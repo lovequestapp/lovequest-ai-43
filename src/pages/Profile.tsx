@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -12,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, MapPin, Edit2, Plus, X, Heart, Gift } from 'lucide-react';
+import { User, MapPin, Edit2, Plus, X, Heart, Gift, ShoppingCart } from 'lucide-react';
 
 const Profile = () => {
   const { currentUser, updateUserProfile } = useUser();
@@ -58,10 +57,8 @@ const Profile = () => {
     }
   };
 
-  // Access gift inventory
   const giftInventory = currentUser.giftInventory || { 'rose': 0, 'heart': 0, 'teddy': 0 };
   
-  // Check URL hash on page load
   React.useEffect(() => {
     if (window.location.hash === '#shop') {
       setActiveTab('shop');
