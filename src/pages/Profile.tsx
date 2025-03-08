@@ -75,7 +75,8 @@ const Profile = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-8">
+      {/* Added significant bottom padding (pb-36) to ensure content doesn't get hidden by footer */}
+      <main className="flex-grow container mx-auto px-4 py-8 pb-36">
         <div className="mb-6 flex justify-between items-center">
           <h1 className="text-3xl font-display font-bold">My Profile</h1>
           

@@ -75,7 +75,8 @@ const Discover = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-8">
+      {/* Added significant bottom padding (pb-36) to ensure content doesn't get hidden by footer */}
+      <main className="flex-grow container mx-auto px-4 py-8 pb-36">
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-display font-bold">Discover</h1>

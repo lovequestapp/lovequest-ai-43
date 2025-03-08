@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -42,7 +41,7 @@ const Index = () => {
       
       <main className="flex-grow">
         {showQuiz ? (
-          <div className="container mx-auto px-4 py-10">
+          <div className="container mx-auto px-4 py-10 pb-36">
             <CompatibilityQuiz onComplete={handleQuizComplete} />
           </div>
         ) : (
