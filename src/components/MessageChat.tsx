@@ -65,7 +65,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const [isVideoCallRequested, setIsVideoCallRequested] = useState(false);
   const [incomingVideoCall, setIncomingVideoCall] = useState(false);
   
-  // Video chat refs
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -347,14 +346,12 @@ const MessageChat: React.FC<MessageChatProps> = ({
     }
   };
   
-  // Function to focus the input field
   const focusInput = () => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
   };
   
-  // Function to handle input area clicks
   const handleInputAreaClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     focusInput();
@@ -366,12 +363,9 @@ const MessageChat: React.FC<MessageChatProps> = ({
     }
   }, [messages, isInVideoCall, incomingVideoCall, isVideoCallRequested]);
   
-  // Immediately focus the input when component mounts
   useEffect(() => {
-    // Focus immediately without delay
     focusInput();
     
-    // Also set a slightly delayed focus for edge cases
     const timer = setTimeout(() => {
       focusInput();
     }, 100);
@@ -392,15 +386,11 @@ const MessageChat: React.FC<MessageChatProps> = ({
     };
   }, []);
   
-  // Ensure the input field is focused whenever the active match changes
   useEffect(() => {
     focusInput();
   }, [matchName]);
   
-  // Make sure buttons are properly clickable
   useEffect(() => {
-    // Create a manual focus event for the first render
-    // This helps ensure that the buttons are interactive immediately
     const makeInteractive = () => {
       if (chatFooterRef.current) {
         const buttons = chatFooterRef.current.querySelectorAll('button');
@@ -412,7 +402,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
     };
     
     makeInteractive();
-    // Run again after a short delay to make sure it applies after all renders
     const timer = setTimeout(makeInteractive, 100);
     
     return () => clearTimeout(timer);
@@ -498,7 +487,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
           </div>
         </div>
       ) : (
-        <CardContent className="flex-grow p-0 overflow-hidden">
+        <CardContent className="flex-grow p-0 overflow-hidden flex flex-col">
           {incomingVideoCall && (
             <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
               <div className="bg-white p-6 rounded-lg shadow-lg text-center">
@@ -528,7 +517,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
             </div>
           )}
           
-          <ScrollArea className="h-full" ref={scrollAreaRef}>
+          <ScrollArea className="h-full flex-grow" ref={scrollAreaRef}>
             <div className="p-4 space-y-4">
               {messages.length === 0 ? (
                 <div className="text-center py-8">
@@ -697,7 +686,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
             </div>
           ) : (
             <div className="flex w-full items-center gap-2 relative" onClick={handleInputAreaClick}>
-              {/* Added a transparent overlay to ensure the entire input area is clickable */}
               <div className="absolute inset-0 cursor-text" onClick={focusInput}></div>
               <Input
                 ref={inputRef}
