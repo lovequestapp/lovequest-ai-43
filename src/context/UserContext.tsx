@@ -22,6 +22,26 @@ type User = {
     heart: number;
     teddy: number;
   };
+  balance?: {
+    amount: number;
+    currency: string;
+    pendingWithdrawal?: {
+      amount: number;
+      status: 'pending' | 'completed' | 'failed';
+      date: Date;
+    };
+    withdrawalHistory?: Array<{
+      amount: number;
+      status: 'completed' | 'failed';
+      date: Date;
+    }>;
+  };
+  bankDetails?: {
+    accountName?: string;
+    accountNumber?: string;
+    bankName?: string;
+    swiftCode?: string;
+  };
 };
 
 type Match = {
@@ -65,6 +85,29 @@ type UserContextType = {
     profileBoost: boolean;
     boostTimeRemaining?: string;
   };
+  getGiftMonetizationDetails: () => {
+    giftValues: {
+      rose: number;
+      heart: number;
+      teddy: number;
+    };
+    minimumWithdrawal: number;
+    availableBalance: number;
+    currency: string;
+    exchangeRates: Record<string, number>;
+  };
+  initiateWithdrawal: (amount: number) => boolean;
+  updateBankDetails: (details: User['bankDetails']) => void;
+  getWithdrawalHistory: () => Array<{
+    amount: number;
+    status: 'completed' | 'failed';
+    date: Date;
+  }> | undefined;
+  getPendingWithdrawal: () => {
+    amount: number;
+    status: 'pending' | 'completed' | 'failed';
+    date: Date;
+  } | undefined;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -135,13 +178,187 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     popularityPoints: 0,
     premiumLikes: 0,
     profileBoost: { active: false },
-    receivedGifts: { rose: 0, heart: 0, teddy: 0 }
+    receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+    balance: {
+      amount: 0,
+      currency: 'USD',
+      withdrawalHistory: []
+    }
   });
   
   const [potentialMatches, setPotentialMatches] = useState<User[]>(mockUsers);
   const [matches, setMatches] = useState<Match[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
 
+  // Gift monetization details - could be fetched from an API in a real app
+  const giftValues = {
+    rose: 0.50,    // Each rose is worth $0.50
+    heart: 2.00,    // Each heart is worth $2.00
+    teddy: 5.00     // Each teddy bear is worth $5.00
+  };
+  
+  const minimumWithdrawal = 10.00;  // Minimum $10 for withdrawal
+  
+  // Exchange rates for major currencies (would come from an API in a real app)
+  const exchangeRates = {
+    USD: 1.00,
+    EUR: 0.93,
+    GBP: 0.78,
+    JPY: 156.78,
+    CAD: 1.37,
+    AUD: 1.52,
+    CNY: 7.24,
+    INR: 83.15,
+  };
+  
+  const getGiftMonetizationDetails = () => {
+    return {
+      giftValues,
+      minimumWithdrawal,
+      availableBalance: currentUser?.balance?.amount || 0,
+      currency: currentUser?.balance?.currency || 'USD',
+      exchangeRates
+    };
+  };
+  
+  const calculateGiftValue = (giftType: string, quantity: number): number => {
+    switch (giftType) {
+      case 'rose':
+        return giftValues.rose * quantity;
+      case 'heart':
+        return giftValues.heart * quantity;
+      case 'teddy':
+        return giftValues.teddy * quantity;
+      default:
+        return 0;
+    }
+  };
+  
+  const updateBankDetails = (details: User['bankDetails']) => {
+    if (!currentUser) return;
+    
+    setCurrentUser({
+      ...currentUser,
+      bankDetails: {
+        ...currentUser.bankDetails,
+        ...details
+      }
+    });
+    
+    toast({
+      title: "Bank Details Updated",
+      description: "Your withdrawal information has been saved",
+    });
+  };
+  
+  const initiateWithdrawal = (amount: number): boolean => {
+    if (!currentUser || !currentUser.balance) return false;
+    
+    // Validate amount against minimum and available balance
+    if (amount < minimumWithdrawal) {
+      toast({
+        title: "Withdrawal Failed",
+        description: `Minimum withdrawal amount is $${minimumWithdrawal}`,
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (amount > currentUser.balance.amount) {
+      toast({
+        title: "Withdrawal Failed",
+        description: "Requested amount exceeds your available balance",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    // Check if bank details are provided
+    if (!currentUser.bankDetails?.accountNumber || !currentUser.bankDetails?.bankName) {
+      toast({
+        title: "Withdrawal Failed",
+        description: "Please add your bank details before withdrawing",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    // Check for pending withdrawals
+    if (currentUser.balance.pendingWithdrawal) {
+      toast({
+        title: "Withdrawal Failed",
+        description: "You have a pending withdrawal. Please wait for it to complete.",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    // Process withdrawal - in a real app, this would call an API
+    const updatedUser = { ...currentUser };
+    
+    // Update balance and create pending withdrawal
+    updatedUser.balance = {
+      ...updatedUser.balance,
+      amount: updatedUser.balance.amount - amount,
+      pendingWithdrawal: {
+        amount,
+        status: 'pending',
+        date: new Date()
+      }
+    };
+    
+    setCurrentUser(updatedUser);
+    
+    toast({
+      title: "Withdrawal Initiated",
+      description: `Your withdrawal of ${currentUser.balance.currency} ${amount.toFixed(2)} is being processed`,
+    });
+    
+    // Simulate processing delay (in a real app, this would be handled by a backend)
+    setTimeout(() => {
+      completeWithdrawal(amount);
+    }, 5000); // 5 seconds for demo purposes
+    
+    return true;
+  };
+  
+  const completeWithdrawal = (amount: number) => {
+    if (!currentUser || !currentUser.balance?.pendingWithdrawal) return;
+    
+    const updatedUser = { ...currentUser };
+    const withdrawal = {
+      amount,
+      status: 'completed' as const,
+      date: new Date()
+    };
+    
+    // Add to history and clear pending
+    updatedUser.balance = {
+      ...updatedUser.balance,
+      withdrawalHistory: [
+        ...(updatedUser.balance.withdrawalHistory || []),
+        withdrawal
+      ],
+      pendingWithdrawal: undefined
+    };
+    
+    setCurrentUser(updatedUser);
+    
+    toast({
+      title: "Withdrawal Completed",
+      description: `${currentUser.balance.currency} ${amount.toFixed(2)} has been sent to your bank account`,
+    });
+  };
+  
+  const getWithdrawalHistory = () => {
+    return currentUser?.balance?.withdrawalHistory;
+  };
+  
+  const getPendingWithdrawal = () => {
+    return currentUser?.balance?.pendingWithdrawal;
+  };
+  
+  // Modified receiveGift to update monetary balance
   const receiveGift = (giftType: string) => {
     if (!currentUser) return;
     
@@ -159,12 +376,25 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!updatedUser.premiumLikes) updatedUser.premiumLikes = 0;
     if (!updatedUser.profileBoost) updatedUser.profileBoost = { active: false };
     
+    // Initialize balance if it doesn't exist
+    if (!updatedUser.balance) {
+      updatedUser.balance = {
+        amount: 0,
+        currency: 'USD',
+        withdrawalHistory: []
+      };
+    }
+    
+    // Calculate monetary value of the gift
+    const giftValue = calculateGiftValue(giftType, 1);
+    updatedUser.balance.amount += giftValue;
+    
     switch (giftType) {
       case 'rose':
         updatedUser.popularityPoints += 2;
         toast({
           title: "Rose Received!",
-          description: "You gained +2 popularity points",
+          description: `You gained +2 popularity points and ${updatedUser.balance.currency} ${giftValue.toFixed(2)} in cash value`,
         });
         break;
       case 'heart':
@@ -172,7 +402,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedUser.premiumLikes += 1;
         toast({
           title: "Heart Received!",
-          description: "You gained +10 popularity points and 1 premium like token",
+          description: `You gained +10 popularity points, 1 premium like token, and ${updatedUser.balance.currency} ${giftValue.toFixed(2)} in cash value`,
         });
         break;
       case 'teddy':
@@ -183,51 +413,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         toast({
           title: "Teddy Bear Received!",
-          description: "You gained +5 popularity points and a 24-hour profile boost",
+          description: `You gained +5 popularity points, a 24-hour profile boost, and ${updatedUser.balance.currency} ${giftValue.toFixed(2)} in cash value`,
         });
         break;
     }
     
     setCurrentUser(updatedUser);
-  };
-
-  const getGiftBenefits = () => {
-    if (!currentUser) {
-      return {
-        popularityPoints: 0,
-        premiumLikes: 0,
-        profileBoost: false,
-      };
-    }
-    
-    // Check if profile boost is expired
-    if (currentUser.profileBoost?.active && currentUser.profileBoost.expiresAt) {
-      if (new Date() > currentUser.profileBoost.expiresAt) {
-        // Update profile boost status if expired
-        setCurrentUser({
-          ...currentUser,
-          profileBoost: { active: false }
-        });
-      }
-    }
-    
-    // Calculate remaining time for profile boost
-    let boostTimeRemaining: string | undefined;
-    if (currentUser.profileBoost?.active && currentUser.profileBoost.expiresAt) {
-      const remainingMs = currentUser.profileBoost.expiresAt.getTime() - Date.now();
-      if (remainingMs > 0) {
-        const hours = Math.floor(remainingMs / (1000 * 60 * 60));
-        const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
-        boostTimeRemaining = `${hours}h ${minutes}m`;
-      }
-    }
-    
-    return {
-      popularityPoints: currentUser.popularityPoints || 0,
-      premiumLikes: currentUser.premiumLikes || 0,
-      profileBoost: currentUser.profileBoost?.active || false,
-      boostTimeRemaining,
-    };
   };
 
   const updateUserProfile = (updates: Partial<User>) => {
@@ -444,6 +635,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getGiftInventory,
         receiveGift,
         getGiftBenefits,
+        getGiftMonetizationDetails,
+        initiateWithdrawal,
+        updateBankDetails,
+        getWithdrawalHistory,
+        getPendingWithdrawal,
       }}
     >
       {children}

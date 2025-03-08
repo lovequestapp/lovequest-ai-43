@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import GiftShop from '@/components/GiftShop';
+import Monetization from '@/components/Monetization';
 import { useUser } from '@/context/UserContext';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, MapPin, Edit2, Plus, X, Heart, Gift, ShoppingCart, Sparkles, Timer, Star } from 'lucide-react';
+import { User, MapPin, Edit2, Plus, X, Heart, Gift, ShoppingCart, Sparkles, Timer, Star, Coins } from 'lucide-react';
 
 const Profile = () => {
   const { currentUser, updateUserProfile, getGiftBenefits } = useUser();
@@ -65,6 +66,8 @@ const Profile = () => {
   React.useEffect(() => {
     if (window.location.hash === '#shop') {
       setActiveTab('shop');
+    } else if (window.location.hash === '#monetize') {
+      setActiveTab('monetize');
     }
   }, []);
   
@@ -104,9 +107,13 @@ const Profile = () => {
         </div>
         
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 mb-6">
+          <TabsList className="grid grid-cols-3 mb-6">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="shop">Gift Shop</TabsTrigger>
+            <TabsTrigger value="monetize" className="flex items-center gap-1">
+              <Coins size={16} />
+              <span>Monetize</span>
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile">
@@ -253,14 +260,25 @@ const Profile = () => {
                           </div>
                         </div>
                         
-                        <Button 
-                          onClick={() => setActiveTab('shop')} 
-                          variant="outline" 
-                          className="w-full mt-4 border-love-200 text-love-600"
-                        >
-                          <ShoppingCart size={16} className="mr-2" />
-                          Go to Shop
-                        </Button>
+                        <div className="grid grid-cols-2 gap-2 mt-4">
+                          <Button 
+                            onClick={() => setActiveTab('shop')} 
+                            variant="outline" 
+                            className="border-love-200 text-love-600"
+                          >
+                            <ShoppingCart size={16} className="mr-2" />
+                            Go to Shop
+                          </Button>
+                          
+                          <Button 
+                            onClick={() => setActiveTab('monetize')} 
+                            variant="outline" 
+                            className="border-purple-200 text-purple-600"
+                          >
+                            <Coins size={16} className="mr-2" />
+                            Monetize
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   </>
@@ -356,6 +374,10 @@ const Profile = () => {
           
           <TabsContent value="shop">
             <GiftShop />
+          </TabsContent>
+          
+          <TabsContent value="monetize">
+            <Monetization />
           </TabsContent>
         </Tabs>
       </main>
