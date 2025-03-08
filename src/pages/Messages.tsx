@@ -47,7 +47,8 @@ const Messages = () => {
       id: msg.id,
       content: msg.content,
       timestamp: msg.timestamp,
-      sender: msg.senderId === currentUser.id ? 'user' : 'match',
+      // Fix: Use explicit "match" or "user" type instead of string
+      sender: msg.senderId === currentUser.id ? 'user' as const : 'match' as const,
     }));
   }, [activeMatchId, messages, currentUser]);
   
