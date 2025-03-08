@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'light' | 'dark';
+type Theme = 'light';
 
 interface ThemeContextType {
   theme: Theme;
@@ -20,32 +20,21 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Check for saved theme preference
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    // Check for system preference
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    return savedTheme || (prefersDark ? 'dark' : 'light');
-  });
+  const [theme] = useState<Theme>('light');
 
   useEffect(() => {
     // Save theme preference
     localStorage.setItem('theme', theme);
     
     // Apply theme to document
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-      // Add black accents for dark theme
-      document.documentElement.style.setProperty('--accent', '0 0% 0%'); // Pure black
-      document.documentElement.style.setProperty('--sidebar-accent', '0 0% 0%');
-    } else {
-      document.documentElement.classList.remove('dark');
-      // Reset accents for light theme to the default values
-      document.documentElement.style.removeProperty('--accent');
-      document.documentElement.style.removeProperty('--sidebar-accent');
-    }
+    document.documentElement.classList.remove('dark');
+    // Reset accents for light theme to the default values
+    document.documentElement.style.removeProperty('--accent');
+    document.documentElement.style.removeProperty('--sidebar-accent');
   }, [theme]);
+
+  // Since we're removing dark mode, setTheme is a no-op function
+  const setTheme = () => {};
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
