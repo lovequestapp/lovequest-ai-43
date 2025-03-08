@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useUser } from '@/context/UserContext';
-import { Heart, Search, MessagesSquare, User, FileText, Menu, X, Brain } from 'lucide-react';
+import { Heart, Search, MessagesSquare, User, FileText, Menu, X } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const Header = () => {
@@ -24,10 +24,10 @@ const Header = () => {
       <div className="container flex h-14 items-center justify-between">
         <Link 
           to="/" 
-          className="flex items-center font-display font-bold text-2xl text-purple-600"
+          className="flex items-center font-display font-bold text-2xl text-rose-600"
         >
-          <Brain className="h-6 w-6 text-purple-500 mr-2" />
-          <span>MindMatch</span>
+          <Heart className="h-6 w-6 text-rose-500 mr-2 fill-rose-500" />
+          <span>Adam & Eve</span>
         </Link>
         
         {isMobile ? (

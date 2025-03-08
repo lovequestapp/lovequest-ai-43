@@ -2,17 +2,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --love-50: #f5f3ff;
-  --love-100: #ede9fe;
-  --love-200: #ddd6fe;
-  --love-300: #c4b5fd;
-  --love-400: #a78bfa;
-  --love-500: #8b5cf6;
-  --love-600: #7c3aed;
-  --love-700: #6d28d9;
-  --love-800: #5b21b6;
-  --love-900: #4c1d95;
-  --love-950: #2e1065;
+  --love-50: #fff1f2;
+  --love-100: #ffe4e6;
+  --love-200: #fecdd3;
+  --love-300: #fda4af;
+  --love-400: #fb7185;
+  --love-500: #f43f5e;
+  --love-600: #e11d48;
+  --love-700: #be123c;
+  --love-800: #9f1239;
+  --love-900: #881337;
+  --love-950: #4c0519;
 }
 
 .bg-gradient-love {
@@ -32,6 +32,32 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
-.bg-purple-50 {
+.bg-love-50 {
   background-color: var(--love-50);
+}
+
+.animate-pulse-heart {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }

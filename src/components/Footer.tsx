@@ -8,16 +8,16 @@ const Footer = () => {
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <Heart size={20} className="text-love-500" />
-            <span className="font-display text-lg font-medium">LoveQuest</span>
+            <Heart size={20} className="text-love-500 fill-love-500" />
+            <span className="font-display text-lg font-medium">AAE Love</span>
           </div>
           
           <div className="text-sm text-muted-foreground">
-            Finding true love with the power of AI
+            Finding your perfect match with the power of AI
           </div>
           
           <div className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} LoveQuest. All rights reserved.
+            © {new Date().getFullYear()} Adam & Eve. All rights reserved.
           </div>
         </div>
       </div>
