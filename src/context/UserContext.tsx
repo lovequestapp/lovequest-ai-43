@@ -9,6 +9,7 @@ type User = {
   interests: string[];
   photos: string[];
   compatibilityScore?: number;
+  giftInventory?: Record<string, number>;
 };
 
 type Match = {
@@ -43,6 +44,8 @@ type UserContextType = {
   getMatchedUser: (matchId: string) => User | undefined;
   likeUser: (userId: string) => void;
   passUser: (userId: string) => void;
+  purchaseGifts: (gifts: Record<string, number>) => void;
+  getGiftInventory: () => Record<string, number>;
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -110,6 +113,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     location: 'New York, NY',
     interests: ['Technology', 'Art', 'Hiking', 'Food'],
     photos: ['/placeholder.svg', '/placeholder.svg'],
+    giftInventory: { 'rose': 0, 'heart': 0, 'teddy': 0 }
   });
   
   const [potentialMatches, setPotentialMatches] = useState<User[]>(mockUsers);
@@ -144,6 +148,28 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     giftType?: string
   ) => {
     if (!currentUser) return;
+    
+    // For gift messages, check if user has the gift in inventory
+    if (type === 'gift' && giftType) {
+      const inventory = currentUser.giftInventory || {};
+      
+      // Check if user has this gift
+      if (!inventory[giftType] || inventory[giftType] <= 0) {
+        return; // Cannot send gift if not in inventory
+      }
+      
+      // Reduce inventory count
+      const updatedInventory = {
+        ...inventory,
+        [giftType]: inventory[giftType] - 1
+      };
+      
+      // Update user inventory
+      setCurrentUser({
+        ...currentUser,
+        giftInventory: updatedInventory
+      });
+    }
     
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
@@ -207,6 +233,29 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const passUser = (userId: string) => {
     // Remove from potential matches
     setPotentialMatches(prev => prev.filter(user => user.id !== userId));
+  };
+
+  const purchaseGifts = (gifts: Record<string, number>) => {
+    if (!currentUser) return;
+    
+    const currentInventory = currentUser.giftInventory || { 'rose': 0, 'heart': 0, 'teddy': 0 };
+    
+    const updatedInventory = { ...currentInventory };
+    
+    // Add purchased gifts to inventory
+    Object.keys(gifts).forEach(giftId => {
+      updatedInventory[giftId] = (updatedInventory[giftId] || 0) + gifts[giftId];
+    });
+    
+    // Update user with new inventory
+    setCurrentUser({
+      ...currentUser,
+      giftInventory: updatedInventory
+    });
+  };
+
+  const getGiftInventory = (): Record<string, number> => {
+    return currentUser?.giftInventory || { 'rose': 0, 'heart': 0, 'teddy': 0 };
   };
 
   useEffect(() => {
@@ -275,6 +324,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         getMatchedUser,
         likeUser,
         passUser,
+        purchaseGifts,
+        getGiftInventory,
       }}
     >
       {children}

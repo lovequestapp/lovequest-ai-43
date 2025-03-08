@@ -12,11 +12,13 @@ import {
   Gift, 
   Heart, 
   Play, 
-  Square 
+  Square,
+  ShoppingCart
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
+import { useUser } from '@/context/UserContext';
 
 interface Message {
   id: string;
@@ -44,6 +46,9 @@ const MessageChat: React.FC<MessageChatProps> = ({
   onSendMessage,
   suggestionStarters = [],
 }) => {
+  const { getGiftInventory } = useUser();
+  const giftInventory = getGiftInventory();
+  
   const [messageText, setMessageText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -55,9 +60,9 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const { toast } = useToast();
   
   const gifts = [
-    { id: 'rose', name: 'Rose', icon: <Heart className="text-rose-500" />, price: 2 },
-    { id: 'heart', name: 'Heart', icon: <Heart className="text-red-500 fill-red-500" />, price: 1 },
-    { id: 'teddy', name: 'Teddy Bear', icon: <Gift className="text-amber-700" />, price: 5 },
+    { id: 'rose', name: 'Rose', icon: <Heart className="text-rose-500" />, price: 20 },
+    { id: 'heart', name: 'Heart', icon: <Heart className="text-red-500 fill-red-500" />, price: 100 },
+    { id: 'teddy', name: 'Teddy Bear', icon: <Gift className="text-amber-700" />, price: 50 },
   ];
 
   const handleSendMessage = () => {
@@ -91,24 +96,19 @@ const MessageChat: React.FC<MessageChatProps> = ({
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp3' });
         const audioUrl = URL.createObjectURL(audioBlob);
         
-        // Convert blob to base64 for sending
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
           const base64data = reader.result as string;
-          // Send voice message
           onSendMessage(base64data, 'voice');
         };
         
-        // Clean up
         stream.getTracks().forEach(track => track.stop());
       };
       
-      // Start recording
       mediaRecorder.start();
       setIsRecording(true);
       
-      // Start timer
       setRecordingTime(0);
       timerRef.current = window.setInterval(() => {
         setRecordingTime(prev => prev + 1);
@@ -129,7 +129,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       
-      // Clear timer
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -138,13 +137,21 @@ const MessageChat: React.FC<MessageChatProps> = ({
   };
   
   const sendGift = (giftId: string) => {
-    onSendMessage(giftId, 'gift', giftId);
-    setShowGiftMenu(false);
-    
-    toast({
-      title: "Gift Sent",
-      description: `You sent a ${gifts.find(g => g.id === giftId)?.name || 'gift'} to ${matchName}`,
-    });
+    if (giftInventory[giftId] && giftInventory[giftId] > 0) {
+      onSendMessage(giftId, 'gift', giftId);
+      setShowGiftMenu(false);
+      
+      toast({
+        title: "Gift Sent",
+        description: `You sent a ${gifts.find(g => g.id === giftId)?.name || 'gift'} to ${matchName}`,
+      });
+    } else {
+      toast({
+        title: "Gift Not Available",
+        description: "You don't have this gift in your inventory. Please purchase it from the shop.",
+        variant: "destructive"
+      });
+    }
   };
   
   const formatTime = (seconds: number): string => {
@@ -272,25 +279,50 @@ const MessageChat: React.FC<MessageChatProps> = ({
         <div className="p-3 border-t border-love-100 bg-love-50">
           <div className="flex justify-between items-center mb-2">
             <h4 className="font-medium text-sm">Send a Gift</h4>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setShowGiftMenu(false)}
-            >
-              Close
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-love-600"
+                asChild
+              >
+                <a href="/profile#shop">
+                  <ShoppingCart size={14} className="mr-1" />
+                  Shop
+                </a>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowGiftMenu(false)}
+              >
+                Close
+              </Button>
+            </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
             {gifts.map((gift) => (
               <Button
                 key={gift.id}
                 variant="outline"
-                className="flex flex-col h-20 px-2 py-1 bg-white"
+                className={cn(
+                  "flex flex-col h-20 px-2 py-1 bg-white relative",
+                  giftInventory[gift.id] <= 0 && "opacity-50"
+                )}
                 onClick={() => sendGift(gift.id)}
+                disabled={giftInventory[gift.id] <= 0}
               >
                 <span className="text-2xl">{gift.icon}</span>
                 <span className="text-xs mt-1">{gift.name}</span>
-                <span className="text-xs text-muted-foreground">${gift.price}</span>
+                {giftInventory[gift.id] > 0 ? (
+                  <Badge variant="outline" className="absolute top-1 right-1 bg-love-50 text-love-700 text-xs">
+                    {giftInventory[gift.id]}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="absolute top-1 right-1 bg-gray-100 text-gray-500 text-xs">
+                    0
+                  </Badge>
+                )}
               </Button>
             ))}
           </div>
