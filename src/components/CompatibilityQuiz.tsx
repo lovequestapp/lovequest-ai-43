@@ -30,7 +30,7 @@ const quizQuestions: QuizQuestion[] = [
   },
   {
     id: 'quality-time',
-    question: 'What's your ideal way to spend quality time together?',
+    question: "What's your ideal way to spend quality time together?",
     options: [
       'Adventurous activities and exploring new places',
       'Quiet evenings at home watching movies or cooking',
@@ -63,7 +63,7 @@ const quizQuestions: QuizQuestion[] = [
     question: 'What values are most important to you in a relationship?',
     options: [
       'Honesty and open communication',
-      'Growth and supporting each other's goals',
+      "Growth and supporting each other's goals",
       'Passion and maintaining excitement',
       'Stability and reliability'
     ]
