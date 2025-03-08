@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -109,6 +110,9 @@ type UserContextType = {
     date: Date;
   } | undefined;
 };
+
+// Create the context with a default value matching the type
+const UserContext = createContext<UserContextType>({} as UserContextType);
 
 const mockUsers: User[] = [
   {
