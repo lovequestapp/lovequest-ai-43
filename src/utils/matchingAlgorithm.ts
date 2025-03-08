@@ -123,3 +123,36 @@ export const shouldBoostProfile = (popularityPoints: number): boolean => {
   return popularityPoints >= 20;
 };
 
+// Generate conversation starters based on user profiles
+export const getConversationStarters = (currentUser: User, matchUser: User): string[] => {
+  const starters: string[] = [];
+  
+  // Based on shared interests
+  if (currentUser.interests && matchUser.interests) {
+    const sharedInterests = currentUser.interests.filter(interest => 
+      matchUser.interests?.includes(interest)
+    );
+    
+    if (sharedInterests.length > 0) {
+      const randomInterest = sharedInterests[Math.floor(Math.random() * sharedInterests.length)];
+      starters.push(`I see we both like ${randomInterest}! What got you into that?`);
+    }
+  }
+  
+  // Based on location
+  if (matchUser.location) {
+    starters.push(`How do you like living in ${matchUser.location.split(',')[0]}?`);
+  }
+  
+  // Based on profile content
+  if (matchUser.bio && matchUser.bio.length > 10) {
+    starters.push(`I loved reading that ${matchUser.bio.substring(0, 15)}... in your bio. Tell me more about that.`);
+  }
+  
+  // Add some generic but effective starters
+  starters.push("What's something you're looking forward to this week?");
+  starters.push("What's your idea of a perfect first date?");
+  starters.push("If you could travel anywhere right now, where would you go?");
+  
+  return starters;
+};

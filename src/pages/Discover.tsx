@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -126,13 +125,12 @@ const Discover = () => {
       const matchesWithBoostInfo = sortedMatches.map(match => {
         const popularityScore = match.popularityPoints || 0;
         const isBoosted = shouldBoostProfile(popularityScore);
+        const boostLevel: 'standard' | 'super' = popularityScore >= 100 ? 'super' : 'standard';
         
         return {
           ...match,
           isBoosted,
-          boostLevel: isBoosted 
-            ? (popularityScore >= 100 ? 'super' : 'standard')
-            : undefined
+          boostLevel: isBoosted ? boostLevel : undefined
         };
       });
       
