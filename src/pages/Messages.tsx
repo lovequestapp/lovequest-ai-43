@@ -286,11 +286,11 @@ const Messages = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-8 flex flex-col">
+      <main className="flex-grow container mx-auto px-4 py-8 grid grid-rows-[auto_1fr_auto] h-[calc(100vh-7rem)]">
         <h1 className="text-3xl font-display font-bold mb-6">Messages</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-22rem)] md:h-[calc(100vh-18rem)] mb-8">
-          <div className="md:col-span-1">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden min-h-0">
+          <div className="md:col-span-1 overflow-hidden">
             <MessageList
               matches={matchListItems}
               activeMatchId={activeMatchId}
@@ -298,7 +298,7 @@ const Messages = () => {
             />
           </div>
           
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 overflow-hidden">
             {activeMatchUser && activeMatchId ? (
               <MessageChat
                 matchName={activeMatchUser.name}
@@ -320,8 +320,8 @@ const Messages = () => {
           </div>
         </div>
         
-        {/* Interactive features section with proper spacing */}
-        <div className="space-y-8 mt-auto">
+        {/* Interactive features section */}
+        <div className="space-y-6 mt-8 pb-8 overflow-y-auto">
           {/* Conversation Starters */}
           <section>
             <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
@@ -368,7 +368,7 @@ const Messages = () => {
           </section>
           
           {/* Popular Gifts */}
-          <section className="mb-16">
+          <section>
             <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
               <Gift className="text-rose-600" size={24} />
               <span>Popular Gifts</span>

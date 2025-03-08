@@ -27,7 +27,7 @@ const MessageList: React.FC<MessageListProps> = ({
 }) => {
   return (
     <Card className="h-full border-love-100 overflow-hidden flex flex-col">
-      <CardContent className="p-0 flex flex-col h-full">
+      <CardContent className="p-0 flex flex-col h-full overflow-hidden">
         <div className="p-4 border-b border-love-100 flex-shrink-0">
           <h2 className="text-xl font-display font-semibold">Messages</h2>
           {matches.length === 0 && (
@@ -37,7 +37,7 @@ const MessageList: React.FC<MessageListProps> = ({
           )}
         </div>
         
-        <ScrollArea className="flex-grow">
+        <ScrollArea className="flex-grow min-h-0">
           <div className="divide-y divide-love-100">
             {matches.map((match) => (
               <div

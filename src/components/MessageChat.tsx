@@ -404,11 +404,24 @@ const MessageChat: React.FC<MessageChatProps> = ({
     makeInteractive();
     const timer = setTimeout(makeInteractive, 100);
     
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      
+      if (peerConnectionRef.current) {
+        peerConnectionRef.current.close();
+      }
+    };
   }, []);
   
   return (
-    <Card className="h-full flex flex-col border-love-100">
+    <Card className="h-full flex flex-col border-love-100 overflow-hidden">
       <CardHeader className="px-4 py-3 border-b border-love-100 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -487,7 +500,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
           </div>
         </div>
       ) : (
-        <CardContent className="flex-grow p-0 overflow-hidden flex flex-col">
+        <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
           {incomingVideoCall && (
             <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
               <div className="bg-white p-6 rounded-lg shadow-lg text-center">
@@ -517,7 +530,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
             </div>
           )}
           
-          <ScrollArea className="h-full flex-grow" ref={scrollAreaRef}>
+          <ScrollArea className="flex-grow min-h-0" ref={scrollAreaRef}>
             <div className="p-4 space-y-4">
               {messages.length === 0 ? (
                 <div className="text-center py-8">
@@ -582,11 +595,11 @@ const MessageChat: React.FC<MessageChatProps> = ({
               )}
             </div>
           </ScrollArea>
-        </CardContent>
+        </div>
       )}
       
       {showGiftMenu && (
-        <div className="p-3 border-t border-love-100 bg-love-50">
+        <div className="p-3 border-t border-love-100 bg-love-50 flex-shrink-0">
           <div className="flex justify-between items-center mb-2">
             <h4 className="font-medium text-sm">Send a Gift</h4>
             <div className="flex items-center gap-2">
@@ -668,7 +681,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
       )}
       
       {!isInVideoCall && (
-        <CardFooter className="p-3 border-t border-love-100 sticky bottom-0 bg-white z-10" ref={chatFooterRef}>
+        <CardFooter className="p-3 border-t border-love-100 sticky bottom-0 bg-white z-10 flex-shrink-0" ref={chatFooterRef}>
           {isRecording ? (
             <div className="flex w-full items-center gap-2">
               <div className="flex-grow bg-red-50 text-red-500 px-4 py-2 rounded-md border border-red-200 flex items-center">
