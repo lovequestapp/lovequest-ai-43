@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,9 @@ import { useUser } from '@/context/UserContext';
 import { useToast } from "@/hooks/use-toast";
 import PersonalityTraitSelector from '@/components/PersonalityTraitSelector';
 import AIProfileGenerator from '@/components/AIProfileGenerator';
-import { Check, CreditCard, Star, Award, UserPlus, Key, Mail } from 'lucide-react';
+import IdentityVerification from '@/components/IdentityVerification';
+import { Check, CreditCard, Star, Award, UserPlus, Key, Mail, Shield, Lock } from 'lucide-react';
+import { Progress } from "@/components/ui/progress";
 
 const plans = [
   {
@@ -54,6 +55,8 @@ const SignUp = () => {
   const [step, setStep] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState('');
   const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationProgress, setVerificationProgress] = useState(0);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -68,6 +71,7 @@ const SignUp = () => {
     gender: 'female',
     interestedIn: ['male'],
     favoriteMusic: '',
+    verificationId: '',
   });
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -97,6 +101,32 @@ const SignUp = () => {
       interestedIn: selected as ('male' | 'female' | 'non-binary')[],
     });
   };
+
+  const handleVerificationComplete = (success: boolean, verificationId?: string) => {
+    if (success && verificationId) {
+      setIsVerified(true);
+      setFormData(prev => ({
+        ...prev,
+        verificationId: verificationId
+      }));
+      
+      toast({
+        title: "Verification Successful",
+        description: "Your identity has been verified successfully.",
+      });
+    } else {
+      setIsVerified(false);
+      toast({
+        title: "Verification Failed",
+        description: "We couldn't verify your identity. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updateVerificationProgress = (progress: number) => {
+    setVerificationProgress(progress);
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,8 +149,6 @@ const SignUp = () => {
       return;
     }
     
-    // In a real app, this would send the data to a backend service
-    // For now, we'll just create a user in our local state
     const newUser = {
       id: `user-${Date.now()}`,
       name: formData.name,
@@ -143,7 +171,8 @@ const SignUp = () => {
       favoriteMusic: formData.favoriteMusic,
       gender: formData.gender as 'male' | 'female' | 'non-binary',
       interestedIn: formData.interestedIn,
-      // Add plan info
+      verificationId: formData.verificationId,
+      isVerified: isVerified,
       plan: selectedPlan,
     };
     
@@ -154,7 +183,6 @@ const SignUp = () => {
       description: `Welcome to our dating app, ${formData.name}!`,
     });
     
-    // In a real app, this would navigate to the dashboard
     window.location.href = '/discover';
   };
 
@@ -177,7 +205,6 @@ const SignUp = () => {
   
   const nextStep = () => {
     if (step === 1) {
-      // Validate fields for step 1
       if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
         toast({
           title: "Missing information",
@@ -198,7 +225,6 @@ const SignUp = () => {
     }
     
     if (step === 2) {
-      // Validate fields for step 2
       if (!formData.age || !formData.location || !formData.bio || !formData.interests) {
         toast({
           title: "Missing information",
@@ -217,12 +243,25 @@ const SignUp = () => {
         return;
       }
     }
+
+    if (step === 4 && !isVerified) {
+      toast({
+        title: "Verification Required",
+        description: "Please complete the identity verification process before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setStep(step + 1);
   };
   
   const prevStep = () => {
     setStep(step - 1);
+  };
+
+  const getProgressStep = () => {
+    return (step / 5) * 100;
   };
   
   return (
@@ -232,8 +271,16 @@ const SignUp = () => {
           {step === 1 && "Create your account"}
           {step === 2 && "Tell us about yourself"}
           {step === 3 && "Add your profile photo"}
-          {step === 4 && "Choose your membership plan"}
+          {step === 4 && "Verify your identity"}
+          {step === 5 && "Choose your membership plan"}
         </CardTitle>
+        <div className="w-full mt-4">
+          <Progress value={getProgressStep()} className="h-2" />
+          <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+            <span>Step {step} of 5</span>
+            <span>{Math.round(getProgressStep())}% Complete</span>
+          </div>
+        </div>
       </CardHeader>
       
       <CardContent>
@@ -264,6 +311,7 @@ const SignUp = () => {
                   onChange={handleChange}
                   placeholder="your.email@example.com"
                   required
+                  icon={<Mail className="h-4 w-4 text-muted-foreground" />}
                 />
               </div>
               
@@ -277,6 +325,7 @@ const SignUp = () => {
                   onChange={handleChange}
                   placeholder="Create a password"
                   required
+                  icon={<Key className="h-4 w-4 text-muted-foreground" />}
                 />
               </div>
               
@@ -290,6 +339,7 @@ const SignUp = () => {
                   onChange={handleChange}
                   placeholder="Confirm your password"
                   required
+                  icon={<Lock className="h-4 w-4 text-muted-foreground" />}
                 />
               </div>
             </div>
@@ -436,6 +486,49 @@ const SignUp = () => {
           
           {step === 4 && (
             <div className="space-y-6">
+              <div className="bg-green-50 border border-green-100 rounded-md p-4 mb-6">
+                <h3 className="font-medium flex items-center gap-2 text-green-800">
+                  <Shield className="h-5 w-5 text-green-600" />
+                  Identity Verification
+                </h3>
+                <p className="text-sm text-green-700 mt-2">
+                  To ensure our community's safety and authenticity, we require all users to verify their identity.
+                  This process is secure, private, and takes less than a minute.
+                </p>
+              </div>
+
+              <IdentityVerification 
+                onVerificationComplete={handleVerificationComplete}
+                onProgressUpdate={updateVerificationProgress}
+              />
+
+              {verificationProgress > 0 && verificationProgress < 100 && (
+                <div className="mt-4">
+                  <Progress value={verificationProgress} className="h-2" />
+                  <p className="text-sm text-center mt-2 text-muted-foreground">
+                    Verification in progress: {verificationProgress}%
+                  </p>
+                </div>
+              )}
+
+              {isVerified && (
+                <div className="bg-green-50 border border-green-100 rounded-md p-4 mt-6 flex items-center gap-3">
+                  <div className="bg-green-100 rounded-full p-2">
+                    <Check className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-green-800">Verification Successful</h4>
+                    <p className="text-sm text-green-700">
+                      Your identity has been verified. You'll receive a verified badge on your profile.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {step === 5 && (
+            <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {plans.map((plan) => (
                   <div 
@@ -534,11 +627,12 @@ const SignUp = () => {
               </Button>
             )}
             
-            {step < 4 ? (
+            {step < 5 ? (
               <Button 
                 type="button" 
                 className="ml-auto"
                 onClick={nextStep}
+                disabled={step === 4 && !isVerified}
               >
                 Next
               </Button>

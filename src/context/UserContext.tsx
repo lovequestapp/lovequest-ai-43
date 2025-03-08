@@ -68,6 +68,8 @@ type User = {
   blogPosts?: BlogPost[];
   favoriteMusic?: string;
   personalityTraits?: string[];
+  verificationId?: string;
+  isVerified?: boolean;
 };
 
 type Match = {
