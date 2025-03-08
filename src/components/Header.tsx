@@ -27,7 +27,7 @@ const Header = () => {
           className="flex items-center font-display font-bold text-2xl text-rose-600"
         >
           <Heart className="h-6 w-6 text-rose-500 mr-2 fill-rose-500" />
-          <span>Adam & Eve</span>
+          <span>LoveQuest</span>
         </Link>
         
         {isMobile ? (

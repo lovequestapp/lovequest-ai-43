@@ -17,7 +17,7 @@ const Footer = () => {
           </div>
           
           <div className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Adam & Eve. All rights reserved.
+            © {new Date().getFullYear()} LoveQuest. All rights reserved.
           </div>
         </div>
       </div>
