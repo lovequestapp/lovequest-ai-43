@@ -789,93 +789,13 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser, mockUsers, matches.length]);
 
-  const getGiftBenefits = () => {
-    if (!currentUser) return {
-      popularityPoints: 0,
-      premiumLikes: 0,
-      profileBoost: false,
-      boostTimeRemaining: undefined
-    };
-    
-    const now = new Date();
-    const boostExpiration = currentUser.profileBoost?.expiresAt;
-    
-    let boostTimeRemaining;
-    if (boostExpiration && boostExpiration > now) {
-      const diff = boostExpiration.getTime() - now.getTime();
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      boostTimeRemaining = `${hours}h ${minutes}m`;
+  const getUserPosts = (userId: string): BlogPost[] => {
+    if (userId === currentUser?.id) {
+      return currentUser.blogPosts || [];
     }
     
-    return {
-      popularityPoints: currentUser.popularityPoints || 0,
-      premiumLikes: currentUser.premiumLikes || 0,
-      profileBoost: (currentUser.profileBoost?.active && boostExpiration && boostExpiration > now) || false,
-      boostTimeRemaining
-    };
-  };
-
-  const createBlogPost = (title: string, content: string, tags: string[]) => {
-    if (!currentUser) return;
-    
-    const newPost: BlogPost = {
-      id: `blog-${Date.now()}`,
-      userId: currentUser.id,
-      title,
-      content,
-      createdAt: new Date(),
-      likes: 0,
-      comments: [],
-      tags,
-    };
-    
-    const updatedUser = { ...currentUser };
-    updatedUser.blogPosts = [...(updatedUser.blogPosts || []), newPost];
-    
-    setCurrentUser(updatedUser);
-    
-    toast({
-      title: "Post Published",
-      description: "Your blog post has been published successfully!",
-    });
-    
-    setTimeout(() => {
-      toast({
-        title: "Post Engagement",
-        description: "Your post is being discovered by others in the community!",
-      });
-    }, 3000);
-  };
-  
-  const updateBlogPost = (postId: string, updates: Partial<Omit<BlogPost, 'id' | 'userId' | 'createdAt'>>) => {
-    if (!currentUser || !currentUser.blogPosts) return;
-    
-    const updatedUser = { ...currentUser };
-    updatedUser.blogPosts = updatedUser.blogPosts.map(post => 
-      post.id === postId ? { ...post, ...updates } : post
-    );
-    
-    setCurrentUser(updatedUser);
-    
-    toast({
-      title: "Post Updated",
-      description: "Your blog post has been updated successfully!",
-    });
-  };
-  
-  const deleteBlogPost = (postId: string) => {
-    if (!currentUser || !currentUser.blogPosts) return;
-    
-    const updatedUser = { ...currentUser };
-    updatedUser.blogPosts = updatedUser.blogPosts.filter(post => post.id !== postId);
-    
-    setCurrentUser(updatedUser);
-    
-    toast({
-      title: "Post Deleted",
-      description: "Your blog post has been deleted.",
-    });
+    const user = potentialMatches.find(u => u.id === userId);
+    return user?.blogPosts || [];
   };
   
   const likeBlogPost = (postId: string, userId: string) => {
@@ -896,9 +816,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const updatedMatches = potentialMatches.map(user => 
         user.id === userId ? {
           ...user,
-          blogPosts: user.blogPosts?.map(p => 
-            p.id === postId ? updatedPosts : p
-          ) || []
+          blogPosts: updatedPosts
         } : user
       );
       setPotentialMatches(updatedMatches);
@@ -998,52 +916,28 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .flatMap(user => user.blogPosts || [])
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   };
-  
-  const getUserPosts = (userId: string): BlogPost[] => {
-    if (userId === currentUser?.id) {
-      return currentUser.blogPosts || [];
+
+  const getGiftBenefits = () => {
+    if (!currentUser) return {
+      popularityPoints: 0,
+      premiumLikes: 0,
+      profileBoost: false,
+      boostTimeRemaining: undefined
+    };
+    
+    const now = new Date();
+    const boostExpiration = currentUser.profileBoost?.expiresAt;
+    
+    let boostTimeRemaining;
+    if (boostExpiration && boostExpiration > now) {
+      const diff = boostExpiration.getTime() - now.getTime();
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      boostTimeRemaining = `${hours}h ${minutes}m`;
     }
     
-    const user = potentialMatches.find(u => u.id === userId);
-    return user?.blogPosts || [];
-  };
-  
-  return (
-    <UserContext.Provider
-      value={{
-        currentUser,
-        potentialMatches,
-        matches,
-        messages,
-        setCurrentUser,
-        updateUserProfile,
-        addMatch,
-        sendMessage,
-        getMatchedUser,
-        likeUser,
-        passUser,
-        purchaseGifts,
-        getGiftInventory,
-        receiveGift,
-        getGiftBenefits,
-        getGiftMonetizationDetails,
-        initiateWithdrawal,
-        updateBankDetails,
-        getWithdrawalHistory,
-        getPendingWithdrawal,
-        createBlogPost,
-        updateBlogPost,
-        deleteBlogPost,
-        likeBlogPost,
-        commentOnBlogPost,
-        getAllPosts,
-        getFilteredPosts,
-        getUserPosts,
-      }}
-    >
-      {children}
-    </UserContext.Provider>
-  );
-};
-
-export const useUser = () => useContext(UserContext);
+    return {
+      popularityPoints: currentUser.popularityPoints || 0,
+      premiumLikes: currentUser.premiumLikes || 0,
+      profileBoost: (currentUser.profileBoost?.active && boostExpiration && boostExpiration > now) || false,
+      boost
