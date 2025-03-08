@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,7 +115,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
     }
   };
   
-  // Enhanced voice recording functionality
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -152,7 +150,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
         setRecordingTime(prev => prev + 1);
       }, 1000);
       
-      // Visualize audio recording with animation
       toast({
         title: "Recording Started",
         description: "Speak clearly to record your voice message",
@@ -185,10 +182,8 @@ const MessageChat: React.FC<MessageChatProps> = ({
     }
   };
   
-  // Video chat functionality
   const startVideoCall = async () => {
     try {
-      // Request video call permission
       setIsVideoCallRequested(true);
       onSendMessage("Video call request", 'video-request');
       
@@ -217,19 +212,16 @@ const MessageChat: React.FC<MessageChatProps> = ({
         localVideoRef.current.srcObject = stream;
       }
       
-      // Initialize WebRTC peer connection
       const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
       const peerConnection = new RTCPeerConnection(configuration);
       peerConnectionRef.current = peerConnection;
       
-      // Add local stream to peer connection
       stream.getTracks().forEach(track => {
         if (localStreamRef.current) {
           peerConnection.addTrack(track, localStreamRef.current);
         }
       });
       
-      // Set up event handlers for incoming stream
       peerConnection.ontrack = (event) => {
         if (remoteVideoRef.current && event.streams[0]) {
           remoteVideoRef.current.srcObject = event.streams[0];
@@ -257,13 +249,11 @@ const MessageChat: React.FC<MessageChatProps> = ({
   };
   
   const endVideoCall = () => {
-    // Close peer connection
     if (peerConnectionRef.current) {
       peerConnectionRef.current.close();
       peerConnectionRef.current = null;
     }
     
-    // Stop all tracks in local stream
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => track.stop());
       localStreamRef.current = null;
@@ -279,7 +269,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
     });
   };
   
-  // Simulate incoming video call for demo purposes
   const simulateIncomingCall = () => {
     setIncomingVideoCall(true);
     toast({
@@ -360,21 +349,8 @@ const MessageChat: React.FC<MessageChatProps> = ({
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-    
-    // Demo: simulate incoming video call after 10 seconds for testing
-    // Remove in production
-    /* 
-    const timer = setTimeout(() => {
-      if (!isInVideoCall && !incomingVideoCall && !isVideoCallRequested) {
-        simulateIncomingCall();
-      }
-    }, 10000);
-    
-    return () => clearTimeout(timer);
-    */
   }, [messages, isInVideoCall, incomingVideoCall, isVideoCallRequested]);
   
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) {
