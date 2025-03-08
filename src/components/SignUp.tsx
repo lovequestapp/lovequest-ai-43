@@ -7,6 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from '@/context/UserContext';
 import { useToast } from "@/hooks/use-toast";
+import PersonalityTraitSelector from '@/components/PersonalityTraitSelector';
+import AIProfileGenerator from '@/components/AIProfileGenerator';
+import { Check, CreditCard, Star, Award, UserPlus, Key, Mail } from 'lucide-react';
 
 const plans = [
   {
@@ -50,6 +53,7 @@ const SignUp = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState('');
+  const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -61,12 +65,36 @@ const SignUp = () => {
     bio: '',
     interests: '',
     photos: ['/placeholder.svg'],
+    gender: 'female',
+    interestedIn: ['male'],
+    favoriteMusic: '',
   });
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleGenderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setFormData({
+      ...formData,
+      gender: e.target.value as 'male' | 'female' | 'non-binary',
+    });
+  };
+
+  const handleInterestedInChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const options = e.target.options;
+    const selected = [];
+    for (let i = 0; i < options.length; i++) {
+      if (options[i].selected) {
+        selected.push(options[i].value);
+      }
+    }
+    setFormData({
+      ...formData,
+      interestedIn: selected as ('male' | 'female' | 'non-binary')[],
     });
   };
   
@@ -111,6 +139,10 @@ const SignUp = () => {
         currency: 'USD',
         withdrawalHistory: []
       },
+      personalityTraits: selectedTraits,
+      favoriteMusic: formData.favoriteMusic,
+      gender: formData.gender as 'male' | 'female' | 'non-binary',
+      interestedIn: formData.interestedIn,
       // Add plan info
       plan: selectedPlan,
     };
@@ -124,6 +156,23 @@ const SignUp = () => {
     
     // In a real app, this would navigate to the dashboard
     window.location.href = '/discover';
+  };
+
+  const handleSelectTrait = (trait: string) => {
+    if (selectedTraits.includes(trait)) {
+      setSelectedTraits(selectedTraits.filter(t => t !== trait));
+    } else {
+      if (selectedTraits.length < 5) {
+        setSelectedTraits([...selectedTraits, trait]);
+      }
+    }
+  };
+
+  const handleProfileImageGenerated = (imageUrl: string) => {
+    setFormData({
+      ...formData,
+      photos: [imageUrl],
+    });
   };
   
   const nextStep = () => {
@@ -182,7 +231,8 @@ const SignUp = () => {
         <CardTitle className="text-2xl font-display text-center">
           {step === 1 && "Create your account"}
           {step === 2 && "Tell us about yourself"}
-          {step === 3 && "Choose your membership plan"}
+          {step === 3 && "Add your profile photo"}
+          {step === 4 && "Choose your membership plan"}
         </CardTitle>
       </CardHeader>
       
@@ -199,6 +249,8 @@ const SignUp = () => {
                   onChange={handleChange}
                   placeholder="Your name"
                   required
+                  className="flex items-center gap-2"
+                  icon={<UserPlus className="h-4 w-4 text-muted-foreground" />}
                 />
               </div>
               
@@ -285,6 +337,28 @@ const SignUp = () => {
               </div>
               
               <div className="grid gap-2">
+                <Label htmlFor="favoriteMusic">Favorite Song or Artist</Label>
+                <Input
+                  id="favoriteMusic"
+                  name="favoriteMusic"
+                  value={formData.favoriteMusic}
+                  onChange={handleChange}
+                  placeholder="E.g., The Beatles - Hey Jude"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Personality Traits</Label>
+                <PersonalityTraitSelector 
+                  selectedTraits={selectedTraits}
+                  onSelectTrait={handleSelectTrait}
+                />
+                {selectedTraits.length >= 5 && (
+                  <p className="text-xs text-love-600 mt-1">Maximum 5 traits selected</p>
+                )}
+              </div>
+              
+              <div className="grid gap-2">
                 <Label htmlFor="interests">Interests (comma separated)</Label>
                 <Input
                   id="interests"
@@ -295,10 +369,72 @@ const SignUp = () => {
                   required
                 />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="gender">I am</Label>
+                  <select
+                    id="gender"
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleGenderChange}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                  >
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                    <option value="non-binary">Non-binary</option>
+                  </select>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="interestedIn">Interested in</Label>
+                  <select
+                    id="interestedIn"
+                    name="interestedIn"
+                    multiple
+                    value={formData.interestedIn}
+                    onChange={handleInterestedInChange}
+                    className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                  >
+                    <option value="female">Female</option>
+                    <option value="male">Male</option>
+                    <option value="non-binary">Non-binary</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground">Hold Ctrl/Cmd to select multiple</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-6">
+              <div className="flex flex-col items-center">
+                <div className="w-40 h-40 rounded-full overflow-hidden mb-6 bg-gray-100 flex items-center justify-center">
+                  {formData.photos[0] === '/placeholder.svg' ? (
+                    <UserPlus className="h-12 w-12 text-gray-400" />
+                  ) : (
+                    <img 
+                      src={formData.photos[0]} 
+                      alt="Profile" 
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+                
+                <AIProfileGenerator 
+                  onImageGenerated={handleProfileImageGenerated}
+                  gender={formData.gender as 'male' | 'female' | 'non-binary'}
+                />
+
+                <p className="text-sm text-muted-foreground mt-4 text-center max-w-md">
+                  Our AI will generate a professional profile image for you. 
+                  Click the button above to create your profile picture.
+                </p>
+              </div>
             </div>
           )}
           
-          {step === 3 && (
+          {step === 4 && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {plans.map((plan) => (
@@ -320,14 +456,70 @@ const SignUp = () => {
                     <ul className="space-y-2 text-sm">
                       {plan.features.map((feature, index) => (
                         <li key={index} className="flex items-start">
-                          <span className="text-love-500 mr-2">✓</span>
+                          <span className="text-love-500 mr-2"><Check size={16} /></span>
                           {feature}
                         </li>
                       ))}
                     </ul>
+
+                    {plan.id === 'premium' && (
+                      <div className="mt-4 pt-2 border-t border-love-100">
+                        <p className="text-sm flex items-center text-love-700">
+                          <Star size={14} className="inline mr-1 text-amber-500" />
+                          Most Popular Choice
+                        </p>
+                      </div>
+                    )}
+
+                    {plan.id === 'vip' && (
+                      <div className="mt-4 pt-2 border-t border-love-100">
+                        <p className="text-sm flex items-center text-love-700">
+                          <Award size={14} className="inline mr-1 text-purple-500" />
+                          Best Value
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
+
+              {selectedPlan !== 'free' && (
+                <div className="bg-love-50 p-4 rounded-lg border border-love-100 mt-6">
+                  <h4 className="font-medium flex items-center gap-2 mb-2">
+                    <CreditCard size={18} className="text-love-500" />
+                    Payment Information
+                  </h4>
+                  <div className="grid gap-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="cardName">Name on Card</Label>
+                        <Input id="cardName" placeholder="John Smith" />
+                      </div>
+                      <div>
+                        <Label htmlFor="cardNumber">Card Number</Label>
+                        <Input id="cardNumber" placeholder="4242 4242 4242 4242" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="expMonth">Expiry Month</Label>
+                        <Input id="expMonth" placeholder="MM" />
+                      </div>
+                      <div>
+                        <Label htmlFor="expYear">Expiry Year</Label>
+                        <Input id="expYear" placeholder="YY" />
+                      </div>
+                      <div>
+                        <Label htmlFor="cvc">CVC</Label>
+                        <Input id="cvc" placeholder="123" />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-4">
+                    Your payment is secure and encrypted. We never store your full card details.
+                  </p>
+                </div>
+              )}
             </div>
           )}
           
@@ -342,7 +534,7 @@ const SignUp = () => {
               </Button>
             )}
             
-            {step < 3 ? (
+            {step < 4 ? (
               <Button 
                 type="button" 
                 className="ml-auto"
