@@ -54,7 +54,11 @@ const Messages = () => {
     }));
   }, [activeMatchId, messages, currentUser]);
   
-  const handleSendMessage = (content: string, type: 'text' | 'voice' | 'gift' = 'text', giftType?: string) => {
+  const handleSendMessage = (
+    content: string, 
+    type: 'text' | 'voice' | 'gift' | 'video-request' | 'video-accepted' | 'video-ended' = 'text', 
+    giftType?: string
+  ) => {
     if (activeMatchId) {
       if (type === 'gift') {
         toast({
@@ -66,6 +70,26 @@ const Messages = () => {
           title: "Voice Message Sent",
           description: "Your voice message has been sent.",
         });
+      } else if (type === 'video-request') {
+        toast({
+          title: "Video Call Requested",
+          description: `Waiting for ${activeMatchUser?.name} to accept your call...`,
+        });
+        
+        setTimeout(() => {
+          if (activeMatchId) {
+            const responseType = Math.random() > 0.3 ? 'video-accepted' : 'video-ended';
+            const responseMessage = responseType === 'video-accepted' 
+              ? "Video call accepted" 
+              : "Missed your call, sorry!";
+              
+            sendMessage(
+              activeMatchId, 
+              responseMessage, 
+              responseType as 'video-accepted' | 'video-ended'
+            );
+          }
+        }, 5000 + Math.random() * 5000);
       }
       
       sendMessage(activeMatchId, content, type, giftType);

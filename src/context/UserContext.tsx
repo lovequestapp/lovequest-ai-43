@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 type User = {
   id: string;
@@ -60,7 +60,7 @@ type Message = {
   content: string;
   timestamp: Date;
   read: boolean;
-  type?: 'text' | 'voice' | 'gift';
+  type?: 'text' | 'voice' | 'gift' | 'video-request' | 'video-accepted' | 'video-ended';
   giftType?: string;
 };
 
@@ -72,8 +72,8 @@ type UserContextType = {
   setCurrentUser: (user: User) => void;
   updateUserProfile: (updates: Partial<User>) => void;
   addMatch: (matchedUserId: string) => void;
-  sendMessage: (matchId: string, content: string, type?: 'text' | 'voice' | 'gift', giftType?: string) => void;
-  getMatchedUser: (matchId: string) => User | undefined;
+  sendMessage: (matchId: string, content: string, type?: 'text' | 'voice' | 'gift' | 'video-request' | 'video-accepted' | 'video-ended', giftType?: string) => void;
+  getMatchedUser: (userId: string) => User | undefined;
   likeUser: (userId: string) => void;
   passUser: (userId: string) => void;
   purchaseGifts: (gifts: Record<string, number>) => void;
@@ -109,8 +109,6 @@ type UserContextType = {
     date: Date;
   } | undefined;
 };
-
-const UserContext = createContext<UserContextType | undefined>(undefined);
 
 const mockUsers: User[] = [
   {
@@ -166,6 +164,8 @@ const mockUsers: User[] = [
 ];
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { toast } = useToast();
+  
   const [currentUser, setCurrentUser] = useState<User | null>({
     id: 'current-user',
     name: 'Sam Rivera',
@@ -174,7 +174,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     location: 'New York, NY',
     interests: ['Technology', 'Art', 'Hiking', 'Food'],
     photos: ['/placeholder.svg', '/placeholder.svg'],
-    giftInventory: { 'rose': 0, 'heart': 0, 'teddy': 0 },
+    giftInventory: { 'rose': 3, 'heart': 1, 'teddy': 2 },
     popularityPoints: 0,
     premiumLikes: 0,
     profileBoost: { active: false },
@@ -190,7 +190,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [matches, setMatches] = useState<Match[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
 
-  // Gift monetization details - could be fetched from an API in a real app
   const giftValues = {
     rose: 0.50,    // Each rose is worth $0.50
     heart: 2.00,    // Each heart is worth $2.00
@@ -199,7 +198,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const minimumWithdrawal = 10.00;  // Minimum $10 for withdrawal
   
-  // Exchange rates for major currencies (would come from an API in a real app)
   const exchangeRates = {
     USD: 1.00,
     EUR: 0.93,
@@ -254,7 +252,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const initiateWithdrawal = (amount: number): boolean => {
     if (!currentUser || !currentUser.balance) return false;
     
-    // Validate amount against minimum and available balance
     if (amount < minimumWithdrawal) {
       toast({
         title: "Withdrawal Failed",
@@ -273,7 +270,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
     
-    // Check if bank details are provided
     if (!currentUser.bankDetails?.accountNumber || !currentUser.bankDetails?.bankName) {
       toast({
         title: "Withdrawal Failed",
@@ -283,7 +279,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
     
-    // Check for pending withdrawals
     if (currentUser.balance.pendingWithdrawal) {
       toast({
         title: "Withdrawal Failed",
@@ -293,10 +288,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
     
-    // Process withdrawal - in a real app, this would call an API
     const updatedUser = { ...currentUser };
     
-    // Update balance and create pending withdrawal
     updatedUser.balance = {
       ...updatedUser.balance,
       amount: updatedUser.balance.amount - amount,
@@ -314,10 +307,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       description: `Your withdrawal of ${currentUser.balance.currency} ${amount.toFixed(2)} is being processed`,
     });
     
-    // Simulate processing delay (in a real app, this would be handled by a backend)
     setTimeout(() => {
       completeWithdrawal(amount);
-    }, 5000); // 5 seconds for demo purposes
+    }, 5000);
     
     return true;
   };
@@ -332,7 +324,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       date: new Date()
     };
     
-    // Add to history and clear pending
     updatedUser.balance = {
       ...updatedUser.balance,
       withdrawalHistory: [
@@ -358,25 +349,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return currentUser?.balance?.pendingWithdrawal;
   };
   
-  // Modified receiveGift to update monetary balance
   const receiveGift = (giftType: string) => {
     if (!currentUser) return;
     
     const updatedUser = { ...currentUser };
     
-    // Update received gifts count
     if (!updatedUser.receivedGifts) {
       updatedUser.receivedGifts = { rose: 0, heart: 0, teddy: 0 };
     }
     
     updatedUser.receivedGifts[giftType as keyof typeof updatedUser.receivedGifts] += 1;
     
-    // Apply benefits based on gift type
     if (!updatedUser.popularityPoints) updatedUser.popularityPoints = 0;
     if (!updatedUser.premiumLikes) updatedUser.premiumLikes = 0;
     if (!updatedUser.profileBoost) updatedUser.profileBoost = { active: false };
     
-    // Initialize balance if it doesn't exist
     if (!updatedUser.balance) {
       updatedUser.balance = {
         amount: 0,
@@ -385,7 +372,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     }
     
-    // Calculate monetary value of the gift
     const giftValue = calculateGiftValue(giftType, 1);
     updatedUser.balance.amount += giftValue;
     
@@ -409,7 +395,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedUser.popularityPoints += 5;
         updatedUser.profileBoost = { 
           active: true, 
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) 
         };
         toast({
           title: "Teddy Bear Received!",
@@ -445,34 +431,28 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sendMessage = (
     matchId: string, 
     content: string, 
-    type: 'text' | 'voice' | 'gift' = 'text',
+    type: 'text' | 'voice' | 'gift' | 'video-request' | 'video-accepted' | 'video-ended' = 'text',
     giftType?: string
   ) => {
     if (!currentUser) return;
     
-    // For gift messages, check if user has the gift in inventory
     if (type === 'gift' && giftType) {
       const inventory = currentUser.giftInventory || {};
       
-      // Check if user has this gift
       if (!inventory[giftType] || inventory[giftType] <= 0) {
-        return; // Cannot send gift if not in inventory
+        return;
       }
       
-      // Reduce inventory count
       const updatedInventory = {
         ...inventory,
         [giftType]: inventory[giftType] - 1
       };
       
-      // Update user inventory
       setCurrentUser({
         ...currentUser,
         giftInventory: updatedInventory
       });
       
-      // In a real app, this would call an API to handle gift receipt by the other user
-      // For this demo, we'll simulate receiving the gift ourselves
       setTimeout(() => {
         receiveGift(giftType);
       }, 2000);
@@ -494,8 +474,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       [matchId]: [...(prev[matchId] || []), newMessage],
     }));
     
-    // Update last message in match
-    // For voice and gift messages, use descriptive text for the preview
     let previewText = content;
     if (type === 'voice') {
       previewText = '🎤 Voice message';
@@ -506,6 +484,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         'teddy': '🧸 Teddy bear',
       };
       previewText = giftNames[giftType || ''] || '🎁 Gift';
+    } else if (type === 'video-request') {
+      previewText = '📹 Video call request';
+    } else if (type === 'video-accepted') {
+      previewText = '📹 Video call started';
+    } else if (type === 'video-ended') {
+      previewText = '📹 Video call ended';
     }
     
     setMatches(prev => 
@@ -519,6 +503,43 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           : match
       )
     );
+    
+    if (type === 'video-request') {
+      const match = matches.find(m => m.id === matchId);
+      if (match) {
+        const willAccept = Math.random() > 0.3;
+        
+        setTimeout(() => {
+          const responseMessage: Message = {
+            id: `msg-${Date.now()}`,
+            matchId,
+            senderId: match.matchedUserId,
+            content: willAccept ? "Video call accepted" : "Missed your call, sorry!",
+            timestamp: new Date(),
+            read: false,
+            type: willAccept ? 'video-accepted' : 'video-ended',
+          };
+          
+          setMessages(prev => ({
+            ...prev,
+            [matchId]: [...(prev[matchId] || []), responseMessage],
+          }));
+          
+          const previewText = willAccept ? '📹 Video call started' : '📹 Missed call';
+          setMatches(prev => 
+            prev.map(m => 
+              m.id === matchId 
+                ? { 
+                    ...m, 
+                    lastMessage: previewText, 
+                    lastMessageTime: new Date() 
+                  } 
+                : m
+            )
+          );
+        }, 3000 + Math.random() * 2000);
+      }
+    }
   };
 
   const getMatchedUser = (matchId: string) => {
@@ -529,16 +550,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const likeUser = (userId: string) => {
-    // In a real app, this would send a request to the server
-    // For now, we'll simulate a match
     addMatch(userId);
-    
-    // Remove from potential matches
     setPotentialMatches(prev => prev.filter(user => user.id !== userId));
   };
 
   const passUser = (userId: string) => {
-    // Remove from potential matches
     setPotentialMatches(prev => prev.filter(user => user.id !== userId));
   };
 
@@ -549,15 +565,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     const updatedInventory = { ...currentInventory };
     
-    // Add purchased gifts to inventory
     Object.keys(gifts).forEach(giftId => {
       updatedInventory[giftId] = (updatedInventory[giftId] || 0) + gifts[giftId];
     });
     
-    // Update user with new inventory
     setCurrentUser({
       ...currentUser,
       giftInventory: updatedInventory
+    });
+    
+    toast({
+      title: "Gifts Purchased",
+      description: "Your gift inventory has been updated",
     });
   };
 
@@ -566,26 +585,23 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Only initialize if there are no matches yet
     if (matches.length === 0 && mockUsers.length > 0) {
-      // Create a sample match
       const sampleMatch: Match = {
         id: 'sample-match-1',
         userId: currentUser?.id || '',
         matchedUserId: mockUsers[0].id,
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
         lastMessage: 'Hi there!',
-        lastMessageTime: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
+        lastMessageTime: new Date(Date.now() - 12 * 60 * 60 * 1000),
       };
       
-      // Create some sample messages
       const sampleMessages: Message[] = [
         {
           id: 'msg-1',
           matchId: 'sample-match-1',
           senderId: mockUsers[0].id,
           content: 'Hi there! I noticed we both like hiking.',
-          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
           read: true,
           type: 'text',
         },
@@ -594,7 +610,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           matchId: 'sample-match-1',
           senderId: currentUser?.id || '',
           content: 'Yes! I love hiking in the mountains. What about you?',
-          timestamp: new Date(Date.now() - 23 * 60 * 60 * 1000), // 23 hours ago
+          timestamp: new Date(Date.now() - 23 * 60 * 60 * 1000),
           read: true,
           type: 'text',
         },
@@ -603,10 +619,19 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
           matchId: 'sample-match-1',
           senderId: mockUsers[0].id,
           content: '🌹',
-          timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
+          timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000),
           read: true,
           type: 'gift',
           giftType: 'rose',
+        },
+        {
+          id: 'msg-4',
+          matchId: 'sample-match-1',
+          senderId: currentUser?.id || '',
+          content: 'Thanks for the rose! Would you like to have a video call sometime?',
+          timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000),
+          read: true,
+          type: 'text',
         },
       ];
       
@@ -617,33 +642,32 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser, mockUsers, matches.length]);
 
-const getGiftBenefits = () => {
-  if (!currentUser) return {
-    popularityPoints: 0,
-    premiumLikes: 0,
-    profileBoost: false,
-    boostTimeRemaining: undefined
+  const getGiftBenefits = () => {
+    if (!currentUser) return {
+      popularityPoints: 0,
+      premiumLikes: 0,
+      profileBoost: false,
+      boostTimeRemaining: undefined
+    };
+    
+    const now = new Date();
+    const boostExpiration = currentUser.profileBoost?.expiresAt;
+    
+    let boostTimeRemaining;
+    if (boostExpiration && boostExpiration > now) {
+      const diff = boostExpiration.getTime() - now.getTime();
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      boostTimeRemaining = `${hours}h ${minutes}m`;
+    }
+    
+    return {
+      popularityPoints: currentUser.popularityPoints || 0,
+      premiumLikes: currentUser.premiumLikes || 0,
+      profileBoost: (currentUser.profileBoost?.active && boostExpiration && boostExpiration > now) || false,
+      boostTimeRemaining
+    };
   };
-  
-  const now = new Date();
-  const boostExpiration = currentUser.profileBoost?.expiresAt;
-  
-  let boostTimeRemaining;
-  if (boostExpiration && boostExpiration > now) {
-    // Calculate time remaining
-    const diff = boostExpiration.getTime() - now.getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    boostTimeRemaining = `${hours}h ${minutes}m`;
-  }
-  
-  return {
-    popularityPoints: currentUser.popularityPoints || 0,
-    premiumLikes: currentUser.premiumLikes || 0,
-    profileBoost: (currentUser.profileBoost?.active && boostExpiration && boostExpiration > now) || false,
-    boostTimeRemaining
-  };
-};
 
   return (
     <UserContext.Provider
