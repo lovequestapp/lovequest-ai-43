@@ -138,10 +138,12 @@ const Messages = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-8 mb-16"> {/* Added mb-16 to prevent footer overlap */}
+      {/* Increased bottom margin to mb-32 (8rem) on mobile and mb-24 (6rem) on larger screens */}
+      <main className="flex-grow container mx-auto px-4 py-8 mb-32 md:mb-24">
         <h1 className="text-3xl font-display font-bold mb-6">Messages</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-16rem)]">
+        {/* Adjusted height calculation to better account for footer space */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-22rem)] md:h-[calc(100vh-18rem)]">
           <div className="md:col-span-1">
             <MessageList
               matches={matchListItems}
