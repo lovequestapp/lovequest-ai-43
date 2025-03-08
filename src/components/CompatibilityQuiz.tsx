@@ -13,6 +13,7 @@ interface QuizQuestion {
   question: string;
   options: string[];
   isTextInput?: boolean;
+  minLength?: number;
 }
 
 interface CompatibilityQuizProps {
@@ -22,9 +23,10 @@ interface CompatibilityQuizProps {
 const quizQuestions: QuizQuestion[] = [
   {
     id: 'personal-story',
-    question: 'Tell me a story, anything you want about yourself',
+    question: 'Tell your personal story. The more details you share, the better we can match you with compatible partners!',
     options: [],
-    isTextInput: true
+    isTextInput: true,
+    minLength: 100
   },
   {
     id: 'communication',
@@ -75,6 +77,20 @@ const quizQuestions: QuizQuestion[] = [
       'Passion and maintaining excitement',
       'Stability and reliability'
     ]
+  },
+  {
+    id: 'childhood-influence',
+    question: 'Tell us about how your childhood has influenced your approach to relationships today.',
+    options: [],
+    isTextInput: true,
+    minLength: 100
+  },
+  {
+    id: 'life-goals',
+    question: 'Describe your most important life goals and how you hope a partner will fit into them.',
+    options: [],
+    isTextInput: true,
+    minLength: 100
   }
 ];
 
@@ -88,7 +104,8 @@ const CompatibilityQuiz: React.FC<CompatibilityQuizProps> = ({ onComplete }) => 
     const currentQuestionData = quizQuestions[currentQuestion];
     
     if (currentQuestionData.isTextInput) {
-      if (textInput.trim().length > 10) {
+      const minLength = currentQuestionData.minLength || 10;
+      if (textInput.trim().length >= minLength) {
         setAnswers(prev => ({
           ...prev,
           [currentQuestionData.id]: textInput
@@ -119,7 +136,33 @@ const CompatibilityQuiz: React.FC<CompatibilityQuizProps> = ({ onComplete }) => 
   const progress = ((currentQuestion + 1) / quizQuestions.length) * 100;
   const currentQuestionData = quizQuestions[currentQuestion];
   const isTextQuestion = currentQuestionData.isTextInput;
-  const buttonEnabled = isTextQuestion ? textInput.trim().length > 10 : !!selectedOption;
+  const minLength = currentQuestionData.minLength || 10;
+  const buttonEnabled = isTextQuestion ? textInput.trim().length >= minLength : !!selectedOption;
+  
+  const getCharacterFeedback = () => {
+    const charCount = textInput.trim().length;
+    if (charCount < minLength) {
+      return {
+        message: `Please write at least ${minLength} characters (${charCount}/${minLength})`,
+        color: 'text-red-500'
+      };
+    } else if (charCount < minLength * 2) {
+      return {
+        message: `Good start! Consider adding more details (${charCount} characters)`,
+        color: 'text-amber-500'
+      };
+    } else if (charCount < minLength * 4) {
+      return {
+        message: `Great! Your detailed response helps us find better matches (${charCount} characters)`,
+        color: 'text-green-500'
+      };
+    } else {
+      return {
+        message: `Excellent! Your thorough response will significantly improve your matches (${charCount} characters)`,
+        color: 'text-love-500'
+      };
+    }
+  };
   
   return (
     <Card className="w-full max-w-md mx-auto animate-slide-up-fade">
@@ -143,16 +186,14 @@ const CompatibilityQuiz: React.FC<CompatibilityQuizProps> = ({ onComplete }) => 
           {isTextQuestion ? (
             <div className="space-y-2">
               <Textarea 
-                placeholder="Share your story here... (at least 10 characters)"
+                placeholder={`Share your thoughts here... (at least ${minLength} characters for better matching)`}
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
-                className="min-h-32 resize-none"
+                className="min-h-40 resize-none"
               />
-              {textInput.trim().length > 0 && textInput.trim().length <= 10 && (
-                <p className="text-sm text-red-500">
-                  Please write at least 10 characters
-                </p>
-              )}
+              <p className={`text-sm ${getCharacterFeedback().color}`}>
+                {getCharacterFeedback().message}
+              </p>
             </div>
           ) : (
             <RadioGroup 
