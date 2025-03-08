@@ -1,42 +1,37 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --love-50: #f5f3ff;
+  --love-100: #ede9fe;
+  --love-200: #ddd6fe;
+  --love-300: #c4b5fd;
+  --love-400: #a78bfa;
+  --love-500: #8b5cf6;
+  --love-600: #7c3aed;
+  --love-700: #6d28d9;
+  --love-800: #5b21b6;
+  --love-900: #4c1d95;
+  --love-950: #2e1065;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.bg-gradient-love {
+  background: linear-gradient(135deg, var(--love-500), var(--love-600));
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.font-display {
+  font-family: 'Playfair Display', serif;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.card-hover {
+  transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
 }
 
-.card {
-  padding: 2em;
+.card-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
-.read-the-docs {
-  color: #888;
+.bg-purple-50 {
+  background-color: var(--love-50);
 }
