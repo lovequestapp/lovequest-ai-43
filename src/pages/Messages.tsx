@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MessageList from '@/components/MessageList';
@@ -14,6 +14,13 @@ const Messages = () => {
   const { matches, messages, potentialMatches, sendMessage, currentUser } = useUser();
   const [activeMatchId, setActiveMatchId] = useState<string | undefined>(matches[0]?.id);
   const { toast } = useToast();
+  
+  // Ensure we always have an active match if matches are available
+  useEffect(() => {
+    if (matches.length > 0 && !activeMatchId) {
+      setActiveMatchId(matches[0].id);
+    }
+  }, [matches, activeMatchId]);
   
   const matchListItems = useMemo(() => 
     matches.map(match => {

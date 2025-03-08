@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
   const gifts = [
@@ -345,14 +347,28 @@ const MessageChat: React.FC<MessageChatProps> = ({
     }
   };
   
+  // Function to focus the input field
+  const focusInput = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+  
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages, isInVideoCall, incomingVideoCall, isVideoCallRequested]);
   
+  // Auto-focus the text input when the component mounts
   useEffect(() => {
+    // Short delay to ensure the component is fully rendered
+    const timer = setTimeout(() => {
+      focusInput();
+    }, 300);
+    
     return () => {
+      clearTimeout(timer);
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
@@ -366,6 +382,11 @@ const MessageChat: React.FC<MessageChatProps> = ({
       }
     };
   }, []);
+  
+  // Ensure the input field is focused whenever the active match changes
+  useEffect(() => {
+    focusInput();
+  }, [matchName]);
   
   return (
     <Card className="h-full flex flex-col border-love-100">
@@ -496,6 +517,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
                             className="border-love-200 hover:bg-love-50 text-sm justify-start h-auto py-2 px-3"
                             onClick={() => {
                               setMessageText(starter);
+                              focusInput();
                             }}
                           >
                             {starter}
@@ -572,7 +594,10 @@ const MessageChat: React.FC<MessageChatProps> = ({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => setShowGiftMenu(false)}
+                onClick={() => {
+                  setShowGiftMenu(false);
+                  focusInput();
+                }}
               >
                 Close
               </Button>
@@ -639,19 +664,22 @@ const MessageChat: React.FC<MessageChatProps> = ({
               </Button>
             </div>
           ) : (
-            <div className="flex w-full items-center gap-2">
+            <div className="flex w-full items-center gap-2" onClick={focusInput}>
               <Input
+                ref={inputRef}
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Type a message..."
                 className="flex-grow border-love-200 focus-visible:ring-love-500"
+                tabIndex={0}
               />
               <Button
                 onClick={startRecording}
                 size="icon"
                 variant="outline"
                 className="bg-white border-love-200 hover:bg-love-50"
+                tabIndex={0}
               >
                 <Mic size={18} className="text-love-500" />
               </Button>
@@ -660,6 +688,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
                 size="icon"
                 variant="outline"
                 className="bg-white border-love-200 hover:bg-love-50"
+                tabIndex={0}
               >
                 <Gift size={18} className="text-love-500" />
               </Button>
@@ -668,6 +697,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
                 disabled={!messageText.trim()}
                 size="icon"
                 className="bg-love-500 hover:bg-love-600"
+                tabIndex={0}
               >
                 <Send size={18} />
               </Button>
