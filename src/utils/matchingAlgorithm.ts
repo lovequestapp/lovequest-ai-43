@@ -1,9 +1,9 @@
-
 interface UserProfile {
   interests: string[];
   age: number;
   location: string;
   personalStory?: string;
+  popularityPoints?: number;
   // Add more traits as needed
 }
 
@@ -124,15 +124,26 @@ export const calculateCompatibility = (user1: UserProfile, user2: UserProfile): 
 
 // Advanced matching with AI factors (simulated)
 export const getAiEnhancedMatches = (currentUser: UserProfile, potentialMatches: UserProfile[]): UserProfile[] => {
-  // In a real app, this would use AI to analyze profiles and conversations
-  // For now, we'll just sort by compatibility
+  // Calculate base compatibility scores
+  const scoredMatches = potentialMatches.map(match => ({
+    ...match,
+    compatibilityScore: calculateCompatibility(currentUser, match)
+  }));
   
-  return potentialMatches
-    .map(match => ({
-      ...match,
-      compatibilityScore: calculateCompatibility(currentUser, match)
-    }))
-    .sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
+  // Apply popularity boosting - profiles with popularity points get boosted
+  return scoredMatches.sort((a, b) => {
+    // First compare popularity points (if present)
+    const aPopularity = a.popularityPoints || 0;
+    const bPopularity = b.popularityPoints || 0;
+    
+    // If significant popularity difference exists, prioritize popular profiles
+    if (Math.abs(aPopularity - bPopularity) > 10) {
+      return bPopularity - aPopularity;
+    }
+    
+    // Otherwise fall back to compatibility score
+    return (b.compatibilityScore || 0) - (a.compatibilityScore || 0);
+  });
 };
 
 // Get conversation starters based on profiles
@@ -185,4 +196,45 @@ export const getConversationStarters = (user1: UserProfile, user2: UserProfile):
   );
   
   return starters;
+};
+
+// New function to calculate popularity score based on receiving gifts and engagement
+export const calculatePopularityScore = (
+  receivedGifts: { rose: number; heart: number; teddy: number; },
+  engagementMetrics: { 
+    messageCount?: number; 
+    responseRate?: number; 
+    profileViews?: number; 
+  }
+): number => {
+  let score = 0;
+  
+  // Gift-based popularity (weighted by gift value)
+  score += receivedGifts.rose * 2;    // Each rose is worth 2 points
+  score += receivedGifts.heart * 10;   // Each heart is worth 10 points
+  score += receivedGifts.teddy * 5;    // Each teddy is worth 5 points
+  
+  // Engagement-based popularity
+  if (engagementMetrics.messageCount) {
+    // Each message received is worth 0.5 points (capped at 50 points)
+    score += Math.min(engagementMetrics.messageCount * 0.5, 50);
+  }
+  
+  if (engagementMetrics.responseRate) {
+    // Response rate from 0 to 1, scale to 0-20 points
+    score += engagementMetrics.responseRate * 20;
+  }
+  
+  if (engagementMetrics.profileViews) {
+    // Each profile view is worth 0.1 points (capped at 30 points)
+    score += Math.min(engagementMetrics.profileViews * 0.1, 30);
+  }
+  
+  return Math.round(score);
+};
+
+// Function to check if a profile should get a visibility boost
+export const shouldBoostProfile = (popularityScore: number): boolean => {
+  // Profiles with more than 50 popularity points get boosted
+  return popularityScore >= 50;
 };

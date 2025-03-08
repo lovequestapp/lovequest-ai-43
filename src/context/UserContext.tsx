@@ -617,6 +617,34 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser, mockUsers, matches.length]);
 
+const getGiftBenefits = () => {
+  if (!currentUser) return {
+    popularityPoints: 0,
+    premiumLikes: 0,
+    profileBoost: false,
+    boostTimeRemaining: undefined
+  };
+  
+  const now = new Date();
+  const boostExpiration = currentUser.profileBoost?.expiresAt;
+  
+  let boostTimeRemaining;
+  if (boostExpiration && boostExpiration > now) {
+    // Calculate time remaining
+    const diff = boostExpiration.getTime() - now.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    boostTimeRemaining = `${hours}h ${minutes}m`;
+  }
+  
+  return {
+    popularityPoints: currentUser.popularityPoints || 0,
+    premiumLikes: currentUser.premiumLikes || 0,
+    profileBoost: (currentUser.profileBoost?.active && boostExpiration && boostExpiration > now) || false,
+    boostTimeRemaining
+  };
+};
+
   return (
     <UserContext.Provider
       value={{
