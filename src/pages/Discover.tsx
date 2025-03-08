@@ -4,7 +4,12 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProfileCard from '@/components/ProfileCard';
 import { useUser } from '@/context/UserContext';
-import { getAiEnhancedMatches, shouldBoostProfile, getNearbyUsers } from '@/utils/matchingAlgorithm';
+import { 
+  getAiEnhancedMatches, 
+  shouldBoostProfile, 
+  getNearbyUsers,
+  UserWithCoordinates 
+} from '@/utils/matchingAlgorithm';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,14 +48,6 @@ const regions = [
   { value: "oceania", label: "Oceania" },
   // Add more specific regions/countries as needed
 ];
-
-// Interface to extend User type with coordinates for location-based matching
-interface UserWithCoordinates extends User {
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
-}
 
 const Discover = () => {
   const { currentUser, potentialMatches, likeUser, passUser } = useUser();
@@ -109,6 +106,7 @@ const Discover = () => {
       // Filter by selected regions if any
       if (isLocationFiltering && selectedRegions.length > 0) {
         processedMatches = processedMatches.filter(match => {
+          if (!match.location) return false;
           const matchRegion = match.location.split(',')[1]?.trim();
           return selectedRegions.includes(matchRegion);
         });

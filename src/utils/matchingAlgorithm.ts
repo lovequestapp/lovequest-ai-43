@@ -1,14 +1,20 @@
 
 // Extending this file to properly type the functions for geolocation-based matching
 
-import { User } from '../context/UserContext';
+import { useUser } from '../context/UserContext';
+
+// Extract the User type from the context
+type User = ReturnType<typeof useUser>["currentUser"] extends infer U ? NonNullable<U> : never;
 
 // Extended User type with coordinates for geolocation features
-interface UserWithCoordinates extends User {
+export interface UserWithCoordinates extends User {
   coordinates?: {
     latitude: number;
     longitude: number;
   };
+  // Additional fields that are used in the UI but not in the base User type
+  isBoosted?: boolean;
+  boostLevel?: 'standard' | 'super';
 }
 
 // Calculate distance between two points using the Haversine formula
@@ -116,3 +122,4 @@ export const getAiEnhancedMatches = (
 export const shouldBoostProfile = (popularityPoints: number): boolean => {
   return popularityPoints >= 20;
 };
+
