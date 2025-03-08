@@ -132,7 +132,6 @@ type UserContextType = {
     status: 'pending' | 'completed' | 'failed';
     date: Date;
   } | undefined;
-  // Blog functionality
   createBlogPost: (title: string, content: string, tags: string[]) => void;
   updateBlogPost: (postId: string, updates: Partial<Omit<BlogPost, 'id' | 'userId' | 'createdAt'>>) => void;
   deleteBlogPost: (postId: string) => void;
@@ -198,7 +197,6 @@ const mockUsers: User[] = [
   },
 ];
 
-// Sample blog posts
 const sampleBlogPosts: BlogPost[] = [
   {
     id: 'blog-1',
@@ -306,7 +304,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ]
   });
   
-  // Update mock users with gender and interest
   const [potentialMatches, setPotentialMatches] = useState<User[]>(
     mockUsers.map((user, index) => ({
       ...user,
@@ -815,7 +812,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   };
 
-  // Blog post functionality
   const createBlogPost = (title: string, content: string, tags: string[]) => {
     if (!currentUser) return;
     
@@ -840,7 +836,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       description: "Your blog post has been published successfully!",
     });
     
-    // Simulate discovery and engagement
     setTimeout(() => {
       toast({
         title: "Post Engagement",
@@ -880,19 +875,16 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const likeBlogPost = (postId: string, userId: string) => {
-    // Find the post owner
     const targetUser = userId === currentUser?.id 
       ? currentUser 
       : potentialMatches.find(user => user.id === userId);
     
     if (!targetUser || !targetUser.blogPosts) return;
     
-    // Update the post likes
     const updatedPosts = targetUser.blogPosts.map(post => 
       post.id === postId ? { ...post, likes: post.likes + 1 } : post
     );
     
-    // Update the user's posts
     if (userId === currentUser?.id && currentUser) {
       const updatedUser = { ...currentUser, blogPosts: updatedPosts };
       setCurrentUser(updatedUser);
@@ -912,7 +904,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const commentOnBlogPost = (postId: string, content: string) => {
     if (!currentUser) return;
     
-    // Find which user owns this post
     const allUsers = [currentUser, ...potentialMatches];
     let postOwner: User | undefined;
     let post: BlogPost | undefined;
@@ -938,8 +929,112 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: new Date(),
     };
     
-    // Update the post with the new comment
     const updatedPost = {
       ...post,
       comments: [...post.comments, newComment]
     };
+    
+    if (postOwner.id === currentUser.id) {
+      const updatedUser = { ...currentUser };
+      updatedUser.blogPosts = updatedUser.blogPosts?.map(p => 
+        p.id === postId ? updatedPost : p
+      ) || [];
+      
+      setCurrentUser(updatedUser);
+    } else {
+      const updatedMatches = potentialMatches.map(user => 
+        user.id === postOwner?.id ? {
+          ...user,
+          blogPosts: user.blogPosts?.map(p => 
+            p.id === postId ? updatedPost : p
+          ) || []
+        } : user
+      );
+      
+      setPotentialMatches(updatedMatches);
+    }
+    
+    toast({
+      title: "Comment Added",
+      description: "Your comment has been added to the post!",
+    });
+  };
+  
+  const getAllPosts = (): BlogPost[] => {
+    const allPosts: BlogPost[] = [];
+    
+    if (currentUser?.blogPosts) {
+      allPosts.push(...currentUser.blogPosts);
+    }
+    
+    potentialMatches.forEach(user => {
+      if (user.blogPosts) {
+        allPosts.push(...user.blogPosts);
+      }
+    });
+    
+    return allPosts.sort((a, b) => 
+      b.createdAt.getTime() - a.createdAt.getTime()
+    );
+  };
+  
+  const getFilteredPosts = (): BlogPost[] => {
+    if (!currentUser) return [];
+    
+    return potentialMatches
+      .filter(user => {
+        if (!currentUser.interestedIn) return true;
+        return user.gender ? currentUser.interestedIn.includes(user.gender) : true;
+      })
+      .flatMap(user => user.blogPosts || [])
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  };
+  
+  const getUserPosts = (userId: string): BlogPost[] => {
+    if (userId === currentUser?.id) {
+      return currentUser.blogPosts || [];
+    }
+    
+    const user = potentialMatches.find(u => u.id === userId);
+    return user?.blogPosts || [];
+  };
+  
+  return (
+    <UserContext.Provider
+      value={{
+        currentUser,
+        potentialMatches,
+        matches,
+        messages,
+        setCurrentUser,
+        updateUserProfile,
+        addMatch,
+        sendMessage,
+        getMatchedUser,
+        likeUser,
+        passUser,
+        purchaseGifts,
+        getGiftInventory,
+        receiveGift,
+        getGiftBenefits,
+        getGiftMonetizationDetails,
+        initiateWithdrawal,
+        updateBankDetails,
+        getWithdrawalHistory,
+        getPendingWithdrawal,
+        createBlogPost,
+        updateBlogPost,
+        deleteBlogPost,
+        likeBlogPost,
+        commentOnBlogPost,
+        getAllPosts,
+        getFilteredPosts,
+        getUserPosts,
+      }}
+    >
+      {children}
+    </UserContext.Provider>
+  );
+};
+
+export const useUser = () => useContext(UserContext);
