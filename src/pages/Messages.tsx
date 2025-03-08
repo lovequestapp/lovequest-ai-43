@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -289,8 +288,7 @@ const Messages = () => {
       <main className="flex-grow container mx-auto px-4 py-8 flex flex-col">
         <h1 className="text-3xl font-display font-bold mb-6">Messages</h1>
         
-        {/* Message chat section - fixed height with scrolling */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" style={{ minHeight: "500px", height: "50vh" }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" style={{ minHeight: "650px", height: "65vh" }}>
           <div className="md:col-span-1 h-full overflow-hidden">
             <MessageList
               matches={matchListItems}
@@ -321,9 +319,7 @@ const Messages = () => {
           </div>
         </div>
         
-        {/* Interactive features section - separately scrollable */}
         <div className="space-y-6 mb-8">
-          {/* Conversation Starters */}
           <section>
             <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
               <MessageSquare className="text-purple-600" size={24} />
@@ -345,7 +341,6 @@ const Messages = () => {
             </div>
           </section>
           
-          {/* Games to Play */}
           <section>
             <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
               <Gamepad className="text-green-600" size={24} />
@@ -368,7 +363,6 @@ const Messages = () => {
             </div>
           </section>
           
-          {/* Popular Gifts */}
           <section>
             <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
               <Gift className="text-rose-600" size={24} />
