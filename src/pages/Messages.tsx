@@ -58,8 +58,13 @@ const Messages = () => {
     if (activeMatchId) {
       if (type === 'gift') {
         toast({
-          title: "Premium Feature",
-          description: "In a real app, this would connect to a payment system.",
+          title: "Virtual Gift Sent",
+          description: `You sent a ${giftType} to ${activeMatchUser?.name}. In a real app, this would connect to a payment system.`,
+        });
+      } else if (type === 'voice') {
+        toast({
+          title: "Voice Message Sent",
+          description: "Your voice message has been sent.",
         });
       }
       

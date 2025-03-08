@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -63,7 +62,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
 
   const handleSendMessage = () => {
     if (messageText.trim()) {
-      onSendMessage(messageText);
+      onSendMessage(messageText, 'text');
       setMessageText('');
     }
   };
@@ -174,7 +173,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
     }
   };
   
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;

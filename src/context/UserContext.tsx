@@ -209,6 +209,58 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setPotentialMatches(prev => prev.filter(user => user.id !== userId));
   };
 
+  useEffect(() => {
+    // Only initialize if there are no matches yet
+    if (matches.length === 0 && mockUsers.length > 0) {
+      // Create a sample match
+      const sampleMatch: Match = {
+        id: 'sample-match-1',
+        userId: currentUser?.id || '',
+        matchedUserId: mockUsers[0].id,
+        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+        lastMessage: 'Hi there!',
+        lastMessageTime: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
+      };
+      
+      // Create some sample messages
+      const sampleMessages: Message[] = [
+        {
+          id: 'msg-1',
+          matchId: 'sample-match-1',
+          senderId: mockUsers[0].id,
+          content: 'Hi there! I noticed we both like hiking.',
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+          read: true,
+          type: 'text',
+        },
+        {
+          id: 'msg-2',
+          matchId: 'sample-match-1',
+          senderId: currentUser?.id || '',
+          content: 'Yes! I love hiking in the mountains. What about you?',
+          timestamp: new Date(Date.now() - 23 * 60 * 60 * 1000), // 23 hours ago
+          read: true,
+          type: 'text',
+        },
+        {
+          id: 'msg-3',
+          matchId: 'sample-match-1',
+          senderId: mockUsers[0].id,
+          content: '🌹',
+          timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000), // 12 hours ago
+          read: true,
+          type: 'gift',
+          giftType: 'rose',
+        },
+      ];
+      
+      setMatches([sampleMatch]);
+      setMessages({
+        'sample-match-1': sampleMessages,
+      });
+    }
+  }, [currentUser, mockUsers, matches.length]);
+
   return (
     <UserContext.Provider
       value={{
