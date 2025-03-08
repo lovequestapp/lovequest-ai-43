@@ -940,4 +940,112 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       popularityPoints: currentUser.popularityPoints || 0,
       premiumLikes: currentUser.premiumLikes || 0,
       profileBoost: (currentUser.profileBoost?.active && boostExpiration && boostExpiration > now) || false,
-      boost
+      boostTimeRemaining
+    };
+  };
+  
+  const createBlogPost = (title: string, content: string, tags: string[]) => {
+    if (!currentUser) return;
+    
+    const newPost: BlogPost = {
+      id: `blog-${Date.now()}`,
+      userId: currentUser.id,
+      title,
+      content,
+      createdAt: new Date(),
+      likes: 0,
+      comments: [],
+      tags,
+    };
+    
+    const updatedUser = { ...currentUser };
+    updatedUser.blogPosts = [...(updatedUser.blogPosts || []), newPost];
+    
+    setCurrentUser(updatedUser);
+    
+    toast({
+      title: "Blog Post Created",
+      description: "Your post has been published!",
+    });
+  };
+  
+  const updateBlogPost = (postId: string, updates: Partial<Omit<BlogPost, 'id' | 'userId' | 'createdAt'>>) => {
+    if (!currentUser || !currentUser.blogPosts) return;
+    
+    const postIndex = currentUser.blogPosts.findIndex(post => post.id === postId);
+    if (postIndex === -1) return;
+    
+    const updatedPosts = [...currentUser.blogPosts];
+    updatedPosts[postIndex] = {
+      ...updatedPosts[postIndex],
+      ...updates,
+    };
+    
+    setCurrentUser({
+      ...currentUser,
+      blogPosts: updatedPosts
+    });
+    
+    toast({
+      title: "Blog Post Updated",
+      description: "Your changes have been saved!",
+    });
+  };
+  
+  const deleteBlogPost = (postId: string) => {
+    if (!currentUser || !currentUser.blogPosts) return;
+    
+    const updatedPosts = currentUser.blogPosts.filter(post => post.id !== postId);
+    
+    setCurrentUser({
+      ...currentUser,
+      blogPosts: updatedPosts
+    });
+    
+    toast({
+      title: "Blog Post Deleted",
+      description: "Your post has been removed.",
+    });
+  };
+  
+  return (
+    <UserContext.Provider
+      value={{
+        currentUser,
+        potentialMatches,
+        matches,
+        messages,
+        setCurrentUser,
+        updateUserProfile,
+        addMatch,
+        sendMessage,
+        getMatchedUser,
+        likeUser,
+        passUser,
+        purchaseGifts,
+        getGiftInventory,
+        receiveGift,
+        getGiftBenefits,
+        getGiftMonetizationDetails,
+        initiateWithdrawal,
+        updateBankDetails,
+        getWithdrawalHistory,
+        getPendingWithdrawal,
+        createBlogPost,
+        updateBlogPost,
+        deleteBlogPost,
+        likeBlogPost,
+        commentOnBlogPost,
+        getAllPosts,
+        getFilteredPosts,
+        getUserPosts,
+      }}
+    >
+      {children}
+    </UserContext.Provider>
+  );
+};
+
+export const useUser = () => useContext(UserContext);
+
+export default UserContext;
