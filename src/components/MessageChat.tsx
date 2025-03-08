@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -680,7 +679,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
       )}
       
       {!isInVideoCall && (
-        <CardFooter className="p-3 border-t border-love-100" ref={chatFooterRef}>
+        <CardFooter className="p-3 border-t border-love-100 sticky bottom-0 bg-white z-10" ref={chatFooterRef}>
           {isRecording ? (
             <div className="flex w-full items-center gap-2">
               <div className="flex-grow bg-red-50 text-red-500 px-4 py-2 rounded-md border border-red-200 flex items-center">
@@ -691,7 +690,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
                 onClick={stopRecording}
                 size="icon"
                 variant="destructive"
-                className="z-10"
+                className="z-20"
               >
                 <Square size={18} />
               </Button>
@@ -706,7 +705,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
                 onChange={(e) => setMessageText(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Type a message..."
-                className="flex-grow border-love-200 focus-visible:ring-love-500 z-10"
+                className="flex-grow border-love-200 focus-visible:ring-love-500 z-20"
                 autoFocus
                 onClick={(e) => e.stopPropagation()}
               />
@@ -714,8 +713,9 @@ const MessageChat: React.FC<MessageChatProps> = ({
                 onClick={startRecording}
                 size="icon"
                 variant="outline"
-                className="bg-white border-love-200 hover:bg-love-50 z-10"
+                className="bg-white border-love-200 hover:bg-love-50 z-20"
                 type="button"
+                aria-label="Record voice message"
               >
                 <Mic size={18} className="text-love-500" />
               </Button>
@@ -723,8 +723,9 @@ const MessageChat: React.FC<MessageChatProps> = ({
                 onClick={() => setShowGiftMenu(!showGiftMenu)}
                 size="icon"
                 variant="outline"
-                className="bg-white border-love-200 hover:bg-love-50 z-10"
+                className="bg-white border-love-200 hover:bg-love-50 z-20"
                 type="button"
+                aria-label="Send gift"
               >
                 <Gift size={18} className="text-love-500" />
               </Button>
@@ -732,8 +733,9 @@ const MessageChat: React.FC<MessageChatProps> = ({
                 onClick={handleSendMessage}
                 disabled={!messageText.trim()}
                 size="icon"
-                className="bg-love-500 hover:bg-love-600 z-10"
+                className="bg-love-500 hover:bg-love-600 z-20"
                 type="button"
+                aria-label="Send message"
               >
                 <Send size={18} />
               </Button>
