@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { toast } from "@/hooks/use-toast";
 
 type User = {
   id: string;
@@ -68,7 +69,6 @@ type UserContextType = {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// Mock data for development
 const mockUsers: User[] = [
   {
     id: '1',
