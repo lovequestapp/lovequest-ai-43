@@ -44,9 +44,17 @@ const regions = [
   // Add more specific regions/countries as needed
 ];
 
+// Interface to extend User type with coordinates for location-based matching
+interface UserWithCoordinates extends User {
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+}
+
 const Discover = () => {
   const { currentUser, potentialMatches, likeUser, passUser } = useUser();
-  const [enhancedMatches, setEnhancedMatches] = useState<any[]>([]);
+  const [enhancedMatches, setEnhancedMatches] = useState<UserWithCoordinates[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
   const [isLocationFiltering, setIsLocationFiltering] = useState(false);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
@@ -81,17 +89,19 @@ const Discover = () => {
   useEffect(() => {
     if (currentUser && potentialMatches.length > 0) {
       // Apply geolocation and filters
-      let processedMatches = [...potentialMatches];
+      let processedMatches = [...potentialMatches] as UserWithCoordinates[];
       
       // Set user coordinates to potential matches if available
       if (userCoordinates && isNearbyFilterActive) {
+        const currentUserWithCoords: UserWithCoordinates = {
+          ...(currentUser as UserWithCoordinates),
+          coordinates: userCoordinates
+        };
+        
         // Get only nearby users
         processedMatches = getNearbyUsers(
-          { ...currentUser, coordinates: userCoordinates },
-          processedMatches.map(match => ({
-            ...match,
-            coordinates: match.coordinates || undefined
-          })),
+          currentUserWithCoords,
+          processedMatches,
           proximityRadius
         );
       }
@@ -105,8 +115,12 @@ const Discover = () => {
       }
       
       // Use our enhanced algorithm to sort matches
+      const currentUserWithCoords: UserWithCoordinates = userCoordinates 
+        ? { ...(currentUser as UserWithCoordinates), coordinates: userCoordinates }
+        : currentUser as UserWithCoordinates;
+        
       const sortedMatches = getAiEnhancedMatches(
-        userCoordinates ? { ...currentUser, coordinates: userCoordinates } : currentUser, 
+        currentUserWithCoords,
         processedMatches
       );
       
