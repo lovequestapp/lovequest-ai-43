@@ -6,11 +6,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Sparkles } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
 
 interface QuizQuestion {
   id: string;
   question: string;
   options: string[];
+  isTextInput?: boolean;
 }
 
 interface CompatibilityQuizProps {
@@ -18,6 +20,12 @@ interface CompatibilityQuizProps {
 }
 
 const quizQuestions: QuizQuestion[] = [
+  {
+    id: 'personal-story',
+    question: 'Tell me a story, anything you want about yourself',
+    options: [],
+    isTextInput: true
+  },
   {
     id: 'communication',
     question: 'How do you prefer to communicate in a relationship?',
@@ -74,12 +82,25 @@ const CompatibilityQuiz: React.FC<CompatibilityQuizProps> = ({ onComplete }) => 
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [textInput, setTextInput] = useState("");
   
   const handleNext = () => {
-    if (selectedOption) {
+    const currentQuestionData = quizQuestions[currentQuestion];
+    
+    if (currentQuestionData.isTextInput) {
+      if (textInput.trim().length > 10) {
+        setAnswers(prev => ({
+          ...prev,
+          [currentQuestionData.id]: textInput
+        }));
+        
+        setCurrentQuestion(prev => prev + 1);
+        setTextInput("");
+      }
+    } else if (selectedOption) {
       setAnswers(prev => ({
         ...prev,
-        [quizQuestions[currentQuestion].id]: selectedOption
+        [currentQuestionData.id]: selectedOption
       }));
       
       if (currentQuestion < quizQuestions.length - 1) {
@@ -89,13 +110,16 @@ const CompatibilityQuiz: React.FC<CompatibilityQuizProps> = ({ onComplete }) => 
         // Quiz completed
         onComplete({
           ...answers,
-          [quizQuestions[currentQuestion].id]: selectedOption
+          [currentQuestionData.id]: selectedOption
         });
       }
     }
   };
   
   const progress = ((currentQuestion + 1) / quizQuestions.length) * 100;
+  const currentQuestionData = quizQuestions[currentQuestion];
+  const isTextQuestion = currentQuestionData.isTextInput;
+  const buttonEnabled = isTextQuestion ? textInput.trim().length > 10 : !!selectedOption;
   
   return (
     <Card className="w-full max-w-md mx-auto animate-slide-up-fade">
@@ -113,37 +137,53 @@ const CompatibilityQuiz: React.FC<CompatibilityQuizProps> = ({ onComplete }) => 
       <CardContent>
         <div className="space-y-4">
           <h3 className="text-lg font-medium">
-            {quizQuestions[currentQuestion].question}
+            {currentQuestionData.question}
           </h3>
           
-          <RadioGroup 
-            value={selectedOption || ''} 
-            onValueChange={setSelectedOption}
-            className="space-y-3"
-          >
-            {quizQuestions[currentQuestion].options.map((option, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <RadioGroupItem 
-                  value={option} 
-                  id={`option-${index}`} 
-                  className="text-love-500 border-gray-300"
-                />
-                <Label 
-                  htmlFor={`option-${index}`}
-                  className="flex-grow p-3 rounded-md hover:bg-love-50 cursor-pointer transition-colors"
-                >
-                  {option}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
+          {isTextQuestion ? (
+            <div className="space-y-2">
+              <Textarea 
+                placeholder="Share your story here... (at least 10 characters)"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                className="min-h-32 resize-none"
+              />
+              {textInput.trim().length > 0 && textInput.trim().length <= 10 && (
+                <p className="text-sm text-red-500">
+                  Please write at least 10 characters
+                </p>
+              )}
+            </div>
+          ) : (
+            <RadioGroup 
+              value={selectedOption || ''} 
+              onValueChange={setSelectedOption}
+              className="space-y-3"
+            >
+              {currentQuestionData.options.map((option, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <RadioGroupItem 
+                    value={option} 
+                    id={`option-${index}`} 
+                    className="text-love-500 border-gray-300"
+                  />
+                  <Label 
+                    htmlFor={`option-${index}`}
+                    className="flex-grow p-3 rounded-md hover:bg-love-50 cursor-pointer transition-colors"
+                  >
+                    {option}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          )}
         </div>
       </CardContent>
       
       <CardFooter>
         <Button 
           onClick={handleNext}
-          disabled={!selectedOption}
+          disabled={!buttonEnabled}
           className="w-full bg-gradient-love hover:opacity-90"
         >
           {currentQuestion < quizQuestions.length - 1 ? 'Next Question' : 'Complete Quiz'}
