@@ -4,22 +4,111 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProfileCard from '@/components/ProfileCard';
 import { useUser } from '@/context/UserContext';
-import { getAiEnhancedMatches, shouldBoostProfile } from '@/utils/matchingAlgorithm';
+import { getAiEnhancedMatches, shouldBoostProfile, getNearbyUsers } from '@/utils/matchingAlgorithm';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Filter, Flame, Crown } from 'lucide-react';
-import { toast } from "@/hooks/use-toast";
+import { 
+  Sparkles, 
+  Filter, 
+  Flame, 
+  Crown, 
+  MapPin, 
+  Globe, 
+  X 
+} from 'lucide-react';
+import { toast } from "sonner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Slider } from "@/components/ui/slider";
+
+// Sample regions for location preferences
+const regions = [
+  { value: "north-america", label: "North America" },
+  { value: "south-america", label: "South America" },
+  { value: "europe", label: "Europe" },
+  { value: "asia", label: "Asia" },
+  { value: "africa", label: "Africa" },
+  { value: "oceania", label: "Oceania" },
+  // Add more specific regions/countries as needed
+];
 
 const Discover = () => {
   const { currentUser, potentialMatches, likeUser, passUser } = useUser();
   const [enhancedMatches, setEnhancedMatches] = useState<any[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
+  const [isLocationFiltering, setIsLocationFiltering] = useState(false);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [proximityRadius, setProximityRadius] = useState(50); // Default 50km radius
+  const [userCoordinates, setUserCoordinates] = useState<{latitude: number, longitude: number} | null>(null);
+  const [isNearbyFilterActive, setIsNearbyFilterActive] = useState(false);
+  
+  // Detect user location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserCoordinates({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+          
+          toast.success("Location detected successfully", {
+            description: "Matches will now be prioritized by proximity"
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          toast.error("Could not detect location", {
+            description: "Please enable location services to see nearby matches"
+          });
+        }
+      );
+    }
+  }, []);
   
   useEffect(() => {
     if (currentUser && potentialMatches.length > 0) {
+      // Apply geolocation and filters
+      let processedMatches = [...potentialMatches];
+      
+      // Set user coordinates to potential matches if available
+      if (userCoordinates && isNearbyFilterActive) {
+        // Get only nearby users
+        processedMatches = getNearbyUsers(
+          { ...currentUser, coordinates: userCoordinates },
+          processedMatches.map(match => ({
+            ...match,
+            coordinates: match.coordinates || undefined
+          })),
+          proximityRadius
+        );
+      }
+      
+      // Filter by selected regions if any
+      if (isLocationFiltering && selectedRegions.length > 0) {
+        processedMatches = processedMatches.filter(match => {
+          const matchRegion = match.location.split(',')[1]?.trim();
+          return selectedRegions.includes(matchRegion);
+        });
+      }
+      
       // Use our enhanced algorithm to sort matches
-      const sortedMatches = getAiEnhancedMatches(currentUser, potentialMatches);
+      const sortedMatches = getAiEnhancedMatches(
+        userCoordinates ? { ...currentUser, coordinates: userCoordinates } : currentUser, 
+        processedMatches
+      );
       
       // Apply visual indicators for boosted profiles
       const matchesWithBoostInfo = sortedMatches.map(match => {
@@ -40,13 +129,22 @@ const Discover = () => {
       // Notify user about boosted profiles (only on initial load)
       const boostedCount = matchesWithBoostInfo.filter(m => m.isBoosted).length;
       if (boostedCount > 0) {
-        toast({
-          title: `${boostedCount} Boosted ${boostedCount === 1 ? 'Profile' : 'Profiles'}`,
-          description: "Popular profiles are highlighted and ranked higher",
-        });
+        toast(`${boostedCount} Boosted ${boostedCount === 1 ? 'Profile' : 'Profiles'}`,
+          {
+            description: "Popular profiles are highlighted and ranked higher",
+          }
+        );
       }
     }
-  }, [currentUser, potentialMatches]);
+  }, [
+    currentUser, 
+    potentialMatches, 
+    selectedRegions, 
+    isLocationFiltering, 
+    isNearbyFilterActive, 
+    proximityRadius, 
+    userCoordinates
+  ]);
   
   const togglePopularFilter = () => {
     setIsFiltering(!isFiltering);
@@ -54,20 +152,69 @@ const Discover = () => {
     // If turning on filter, only show boosted profiles
     // If turning off, show all profiles again
     if (!isFiltering) {
-      toast({
-        title: "Showing Popular Profiles",
+      toast("Showing Popular Profiles", {
         description: "Displaying profiles that are trending right now",
       });
     } else {
-      toast({
-        title: "Showing All Profiles",
+      toast("Showing All Profiles", {
         description: "Displaying all compatible matches",
       });
     }
   };
   
+  const toggleLocationFilter = () => {
+    setIsLocationFiltering(!isLocationFiltering);
+    
+    if (!isLocationFiltering && selectedRegions.length === 0) {
+      toast("Please select regions", {
+        description: "Select regions you're interested in",
+      });
+    } else if (!isLocationFiltering) {
+      toast("Filtering by selected regions", {
+        description: `Showing matches from: ${selectedRegions.join(', ')}`,
+      });
+    } else {
+      toast("Showing all regions", {
+        description: "Displaying matches from all locations",
+      });
+    }
+  };
+  
+  const toggleNearbyFilter = () => {
+    if (!userCoordinates) {
+      toast.error("Location not available", {
+        description: "Please enable location services to use this feature",
+      });
+      return;
+    }
+    
+    setIsNearbyFilterActive(!isNearbyFilterActive);
+    
+    if (!isNearbyFilterActive) {
+      toast("Showing nearby profiles", {
+        description: `Displaying profiles within ${proximityRadius}km`,
+      });
+    } else {
+      toast("Showing all profiles", {
+        description: "Distance is no longer a filter",
+      });
+    }
+  };
+  
+  const handleRadiusChange = (value: number[]) => {
+    setProximityRadius(value[0]);
+  };
+  
+  const toggleRegion = (region: string) => {
+    setSelectedRegions(prevRegions => 
+      prevRegions.includes(region)
+        ? prevRegions.filter(r => r !== region)
+        : [...prevRegions, region]
+    );
+  };
+  
   // Filter matches based on selected filters
-  const displayedMatches = isFiltering
+  const filteredMatches = isFiltering
     ? enhancedMatches.filter(match => match.isBoosted)
     : enhancedMatches;
   
@@ -83,7 +230,7 @@ const Discover = () => {
             <p className="text-muted-foreground">Find your perfect match based on compatibility</p>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button 
               variant={isFiltering ? "default" : "outline"} 
               onClick={togglePopularFilter}
@@ -93,16 +240,141 @@ const Discover = () => {
               <span>Popular</span>
             </Button>
             
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter size={16} />
-              <span>Filters</span>
+            <Button 
+              variant={isNearbyFilterActive ? "default" : "outline"}
+              onClick={toggleNearbyFilter}
+              className="flex items-center gap-2"
+              disabled={!userCoordinates}
+            >
+              <MapPin size={16} className={isNearbyFilterActive ? "text-white" : ""} />
+              <span>Nearby</span>
             </Button>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant={isLocationFiltering ? "default" : "outline"} 
+                  className="flex items-center gap-2"
+                >
+                  <Globe size={16} className={isLocationFiltering ? "text-white" : ""} />
+                  <span>Regions</span>
+                  {selectedRegions.length > 0 && (
+                    <Badge variant="outline" className="ml-1 bg-background text-foreground">
+                      {selectedRegions.length}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <Command>
+                  <CommandInput placeholder="Search regions..." />
+                  <CommandList>
+                    <CommandEmpty>No region found.</CommandEmpty>
+                    <CommandGroup>
+                      {regions.map((region) => (
+                        <CommandItem
+                          key={region.value}
+                          onSelect={() => toggleRegion(region.value)}
+                          className="flex items-center justify-between"
+                        >
+                          <span>{region.label}</span>
+                          {selectedRegions.includes(region.value) && (
+                            <Badge className="ml-auto bg-love-500">Selected</Badge>
+                          )}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                  <div className="border-t p-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-sm font-medium">Selected regions: {selectedRegions.length}</span>
+                      {selectedRegions.length > 0 && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setSelectedRegions([])}
+                          className="h-auto p-1"
+                        >
+                          <X size={14} />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {selectedRegions.map(region => {
+                        const regionLabel = regions.find(r => r.value === region)?.label || region;
+                        return (
+                          <Badge 
+                            key={region} 
+                            variant="secondary"
+                            className="flex gap-1 items-center"
+                          >
+                            {regionLabel}
+                            <X 
+                              size={12} 
+                              className="cursor-pointer"
+                              onClick={() => toggleRegion(region)}
+                            />
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setSelectedRegions([])}
+                      >
+                        Clear All
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={toggleLocationFilter}
+                        disabled={selectedRegions.length === 0}
+                      >
+                        Apply Filter
+                      </Button>
+                    </div>
+                  </div>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            
+            {isNearbyFilterActive && userCoordinates && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <span>{proximityRadius}km</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 p-4">
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Proximity Radius</h4>
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-xs">5km</span>
+                        <span className="text-xs">500km</span>
+                      </div>
+                      <Slider
+                        value={[proximityRadius]}
+                        min={5}
+                        max={500}
+                        step={5}
+                        onValueChange={handleRadiusChange}
+                      />
+                      <div className="flex justify-center mt-2">
+                        <span className="text-sm font-medium">{proximityRadius}km</span>
+                      </div>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
         </div>
         
-        {displayedMatches.length > 0 ? (
+        {filteredMatches.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {displayedMatches.map(match => (
+            {filteredMatches.map(match => (
               <div key={match.id} className="relative">
                 {match.isBoosted && (
                   <div className="absolute -top-3 -right-3 z-10">

@@ -4,7 +4,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { Heart, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
-import ThemeToggle from './ThemeToggle';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -64,8 +63,6 @@ const Header = () => {
           </nav>
           
           <div className="flex items-center gap-4">
-            <ThemeToggle />
-            
             {currentUser ? (
               <Link to="/profile">
                 <Button variant="outline" className="rounded-full">
@@ -143,8 +140,6 @@ const Header = () => {
               </Link>
               
               <div className="flex items-center justify-between py-2">
-                <ThemeToggle />
-                
                 {currentUser ? (
                   <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="outline" className="rounded-full">

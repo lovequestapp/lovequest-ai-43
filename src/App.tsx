@@ -2,6 +2,7 @@
 import { Route, Routes } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { Toaster } from './components/ui/sonner';
+import CookieConsent from './components/CookieConsent';
 import Index from './pages/Index';
 import SignUp from './pages/SignUp';
 import Profile from './pages/Profile';
@@ -25,6 +26,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
+      <CookieConsent />
     </UserProvider>
   );
 }
