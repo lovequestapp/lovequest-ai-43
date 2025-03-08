@@ -286,11 +286,12 @@ const Messages = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-8 grid grid-rows-[auto_1fr_auto] h-[calc(100vh-7rem)]">
+      <main className="flex-grow container mx-auto px-4 py-8 flex flex-col">
         <h1 className="text-3xl font-display font-bold mb-6">Messages</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden min-h-0">
-          <div className="md:col-span-1 overflow-hidden">
+        {/* Message chat section - fixed height with scrolling */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" style={{ minHeight: "500px", height: "50vh" }}>
+          <div className="md:col-span-1 h-full overflow-hidden">
             <MessageList
               matches={matchListItems}
               activeMatchId={activeMatchId}
@@ -298,7 +299,7 @@ const Messages = () => {
             />
           </div>
           
-          <div className="md:col-span-2 overflow-hidden">
+          <div className="md:col-span-2 h-full overflow-hidden">
             {activeMatchUser && activeMatchId ? (
               <MessageChat
                 matchName={activeMatchUser.name}
@@ -320,8 +321,8 @@ const Messages = () => {
           </div>
         </div>
         
-        {/* Interactive features section */}
-        <div className="space-y-6 mt-8 pb-8 overflow-y-auto">
+        {/* Interactive features section - separately scrollable */}
+        <div className="space-y-6 mb-8">
           {/* Conversation Starters */}
           <section>
             <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
