@@ -36,8 +36,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     // Apply theme to document
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
+      // Add black accents for dark theme
+      document.documentElement.style.setProperty('--accent', '0 0% 0%'); // Pure black
+      document.documentElement.style.setProperty('--sidebar-accent', '0 0% 0%');
     } else {
       document.documentElement.classList.remove('dark');
+      // Reset accents for light theme to the default values
+      document.documentElement.style.removeProperty('--accent');
+      document.documentElement.style.removeProperty('--sidebar-accent');
     }
   }, [theme]);
 
