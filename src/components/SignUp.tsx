@@ -362,8 +362,7 @@ const SignUp = () => {
           </div>
         </form>
       </CardContent>
-    </CardContent>
-  </Card>
+    </Card>
   );
 };
 
