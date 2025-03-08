@@ -1,6 +1,26 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
+type BlogPost = {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+  likes: number;
+  comments: BlogComment[];
+  tags: string[];
+};
+
+type BlogComment = {
+  id: string;
+  postId: string;
+  userId: string;
+  content: string;
+  createdAt: Date;
+  userName: string;
+};
+
 type User = {
   id: string;
   name: string;
@@ -43,6 +63,9 @@ type User = {
     swiftCode?: string;
   };
   plan?: string;
+  gender?: 'male' | 'female' | 'non-binary';
+  interestedIn?: ('male' | 'female' | 'non-binary')[];
+  blogPosts?: BlogPost[];
 };
 
 type Match = {
@@ -109,6 +132,15 @@ type UserContextType = {
     status: 'pending' | 'completed' | 'failed';
     date: Date;
   } | undefined;
+  // Blog functionality
+  createBlogPost: (title: string, content: string, tags: string[]) => void;
+  updateBlogPost: (postId: string, updates: Partial<Omit<BlogPost, 'id' | 'userId' | 'createdAt'>>) => void;
+  deleteBlogPost: (postId: string) => void;
+  likeBlogPost: (postId: string, userId: string) => void;
+  commentOnBlogPost: (postId: string, content: string) => void;
+  getAllPosts: () => BlogPost[];
+  getFilteredPosts: () => BlogPost[];
+  getUserPosts: (userId: string) => BlogPost[];
 };
 
 const UserContext = createContext<UserContextType>({} as UserContextType);
@@ -166,6 +198,67 @@ const mockUsers: User[] = [
   },
 ];
 
+// Sample blog posts
+const sampleBlogPosts: BlogPost[] = [
+  {
+    id: 'blog-1',
+    userId: '1',
+    title: 'My Hiking Adventure in Yosemite',
+    content: 'Last weekend, I finally made it to Yosemite National Park. The views were breathtaking and the trails challenged me in the best way possible. I met some fellow hikers who shared their favorite spots with me...',
+    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    likes: 24,
+    comments: [
+      {
+        id: 'comment-1',
+        postId: 'blog-1',
+        userId: '3',
+        userName: 'Taylor Wilson',
+        content: 'This looks amazing! I\'ve been wanting to visit Yosemite for years.',
+        createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+      }
+    ],
+    tags: ['Hiking', 'Nature', 'Adventure']
+  },
+  {
+    id: 'blog-2',
+    userId: '2',
+    title: 'Finding Creativity in Unexpected Places',
+    content: 'As an artist, I\'m always looking for inspiration. Recently, I found it in the most unexpected place - a crowded subway car during rush hour. The diverse faces, expressions, and energies sparked a whole new series of paintings...',
+    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+    likes: 37,
+    comments: [
+      {
+        id: 'comment-2',
+        postId: 'blog-2',
+        userId: '5',
+        userName: 'Casey Parker',
+        content: 'I love how you find beauty in everyday moments!',
+        createdAt: new Date(Date.now() - 13 * 24 * 60 * 60 * 1000),
+      }
+    ],
+    tags: ['Art', 'Creativity', 'Inspiration']
+  },
+  {
+    id: 'blog-3',
+    userId: '4',
+    title: 'How Meditation Changed My Fitness Journey',
+    content: 'For years, I approached fitness purely from a physical perspective. Adding meditation to my routine has transformed not just my workouts but my entire relationship with my body. Here\'s how the practice changed my approach...',
+    createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000),
+    likes: 52,
+    comments: [
+      {
+        id: 'comment-3',
+        postId: 'blog-3',
+        userId: '1',
+        userName: 'Alex Johnson',
+        content: 'I\'ve been thinking about trying meditation. Any tips for beginners?',
+        createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+      }
+    ],
+    tags: ['Fitness', 'Meditation', 'Wellness']
+  }
+];
+
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { toast } = useToast();
   
@@ -187,10 +280,42 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       currency: 'USD',
       withdrawalHistory: []
     },
-    plan: 'free'
+    plan: 'free',
+    gender: 'male',
+    interestedIn: ['female'],
+    blogPosts: [
+      {
+        id: 'blog-current-1',
+        userId: 'current-user',
+        title: 'My Journey into Tech and Creativity',
+        content: 'When I first started exploring the intersection of technology and art, I never imagined how deeply these seemingly different worlds would connect. In this post, I share my story of discovering digital creativity and how it\'s shaped my perspective on life and relationships...',
+        createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+        likes: 18,
+        comments: [
+          {
+            id: 'comment-current-1',
+            postId: 'blog-current-1',
+            userId: '2',
+            userName: 'Jamie Smith',
+            content: 'I relate to this so much! Technology and art have always been my two passions as well.',
+            createdAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000),
+          }
+        ],
+        tags: ['Technology', 'Creativity', 'Digital Art']
+      }
+    ]
   });
   
-  const [potentialMatches, setPotentialMatches] = useState<User[]>(mockUsers);
+  // Update mock users with gender and interest
+  const [potentialMatches, setPotentialMatches] = useState<User[]>(
+    mockUsers.map((user, index) => ({
+      ...user,
+      gender: index % 2 === 0 ? 'female' : 'male',
+      interestedIn: index % 2 === 0 ? ['male'] : ['female'],
+      blogPosts: sampleBlogPosts.filter(post => post.userId === user.id)
+    }))
+  );
+  
   const [matches, setMatches] = useState<Match[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
 
@@ -690,40 +815,131 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   };
 
-  return (
-    <UserContext.Provider
-      value={{
-        currentUser,
-        potentialMatches,
-        matches,
-        messages,
-        setCurrentUser,
-        updateUserProfile,
-        addMatch,
-        sendMessage,
-        getMatchedUser,
-        likeUser,
-        passUser,
-        purchaseGifts,
-        getGiftInventory,
-        receiveGift,
-        getGiftBenefits,
-        getGiftMonetizationDetails,
-        initiateWithdrawal,
-        updateBankDetails,
-        getWithdrawalHistory,
-        getPendingWithdrawal,
-      }}
-    >
-      {children}
-    </UserContext.Provider>
-  );
-};
-
-export const useUser = () => {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
-};
+  // Blog post functionality
+  const createBlogPost = (title: string, content: string, tags: string[]) => {
+    if (!currentUser) return;
+    
+    const newPost: BlogPost = {
+      id: `blog-${Date.now()}`,
+      userId: currentUser.id,
+      title,
+      content,
+      createdAt: new Date(),
+      likes: 0,
+      comments: [],
+      tags,
+    };
+    
+    const updatedUser = { ...currentUser };
+    updatedUser.blogPosts = [...(updatedUser.blogPosts || []), newPost];
+    
+    setCurrentUser(updatedUser);
+    
+    toast({
+      title: "Post Published",
+      description: "Your blog post has been published successfully!",
+    });
+    
+    // Simulate discovery and engagement
+    setTimeout(() => {
+      toast({
+        title: "Post Engagement",
+        description: "Your post is being discovered by others in the community!",
+      });
+    }, 3000);
+  };
+  
+  const updateBlogPost = (postId: string, updates: Partial<Omit<BlogPost, 'id' | 'userId' | 'createdAt'>>) => {
+    if (!currentUser || !currentUser.blogPosts) return;
+    
+    const updatedUser = { ...currentUser };
+    updatedUser.blogPosts = updatedUser.blogPosts.map(post => 
+      post.id === postId ? { ...post, ...updates } : post
+    );
+    
+    setCurrentUser(updatedUser);
+    
+    toast({
+      title: "Post Updated",
+      description: "Your blog post has been updated successfully!",
+    });
+  };
+  
+  const deleteBlogPost = (postId: string) => {
+    if (!currentUser || !currentUser.blogPosts) return;
+    
+    const updatedUser = { ...currentUser };
+    updatedUser.blogPosts = updatedUser.blogPosts.filter(post => post.id !== postId);
+    
+    setCurrentUser(updatedUser);
+    
+    toast({
+      title: "Post Deleted",
+      description: "Your blog post has been deleted.",
+    });
+  };
+  
+  const likeBlogPost = (postId: string, userId: string) => {
+    // Find the post owner
+    const targetUser = userId === currentUser?.id 
+      ? currentUser 
+      : potentialMatches.find(user => user.id === userId);
+    
+    if (!targetUser || !targetUser.blogPosts) return;
+    
+    // Update the post likes
+    const updatedPosts = targetUser.blogPosts.map(post => 
+      post.id === postId ? { ...post, likes: post.likes + 1 } : post
+    );
+    
+    // Update the user's posts
+    if (userId === currentUser?.id && currentUser) {
+      const updatedUser = { ...currentUser, blogPosts: updatedPosts };
+      setCurrentUser(updatedUser);
+    } else {
+      const updatedMatches = potentialMatches.map(user => 
+        user.id === userId ? { ...user, blogPosts: updatedPosts } : user
+      );
+      setPotentialMatches(updatedMatches);
+    }
+    
+    toast({
+      title: "Post Liked",
+      description: "You liked this post!",
+    });
+  };
+  
+  const commentOnBlogPost = (postId: string, content: string) => {
+    if (!currentUser) return;
+    
+    // Find which user owns this post
+    const allUsers = [currentUser, ...potentialMatches];
+    let postOwner: User | undefined;
+    let post: BlogPost | undefined;
+    
+    for (const user of allUsers) {
+      if (user.blogPosts) {
+        post = user.blogPosts.find(p => p.id === postId);
+        if (post) {
+          postOwner = user;
+          break;
+        }
+      }
+    }
+    
+    if (!postOwner || !post) return;
+    
+    const newComment: BlogComment = {
+      id: `comment-${Date.now()}`,
+      postId,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      content,
+      createdAt: new Date(),
+    };
+    
+    // Update the post with the new comment
+    const updatedPost = {
+      ...post,
+      comments: [...post.comments, newComment]
+    };

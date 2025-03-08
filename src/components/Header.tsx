@@ -1,70 +1,167 @@
 
-import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { Heart, MessageCircle, User, Search, LogIn } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useUser } from '@/context/UserContext';
+import { Heart, Search, MessagesSquare, User, FileText, Menu, X } from 'lucide-react';
+import { useMobile } from '@/hooks/use-mobile';
 
 const Header = () => {
-  const location = useLocation();
   const { currentUser } = useUser();
+  const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useMobile();
   
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
+  const isActive = (path: string) => location.pathname === path;
+  
+  const showHeader = currentUser !== null;
+  
+  if (!showHeader) return null;
   
   return (
-    <header className="border-b border-love-100 py-4 px-4 bg-white sticky top-0 z-10">
-      <div className="container mx-auto flex items-center justify-between">
-        <NavLink 
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center justify-between">
+        <Link 
           to="/" 
-          className="flex items-center gap-2 font-display font-bold text-xl"
+          className="flex items-center font-display font-bold text-2xl text-love-600"
         >
-          <Heart className="h-6 w-6 text-love-500 fill-love-500" />
-          <span className="hidden sm:inline">DateQuest</span>
-        </NavLink>
+          <Heart className="h-6 w-6 fill-love-500 text-love-500 mr-2" />
+          <span>LoveQuest</span>
+        </Link>
         
-        <nav className="flex items-center gap-2">
-          <NavLink 
-            to="/discover" 
-            className={cn(
-              "p-2 rounded-full hover:bg-love-50 transition-colors",
-              isActive('/discover') && "bg-love-50 text-love-500"
+        {isMobile ? (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </Button>
+            
+            {mobileMenuOpen && (
+              <div className="fixed inset-0 top-14 z-50 bg-background p-4">
+                <nav className="flex flex-col gap-2">
+                  <Link 
+                    to="/discover"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+                      isActive('/discover') 
+                        ? "bg-love-100 text-love-600" 
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <Search className="h-4 w-4" />
+                    <span>Discover</span>
+                  </Link>
+                  
+                  <Link 
+                    to="/explore"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+                      isActive('/explore') 
+                        ? "bg-love-100 text-love-600" 
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <FileText className="h-4 w-4" />
+                    <span>Explore</span>
+                  </Link>
+                  
+                  <Link 
+                    to="/messages"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+                      isActive('/messages') 
+                        ? "bg-love-100 text-love-600" 
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <MessagesSquare className="h-4 w-4" />
+                    <span>Messages</span>
+                  </Link>
+                  
+                  <Link 
+                    to="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+                      isActive('/profile') 
+                        ? "bg-love-100 text-love-600" 
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
+                </nav>
+              </div>
             )}
-          >
-            <Search className="h-5 w-5" />
-          </NavLink>
-          
-          <NavLink 
-            to="/messages" 
-            className={cn(
-              "p-2 rounded-full hover:bg-love-50 transition-colors",
-              isActive('/messages') && "bg-love-50 text-love-500"
-            )}
-          >
-            <MessageCircle className="h-5 w-5" />
-          </NavLink>
-          
-          <NavLink 
-            to="/profile" 
-            className={cn(
-              "p-2 rounded-full hover:bg-love-50 transition-colors",
-              isActive('/profile') && "bg-love-50 text-love-500"
-            )}
-          >
-            <User className="h-5 w-5" />
-          </NavLink>
-          
-          {!currentUser && (
-            <NavLink to="/signup">
-              <Button size="sm" className="bg-love-500 hover:bg-love-600 ml-2">
-                <LogIn className="h-4 w-4 mr-1" />
-                <span>Sign Up</span>
-              </Button>
-            </NavLink>
-          )}
-        </nav>
+          </>
+        ) : (
+          <nav className="flex items-center gap-6">
+            <Link
+              to="/discover"
+              className={cn(
+                "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+                isActive('/discover') 
+                  ? "bg-love-100 text-love-600" 
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <Search className="h-4 w-4" />
+              <span>Discover</span>
+            </Link>
+            
+            <Link
+              to="/explore"
+              className={cn(
+                "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+                isActive('/explore') 
+                  ? "bg-love-100 text-love-600" 
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <FileText className="h-4 w-4" />
+              <span>Explore</span>
+            </Link>
+            
+            <Link
+              to="/messages"
+              className={cn(
+                "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+                isActive('/messages') 
+                  ? "bg-love-100 text-love-600" 
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <MessagesSquare className="h-4 w-4" />
+              <span>Messages</span>
+            </Link>
+            
+            <Link
+              to="/profile"
+              className={cn(
+                "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium",
+                isActive('/profile') 
+                  ? "bg-love-100 text-love-600" 
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              <User className="h-4 w-4" />
+              <span>Profile</span>
+            </Link>
+          </nav>
+        )}
       </div>
     </header>
   );

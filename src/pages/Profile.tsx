@@ -4,6 +4,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import GiftShop from '@/components/GiftShop';
 import Monetization from '@/components/Monetization';
+import Blog from '@/components/Blog';
 import { useUser } from '@/context/UserContext';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, MapPin, Edit2, Plus, X, Heart, Gift, ShoppingCart, Sparkles, Timer, Star, Coins } from 'lucide-react';
+import { User, MapPin, Edit2, Plus, X, Heart, Gift, ShoppingCart, Sparkles, Timer, Star, Coins, FileText } from 'lucide-react';
 
 const Profile = () => {
   const { currentUser, updateUserProfile, getGiftBenefits } = useUser();
@@ -68,6 +69,8 @@ const Profile = () => {
       setActiveTab('shop');
     } else if (window.location.hash === '#monetize') {
       setActiveTab('monetize');
+    } else if (window.location.hash === '#blog') {
+      setActiveTab('blog');
     }
   }, []);
   
@@ -108,8 +111,12 @@ const Profile = () => {
         </div>
         
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-3 mb-6">
+          <TabsList className="grid grid-cols-4 mb-6">
             <TabsTrigger value="profile">Profile</TabsTrigger>
+            <TabsTrigger value="blog" className="flex items-center gap-1">
+              <FileText size={16} />
+              <span>Blog</span>
+            </TabsTrigger>
             <TabsTrigger value="shop">Gift Shop</TabsTrigger>
             <TabsTrigger value="monetize" className="flex items-center gap-1">
               <Coins size={16} />
@@ -371,6 +378,10 @@ const Profile = () => {
                 </Card>
               </div>
             </div>
+          </TabsContent>
+          
+          <TabsContent value="blog">
+            <Blog />
           </TabsContent>
           
           <TabsContent value="shop">
