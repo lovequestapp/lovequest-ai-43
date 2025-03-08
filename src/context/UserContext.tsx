@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 type User = {
@@ -28,6 +27,8 @@ type Message = {
   content: string;
   timestamp: Date;
   read: boolean;
+  type?: 'text' | 'voice' | 'gift';
+  giftType?: string;
 };
 
 type UserContextType = {
@@ -38,7 +39,7 @@ type UserContextType = {
   setCurrentUser: (user: User) => void;
   updateUserProfile: (updates: Partial<User>) => void;
   addMatch: (matchedUserId: string) => void;
-  sendMessage: (matchId: string, content: string) => void;
+  sendMessage: (matchId: string, content: string, type?: 'text' | 'voice' | 'gift', giftType?: string) => void;
   getMatchedUser: (matchId: string) => User | undefined;
   likeUser: (userId: string) => void;
   passUser: (userId: string) => void;
@@ -136,7 +137,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  const sendMessage = (matchId: string, content: string) => {
+  const sendMessage = (
+    matchId: string, 
+    content: string, 
+    type: 'text' | 'voice' | 'gift' = 'text',
+    giftType?: string
+  ) => {
     if (!currentUser) return;
     
     const newMessage: Message = {
@@ -146,6 +152,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       content,
       timestamp: new Date(),
       read: false,
+      type,
+      giftType,
     };
     
     setMessages(prev => ({
@@ -154,12 +162,25 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
     
     // Update last message in match
+    // For voice and gift messages, use descriptive text for the preview
+    let previewText = content;
+    if (type === 'voice') {
+      previewText = '🎤 Voice message';
+    } else if (type === 'gift') {
+      const giftNames: Record<string, string> = {
+        'rose': '🌹 Rose',
+        'heart': '❤️ Heart',
+        'teddy': '🧸 Teddy bear',
+      };
+      previewText = giftNames[giftType || ''] || '🎁 Gift';
+    }
+    
     setMatches(prev => 
       prev.map(match => 
         match.id === matchId 
           ? { 
               ...match, 
-              lastMessage: content, 
+              lastMessage: previewText, 
               lastMessageTime: new Date() 
             } 
           : match

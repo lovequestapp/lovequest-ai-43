@@ -5,15 +5,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Send } from 'lucide-react';
+import { 
+  Sparkles, 
+  Send, 
+  Mic, 
+  MicOff, 
+  Gift, 
+  Heart, 
+  Play, 
+  Square 
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
   content: string;
   timestamp: Date;
   sender: 'user' | 'match';
+  type?: 'text' | 'voice' | 'gift';
+  giftType?: string;
 }
 
 interface MessageChatProps {
@@ -21,7 +33,7 @@ interface MessageChatProps {
   matchPhoto: string;
   compatibilityScore?: number;
   messages: Message[];
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, type?: 'text' | 'voice' | 'gift', giftType?: string) => void;
   suggestionStarters?: string[];
 }
 
@@ -34,8 +46,21 @@ const MessageChat: React.FC<MessageChatProps> = ({
   suggestionStarters = [],
 }) => {
   const [messageText, setMessageText] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [showGiftMenu, setShowGiftMenu] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<number | null>(null);
+  const { toast } = useToast();
   
+  const gifts = [
+    { id: 'rose', name: 'Rose', icon: <Heart className="text-rose-500" />, price: 2 },
+    { id: 'heart', name: 'Heart', icon: <Heart className="text-red-500 fill-red-500" />, price: 1 },
+    { id: 'teddy', name: 'Teddy Bear', icon: <Gift className="text-amber-700" />, price: 5 },
+  ];
+
   const handleSendMessage = () => {
     if (messageText.trim()) {
       onSendMessage(messageText);
@@ -47,6 +72,105 @@ const MessageChat: React.FC<MessageChatProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+  
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+      
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/mp3' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        // Convert blob to base64 for sending
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          const base64data = reader.result as string;
+          // Send voice message
+          onSendMessage(base64data, 'voice');
+        };
+        
+        // Clean up
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      // Start recording
+      mediaRecorder.start();
+      setIsRecording(true);
+      
+      // Start timer
+      setRecordingTime(0);
+      timerRef.current = window.setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      toast({
+        title: "Microphone Error",
+        description: "Could not access your microphone. Please check permissions.",
+        variant: "destructive",
+      });
+    }
+  };
+  
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      
+      // Clear timer
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  };
+  
+  const sendGift = (giftId: string) => {
+    onSendMessage(giftId, 'gift', giftId);
+    setShowGiftMenu(false);
+    
+    toast({
+      title: "Gift Sent",
+      description: `You sent a ${gifts.find(g => g.id === giftId)?.name || 'gift'} to ${matchName}`,
+    });
+  };
+  
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  const renderMessageContent = (message: Message) => {
+    if (message.type === 'voice') {
+      return (
+        <div className="flex items-center gap-2">
+          <audio src={message.content} controls className="h-10 max-w-[200px]" />
+        </div>
+      );
+    } else if (message.type === 'gift') {
+      const gift = gifts.find(g => g.id === message.giftType);
+      return (
+        <div className="flex flex-col items-center text-center p-2">
+          <div className="text-4xl mb-2">{gift?.icon || <Gift className="text-love-500" />}</div>
+          <p className="text-sm">Sent a {gift?.name || 'gift'}</p>
+        </div>
+      );
+    } else {
+      return message.content;
     }
   };
   
@@ -127,7 +251,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
                         : "bg-gray-100 rounded-bl-none"
                     )}
                   >
-                    {message.content}
+                    {renderMessageContent(message)}
                   </div>
                   <div
                     className={cn(
@@ -146,24 +270,85 @@ const MessageChat: React.FC<MessageChatProps> = ({
         </ScrollArea>
       </CardContent>
       
-      <CardFooter className="p-3 border-t border-love-100">
-        <div className="flex w-full items-center gap-2">
-          <Input
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Type a message..."
-            className="flex-grow border-love-200 focus-visible:ring-love-500"
-          />
-          <Button
-            onClick={handleSendMessage}
-            disabled={!messageText.trim()}
-            size="icon"
-            className="bg-love-500 hover:bg-love-600"
-          >
-            <Send size={18} />
-          </Button>
+      {showGiftMenu && (
+        <div className="p-3 border-t border-love-100 bg-love-50">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="font-medium text-sm">Send a Gift</h4>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setShowGiftMenu(false)}
+            >
+              Close
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {gifts.map((gift) => (
+              <Button
+                key={gift.id}
+                variant="outline"
+                className="flex flex-col h-20 px-2 py-1 bg-white"
+                onClick={() => sendGift(gift.id)}
+              >
+                <span className="text-2xl">{gift.icon}</span>
+                <span className="text-xs mt-1">{gift.name}</span>
+                <span className="text-xs text-muted-foreground">${gift.price}</span>
+              </Button>
+            ))}
+          </div>
         </div>
+      )}
+      
+      <CardFooter className="p-3 border-t border-love-100">
+        {isRecording ? (
+          <div className="flex w-full items-center gap-2">
+            <div className="flex-grow bg-red-50 text-red-500 px-4 py-2 rounded-md border border-red-200 flex items-center">
+              <div className="animate-pulse mr-2 h-2 w-2 rounded-full bg-red-500"></div>
+              <span>Recording... {formatTime(recordingTime)}</span>
+            </div>
+            <Button
+              onClick={stopRecording}
+              size="icon"
+              variant="destructive"
+            >
+              <Square size={18} />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex w-full items-center gap-2">
+            <Input
+              value={messageText}
+              onChange={(e) => setMessageText(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Type a message..."
+              className="flex-grow border-love-200 focus-visible:ring-love-500"
+            />
+            <Button
+              onClick={startRecording}
+              size="icon"
+              variant="outline"
+              className="bg-white border-love-200 hover:bg-love-50"
+            >
+              <Mic size={18} className="text-love-500" />
+            </Button>
+            <Button
+              onClick={() => setShowGiftMenu(!showGiftMenu)}
+              size="icon"
+              variant="outline"
+              className="bg-white border-love-200 hover:bg-love-50"
+            >
+              <Gift size={18} className="text-love-500" />
+            </Button>
+            <Button
+              onClick={handleSendMessage}
+              disabled={!messageText.trim()}
+              size="icon"
+              className="bg-love-500 hover:bg-love-600"
+            >
+              <Send size={18} />
+            </Button>
+          </div>
+        )}
       </CardFooter>
     </Card>
   );

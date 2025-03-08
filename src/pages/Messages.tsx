@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -8,10 +7,12 @@ import { useUser } from '@/context/UserContext';
 import { getConversationStarters } from '@/utils/matchingAlgorithm';
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 const Messages = () => {
   const { matches, messages, potentialMatches, sendMessage, currentUser } = useUser();
   const [activeMatchId, setActiveMatchId] = useState<string | undefined>(matches[0]?.id);
+  const { toast } = useToast();
   
   const matchListItems = useMemo(() => 
     matches.map(match => {
@@ -47,14 +48,22 @@ const Messages = () => {
       id: msg.id,
       content: msg.content,
       timestamp: msg.timestamp,
-      // Fix: Use explicit "match" or "user" type instead of string
       sender: msg.senderId === currentUser.id ? 'user' as const : 'match' as const,
+      type: msg.type || 'text',
+      giftType: msg.giftType,
     }));
   }, [activeMatchId, messages, currentUser]);
   
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = (content: string, type: 'text' | 'voice' | 'gift' = 'text', giftType?: string) => {
     if (activeMatchId) {
-      sendMessage(activeMatchId, content);
+      if (type === 'gift') {
+        toast({
+          title: "Premium Feature",
+          description: "In a real app, this would connect to a payment system.",
+        });
+      }
+      
+      sendMessage(activeMatchId, content, type, giftType);
     }
   };
   
