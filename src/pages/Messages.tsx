@@ -10,11 +10,16 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Heart, Sparkles, Gamepad, Gift, MessageSquare } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 const Messages = () => {
   const { matches, messages, potentialMatches, sendMessage, currentUser } = useUser();
   const [activeMatchId, setActiveMatchId] = useState<string | undefined>(matches[0]?.id);
   const { toast } = useToast();
+  const [gameDialogOpen, setGameDialogOpen] = useState(false);
+  const [activeGame, setActiveGame] = useState<{name: string, icon: React.ReactNode} | null>(null);
+  const [gamePrompt, setGamePrompt] = useState('');
+  const [gameResponses, setGameResponses] = useState<string[]>([]);
   
   useEffect(() => {
     if (matches.length > 0 && !activeMatchId) {
@@ -134,6 +139,125 @@ const Messages = () => {
     { name: "Teddy Bear", price: 50, icon: <Gift className="text-amber-700" /> },
   ];
   
+  const handleIcebreakerClick = (starter: string) => {
+    if (activeMatchId && activeMatchUser) {
+      handleSendMessage(starter);
+      toast({
+        title: "Conversation Starter Sent",
+        description: `You sent an icebreaker to ${activeMatchUser.name}`,
+      });
+    } else {
+      toast({
+        title: "Select a Conversation",
+        description: "Please select a match to send this conversation starter to",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const handleGameSelect = (game: {name: string, icon: React.ReactNode}) => {
+    setActiveGame(game);
+    
+    let initialPrompt = '';
+    let initialResponses: string[] = [];
+    
+    switch(game.name) {
+      case "Truth or Dare":
+        initialPrompt = "Truth or Dare?";
+        initialResponses = ["Truth", "Dare"];
+        break;
+      case "Would You Rather":
+        initialPrompt = "Would you rather...";
+        initialResponses = [
+          "Be able to teleport or fly?",
+          "Always be 10 minutes late or 20 minutes early?",
+          "Have unlimited money or unlimited time?",
+          "Live without music or live without movies?",
+        ];
+        break;
+      case "Never Have I Ever":
+        initialPrompt = "Never have I ever...";
+        initialResponses = [
+          "Traveled to another country",
+          "Gone skinny dipping",
+          "Broken a bone",
+          "Gotten a tattoo",
+        ];
+        break;
+      case "Two Truths & A Lie":
+        initialPrompt = "Two truths and a lie";
+        initialResponses = [
+          "Share three statements about yourself - two true and one false",
+          "Have the other person guess which one is the lie",
+        ];
+        break;
+    }
+    
+    setGamePrompt(initialPrompt);
+    setGameResponses(initialResponses);
+    setGameDialogOpen(true);
+  };
+  
+  const sendGamePrompt = (prompt: string) => {
+    if (activeMatchId && activeMatchUser) {
+      const gamePrefix = activeGame ? `[${activeGame.name}] ` : '';
+      handleSendMessage(`${gamePrefix}${prompt}`);
+      
+      toast({
+        title: `${activeGame?.name || 'Game'} Started`,
+        description: `You sent a game prompt to ${activeMatchUser.name}`,
+      });
+      
+      setGameDialogOpen(false);
+    } else {
+      toast({
+        title: "Select a Conversation",
+        description: "Please select a match to play this game with",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const sendGameResponse = (response: string) => {
+    if (activeMatchId && activeGame) {
+      sendGamePrompt(`${gamePrompt} ${response}`);
+    }
+  };
+  
+  const handleGiftSelect = (gift: {name: string, price: number}) => {
+    if (activeMatchId && activeMatchUser) {
+      const giftType = gift.name.toLowerCase().includes('rose') 
+        ? 'rose' 
+        : gift.name.toLowerCase().includes('heart') 
+          ? 'heart' 
+          : 'teddy';
+      
+      const inventory = currentUser?.giftInventory || {};
+      
+      if (!inventory[giftType] || inventory[giftType] <= 0) {
+        toast({
+          title: "Gift Not Available",
+          description: `You don't have any ${gift.name}s in your inventory. Visit the gift shop to purchase.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      handleSendMessage(`I'm sending you a ${gift.name}!`, 'gift', giftType);
+      
+      toast({
+        title: `${gift.name} Sent`,
+        description: `You sent a ${gift.name} to ${activeMatchUser.name}`,
+      });
+    } else {
+      toast({
+        title: "Select a Conversation",
+        description: "Please select a match to send this gift to",
+        variant: "destructive"
+      });
+    }
+  };
+  
   if (matches.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -207,7 +331,11 @@ const Messages = () => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {icebreakers.slice(0, 4).map((starter, index) => (
-                <Card key={index} className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-100 hover:shadow-md transition-shadow cursor-pointer">
+                <Card 
+                  key={index} 
+                  className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-100 hover:shadow-md transition-shadow cursor-pointer hover:bg-purple-100"
+                  onClick={() => handleIcebreakerClick(starter)}
+                >
                   <CardContent className="p-4">
                     <p className="text-sm font-medium text-purple-800">{starter}</p>
                   </CardContent>
@@ -225,7 +353,11 @@ const Messages = () => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {games.map((game, index) => (
-                <Card key={index} className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-100 hover:shadow-md transition-shadow cursor-pointer">
+                <Card 
+                  key={index} 
+                  className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-100 hover:shadow-md transition-shadow cursor-pointer hover:bg-green-100"
+                  onClick={() => handleGameSelect(game)}
+                >
                   <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                     <div className="text-2xl mb-2">{game.icon}</div>
                     <h3 className="font-medium text-green-800">{game.name}</h3>
@@ -244,7 +376,11 @@ const Messages = () => {
             
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {popularGifts.map((gift, index) => (
-                <Card key={index} className="bg-gradient-to-br from-rose-50 to-pink-50 border-rose-100 hover:shadow-md transition-shadow">
+                <Card 
+                  key={index} 
+                  className="bg-gradient-to-br from-rose-50 to-pink-50 border-rose-100 hover:shadow-md transition-shadow cursor-pointer hover:bg-rose-100"
+                  onClick={() => handleGiftSelect(gift)}
+                >
                   <CardContent className="p-4 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <div className="text-2xl">{gift.icon}</div>
@@ -260,6 +396,45 @@ const Messages = () => {
           </section>
         </div>
       </main>
+      
+      <Dialog open={gameDialogOpen} onOpenChange={setGameDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {activeGame?.icon}
+              <span>{activeGame?.name}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Play this game with your match to break the ice and have fun!
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 my-4">
+            <div className="p-4 bg-muted rounded-md">
+              <p className="font-medium">{gamePrompt}</p>
+            </div>
+            
+            <div className="space-y-2">
+              {gameResponses.map((response, index) => (
+                <Button 
+                  key={index} 
+                  variant="outline" 
+                  className="w-full justify-start text-left" 
+                  onClick={() => sendGameResponse(response)}
+                >
+                  {response}
+                </Button>
+              ))}
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button onClick={() => sendGamePrompt(gamePrompt)}>
+              Send Custom Prompt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <Footer />
     </div>
