@@ -10,6 +10,17 @@ type User = {
   photos: string[];
   compatibilityScore?: number;
   giftInventory?: Record<string, number>;
+  popularityPoints?: number;
+  premiumLikes?: number;
+  profileBoost?: {
+    active: boolean;
+    expiresAt?: Date;
+  };
+  receivedGifts?: {
+    rose: number;
+    heart: number;
+    teddy: number;
+  };
 };
 
 type Match = {
@@ -46,6 +57,13 @@ type UserContextType = {
   passUser: (userId: string) => void;
   purchaseGifts: (gifts: Record<string, number>) => void;
   getGiftInventory: () => Record<string, number>;
+  receiveGift: (giftType: string) => void;
+  getGiftBenefits: () => {
+    popularityPoints: number;
+    premiumLikes: number;
+    profileBoost: boolean;
+    boostTimeRemaining?: string;
+  };
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -113,12 +131,104 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     location: 'New York, NY',
     interests: ['Technology', 'Art', 'Hiking', 'Food'],
     photos: ['/placeholder.svg', '/placeholder.svg'],
-    giftInventory: { 'rose': 0, 'heart': 0, 'teddy': 0 }
+    giftInventory: { 'rose': 0, 'heart': 0, 'teddy': 0 },
+    popularityPoints: 0,
+    premiumLikes: 0,
+    profileBoost: { active: false },
+    receivedGifts: { rose: 0, heart: 0, teddy: 0 }
   });
   
   const [potentialMatches, setPotentialMatches] = useState<User[]>(mockUsers);
   const [matches, setMatches] = useState<Match[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
+
+  const receiveGift = (giftType: string) => {
+    if (!currentUser) return;
+    
+    const updatedUser = { ...currentUser };
+    
+    // Update received gifts count
+    if (!updatedUser.receivedGifts) {
+      updatedUser.receivedGifts = { rose: 0, heart: 0, teddy: 0 };
+    }
+    
+    updatedUser.receivedGifts[giftType as keyof typeof updatedUser.receivedGifts] += 1;
+    
+    // Apply benefits based on gift type
+    if (!updatedUser.popularityPoints) updatedUser.popularityPoints = 0;
+    if (!updatedUser.premiumLikes) updatedUser.premiumLikes = 0;
+    if (!updatedUser.profileBoost) updatedUser.profileBoost = { active: false };
+    
+    switch (giftType) {
+      case 'rose':
+        updatedUser.popularityPoints += 2;
+        toast({
+          title: "Rose Received!",
+          description: "You gained +2 popularity points",
+        });
+        break;
+      case 'heart':
+        updatedUser.popularityPoints += 10;
+        updatedUser.premiumLikes += 1;
+        toast({
+          title: "Heart Received!",
+          description: "You gained +10 popularity points and 1 premium like token",
+        });
+        break;
+      case 'teddy':
+        updatedUser.popularityPoints += 5;
+        updatedUser.profileBoost = { 
+          active: true, 
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+        };
+        toast({
+          title: "Teddy Bear Received!",
+          description: "You gained +5 popularity points and a 24-hour profile boost",
+        });
+        break;
+    }
+    
+    setCurrentUser(updatedUser);
+  };
+
+  const getGiftBenefits = () => {
+    if (!currentUser) {
+      return {
+        popularityPoints: 0,
+        premiumLikes: 0,
+        profileBoost: false,
+      };
+    }
+    
+    // Check if profile boost is expired
+    if (currentUser.profileBoost?.active && currentUser.profileBoost.expiresAt) {
+      if (new Date() > currentUser.profileBoost.expiresAt) {
+        // Update profile boost status if expired
+        setCurrentUser({
+          ...currentUser,
+          profileBoost: { active: false }
+        });
+      }
+    }
+    
+    // Calculate remaining time for profile boost
+    let boostTimeRemaining: string | undefined;
+    if (currentUser.profileBoost?.active && currentUser.profileBoost.expiresAt) {
+      const remainingMs = currentUser.profileBoost.expiresAt.getTime() - Date.now();
+      if (remainingMs > 0) {
+        const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+        const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+        boostTimeRemaining = `${hours}h ${minutes}m`;
+      }
+    }
+    
+    return {
+      popularityPoints: currentUser.popularityPoints || 0,
+      premiumLikes: currentUser.premiumLikes || 0,
+      profileBoost: currentUser.profileBoost?.active || false,
+      boostTimeRemaining,
+    };
+  };
 
   const updateUserProfile = (updates: Partial<User>) => {
     if (currentUser) {
@@ -169,6 +279,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ...currentUser,
         giftInventory: updatedInventory
       });
+      
+      // In a real app, this would call an API to handle gift receipt by the other user
+      // For this demo, we'll simulate receiving the gift ourselves
+      setTimeout(() => {
+        receiveGift(giftType);
+      }, 2000);
     }
     
     const newMessage: Message = {
@@ -326,6 +442,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         passUser,
         purchaseGifts,
         getGiftInventory,
+        receiveGift,
+        getGiftBenefits,
       }}
     >
       {children}

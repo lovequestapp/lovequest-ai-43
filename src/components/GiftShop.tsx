@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Heart, Gift, ShoppingCart } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
+import { Heart, Gift, ShoppingCart, Info } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from '@/context/UserContext';
 
@@ -14,6 +15,7 @@ interface GiftItem {
   price: number;
   icon: React.ReactNode;
   description: string;
+  recipientBenefit: string;
 }
 
 const GiftShop: React.FC = () => {
@@ -27,6 +29,7 @@ const GiftShop: React.FC = () => {
   const [cardName, setCardName] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvc, setCardCvc] = useState('');
+  const [showBenefits, setShowBenefits] = useState(false);
   const { toast } = useToast();
   const { purchaseGifts } = useUser();
 
@@ -36,21 +39,24 @@ const GiftShop: React.FC = () => {
       name: 'Virtual Rose', 
       price: 20, 
       icon: <Heart className="text-rose-500" />,
-      description: 'Send a beautiful rose to show your affection'
+      description: 'Send a beautiful rose to show your affection',
+      recipientBenefit: 'Recipient gains +2 popularity points'
     },
     { 
       id: 'heart', 
       name: 'Virtual Heart', 
       price: 100, 
       icon: <Heart className="text-red-500 fill-red-500" />,
-      description: 'Express your feelings with a premium heart'
+      description: 'Express your feelings with a premium heart',
+      recipientBenefit: 'Recipient gains +10 popularity points and 1 premium like token'
     },
     { 
       id: 'teddy', 
       name: 'Virtual Teddy Bear', 
       price: 50, 
       icon: <Gift className="text-amber-700" />,
-      description: 'A cute teddy bear to make them smile'
+      description: 'A cute teddy bear to make them smile',
+      recipientBenefit: 'Recipient gains +5 popularity points and profile boost for 24 hours'
     },
   ];
 
@@ -123,13 +129,45 @@ const GiftShop: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <h3 className="text-xl font-semibold flex items-center gap-2">
-          <ShoppingCart className="h-5 w-5 text-love-500" />
-          Gift Shop
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-semibold flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5 text-love-500" />
+            Gift Shop
+          </h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-love-600 flex items-center gap-1"
+            onClick={() => setShowBenefits(!showBenefits)}
+          >
+            <Info size={16} />
+            Gift Benefits
+          </Button>
+        </div>
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {showBenefits && (
+          <Card className="bg-love-50 border-love-100 mb-4">
+            <CardContent className="p-4">
+              <h4 className="font-semibold mb-2">Benefits for Recipients</h4>
+              <ul className="space-y-2 text-sm">
+                {giftItems.map((gift) => (
+                  <li key={`benefit-${gift.id}`} className="flex items-start gap-2">
+                    <div className="mt-1">{gift.icon}</div>
+                    <div>
+                      <span className="font-medium">{gift.name}:</span> {gift.recipientBenefit}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-muted-foreground mt-2">
+                Popularity points help boost your profile visibility in the matching algorithm.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {!isCheckingOut ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -139,7 +177,10 @@ const GiftShop: React.FC = () => {
                     <div className="text-4xl mb-2 flex justify-center">{item.icon}</div>
                     <h4 className="font-medium">{item.name}</h4>
                     <p className="text-love-700 font-semibold">${item.price}</p>
-                    <p className="text-sm text-muted-foreground mb-4">{item.description}</p>
+                    <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                    <Badge variant="outline" className="mb-4 bg-love-50 text-love-700 border-love-200 text-xs">
+                      {item.recipientBenefit}
+                    </Badge>
                     
                     <div className="flex items-center justify-center gap-2">
                       <Button 

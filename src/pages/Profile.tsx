@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -11,10 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, MapPin, Edit2, Plus, X, Heart, Gift, ShoppingCart } from 'lucide-react';
+import { User, MapPin, Edit2, Plus, X, Heart, Gift, ShoppingCart, Sparkles, Timer, Star } from 'lucide-react';
 
 const Profile = () => {
-  const { currentUser, updateUserProfile } = useUser();
+  const { currentUser, updateUserProfile, getGiftBenefits } = useUser();
   const [editing, setEditing] = useState(false);
   const [profile, setProfile] = useState(currentUser);
   const [newInterest, setNewInterest] = useState('');
@@ -58,6 +59,8 @@ const Profile = () => {
   };
 
   const giftInventory = currentUser.giftInventory || { 'rose': 0, 'heart': 0, 'teddy': 0 };
+  const receivedGifts = currentUser.receivedGifts || { rose: 0, heart: 0, teddy: 0 };
+  const benefits = getGiftBenefits();
   
   React.useEffect(() => {
     if (window.location.hash === '#shop') {
@@ -157,47 +160,110 @@ const Profile = () => {
                 </Card>
                 
                 {!editing && (
-                  <Card className="mt-4">
-                    <CardHeader>
-                      <h3 className="text-lg font-semibold">My Gift Inventory</h3>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Heart className="text-rose-500 mr-2" />
+                  <>
+                    <Card className="mt-4">
+                      <CardHeader>
+                        <h3 className="text-lg font-semibold">Gift Benefits</h3>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Sparkles className="text-amber-500 mr-2" />
+                              <span>Popularity Points</span>
+                            </div>
+                            <Badge variant="outline" className="bg-love-50 text-love-700">
+                              {benefits.popularityPoints}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Star className="text-purple-500 mr-2" />
+                              <span>Premium Likes</span>
+                            </div>
+                            <Badge variant="outline" className="bg-love-50 text-love-700">
+                              {benefits.premiumLikes}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Timer className="text-blue-500 mr-2" />
+                              <span>Profile Boost</span>
+                            </div>
+                            {benefits.profileBoost ? (
+                              <Badge variant="outline" className="bg-green-50 text-green-700">
+                                Active {benefits.boostTimeRemaining ? `(${benefits.boostTimeRemaining})` : ''}
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="bg-gray-100 text-gray-500">
+                                Inactive
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="mt-4">
+                      <CardHeader>
+                        <h3 className="text-lg font-semibold">My Gift Inventory</h3>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Heart className="text-rose-500 mr-2" />
+                              <span>Roses</span>
+                            </div>
+                            <Badge variant="outline">{giftInventory.rose || 0}</Badge>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Heart className="text-red-500 fill-red-500 mr-2" />
+                              <span>Hearts</span>
+                            </div>
+                            <Badge variant="outline">{giftInventory.heart || 0}</Badge>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Gift className="text-amber-700 mr-2" />
+                              <span>Teddy Bears</span>
+                            </div>
+                            <Badge variant="outline">{giftInventory.teddy || 0}</Badge>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 pt-4 border-t">
+                          <h4 className="text-sm font-medium mb-2">Gifts Received:</h4>
+                          <div className="flex justify-between">
                             <span>Roses</span>
+                            <Badge variant="outline" className="bg-love-50 text-love-700">{receivedGifts.rose}</Badge>
                           </div>
-                          <Badge variant="outline">{giftInventory.rose || 0}</Badge>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Heart className="text-red-500 fill-red-500 mr-2" />
+                          <div className="flex justify-between mt-1">
                             <span>Hearts</span>
+                            <Badge variant="outline" className="bg-love-50 text-love-700">{receivedGifts.heart}</Badge>
                           </div>
-                          <Badge variant="outline">{giftInventory.heart || 0}</Badge>
+                          <div className="flex justify-between mt-1">
+                            <span>Teddy Bears</span>
+                            <Badge variant="outline" className="bg-love-50 text-love-700">{receivedGifts.teddy}</Badge>
+                          </div>
                         </div>
                         
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Gift className="text-amber-700 mr-2" />
-                            <span>Teddy Bears</span>
-                          </div>
-                          <Badge variant="outline">{giftInventory.teddy || 0}</Badge>
-                        </div>
-                      </div>
-                      
-                      <Button 
-                        onClick={() => setActiveTab('shop')} 
-                        variant="outline" 
-                        className="w-full mt-4 border-love-200 text-love-600"
-                      >
-                        <ShoppingCart size={16} className="mr-2" />
-                        Go to Shop
-                      </Button>
-                    </CardContent>
-                  </Card>
+                        <Button 
+                          onClick={() => setActiveTab('shop')} 
+                          variant="outline" 
+                          className="w-full mt-4 border-love-200 text-love-600"
+                        >
+                          <ShoppingCart size={16} className="mr-2" />
+                          Go to Shop
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </>
                 )}
               </div>
               

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,8 @@ import {
   Heart, 
   Play, 
   Square,
-  ShoppingCart
+  ShoppingCart,
+  Info
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -53,6 +55,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [showGiftMenu, setShowGiftMenu] = useState(false);
+  const [showGiftInfo, setShowGiftInfo] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -60,9 +63,27 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const { toast } = useToast();
   
   const gifts = [
-    { id: 'rose', name: 'Rose', icon: <Heart className="text-rose-500" />, price: 20 },
-    { id: 'heart', name: 'Heart', icon: <Heart className="text-red-500 fill-red-500" />, price: 100 },
-    { id: 'teddy', name: 'Teddy Bear', icon: <Gift className="text-amber-700" />, price: 50 },
+    { 
+      id: 'rose', 
+      name: 'Rose', 
+      icon: <Heart className="text-rose-500" />, 
+      price: 20,
+      benefit: "+2 popularity points"
+    },
+    { 
+      id: 'heart', 
+      name: 'Heart', 
+      icon: <Heart className="text-red-500 fill-red-500" />, 
+      price: 100,
+      benefit: "+10 popularity points and 1 premium like token"
+    },
+    { 
+      id: 'teddy', 
+      name: 'Teddy Bear', 
+      icon: <Gift className="text-amber-700" />, 
+      price: 50,
+      benefit: "+5 popularity points and profile boost for 24 hours"
+    },
   ];
 
   const handleSendMessage = () => {
@@ -141,9 +162,11 @@ const MessageChat: React.FC<MessageChatProps> = ({
       onSendMessage(giftId, 'gift', giftId);
       setShowGiftMenu(false);
       
+      const gift = gifts.find(g => g.id === giftId);
+      
       toast({
         title: "Gift Sent",
-        description: `You sent a ${gifts.find(g => g.id === giftId)?.name || 'gift'} to ${matchName}`,
+        description: `You sent a ${gift?.name || 'gift'} to ${matchName}. When they receive it, they'll gain: ${gift?.benefit}`,
       });
     } else {
       toast({
@@ -284,6 +307,15 @@ const MessageChat: React.FC<MessageChatProps> = ({
                 variant="ghost" 
                 size="sm" 
                 className="text-love-600"
+                onClick={() => setShowGiftInfo(!showGiftInfo)}
+              >
+                <Info size={14} className="mr-1" />
+                Benefits
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-love-600"
                 asChild
               >
                 <a href="/profile#shop">
@@ -300,6 +332,21 @@ const MessageChat: React.FC<MessageChatProps> = ({
               </Button>
             </div>
           </div>
+          
+          {showGiftInfo && (
+            <div className="bg-white rounded-md p-3 mb-3 border border-love-200 text-sm">
+              <h5 className="font-medium mb-1">Gift Benefits for Recipients:</h5>
+              <ul className="space-y-1 text-xs">
+                {gifts.map(gift => (
+                  <li key={`info-${gift.id}`} className="flex items-start gap-1">
+                    <div className="shrink-0 mt-0.5">{gift.icon}</div>
+                    <div><span className="font-medium">{gift.name}:</span> {gift.benefit}</div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
           <div className="grid grid-cols-3 gap-2">
             {gifts.map((gift) => (
               <Button
