@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -5,9 +6,10 @@ import MessageList from '@/components/MessageList';
 import MessageChat from '@/components/MessageChat';
 import { useUser } from '@/context/UserContext';
 import { getConversationStarters } from '@/utils/matchingAlgorithm';
-import { Card, CardContent } from "@/components/ui/card";
-import { Heart } from 'lucide-react';
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Heart, Sparkles, Gamepad, Gift, MessageSquare } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 const Messages = () => {
   const { matches, messages, potentialMatches, sendMessage, currentUser } = useUser();
@@ -108,6 +110,30 @@ const Messages = () => {
     return getConversationStarters(currentUser, activeMatchUser);
   }, [activeMatchUser, currentUser]);
   
+  const icebreakers = [
+    "What's your favorite place you've ever traveled to?",
+    "Do you have any hidden talents?",
+    "What's your ideal weekend look like?",
+    "Coffee or tea person?",
+    "Beach vacation or mountain getaway?",
+    "What's the last show you binged?",
+    "What's a hobby you've always wanted to try?",
+    "Early bird or night owl?",
+  ];
+  
+  const games = [
+    { name: "Truth or Dare", icon: <Sparkles className="text-purple-500" /> },
+    { name: "Would You Rather", icon: <Gamepad className="text-green-500" /> },
+    { name: "Never Have I Ever", icon: <Sparkles className="text-blue-500" /> },
+    { name: "Two Truths & A Lie", icon: <Gamepad className="text-amber-500" /> },
+  ];
+  
+  const popularGifts = [
+    { name: "Virtual Rose", price: 20, icon: <Gift className="text-rose-500" /> },
+    { name: "Virtual Heart", price: 100, icon: <Heart className="text-red-500 fill-red-500" /> },
+    { name: "Teddy Bear", price: 50, icon: <Gift className="text-amber-700" /> },
+  ];
+  
   if (matches.length === 0) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -136,7 +162,7 @@ const Messages = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-8 mb-32 md:mb-24">
+      <main className="flex-grow container mx-auto px-4 py-8 mb-64 md:mb-48">
         <h1 className="text-3xl font-display font-bold mb-6">Messages</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-22rem)] md:h-[calc(100vh-18rem)]">
@@ -168,6 +194,70 @@ const Messages = () => {
               </Card>
             )}
           </div>
+        </div>
+        
+        {/* New visual features for better footer spacing */}
+        <div className="mt-12 md:mt-16 space-y-8">
+          {/* Conversation Starters */}
+          <section>
+            <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
+              <MessageSquare className="text-purple-600" size={24} />
+              <span>Conversation Starters</span>
+            </h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {icebreakers.slice(0, 4).map((starter, index) => (
+                <Card key={index} className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-100 hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="p-4">
+                    <p className="text-sm font-medium text-purple-800">{starter}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+          
+          {/* Games to Play */}
+          <section>
+            <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
+              <Gamepad className="text-green-600" size={24} />
+              <span>Games to Play</span>
+            </h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              {games.map((game, index) => (
+                <Card key={index} className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-100 hover:shadow-md transition-shadow cursor-pointer">
+                  <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                    <div className="text-2xl mb-2">{game.icon}</div>
+                    <h3 className="font-medium text-green-800">{game.name}</h3>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
+          
+          {/* Popular Gifts */}
+          <section>
+            <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
+              <Gift className="text-rose-600" size={24} />
+              <span>Popular Gifts</span>
+            </h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {popularGifts.map((gift, index) => (
+                <Card key={index} className="bg-gradient-to-br from-rose-50 to-pink-50 border-rose-100 hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                      <div className="text-2xl">{gift.icon}</div>
+                      <span className="font-medium text-rose-800">{gift.name}</span>
+                    </div>
+                    <Button size="sm" variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-50">
+                      ${gift.price}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </section>
         </div>
       </main>
       
