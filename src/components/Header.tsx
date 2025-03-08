@@ -46,7 +46,7 @@ const Header = () => {
             </Button>
             
             {mobileMenuOpen && (
-              <div className="fixed inset-0 top-14 z-50 bg-background p-4">
+              <div className="fixed inset-0 top-14 z-50 bg-white shadow-lg p-4">
                 <nav className="flex flex-col gap-2">
                   <Link 
                     to="/discover"

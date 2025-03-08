@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import GiftShop from '@/components/GiftShop';
 import Monetization from '@/components/Monetization';
 import Blog from '@/components/Blog';
+import PersonalityTraitSelector from '@/components/PersonalityTraitSelector';
 import { useUser } from '@/context/UserContext';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,25 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, MapPin, Edit2, Plus, X, Heart, Gift, ShoppingCart, Sparkles, Timer, Star, Coins, FileText } from 'lucide-react';
+import { 
+  User, 
+  MapPin, 
+  Edit2, 
+  Plus, 
+  X, 
+  Heart, 
+  Gift, 
+  ShoppingCart, 
+  Sparkles, 
+  Timer, 
+  Star, 
+  Coins, 
+  FileText,
+  Music,
+  Upload,
+  Camera
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const Profile = () => {
   const { currentUser, updateUserProfile, getGiftBenefits } = useUser();
@@ -22,6 +41,7 @@ const Profile = () => {
   const [profile, setProfile] = useState(currentUser);
   const [newInterest, setNewInterest] = useState('');
   const [activeTab, setActiveTab] = useState('profile');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   if (!currentUser || !profile) {
     return null;
@@ -58,6 +78,50 @@ const Profile = () => {
         interests: newInterests
       });
     }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && profile) {
+      // In a real app, you would upload the file to a server
+      // Here we're just creating a URL to simulate the upload
+      const photoUrl = URL.createObjectURL(file);
+      const newPhotos = [...profile.photos];
+      newPhotos[0] = photoUrl; // Replace first photo for this demo
+      
+      setProfile({
+        ...profile,
+        photos: newPhotos
+      });
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleTraitSelect = (trait: string) => {
+    if (!profile.personalityTraits) {
+      profile.personalityTraits = [];
+    }
+    
+    const traits = [...(profile.personalityTraits || [])];
+    
+    if (traits.includes(trait)) {
+      // Remove trait if already selected
+      const index = traits.indexOf(trait);
+      traits.splice(index, 1);
+    } else {
+      // Add trait if not already selected (limit to 5)
+      if (traits.length < 5) {
+        traits.push(trait);
+      }
+    }
+    
+    setProfile({
+      ...profile,
+      personalityTraits: traits
+    });
   };
 
   const giftInventory = currentUser.giftInventory || { 'rose': 0, 'heart': 0, 'teddy': 0 };
@@ -130,16 +194,37 @@ const Profile = () => {
                 <Card>
                   <CardContent className="p-6">
                     <div className="flex flex-col items-center">
-                      <div className="w-32 h-32 rounded-full bg-love-100 flex items-center justify-center mb-4">
-                        {profile.photos && profile.photos.length > 0 ? (
-                          <img 
-                            src={profile.photos[0]} 
-                            alt={profile.name} 
-                            className="w-full h-full rounded-full object-cover"
-                          />
-                        ) : (
-                          <User size={48} className="text-love-500" />
+                      <div className="relative">
+                        <div className="w-32 h-32 rounded-full bg-love-100 flex items-center justify-center mb-4 relative overflow-hidden">
+                          {profile.photos && profile.photos.length > 0 ? (
+                            <img 
+                              src={profile.photos[0]} 
+                              alt={profile.name} 
+                              className="w-full h-full rounded-full object-cover"
+                            />
+                          ) : (
+                            <User size={48} className="text-love-500" />
+                          )}
+                        </div>
+                        
+                        {editing && (
+                          <Button 
+                            size="icon"
+                            variant="secondary" 
+                            className="absolute bottom-2 right-0 h-8 w-8 rounded-full bg-white shadow-md"
+                            onClick={triggerFileInput}
+                          >
+                            <Camera size={14} />
+                          </Button>
                         )}
+                        
+                        <input 
+                          type="file" 
+                          ref={fileInputRef}
+                          className="hidden" 
+                          accept="image/*"
+                          onChange={handleFileSelect}
+                        />
                       </div>
                       
                       {editing ? (
@@ -165,11 +250,18 @@ const Profile = () => {
                         )}
                       </div>
                       
-                      {editing ? (
-                        <Button variant="outline" className="w-full">
-                          Upload New Photo
-                        </Button>
-                      ) : null}
+                      {editing && (
+                        <div className="w-full space-y-2">
+                          <Button 
+                            variant="outline" 
+                            className="w-full flex items-center gap-2"
+                            onClick={triggerFileInput}
+                          >
+                            <Upload size={14} />
+                            <span>Upload New Photo</span>
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -309,11 +401,65 @@ const Profile = () => {
                           onChange={(e) => setProfile({...profile, bio: e.target.value})}
                           className="mt-2"
                           rows={5}
+                          placeholder="Write a brief description about yourself, your interests, and what you're looking for in a relationship..."
                         />
                       ) : (
                         <p className="mt-2 text-gray-700">{profile.bio}</p>
                       )}
                     </div>
+                    
+                    {editing && (
+                      <div>
+                        <Label htmlFor="favoriteMusic">Favorite Song</Label>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Music size={16} className="text-love-500" />
+                          <Input
+                            id="favoriteMusic"
+                            value={profile.favoriteMusic || ''}
+                            onChange={(e) => setProfile({...profile, favoriteMusic: e.target.value})}
+                            placeholder="Enter your favorite song or artist"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    
+                    {!editing && profile.favoriteMusic && (
+                      <div>
+                        <Label className="mb-2 block">Favorite Song</Label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Music size={16} className="text-love-500" />
+                          <span className="text-gray-700">{profile.favoriteMusic}</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <Separator />
+                    
+                    {editing && (
+                      <div>
+                        <Label className="mb-2 block">Personality Traits</Label>
+                        <PersonalityTraitSelector 
+                          selectedTraits={profile.personalityTraits || []}
+                          onSelectTrait={handleTraitSelect}
+                        />
+                        {profile.personalityTraits && profile.personalityTraits.length >= 5 && (
+                          <p className="text-xs text-love-600 mt-2">Maximum 5 traits selected</p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {!editing && profile.personalityTraits && profile.personalityTraits.length > 0 && (
+                      <div>
+                        <Label className="mb-2 block">Personality Traits</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.personalityTraits.map((trait, index) => (
+                            <Badge key={index} className="bg-love-500">
+                              {trait}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     
                     <Separator />
                     

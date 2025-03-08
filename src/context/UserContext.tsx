@@ -66,6 +66,8 @@ type User = {
   gender?: 'male' | 'female' | 'non-binary';
   interestedIn?: ('male' | 'female' | 'non-binary')[];
   blogPosts?: BlogPost[];
+  favoriteMusic?: string;
+  personalityTraits?: string[];
 };
 
 type Match = {
@@ -281,6 +283,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     plan: 'free',
     gender: 'male',
     interestedIn: ['female'],
+    favoriteMusic: 'Coldplay - Paradise',
+    personalityTraits: ['Creative', 'Ambitious', 'Adventurous'],
     blogPosts: [
       {
         id: 'blog-current-1',
@@ -890,7 +894,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(updatedUser);
     } else {
       const updatedMatches = potentialMatches.map(user => 
-        user.id === userId ? { ...user, blogPosts: updatedPosts } : user
+        user.id === userId ? {
+          ...user,
+          blogPosts: user.blogPosts?.map(p => 
+            p.id === postId ? updatedPosts : p
+          ) || []
+        } : user
       );
       setPotentialMatches(updatedMatches);
     }
