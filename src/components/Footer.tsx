@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <Heart size={20} className="text-love-500 fill-love-500" />
-            <span className="font-display text-lg font-medium">AAE Love</span>
+            <span className="font-display text-lg font-medium">LoveQuest</span>
           </div>
           
           <div className="text-sm text-muted-foreground">
