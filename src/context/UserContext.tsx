@@ -377,8 +377,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     const giftValue = calculateGiftValue(giftType, 1);
+    
+    // Add gift value to user's balance
     updatedUser.balance.amount += giftValue;
     
+    // Display appropriate toast notification based on gift type
     switch (giftType) {
       case 'rose':
         updatedUser.popularityPoints += 2;

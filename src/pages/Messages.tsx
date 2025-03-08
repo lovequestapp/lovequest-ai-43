@@ -138,7 +138,7 @@ const Messages = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-8 mb-16"> {/* Added mb-16 to prevent footer overlap */}
         <h1 className="text-3xl font-display font-bold mb-6">Messages</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-16rem)]">
