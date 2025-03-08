@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -43,6 +42,7 @@ type User = {
     bankName?: string;
     swiftCode?: string;
   };
+  plan?: string;
 };
 
 type Match = {
@@ -111,7 +111,6 @@ type UserContextType = {
   } | undefined;
 };
 
-// Create the context with a default value matching the type
 const UserContext = createContext<UserContextType>({} as UserContextType);
 
 const mockUsers: User[] = [
@@ -187,7 +186,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       amount: 0,
       currency: 'USD',
       withdrawalHistory: []
-    }
+    },
+    plan: 'free'
   });
   
   const [potentialMatches, setPotentialMatches] = useState<User[]>(mockUsers);
@@ -195,12 +195,12 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
 
   const giftValues = {
-    rose: 0.50,    // Each rose is worth $0.50
-    heart: 2.00,    // Each heart is worth $2.00
-    teddy: 5.00     // Each teddy bear is worth $5.00
+    rose: 0.50,
+    heart: 2.00,
+    teddy: 5.00
   };
   
-  const minimumWithdrawal = 10.00;  // Minimum $10 for withdrawal
+  const minimumWithdrawal = 10.00;
   
   const exchangeRates = {
     USD: 1.00,
@@ -353,6 +353,10 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return currentUser?.balance?.pendingWithdrawal;
   };
   
+  const isPremiumUser = (): boolean => {
+    return currentUser?.plan === 'premium' || currentUser?.plan === 'vip';
+  };
+  
   const receiveGift = (giftType: string) => {
     if (!currentUser) return;
     
@@ -377,17 +381,18 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     const giftValue = calculateGiftValue(giftType, 1);
+    const isPremium = isPremiumUser();
     
-    // Add gift value to user's balance
-    updatedUser.balance.amount += giftValue;
+    if (isPremium) {
+      updatedUser.balance.amount += giftValue;
+    }
     
-    // Display appropriate toast notification based on gift type
     switch (giftType) {
       case 'rose':
         updatedUser.popularityPoints += 2;
         toast({
           title: "Rose Received!",
-          description: `You gained +2 popularity points and ${updatedUser.balance.currency} ${giftValue.toFixed(2)} in cash value`,
+          description: `You gained +2 popularity points${isPremium ? ` and ${updatedUser.balance.currency} ${giftValue.toFixed(2)} in cash value` : ''}`,
         });
         break;
       case 'heart':
@@ -395,7 +400,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updatedUser.premiumLikes += 1;
         toast({
           title: "Heart Received!",
-          description: `You gained +10 popularity points, 1 premium like token, and ${updatedUser.balance.currency} ${giftValue.toFixed(2)} in cash value`,
+          description: `You gained +10 popularity points, 1 premium like token${isPremium ? `, and ${updatedUser.balance.currency} ${giftValue.toFixed(2)} in cash value` : ''}`,
         });
         break;
       case 'teddy':
@@ -406,12 +411,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         toast({
           title: "Teddy Bear Received!",
-          description: `You gained +5 popularity points, a 24-hour profile boost, and ${updatedUser.balance.currency} ${giftValue.toFixed(2)} in cash value`,
+          description: `You gained +5 popularity points, a 24-hour profile boost${isPremium ? `, and ${updatedUser.balance.currency} ${giftValue.toFixed(2)} in cash value` : ''}`,
         });
         break;
     }
     
     setCurrentUser(updatedUser);
+    
+    if (!isPremium && giftValue > 0) {
+      setTimeout(() => {
+        toast({
+          title: "Upgrade to Premium!",
+          description: `Upgrade to Premium or VIP to earn ${updatedUser.balance.currency} ${giftValue.toFixed(2)} for each ${giftType} you receive!`,
+        });
+      }, 2000);
+    }
   };
 
   const updateUserProfile = (updates: Partial<User>) => {
