@@ -702,8 +702,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const getMatchedUser = (matchId: string) => {
-    const match = matches.find(m => m.id === matchId);
+  const getMatchedUser = (userId: string) => {
+    const match = matches.find(m => m.id === userId);
     if (!match) return undefined;
     
     return potentialMatches.find(user => user.id === match.matchedUserId);
@@ -944,4 +944,4 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let boostTimeRemaining;
     if (boostExpiration && boostExpiration > now) {
       const diff = boostExpiration.getTime() - now.getTime();
-      const hours = Math.floor(diff / (1000 * 60
+      const hours = Math.floor(diff / (1000 * 6
