@@ -71,6 +71,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const localStreamRef = useRef<MediaStream | null>(null);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
@@ -357,11 +358,15 @@ const MessageChat: React.FC<MessageChatProps> = ({
     focusInput();
   };
   
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isInVideoCall, incomingVideoCall, isVideoCallRequested]);
+  };
+  
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
   
   useEffect(() => {
     focusInput();
@@ -560,38 +565,41 @@ const MessageChat: React.FC<MessageChatProps> = ({
                   )}
                 </div>
               ) : (
-                messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={cn(
-                      "max-w-[80%] break-words",
-                      message.sender === 'user' 
-                        ? "ml-auto" 
-                        : "mr-auto"
-                    )}
-                  >
+                <>
+                  {messages.map((message) => (
                     <div
+                      key={message.id}
                       className={cn(
-                        "rounded-2xl px-4 py-2",
-                        message.sender === 'user'
-                          ? "bg-love-500 text-white rounded-br-none"
-                          : "bg-gray-100 rounded-bl-none"
+                        "max-w-[80%] break-words",
+                        message.sender === 'user' 
+                          ? "ml-auto" 
+                          : "mr-auto"
                       )}
                     >
-                      {renderMessageContent(message)}
+                      <div
+                        className={cn(
+                          "rounded-2xl px-4 py-2",
+                          message.sender === 'user'
+                            ? "bg-love-500 text-white rounded-br-none"
+                            : "bg-gray-100 rounded-bl-none"
+                        )}
+                      >
+                        {renderMessageContent(message)}
+                      </div>
+                      <div
+                        className={cn(
+                          "text-xs mt-1",
+                          message.sender === 'user'
+                            ? "text-right text-muted-foreground"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        {format(message.timestamp, 'h:mm a')}
+                      </div>
                     </div>
-                    <div
-                      className={cn(
-                        "text-xs mt-1",
-                        message.sender === 'user'
-                          ? "text-right text-muted-foreground"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      {format(message.timestamp, 'h:mm a')}
-                    </div>
-                  </div>
-                ))
+                  ))}
+                  <div ref={messagesEndRef} />
+                </>
               )}
             </div>
           </ScrollArea>
@@ -749,3 +757,4 @@ const MessageChat: React.FC<MessageChatProps> = ({
 };
 
 export default MessageChat;
+
