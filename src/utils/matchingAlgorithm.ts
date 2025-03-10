@@ -14,7 +14,7 @@ export interface UserWithCoordinates extends User {
   };
   // Additional fields that are used in the UI but not in the base User type
   isBoosted?: boolean;
-  boostLevel?: 'standard' | 'super';
+  boostLevel?: 'standard' | 'super' | 'local' | 'international';
 }
 
 // Calculate distance between two points using the Haversine formula

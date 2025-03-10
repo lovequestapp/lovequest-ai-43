@@ -37,7 +37,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Slider } from "@/components/ui/slider";
-import { ProfileBoostPopup } from "@/components/ProfileBoostPopup";
+import ProfileBoostPopup from "@/components/ProfileBoostPopup";
 import { useBoostPopup } from "@/hooks/useBoostPopup";
 
 const regions = [
@@ -131,7 +131,10 @@ const Discover = () => {
         
         const popularityScore = match.popularityPoints || 0;
         const isBoosted = shouldBoostProfile(popularityScore) || isBoostedProfile;
-        let boostLevel: 'standard' | 'super' | 'international' | 'local' = popularityScore >= 100 ? 'super' : 'standard';
+        
+        // Default boost level based on popularity
+        let boostLevel: 'standard' | 'super' | 'local' | 'international' = 
+          popularityScore >= 100 ? 'super' : 'standard';
         
         // Override with custom boost type if applicable
         if (isBoostedProfile) {
