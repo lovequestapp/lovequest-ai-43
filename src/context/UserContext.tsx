@@ -944,4 +944,4 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let boostTimeRemaining;
     if (boostExpiration && boostExpiration > now) {
       const diff = boostExpiration.getTime() - now.getTime();
-      const hours = Math.floor(diff / (1000 * 6
+      const hours = Math.floor(diff / (1000 * 60 *
