@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,15 +8,29 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useUser } from '@/context/UserContext';
-import { Heart, MessageSquare, Share, Search, Book, User } from 'lucide-react';
+import { Heart, MessageSquare, Share, Search, Book, User, Plus, Gift } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { UserWithCoordinates } from '@/utils/matchingAlgorithm';
+import GiftSelector from '@/components/GiftSelector';
 
 const Explore: React.FC = () => {
-  const { currentUser, getFilteredPosts, getAllPosts, likeBlogPost, commentOnBlogPost } = useUser();
+  const { currentUser, getFilteredPosts, getAllPosts, likeBlogPost, commentOnBlogPost, createBlogPost } = useUser();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string>('foryou');
+  const [showGiftSelector, setShowGiftSelector] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  
+  // New post states
+  const [showNewPostDialog, setShowNewPostDialog] = useState(false);
+  const [newPostTitle, setNewPostTitle] = useState('');
+  const [newPostContent, setNewPostContent] = useState('');
+  const [newPostTags, setNewPostTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  
   const navigate = useNavigate();
   
   if (!currentUser) return null;
@@ -46,19 +61,149 @@ const Explore: React.FC = () => {
     }
   };
   
+  const handleViewPost = (postId: string) => {
+    navigate(`/blog/${postId}`);
+  };
+  
+  const handleOpenGiftSelector = (postId: string) => {
+    setSelectedPostId(postId);
+    setShowGiftSelector(true);
+  };
+  
+  const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
+    if (selectedPostId) {
+      // This would be replaced with a proper gift sending mechanism
+      // For now, just add a comment
+      commentOnBlogPost(selectedPostId, `I sent you a ${giftType}! 💝`);
+    }
+    setShowGiftSelector(false);
+    setSelectedPostId(null);
+  };
+  
+  const handleCreatePost = () => {
+    if (newPostTitle.trim() && newPostContent.trim()) {
+      createBlogPost(newPostTitle.trim(), newPostContent.trim(), newPostTags);
+      setNewPostTitle('');
+      setNewPostContent('');
+      setNewPostTags([]);
+      setShowNewPostDialog(false);
+    }
+  };
+  
+  const handleAddTag = () => {
+    if (tagInput.trim() && !newPostTags.includes(tagInput.trim())) {
+      setNewPostTags([...newPostTags, tagInput.trim()]);
+      setTagInput('');
+    }
+  };
+  
+  const handleRemoveTag = (index: number) => {
+    const updatedTags = [...newPostTags];
+    updatedTags.splice(index, 1);
+    setNewPostTags(updatedTags);
+  };
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       
       <main className="flex-grow container mx-auto px-4 py-8 pb-36">
-        <div className="mb-6">
-          <h1 className="text-3xl font-display font-bold flex items-center gap-2">
-            <Book />
-            <span>Explore</span>
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Discover stories, experiences, and insights from the community
-          </p>
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-display font-bold flex items-center gap-2">
+              <Book />
+              <span>Explore</span>
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Discover stories, experiences, and insights from the community
+            </p>
+          </div>
+          
+          <Dialog open={showNewPostDialog} onOpenChange={setShowNewPostDialog}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-love hover:opacity-90 gap-2">
+                <Plus size={16} />
+                <span>New Post</span>
+              </Button>
+            </DialogTrigger>
+            
+            <DialogContent className="sm:max-w-[550px]">
+              <DialogHeader>
+                <DialogTitle>Create New Post</DialogTitle>
+              </DialogHeader>
+              
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title</Label>
+                  <Input
+                    id="title"
+                    placeholder="Enter a title for your post"
+                    value={newPostTitle}
+                    onChange={(e) => setNewPostTitle(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="content">Content</Label>
+                  <Textarea
+                    id="content"
+                    placeholder="Share your thoughts, experiences, or stories..."
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                    className="min-h-[200px]"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Tags</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add a tag (e.g., Dating, Travel, Advice)"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleAddTag}
+                      disabled={!tagInput.trim()}
+                    >
+                      <Plus size={16} />
+                    </Button>
+                  </div>
+                  
+                  {newPostTags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {newPostTags.map((tag, index) => (
+                        <Badge 
+                          key={index} 
+                          variant="secondary"
+                          className="flex items-center gap-1 bg-love-50 text-love-700 hover:bg-love-100"
+                        >
+                          {tag}
+                          <button 
+                            type="button" 
+                            className="ml-1 text-love-500 hover:text-love-700"
+                            onClick={() => handleRemoveTag(index)}
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <DialogFooter>
+                  <Button type="submit" className="bg-gradient-love hover:opacity-90" onClick={handleCreatePost}>
+                    Publish Post
+                  </Button>
+                </DialogFooter>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
         
         <div className="relative mb-6">
@@ -100,7 +245,7 @@ const Explore: React.FC = () => {
                       : post.comments[0]?.userName || 'Unknown';
                     
                     return (
-                      <Card key={post.id} className="overflow-hidden h-full flex flex-col">
+                      <Card key={post.id} className="overflow-hidden h-full flex flex-col hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleViewPost(post.id)}>
                         <CardContent className="p-6 flex flex-col h-full">
                           <div className="flex justify-between items-start mb-3">
                             <div>
@@ -109,7 +254,10 @@ const Explore: React.FC = () => {
                                 variant="ghost" 
                                 size="sm" 
                                 className="p-0 h-auto flex items-center gap-1 text-muted-foreground text-sm"
-                                onClick={() => handleViewProfile(post.userId)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewProfile(post.userId);
+                                }}
                               >
                                 <User size={14} />
                                 <span>{author}</span>
@@ -124,7 +272,12 @@ const Explore: React.FC = () => {
                           
                           <div className="flex flex-wrap gap-2 mb-4">
                             {post.tags.map((tag, index) => (
-                              <Badge key={index} variant="secondary" className="bg-love-50 text-love-700">
+                              <Badge 
+                                key={index} 
+                                variant="secondary" 
+                                className="bg-love-50 text-love-700"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 {tag}
                               </Badge>
                             ))}
@@ -136,7 +289,10 @@ const Explore: React.FC = () => {
                                 variant="ghost" 
                                 size="sm" 
                                 className="flex items-center gap-1 px-1.5"
-                                onClick={() => handleLikePost(post.id, post.userId)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLikePost(post.id, post.userId);
+                                }}
                               >
                                 <Heart 
                                   size={16} 
@@ -149,20 +305,40 @@ const Explore: React.FC = () => {
                                 variant="ghost" 
                                 size="sm" 
                                 className="flex items-center gap-1 px-1.5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewPost(post.id);
+                                }}
                               >
                                 <MessageSquare size={16} />
                                 <span>{post.comments.length}</span>
                               </Button>
                             </div>
                             
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="flex items-center gap-1 px-1.5"
-                            >
-                              <Share size={16} />
-                              <span>Share</span>
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="flex items-center gap-1 px-1.5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenGiftSelector(post.id);
+                                }}
+                              >
+                                <Gift size={16} />
+                                <span>Gift</span>
+                              </Button>
+                              
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="flex items-center gap-1 px-1.5"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Share size={16} />
+                                <span>Share</span>
+                              </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -196,7 +372,7 @@ const Explore: React.FC = () => {
                       : post.comments[0]?.userName || 'Unknown';
                     
                     return (
-                      <Card key={post.id} className="overflow-hidden h-full flex flex-col">
+                      <Card key={post.id} className="overflow-hidden h-full flex flex-col hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleViewPost(post.id)}>
                         <CardContent className="p-6 flex flex-col h-full">
                           <div className="flex justify-between items-start mb-3">
                             <div>
@@ -205,7 +381,10 @@ const Explore: React.FC = () => {
                                 variant="ghost" 
                                 size="sm" 
                                 className="p-0 h-auto flex items-center gap-1 text-muted-foreground text-sm"
-                                onClick={() => handleViewProfile(post.userId)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewProfile(post.userId);
+                                }}
                               >
                                 <User size={14} />
                                 <span>{author}</span>
@@ -220,7 +399,12 @@ const Explore: React.FC = () => {
                           
                           <div className="flex flex-wrap gap-2 mb-4">
                             {post.tags.map((tag, index) => (
-                              <Badge key={index} variant="secondary" className="bg-love-50 text-love-700">
+                              <Badge 
+                                key={index} 
+                                variant="secondary" 
+                                className="bg-love-50 text-love-700"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 {tag}
                               </Badge>
                             ))}
@@ -232,7 +416,10 @@ const Explore: React.FC = () => {
                                 variant="ghost" 
                                 size="sm" 
                                 className="flex items-center gap-1 px-1.5"
-                                onClick={() => handleLikePost(post.id, post.userId)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLikePost(post.id, post.userId);
+                                }}
                               >
                                 <Heart 
                                   size={16} 
@@ -245,20 +432,40 @@ const Explore: React.FC = () => {
                                 variant="ghost" 
                                 size="sm" 
                                 className="flex items-center gap-1 px-1.5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewPost(post.id);
+                                }}
                               >
                                 <MessageSquare size={16} />
                                 <span>{post.comments.length}</span>
                               </Button>
                             </div>
                             
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="flex items-center gap-1 px-1.5"
-                            >
-                              <Share size={16} />
-                              <span>Share</span>
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="flex items-center gap-1 px-1.5"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenGiftSelector(post.id);
+                                }}
+                              >
+                                <Gift size={16} />
+                                <span>Gift</span>
+                              </Button>
+                              
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="flex items-center gap-1 px-1.5"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Share size={16} />
+                                <span>Share</span>
+                              </Button>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -270,6 +477,12 @@ const Explore: React.FC = () => {
           </TabsContent>
         </Tabs>
       </main>
+      
+      <GiftSelector 
+        isOpen={showGiftSelector} 
+        onClose={() => setShowGiftSelector(false)}
+        onSendGift={handleSendGift}
+      />
       
       <Footer />
     </div>

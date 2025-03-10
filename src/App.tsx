@@ -9,6 +9,7 @@ import Profile from './pages/Profile';
 import Discover from './pages/Discover';
 import Messages from './pages/Messages';
 import Explore from './pages/Explore';
+import BlogPost from './pages/BlogPost';
 import NotFound from './pages/NotFound';
 import './App.css';
 
@@ -23,6 +24,7 @@ function App() {
         <Route path="/messages" element={<Messages />} />
         <Route path="/messages/:id" element={<Messages />} />
         <Route path="/explore" element={<Explore />} />
+        <Route path="/blog/:postId" element={<BlogPost />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
