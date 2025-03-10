@@ -3,6 +3,8 @@ import { Route, Routes } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { Toaster } from './components/ui/sonner';
 import CookieConsent from './components/CookieConsent';
+import ProfileBoostPopup from './components/ProfileBoostPopup';
+import { useBoostPopup } from './hooks/useBoostPopup';
 import Index from './pages/Index';
 import SignUp from './pages/SignUp';
 import Profile from './pages/Profile';
@@ -14,6 +16,8 @@ import NotFound from './pages/NotFound';
 import './App.css';
 
 function App() {
+  const { showBoostPopup, closePopup } = useBoostPopup();
+  
   return (
     <UserProvider>
       <Routes>
@@ -29,6 +33,7 @@ function App() {
       </Routes>
       <Toaster />
       <CookieConsent />
+      <ProfileBoostPopup isOpen={showBoostPopup} onClose={closePopup} />
     </UserProvider>
   );
 }

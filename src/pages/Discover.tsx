@@ -19,7 +19,8 @@ import {
   Crown, 
   MapPin, 
   Globe, 
-  X 
+  X,
+  Rocket
 } from 'lucide-react';
 import { toast } from "sonner";
 import {
@@ -36,8 +37,9 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Slider } from "@/components/ui/slider";
+import { ProfileBoostPopup } from "@/components/ProfileBoostPopup";
+import { useBoostPopup } from "@/hooks/useBoostPopup";
 
-// Sample regions for location preferences
 const regions = [
   { value: "north-america", label: "North America" },
   { value: "south-america", label: "South America" },
@@ -49,7 +51,7 @@ const regions = [
 ];
 
 const Discover = () => {
-  const { currentUser, potentialMatches, likeUser, passUser } = useUser();
+  const { currentUser, potentialMatches, likeUser, passUser, boostedProfiles } = useUser();
   const [enhancedMatches, setEnhancedMatches] = useState<UserWithCoordinates[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
   const [isLocationFiltering, setIsLocationFiltering] = useState(false);
@@ -57,8 +59,8 @@ const Discover = () => {
   const [proximityRadius, setProximityRadius] = useState(50); // Default 50km radius
   const [userCoordinates, setUserCoordinates] = useState<{latitude: number, longitude: number} | null>(null);
   const [isNearbyFilterActive, setIsNearbyFilterActive] = useState(false);
+  const { forceShowPopup } = useBoostPopup();
   
-  // Detect user location
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -123,9 +125,18 @@ const Discover = () => {
       
       // Apply visual indicators for boosted profiles
       const matchesWithBoostInfo = sortedMatches.map(match => {
+        // Check if this profile is boosted
+        const isBoostedProfile = boostedProfiles.some(p => p.userId === match.id);
+        const isInternationalBoosted = boostedProfiles.some(p => p.userId === match.id && p.boostType === 'international');
+        
         const popularityScore = match.popularityPoints || 0;
-        const isBoosted = shouldBoostProfile(popularityScore);
-        const boostLevel: 'standard' | 'super' = popularityScore >= 100 ? 'super' : 'standard';
+        const isBoosted = shouldBoostProfile(popularityScore) || isBoostedProfile;
+        let boostLevel: 'standard' | 'super' | 'international' | 'local' = popularityScore >= 100 ? 'super' : 'standard';
+        
+        // Override with custom boost type if applicable
+        if (isBoostedProfile) {
+          boostLevel = isInternationalBoosted ? 'international' : 'local';
+        }
         
         return {
           ...match,
@@ -134,14 +145,33 @@ const Discover = () => {
         };
       });
       
-      setEnhancedMatches(matchesWithBoostInfo);
+      // Move boosted profiles to the top
+      const boostedMatches = matchesWithBoostInfo.filter(m => m.isBoosted);
+      const normalMatches = matchesWithBoostInfo.filter(m => !m.isBoosted);
+      
+      // Sort boosted by type - international first, then local, then super, then standard
+      const sortedBoostedMatches = boostedMatches.sort((a, b) => {
+        const boostOrder = {
+          'international': 0,
+          'local': 1,
+          'super': 2,
+          'standard': 3
+        };
+        
+        const aOrder = boostOrder[a.boostLevel as keyof typeof boostOrder];
+        const bOrder = boostOrder[b.boostLevel as keyof typeof boostOrder];
+        
+        return aOrder - bOrder;
+      });
+      
+      setEnhancedMatches([...sortedBoostedMatches, ...normalMatches]);
       
       // Notify user about boosted profiles (only on initial load)
-      const boostedCount = matchesWithBoostInfo.filter(m => m.isBoosted).length;
+      const boostedCount = boostedMatches.length;
       if (boostedCount > 0) {
         toast(`${boostedCount} Boosted ${boostedCount === 1 ? 'Profile' : 'Profiles'}`,
           {
-            description: "Popular profiles are highlighted and ranked higher",
+            description: "Boosted profiles are highlighted and ranked higher",
           }
         );
       }
@@ -153,7 +183,8 @@ const Discover = () => {
     isLocationFiltering, 
     isNearbyFilterActive, 
     proximityRadius, 
-    userCoordinates
+    userCoordinates,
+    boostedProfiles
   ]);
   
   const togglePopularFilter = () => {
@@ -223,7 +254,6 @@ const Discover = () => {
     );
   };
   
-  // Filter matches based on selected filters
   const filteredMatches = isFiltering
     ? enhancedMatches.filter(match => match.isBoosted)
     : enhancedMatches;
@@ -232,7 +262,6 @@ const Discover = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      {/* Added significant bottom padding (pb-36) to ensure content doesn't get hidden by footer */}
       <main className="flex-grow container mx-auto px-4 py-8 pb-36">
         <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -379,6 +408,15 @@ const Discover = () => {
                 </PopoverContent>
               </Popover>
             )}
+            
+            <Button
+              variant="outline"
+              className="bg-love-50 text-love-700 border-love-200 hover:bg-love-100"
+              onClick={forceShowPopup}
+            >
+              <Rocket size={16} className="mr-2" />
+              Boost Profile
+            </Button>
           </div>
         </div>
         
@@ -391,14 +429,24 @@ const Discover = () => {
                     <Badge className={`py-1 px-3 flex items-center gap-1 ${
                       match.boostLevel === 'super' 
                         ? 'bg-amber-500 text-amber-950 border-amber-600' 
-                        : 'bg-gradient-love text-white'
+                        : match.boostLevel === 'international'
+                          ? 'bg-purple-500 text-white'
+                          : match.boostLevel === 'local'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gradient-love text-white'
                     }`}>
                       {match.boostLevel === 'super' ? (
                         <Crown size={14} className="mr-1" />
+                      ) : match.boostLevel === 'international' ? (
+                        <Globe size={14} className="mr-1" />
+                      ) : match.boostLevel === 'local' ? (
+                        <MapPin size={14} className="mr-1" />
                       ) : (
                         <Sparkles size={14} className="mr-1" />
                       )}
-                      {match.boostLevel === 'super' ? 'Super Popular' : 'Popular'}
+                      {match.boostLevel === 'super' ? 'Super Popular' : 
+                        match.boostLevel === 'international' ? 'International Boost' :
+                        match.boostLevel === 'local' ? 'Local Boost' : 'Popular'}
                     </Badge>
                   </div>
                 )}
