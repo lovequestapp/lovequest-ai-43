@@ -107,6 +107,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
     if (messageText.trim()) {
       onSendMessage(messageText, 'text');
       setMessageText('');
+      setTimeout(scrollToBottom, 100);
     }
   };
   
@@ -359,8 +360,11 @@ const MessageChat: React.FC<MessageChatProps> = ({
   };
   
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     }
   };
   
@@ -757,4 +761,3 @@ const MessageChat: React.FC<MessageChatProps> = ({
 };
 
 export default MessageChat;
-
