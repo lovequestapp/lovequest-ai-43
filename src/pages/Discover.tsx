@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -51,7 +52,15 @@ const regions = [
 ];
 
 const Discover = () => {
-  const { currentUser, potentialMatches = [], likeUser, passUser, boostedProfiles = [] } = useUser();
+  // Ensure all potentially undefined values have default values
+  const { 
+    currentUser, 
+    potentialMatches = [], 
+    likeUser = () => {}, 
+    passUser = () => {}, 
+    boostedProfiles = [] 
+  } = useUser();
+  
   const [enhancedMatches, setEnhancedMatches] = useState<UserWithCoordinates[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
   const [isLocationFiltering, setIsLocationFiltering] = useState(false);
@@ -85,9 +94,24 @@ const Discover = () => {
   }, []);
   
   useEffect(() => {
-    if (currentUser && potentialMatches.length > 0) {
-      console.log("Processing matches, boostedProfiles:", boostedProfiles);
-      
+    // Only process if we have the required data
+    if (!currentUser) {
+      console.log("No current user, skipping match processing");
+      return;
+    }
+    
+    if (potentialMatches.length === 0) {
+      console.log("No potential matches, skipping processing");
+      return;
+    }
+    
+    console.log("Processing matches with:", {
+      currentUser: currentUser,
+      potentialMatches: potentialMatches.length,
+      boostedProfiles: boostedProfiles
+    });
+    
+    try {
       // Apply geolocation and filters
       let processedMatches = [...potentialMatches] as UserWithCoordinates[];
       
@@ -127,9 +151,21 @@ const Discover = () => {
       
       // Apply visual indicators for boosted profiles
       const matchesWithBoostInfo = sortedMatches.map(match => {
-        // Check if this profile is boosted
-        const isBoostedProfile = boostedProfiles && boostedProfiles.some(p => p.userId === match.id);
-        const isInternationalBoosted = boostedProfiles && boostedProfiles.some(p => p.userId === match.id && p.boostType === 'international');
+        if (!match || !match.id) {
+          console.warn("Invalid match object:", match);
+          return {
+            ...match,
+            isBoosted: false,
+            boostLevel: 'standard' as const
+          };
+        }
+        
+        // Check if this profile is boosted - safely handle potential undefined values
+        const isBoostedProfile = boostedProfiles && Array.isArray(boostedProfiles) && 
+          boostedProfiles.some(p => p && p.userId === match.id);
+        
+        const isInternationalBoosted = boostedProfiles && Array.isArray(boostedProfiles) && 
+          boostedProfiles.some(p => p && p.userId === match.id && p.boostType === 'international');
         
         const popularityScore = match.popularityPoints || 0;
         const isBoosted = shouldBoostProfile(popularityScore) || Boolean(isBoostedProfile);
@@ -180,6 +216,11 @@ const Discover = () => {
           }
         );
       }
+    } catch (error) {
+      console.error("Error processing matches:", error);
+      toast.error("There was an error processing your matches", {
+        description: "Please try refreshing the page"
+      });
     }
   }, [
     currentUser, 
