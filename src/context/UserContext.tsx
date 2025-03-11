@@ -20,6 +20,28 @@ export type User = {
     distance: number;
     interests: string[];
   };
+  // Add missing properties
+  compatibilityScore?: number;
+  personalityTraits?: string[];
+  favoriteMusic?: string;
+  giftInventory?: { 
+    rose: number; 
+    heart: number; 
+    teddy: number;
+  };
+  receivedGifts?: { 
+    rose: number; 
+    heart: number; 
+    teddy: number;
+  };
+  bankDetails?: {
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+    swiftCode: string;
+  };
+  gender?: string;
+  interestedIn?: string[];
 };
 
 type Message = {
@@ -29,6 +51,8 @@ type Message = {
   content: string;
   timestamp: Date;
   read: boolean;
+  type?: 'text' | 'gift';
+  giftType?: string;
 };
 
 type Match = {
@@ -37,6 +61,9 @@ type Match = {
   userId2: string;
   matchDate: Date;
   status: 'pending' | 'matched' | 'rejected';
+  matchedUserId?: string;
+  lastMessage?: string;
+  lastMessageTime?: Date;
 };
 
 export type BoostType = 'local' | 'international';
@@ -46,6 +73,32 @@ export type BoostProfile = {
   boostType: BoostType;
   startTime: Date;
   endTime: Date;
+};
+
+type BlogPostType = {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+  likes: number;
+  comments: {
+    id: string;
+    postId: string;
+    userId: string;
+    userName: string;
+    content: string;
+    createdAt: Date;
+  }[];
+  tags: string[];
+};
+
+type WithdrawalType = {
+  id: string;
+  userId: string;
+  amount: number;
+  date: Date;
+  status: 'pending' | 'completed' | 'rejected';
 };
 
 // More comprehensive UserContextType
@@ -61,9 +114,45 @@ type UserContextType = {
   updateProfile: (updates: Partial<User>) => void;
   boostProfile: (boostType: BoostType) => void;
   boostedProfiles: BoostProfile[];
-  getGiftBenefits: () => { coins: number; boosts: number };
+  getGiftBenefits: () => { 
+    coins: number; 
+    boosts: number;
+    popularityPoints: number;
+    premiumLikes: number;
+    profileBoost: boolean;
+    boostTimeRemaining: string | null;
+  };
   redeemGift: (giftId: string) => void;
   updateMatchPreferences: (preferences: User['matchPreferences']) => void;
+  
+  // Add missing functions for blog functionality
+  createBlogPost: (title: string, content: string, tags: string[]) => void;
+  updateBlogPost: (postId: string, updates: { title?: string; content?: string; tags?: string[] }) => void;
+  deleteBlogPost: (postId: string) => void;
+  likeBlogPost: (postId: string, userId: string) => void;
+  commentOnBlogPost: (postId: string, comment: string) => void;
+  getUserPosts: (userId: string) => BlogPostType[];
+  getAllPosts: () => BlogPostType[];
+  getFilteredPosts: (tag?: string) => BlogPostType[];
+  
+  // Add missing functions for gift and monetization
+  purchaseGifts: (gifts: Record<string, number>) => void;
+  getGiftInventory: () => { rose: number; heart: number; teddy: number };
+  getGiftMonetizationDetails: () => {
+    giftValues: { rose: number; heart: number; teddy: number };
+    minimumWithdrawal: number;
+    availableBalance: number;
+    currency: string;
+    exchangeRates: Record<string, number>;
+  };
+  initiateWithdrawal: (amount: number) => boolean;
+  updateBankDetails: (details: User['bankDetails']) => void;
+  getWithdrawalHistory: () => WithdrawalType[];
+  getPendingWithdrawal: () => WithdrawalType | null;
+  
+  // Add missing function for user profile
+  updateUserProfile: (updates: User) => void;
+  setCurrentUser: (user: User | null) => void;
 };
 
 // Create context with default values to prevent undefined errors
@@ -78,10 +167,44 @@ const UserContext = createContext<UserContextType>({
   markMessagesAsRead: () => {},
   updateProfile: () => {},
   boostProfile: () => {},
-  boostedProfiles: [], // Ensure this has a default empty array
-  getGiftBenefits: () => ({ coins: 0, boosts: 0 }),
+  boostedProfiles: [],
+  getGiftBenefits: () => ({ 
+    coins: 0, 
+    boosts: 0, 
+    popularityPoints: 0, 
+    premiumLikes: 0, 
+    profileBoost: false, 
+    boostTimeRemaining: null 
+  }),
   redeemGift: () => {},
   updateMatchPreferences: () => {},
+  
+  // Add missing default values
+  createBlogPost: () => {},
+  updateBlogPost: () => {},
+  deleteBlogPost: () => {},
+  likeBlogPost: () => {},
+  commentOnBlogPost: () => {},
+  getUserPosts: () => [],
+  getAllPosts: () => [],
+  getFilteredPosts: () => [],
+  
+  purchaseGifts: () => {},
+  getGiftInventory: () => ({ rose: 0, heart: 0, teddy: 0 }),
+  getGiftMonetizationDetails: () => ({
+    giftValues: { rose: 20, heart: 100, teddy: 50 },
+    minimumWithdrawal: 50,
+    availableBalance: 0,
+    currency: 'USD',
+    exchangeRates: { USD: 1, EUR: 0.85, GBP: 0.75, JPY: 110, CAD: 1.25, AUD: 1.35, CNY: 6.5, INR: 75 }
+  }),
+  initiateWithdrawal: () => false,
+  updateBankDetails: () => {},
+  getWithdrawalHistory: () => [],
+  getPendingWithdrawal: () => null,
+  
+  updateUserProfile: () => {},
+  setCurrentUser: () => {},
 });
 
 // Provider component
@@ -94,12 +217,25 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [boostedProfiles, setBoostedProfiles] = useState<BoostProfile[]>([]);
+  const [blogPosts, setBlogPosts] = useState<BlogPostType[]>([]);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalType[]>([]);
+  const [pendingWithdrawal, setPendingWithdrawal] = useState<WithdrawalType | null>(null);
 
   const giftValues = {
-    hearts: { coins: 50, boosts: 0 },
-    flowers: { coins: 100, boosts: 1 },
-    chocolates: { coins: 200, boosts: 2 },
-    jewelry: { coins: 500, boosts: 5 },
+    rose: 20,
+    heart: 100,
+    teddy: 50,
+  };
+  
+  const exchangeRates = {
+    USD: 1,
+    EUR: 0.85,
+    GBP: 0.75,
+    JPY: 110,
+    CAD: 1.25,
+    AUD: 1.35,
+    CNY: 6.5,
+    INR: 75
   };
 
   // Load initial data
@@ -125,6 +261,18 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         distance: 50,
         interests: ['photography', 'outdoors', 'travel'],
       },
+      personalityTraits: ['creative', 'adventurous', 'thoughtful'],
+      favoriteMusic: 'Indie Rock',
+      giftInventory: { rose: 5, heart: 2, teddy: 1 },
+      receivedGifts: { rose: 10, heart: 5, teddy: 2 },
+      gender: 'male',
+      interestedIn: ['female'],
+      bankDetails: {
+        accountName: 'Alex Johnson',
+        accountNumber: '123456789',
+        bankName: 'Chase Bank',
+        swiftCode: 'CHASUS33'
+      }
     };
 
     // Simulate fetching potential matches
@@ -143,6 +291,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         interests: ['art', 'painting', 'food', 'museums', 'travel'],
         popularityPoints: 95,
         compatibilityScore: 92,
+        gender: 'female',
+        interestedIn: ['male'],
       },
       {
         id: 'user3',
@@ -159,6 +309,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         popularityPoints: 120,
         premiumStatus: 'premium',
         compatibilityScore: 88,
+        gender: 'female',
+        interestedIn: ['male'],
       },
       {
         id: 'user4',
@@ -174,6 +326,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         interests: ['yoga', 'food', 'music', 'travel', 'reading'],
         popularityPoints: 78,
         compatibilityScore: 75,
+        gender: 'female',
+        interestedIn: ['male'],
       },
       {
         id: 'user5',
@@ -187,8 +341,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         bio: 'Data scientist and outdoor adventurer. Love rock climbing and exploring national parks.',
         location: 'Berkeley, California',
         interests: ['data science', 'rock climbing', 'outdoors', 'travel', 'books'],
-        popularityScore: 62,
+        popularityPoints: 62,
         compatibilityScore: 68,
+        gender: 'female',
+        interestedIn: ['male'],
       },
     ];
 
@@ -200,6 +356,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         userId2: 'user2',
         matchDate: new Date(),
         status: 'matched',
+        matchedUserId: 'user2',
+        lastMessage: 'Hey Jamie, how are you?',
+        lastMessageTime: new Date(),
       },
       {
         id: 'match2',
@@ -207,6 +366,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         userId2: 'user3',
         matchDate: new Date(),
         status: 'matched',
+        matchedUserId: 'user3',
+        lastMessage: 'Hey Jordan, fancy a game night this weekend?',
+        lastMessageTime: new Date(),
       },
     ];
 
@@ -220,6 +382,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           content: 'Hey Jamie, how are you?',
           timestamp: new Date(),
           read: true,
+          type: 'text',
         },
         {
           id: 'message2',
@@ -228,6 +391,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           content: 'Hi Alex, I am doing great! How about you?',
           timestamp: new Date(),
           read: true,
+          type: 'text',
         },
       ],
       user3: [
@@ -238,13 +402,48 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           content: 'Hey Jordan, fancy a game night this weekend?',
           timestamp: new Date(),
           read: false,
+          type: 'text',
         },
       ],
     };
+    
+    // Mock blog posts
+    const mockBlogPosts: BlogPostType[] = [
+      {
+        id: 'post1',
+        userId: 'user1',
+        title: 'My Dating Journey',
+        content: 'Here\'s my experience with online dating so far...',
+        createdAt: new Date(),
+        likes: 5,
+        comments: [
+          {
+            id: 'comment1',
+            postId: 'post1',
+            userId: 'user2',
+            userName: 'Jamie Smith',
+            content: 'Great post! I can relate to this.',
+            createdAt: new Date(),
+          }
+        ],
+        tags: ['dating', 'experience', 'online']
+      },
+      {
+        id: 'post2',
+        userId: 'user1',
+        title: 'Dating Tips That Worked For Me',
+        content: 'These are some tips that helped me improve my dating experience...',
+        createdAt: new Date(),
+        likes: 12,
+        comments: [],
+        tags: ['tips', 'advice', 'dating']
+      }
+    ];
 
     // Set initial app state
     setCurrentUser(mockUser);
     setPotentialMatches(mockPotentialMatches);
+    setBlogPosts(mockBlogPosts);
     
     // Set up initial boosted profiles
     const mockBoostedProfiles: BoostProfile[] = [
@@ -267,6 +466,26 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     
     setMatches(mockMatches);
     setMessages(mockMessages);
+    
+    // Mock withdrawal history
+    const mockWithdrawals: WithdrawalType[] = [
+      {
+        id: 'w1',
+        userId: 'user1',
+        amount: 100,
+        date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+        status: 'completed'
+      },
+      {
+        id: 'w2',
+        userId: 'user1',
+        amount: 50,
+        date: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000), // 15 days ago
+        status: 'completed'
+      }
+    ];
+    
+    setWithdrawals(mockWithdrawals);
   }, []);
 
   // Handler functions
@@ -307,7 +526,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     toast.message('You passed on this user.');
   };
 
-  const sendMessage = (receiverId: string, content: string) => {
+  const sendMessage = (receiverId: string, content: string, type = 'text', giftType?: string) => {
     if (!receiverId || !content || !currentUser) {
       console.error("Invalid receiverId, content, or currentUser is null");
       return;
@@ -320,12 +539,29 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       content: content,
       timestamp: new Date(),
       read: false,
+      type: type as 'text' | 'gift',
+      giftType: giftType,
     };
 
     setMessages((prevMessages) => ({
       ...prevMessages,
       [receiverId]: [...(prevMessages[receiverId] || []), newMessage],
     }));
+    
+    // Update last message in match
+    setMatches((prevMatches) => {
+      return prevMatches.map(match => {
+        if ((match.userId1 === currentUser.id && match.userId2 === receiverId) ||
+            (match.userId2 === currentUser.id && match.userId1 === receiverId)) {
+          return {
+            ...match,
+            lastMessage: content,
+            lastMessageTime: new Date()
+          };
+        }
+        return match;
+      });
+    });
   };
 
   const markMessagesAsRead = (userId: string) => {
@@ -354,11 +590,22 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  // Add updateUserProfile which is just an alias for updateProfile with full User object
+  const updateUserProfile = (updates: User) => {
+    if (!updates) {
+      console.error("Invalid updates");
+      return;
+    }
+    
+    setCurrentUser(updates);
+    toast.success('Profile updated successfully!');
+  };
+
   // Properly implement boostProfile function
   const boostProfile = (boostType: BoostType) => {
     if (!currentUser) {
       toast.error("You must be logged in to boost your profile");
-      return;
+      return false;
     }
     
     console.log(`Boosting profile with type: ${boostType}`);
@@ -390,6 +637,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     toast.success(`Profile boosted! (${boostType})`, {
       description: `Your profile will receive extra visibility until ${endTime.toLocaleString()}`,
     });
+    
+    return true;
   };
   
   // Properly implement getGiftBenefits
@@ -397,7 +646,34 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     // For example, return the sum of all gift benefits the user has received
     // This is a placeholder implementation
     console.log("Getting gift benefits");
-    return { coins: 150, boosts: 2 };
+    const receivedGifts = currentUser?.receivedGifts || { rose: 0, heart: 0, teddy: 0 };
+    
+    // Calculate if user has active boost
+    const userBoost = boostedProfiles.find(
+      boost => boost.userId === currentUser?.id && boost.endTime > new Date()
+    );
+    
+    const boostTimeRemaining = userBoost 
+      ? formatTimeRemaining(userBoost.endTime) 
+      : null;
+    
+    return { 
+      coins: 150, 
+      boosts: 2,
+      popularityPoints: 75,
+      premiumLikes: 5,
+      profileBoost: !!userBoost,
+      boostTimeRemaining,
+    };
+  };
+  
+  const formatTimeRemaining = (endTime: Date): string => {
+    const now = new Date();
+    const diffMs = endTime.getTime() - now.getTime();
+    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return `${diffHrs}h ${diffMins}m`;
   };
   
   const redeemGift = (giftId: string) => {
@@ -415,19 +691,19 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
           return {
             ...prevUser,
             // Add the gift's coins to popularity points
-            popularityPoints: (prevUser.popularityPoints || 0) + giftBenefits.coins,
+            popularityPoints: (prevUser.popularityPoints || 0) + giftBenefits,
           };
         }
         return prevUser;
       });
 
       // Boost user's profile
-      if (giftBenefits.boosts > 0) {
+      if (giftBenefits > 50) {
         boostProfile('local'); // Or implement a way to choose boost type
       }
 
       toast.success(`You redeemed a ${giftId}!`, {
-        description: `You received ${giftBenefits.coins} coins and ${giftBenefits.boosts} boosts.`,
+        description: `You received ${giftBenefits} coins and boost benefits.`,
       });
     } else {
       toast.error('Invalid gift ID.');
@@ -449,6 +725,205 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     
     toast.success('Match preferences updated!');
   };
+  
+  // Blog functionality
+  const createBlogPost = (title: string, content: string, tags: string[]) => {
+    if (!title || !content || !currentUser) {
+      console.error("Invalid blog post data or currentUser is null");
+      return;
+    }
+    
+    const newPost: BlogPostType = {
+      id: `post-${Date.now()}`,
+      userId: currentUser.id,
+      title,
+      content,
+      tags,
+      createdAt: new Date(),
+      likes: 0,
+      comments: []
+    };
+    
+    setBlogPosts(prev => [...prev, newPost]);
+    toast.success("Blog post created successfully!");
+  };
+  
+  const updateBlogPost = (postId: string, updates: { title?: string; content?: string; tags?: string[] }) => {
+    if (!postId || !updates || !currentUser) {
+      console.error("Invalid blog post update data or currentUser is null");
+      return;
+    }
+    
+    setBlogPosts(prev => prev.map(post => {
+      if (post.id === postId && post.userId === currentUser.id) {
+        return { ...post, ...updates };
+      }
+      return post;
+    }));
+    
+    toast.success("Blog post updated successfully!");
+  };
+  
+  const deleteBlogPost = (postId: string) => {
+    if (!postId || !currentUser) {
+      console.error("Invalid postId or currentUser is null");
+      return;
+    }
+    
+    setBlogPosts(prev => prev.filter(post => !(post.id === postId && post.userId === currentUser.id)));
+    toast.success("Blog post deleted successfully!");
+  };
+  
+  const likeBlogPost = (postId: string, userId: string) => {
+    if (!postId || !userId) {
+      console.error("Invalid postId or userId");
+      return;
+    }
+    
+    setBlogPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        return { ...post, likes: post.likes + 1 };
+      }
+      return post;
+    }));
+    
+    toast.success("You liked this post!");
+  };
+  
+  const commentOnBlogPost = (postId: string, comment: string) => {
+    if (!postId || !comment || !currentUser) {
+      console.error("Invalid comment data or currentUser is null");
+      return;
+    }
+    
+    const newComment = {
+      id: `comment-${Date.now()}`,
+      postId,
+      userId: currentUser.id,
+      userName: currentUser.name,
+      content: comment,
+      createdAt: new Date()
+    };
+    
+    setBlogPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        return { ...post, comments: [...post.comments, newComment] };
+      }
+      return post;
+    }));
+    
+    toast.success("Comment added successfully!");
+  };
+  
+  const getUserPosts = (userId: string): BlogPostType[] => {
+    return blogPosts.filter(post => post.userId === userId);
+  };
+  
+  const getAllPosts = (): BlogPostType[] => {
+    return [...blogPosts].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  };
+  
+  const getFilteredPosts = (tag?: string): BlogPostType[] => {
+    if (!tag) return getAllPosts();
+    return blogPosts.filter(post => post.tags.includes(tag))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  };
+  
+  // Gift and monetization
+  const purchaseGifts = (gifts: Record<string, number>) => {
+    if (!gifts || !currentUser) {
+      console.error("Invalid gifts or currentUser is null");
+      return;
+    }
+    
+    setCurrentUser(prev => {
+      if (!prev) return prev;
+      
+      const currentInventory = prev.giftInventory || { rose: 0, heart: 0, teddy: 0 };
+      
+      return {
+        ...prev,
+        giftInventory: {
+          rose: currentInventory.rose + (gifts.rose || 0),
+          heart: currentInventory.heart + (gifts.heart || 0),
+          teddy: currentInventory.teddy + (gifts.teddy || 0)
+        }
+      };
+    });
+    
+    toast.success("Gifts purchased successfully!");
+  };
+  
+  const getGiftInventory = () => {
+    return currentUser?.giftInventory || { rose: 0, heart: 0, teddy: 0 };
+  };
+  
+  const getGiftMonetizationDetails = () => {
+    return {
+      giftValues,
+      minimumWithdrawal: 50,
+      availableBalance: 275, // Mock balance
+      currency: 'USD',
+      exchangeRates
+    };
+  };
+  
+  const initiateWithdrawal = (amount: number): boolean => {
+    if (!amount || amount <= 0 || !currentUser) {
+      toast.error("Invalid withdrawal amount");
+      return false;
+    }
+    
+    // Validate minimum withdrawal
+    if (amount < 50) {
+      toast.error("Minimum withdrawal amount is $50");
+      return false;
+    }
+    
+    // Check if user already has a pending withdrawal
+    if (pendingWithdrawal) {
+      toast.error("You already have a pending withdrawal");
+      return false;
+    }
+    
+    // Create new withdrawal
+    const newWithdrawal: WithdrawalType = {
+      id: `withdrawal-${Date.now()}`,
+      userId: currentUser.id,
+      amount,
+      date: new Date(),
+      status: 'pending'
+    };
+    
+    setPendingWithdrawal(newWithdrawal);
+    toast.success("Withdrawal initiated successfully!");
+    return true;
+  };
+  
+  const updateBankDetails = (details: User['bankDetails']) => {
+    if (!details || !currentUser) {
+      console.error("Invalid bank details or currentUser is null");
+      return;
+    }
+    
+    setCurrentUser(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        bankDetails: details
+      };
+    });
+    
+    toast.success("Bank details updated successfully!");
+  };
+  
+  const getWithdrawalHistory = (): WithdrawalType[] => {
+    return withdrawals;
+  };
+  
+  const getPendingWithdrawal = (): WithdrawalType | null => {
+    return pendingWithdrawal;
+  };
 
   // Create the context value with all our state and functions
   const contextValue = {
@@ -466,6 +941,26 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     getGiftBenefits,
     redeemGift,
     updateMatchPreferences,
+    // Blog functionality
+    createBlogPost,
+    updateBlogPost,
+    deleteBlogPost,
+    likeBlogPost,
+    commentOnBlogPost,
+    getUserPosts,
+    getAllPosts,
+    getFilteredPosts,
+    // Gift and monetization
+    purchaseGifts,
+    getGiftInventory,
+    getGiftMonetizationDetails,
+    initiateWithdrawal,
+    updateBankDetails,
+    getWithdrawalHistory,
+    getPendingWithdrawal,
+    // User profile 
+    updateUserProfile,
+    setCurrentUser,
   };
   
   console.log("Providing UserContext with boostedProfiles:", boostedProfiles?.length || 0);
