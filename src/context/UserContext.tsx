@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
 
@@ -77,7 +78,7 @@ const UserContext = createContext<UserContextType>({
   markMessagesAsRead: () => {},
   updateProfile: () => {},
   boostProfile: () => {},
-  boostedProfiles: [],
+  boostedProfiles: [], // Ensure this has a default empty array
   getGiftBenefits: () => ({ coins: 0, boosts: 0 }),
   redeemGift: () => {},
   updateMatchPreferences: () => {},
@@ -85,7 +86,9 @@ const UserContext = createContext<UserContextType>({
 
 // Provider component
 export const UserProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize state
+  console.log("Initializing UserProvider");
+  
+  // Initialize state with safe defaults
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [potentialMatches, setPotentialMatches] = useState<User[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -101,6 +104,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   // Load initial data
   useEffect(() => {
+    console.log("Loading mock data in UserProvider");
+    
     // Simulate fetching the current user
     const mockUser: User = {
       id: 'user1',
@@ -182,7 +187,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         bio: 'Data scientist and outdoor adventurer. Love rock climbing and exploring national parks.',
         location: 'Berkeley, California',
         interests: ['data science', 'rock climbing', 'outdoors', 'travel', 'books'],
-        popularityPoints: 62,
+        popularityScore: 62,
         compatibilityScore: 68,
       },
     ];
@@ -237,6 +242,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       ],
     };
 
+    // Set initial app state
     setCurrentUser(mockUser);
     setPotentialMatches(mockPotentialMatches);
     
@@ -256,6 +262,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       },
     ];
     
+    console.log("Setting boosted profiles:", mockBoostedProfiles);
     setBoostedProfiles(mockBoostedProfiles);
     
     setMatches(mockMatches);
@@ -264,33 +271,51 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   // Handler functions
   const likeUser = (userId: string) => {
+    if (!userId || !currentUser) {
+      console.error("Invalid userId or currentUser is null");
+      return;
+    }
+    
     setPotentialMatches((prevMatches) =>
       prevMatches.filter((match) => match.id !== userId)
     );
+    
     setMatches((prevMatches) => [
       ...prevMatches,
       {
         id: `match-${userId}-${Date.now()}`,
-        userId1: currentUser!.id,
+        userId1: currentUser.id,
         userId2: userId,
         matchDate: new Date(),
         status: 'pending',
       },
     ]);
+    
     toast.success('You liked this user!');
   };
 
   const passUser = (userId: string) => {
+    if (!userId) {
+      console.error("Invalid userId");
+      return;
+    }
+    
     setPotentialMatches((prevMatches) =>
       prevMatches.filter((match) => match.id !== userId)
     );
+    
     toast.message('You passed on this user.');
   };
 
   const sendMessage = (receiverId: string, content: string) => {
+    if (!receiverId || !content || !currentUser) {
+      console.error("Invalid receiverId, content, or currentUser is null");
+      return;
+    }
+    
     const newMessage: Message = {
       id: `message-${Date.now()}`,
-      senderId: currentUser!.id,
+      senderId: currentUser.id,
       receiverId: receiverId,
       content: content,
       timestamp: new Date(),
@@ -304,6 +329,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const markMessagesAsRead = (userId: string) => {
+    if (!userId) {
+      console.error("Invalid userId");
+      return;
+    }
+    
     setMessages((prevMessages) => ({
       ...prevMessages,
       [userId]: prevMessages[userId]?.map((message) => ({ ...message, read: true })) || [],
@@ -311,6 +341,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateProfile = (updates: Partial<User>) => {
+    if (!updates) {
+      console.error("Invalid updates");
+      return;
+    }
+    
     setCurrentUser((prevUser) => {
       if (prevUser) {
         return { ...prevUser, ...updates };
@@ -325,6 +360,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       toast.error("You must be logged in to boost your profile");
       return;
     }
+    
+    console.log(`Boosting profile with type: ${boostType}`);
     
     const now = new Date();
     const endTime = new Date();
@@ -344,7 +381,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     };
     
     // Add the new boost
-    setBoostedProfiles(prev => [...prev, newBoost]);
+    setBoostedProfiles(prev => {
+      const newBoostedProfiles = [...(prev || []), newBoost];
+      console.log("Updated boosted profiles:", newBoostedProfiles);
+      return newBoostedProfiles;
+    });
     
     toast.success(`Profile boosted! (${boostType})`, {
       description: `Your profile will receive extra visibility until ${endTime.toLocaleString()}`,
@@ -355,10 +396,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const getGiftBenefits = () => {
     // For example, return the sum of all gift benefits the user has received
     // This is a placeholder implementation
+    console.log("Getting gift benefits");
     return { coins: 150, boosts: 2 };
   };
   
   const redeemGift = (giftId: string) => {
+    if (!giftId || !currentUser) {
+      console.error("Invalid giftId or currentUser is null");
+      return;
+    }
+    
     const giftBenefits = giftValues[giftId as keyof typeof giftValues];
 
     if (giftBenefits) {
@@ -367,9 +414,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         if (prevUser) {
           return {
             ...prevUser,
-            // Assuming you have a 'coins' property in your User type
-            // and you want to add the gift's coins to the current amount
-            // coins: (prevUser.coins || 0) + giftBenefits.coins,
+            // Add the gift's coins to popularity points
             popularityPoints: (prevUser.popularityPoints || 0) + giftBenefits.coins,
           };
         }
@@ -390,34 +435,43 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const updateMatchPreferences = (preferences: User['matchPreferences']) => {
+    if (!preferences || !currentUser) {
+      console.error("Invalid preferences or currentUser is null");
+      return;
+    }
+    
     setCurrentUser((prevUser) => {
       if (prevUser) {
         return { ...prevUser, matchPreferences: preferences };
       }
       return prevUser;
     });
+    
     toast.success('Match preferences updated!');
   };
 
+  // Create the context value with all our state and functions
+  const contextValue = {
+    currentUser,
+    potentialMatches,
+    likeUser,
+    passUser,
+    matches,
+    messages,
+    sendMessage,
+    markMessagesAsRead,
+    updateProfile,
+    boostProfile,
+    boostedProfiles,
+    getGiftBenefits,
+    redeemGift,
+    updateMatchPreferences,
+  };
+  
+  console.log("Providing UserContext with boostedProfiles:", boostedProfiles?.length || 0);
+
   return (
-    <UserContext.Provider
-      value={{
-        currentUser,
-        potentialMatches,
-        likeUser,
-        passUser,
-        matches,
-        messages,
-        sendMessage,
-        markMessagesAsRead,
-        updateProfile,
-        boostProfile,
-        boostedProfiles,
-        getGiftBenefits,
-        redeemGift,
-        updateMatchPreferences,
-      }}
-    >
+    <UserContext.Provider value={contextValue}>
       {children}
     </UserContext.Provider>
   );
@@ -429,5 +483,14 @@ export const useUser = () => {
   if (context === undefined) {
     throw new Error('useUser must be used within a UserProvider');
   }
-  return context;
+  
+  // Provide safe fallbacks for all values
+  return {
+    ...context,
+    currentUser: context.currentUser || null,
+    potentialMatches: context.potentialMatches || [],
+    matches: context.matches || [],
+    messages: context.messages || {},
+    boostedProfiles: context.boostedProfiles || [],
+  };
 };

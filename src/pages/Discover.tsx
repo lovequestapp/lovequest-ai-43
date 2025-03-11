@@ -52,14 +52,18 @@ const regions = [
 ];
 
 const Discover = () => {
-  // Ensure all potentially undefined values have default values
+  console.log("Rendering Discover component");
+  
+  // Get user context with safe fallbacks for all properties
   const { 
-    currentUser, 
+    currentUser = null, 
     potentialMatches = [], 
     likeUser = () => {}, 
     passUser = () => {}, 
     boostedProfiles = [] 
-  } = useUser();
+  } = useUser() || {};
+  
+  console.log("User context:", { currentUser, potentialMatchesCount: potentialMatches.length, boostedProfiles });
   
   const [enhancedMatches, setEnhancedMatches] = useState<UserWithCoordinates[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
@@ -70,10 +74,13 @@ const Discover = () => {
   const [isNearbyFilterActive, setIsNearbyFilterActive] = useState(false);
   const { forceShowPopup } = useBoostPopup();
   
+  // Get user's geolocation
   useEffect(() => {
+    console.log("Running geolocation effect");
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          console.log("Got user position:", position.coords);
           setUserCoordinates({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
@@ -90,33 +97,41 @@ const Discover = () => {
           });
         }
       );
+    } else {
+      console.log("Geolocation not supported by browser");
     }
   }, []);
   
+  // Process matches when dependencies change
   useEffect(() => {
+    console.log("Running match processing effect with:", {
+      hasCurrentUser: !!currentUser,
+      potentialMatchesCount: potentialMatches.length,
+      boostedProfilesCount: boostedProfiles?.length || 0,
+      userCoordinates,
+      isNearbyFilterActive
+    });
+    
     // Only process if we have the required data
     if (!currentUser) {
       console.log("No current user, skipping match processing");
       return;
     }
     
-    if (potentialMatches.length === 0) {
+    if (!potentialMatches || potentialMatches.length === 0) {
       console.log("No potential matches, skipping processing");
       return;
     }
     
-    console.log("Processing matches with:", {
-      currentUser: currentUser,
-      potentialMatches: potentialMatches.length,
-      boostedProfiles: boostedProfiles
-    });
-    
     try {
+      console.log("Processing matches...");
+      
       // Apply geolocation and filters
       let processedMatches = [...potentialMatches] as UserWithCoordinates[];
       
       // Set user coordinates to potential matches if available
       if (userCoordinates && isNearbyFilterActive) {
+        console.log(`Filtering by proximity: ${proximityRadius}km radius`);
         const currentUserWithCoords: UserWithCoordinates = {
           ...(currentUser as UserWithCoordinates),
           coordinates: userCoordinates
@@ -132,6 +147,7 @@ const Discover = () => {
       
       // Filter by selected regions if any
       if (isLocationFiltering && selectedRegions.length > 0) {
+        console.log(`Filtering by regions: ${selectedRegions.join(', ')}`);
         processedMatches = processedMatches.filter(match => {
           if (!match.location) return false;
           const matchRegion = match.location.split(',')[1]?.trim();
@@ -143,13 +159,17 @@ const Discover = () => {
       const currentUserWithCoords: UserWithCoordinates = userCoordinates 
         ? { ...(currentUser as UserWithCoordinates), coordinates: userCoordinates }
         : currentUser as UserWithCoordinates;
-        
+      
+      console.log("Applying AI enhancement to matches");  
       const sortedMatches = getAiEnhancedMatches(
         currentUserWithCoords,
         processedMatches
       );
       
       // Apply visual indicators for boosted profiles
+      console.log("Identifying boosted profiles");
+      const safeBootedProfiles = boostedProfiles || [];
+      
       const matchesWithBoostInfo = sortedMatches.map(match => {
         if (!match || !match.id) {
           console.warn("Invalid match object:", match);
@@ -161,11 +181,11 @@ const Discover = () => {
         }
         
         // Check if this profile is boosted - safely handle potential undefined values
-        const isBoostedProfile = boostedProfiles && Array.isArray(boostedProfiles) && 
-          boostedProfiles.some(p => p && p.userId === match.id);
+        const isBoostedProfile = safeBootedProfiles.some(p => p && p.userId === match.id);
         
-        const isInternationalBoosted = boostedProfiles && Array.isArray(boostedProfiles) && 
-          boostedProfiles.some(p => p && p.userId === match.id && p.boostType === 'international');
+        const isInternationalBoosted = safeBootedProfiles.some(
+          p => p && p.userId === match.id && p.boostType === 'international'
+        );
         
         const popularityScore = match.popularityPoints || 0;
         const isBoosted = shouldBoostProfile(popularityScore) || Boolean(isBoostedProfile);
@@ -205,7 +225,9 @@ const Discover = () => {
         return aOrder - bOrder;
       });
       
-      setEnhancedMatches([...sortedBoostedMatches, ...normalMatches]);
+      const finalMatches = [...sortedBoostedMatches, ...normalMatches];
+      console.log(`Final matches: ${finalMatches.length} (${boostedMatches.length} boosted)`);
+      setEnhancedMatches(finalMatches);
       
       // Notify user about boosted profiles (only on initial load)
       const boostedCount = boostedMatches.length;
@@ -233,6 +255,7 @@ const Discover = () => {
     boostedProfiles
   ]);
   
+  // Filter handling functions
   const togglePopularFilter = () => {
     setIsFiltering(!isFiltering);
     
@@ -300,9 +323,12 @@ const Discover = () => {
     );
   };
   
+  // Apply filters to matches
   const filteredMatches = isFiltering
     ? enhancedMatches.filter(match => match.isBoosted)
     : enhancedMatches;
+  
+  console.log(`Rendering ${filteredMatches.length} matches`);
   
   return (
     <div className="min-h-screen flex flex-col">
