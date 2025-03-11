@@ -330,7 +330,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const [matches, setMatches] = useState<Match[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
-  // Add boostedProfiles state
+  // Add boostedProfiles state with initial empty array to prevent undefined errors
   const [boostedProfiles, setBoostedProfiles] = useState<BoostProfile[]>([]);
 
   const giftValues = {
@@ -944,4 +944,4 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let boostTimeRemaining;
     if (boostExpiration && boostExpiration > now) {
       const diff = boostExpiration.getTime() - now.getTime();
-      const hours = Math.floor(diff / (1000 * 60 *
+      const hours = Math.floor(diff /

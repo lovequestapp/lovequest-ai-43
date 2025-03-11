@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -52,7 +51,7 @@ const regions = [
 ];
 
 const Discover = () => {
-  const { currentUser, potentialMatches, likeUser, passUser, boostedProfiles = [] } = useUser();
+  const { currentUser, potentialMatches = [], likeUser, passUser, boostedProfiles = [] } = useUser();
   const [enhancedMatches, setEnhancedMatches] = useState<UserWithCoordinates[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
   const [isLocationFiltering, setIsLocationFiltering] = useState(false);
@@ -87,6 +86,8 @@ const Discover = () => {
   
   useEffect(() => {
     if (currentUser && potentialMatches.length > 0) {
+      console.log("Processing matches, boostedProfiles:", boostedProfiles);
+      
       // Apply geolocation and filters
       let processedMatches = [...potentialMatches] as UserWithCoordinates[];
       
@@ -131,7 +132,7 @@ const Discover = () => {
         const isInternationalBoosted = boostedProfiles && boostedProfiles.some(p => p.userId === match.id && p.boostType === 'international');
         
         const popularityScore = match.popularityPoints || 0;
-        const isBoosted = shouldBoostProfile(popularityScore) || isBoostedProfile;
+        const isBoosted = shouldBoostProfile(popularityScore) || Boolean(isBoostedProfile);
         
         // Default boost level based on popularity
         let boostLevel: 'standard' | 'super' | 'local' | 'international' = 
@@ -162,8 +163,8 @@ const Discover = () => {
           'standard': 3
         };
         
-        const aOrder = boostOrder[a.boostLevel as keyof typeof boostOrder];
-        const bOrder = boostOrder[b.boostLevel as keyof typeof boostOrder];
+        const aOrder = boostOrder[a.boostLevel as keyof typeof boostOrder] || 3;
+        const bOrder = boostOrder[b.boostLevel as keyof typeof boostOrder] || 3;
         
         return aOrder - bOrder;
       });
