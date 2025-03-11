@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -51,7 +52,7 @@ const regions = [
 ];
 
 const Discover = () => {
-  const { currentUser, potentialMatches, likeUser, passUser, boostedProfiles } = useUser();
+  const { currentUser, potentialMatches, likeUser, passUser, boostedProfiles = [] } = useUser();
   const [enhancedMatches, setEnhancedMatches] = useState<UserWithCoordinates[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
   const [isLocationFiltering, setIsLocationFiltering] = useState(false);
@@ -126,8 +127,8 @@ const Discover = () => {
       // Apply visual indicators for boosted profiles
       const matchesWithBoostInfo = sortedMatches.map(match => {
         // Check if this profile is boosted
-        const isBoostedProfile = boostedProfiles.some(p => p.userId === match.id);
-        const isInternationalBoosted = boostedProfiles.some(p => p.userId === match.id && p.boostType === 'international');
+        const isBoostedProfile = boostedProfiles && boostedProfiles.some(p => p.userId === match.id);
+        const isInternationalBoosted = boostedProfiles && boostedProfiles.some(p => p.userId === match.id && p.boostType === 'international');
         
         const popularityScore = match.popularityPoints || 0;
         const isBoosted = shouldBoostProfile(popularityScore) || isBoostedProfile;
