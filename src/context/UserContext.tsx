@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
 
@@ -20,7 +19,6 @@ export type User = {
     distance: number;
     interests: string[];
   };
-  // Add missing properties
   compatibilityScore?: number;
   personalityTraits?: string[];
   favoriteMusic?: string;
@@ -273,10 +271,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         bankName: 'Chase Bank',
         swiftCode: 'CHASUS33'
       },
-      compatibilityScore: 0
+      compatibilityScore: 0,
+      popularityPoints: 75
     };
 
-    // Simulate fetching potential matches
+    // Simulate fetching potential matches with compatibilityScore
     const mockPotentialMatches: User[] = [
       {
         id: 'user2',

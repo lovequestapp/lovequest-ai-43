@@ -1,46 +1,41 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MessageChat from '@/components/MessageChat';
-import GiftSelector from '@/components/GiftSelector';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import { Search, ChevronLeft, Info, Heart, Gift } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { Sparkles, Heart, ChevronLeft, MessageSquare, ArrowRightLeft, Gift } from 'lucide-react';
+import GiftSelector from '@/components/GiftSelector';
+import ProfileBoostPopup from '@/components/ProfileBoostPopup';
 
 const Messages = () => {
   const { id: activeMatchId } = useParams<{ id: string }>();
   const { currentUser, matches, messages, sendMessage, markMessagesAsRead, potentialMatches } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [isGiftSelectorOpen, setIsGiftSelectorOpen] = useState(false);
+  const [showGiftSelector, setShowGiftSelector] = useState(false);
   const navigate = useNavigate();
-  
+  const userId = activeMatchId ? getOtherUserId(matches.find(match => getOtherUserId(match) === activeMatchId)) : null;
+
   if (!currentUser) return null;
-  
-  // Function to get the other user ID in a match
+
   const getOtherUserId = (match: any) => {
     return match.userId1 === currentUser.id ? match.userId2 : match.userId1;
   };
-  
-  // Get matched users details
+
   const getMatchedUsers = () => {
     return matches.map(match => {
       const otherUserId = getOtherUserId(match);
       const matchedUser = potentialMatches.find(user => user.id === match.matchedUserId) || 
                         potentialMatches.find(user => user.id === otherUserId);
       
-      // Get last message from the messages state
       const userMessages = messages[otherUserId] || [];
       const lastMessage = match.lastMessage || (userMessages.length > 0 ? userMessages[userMessages.length - 1].content : '');
       const lastMessageTime = match.lastMessageTime || (userMessages.length > 0 ? userMessages[userMessages.length - 1].timestamp : new Date());
       
-      // Count unread messages
       const unreadCount = userMessages.filter(msg => !msg.read && msg.senderId !== currentUser.id).length;
       
       return {
@@ -54,56 +49,38 @@ const Messages = () => {
       };
     });
   };
-  
-  // Filter matches by search term
+
   const filteredMatches = getMatchedUsers().filter(match => 
     match.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
-  // Get current active match details
+
   const activeMatch = activeMatchId ? matches.find(match => getOtherUserId(match) === activeMatchId) : null;
   const activeUser = activeMatchId ? potentialMatches.find(user => user.id === activeMatchId) : null;
-  
-  // Mark messages as read when opening a chat
+
   useEffect(() => {
     if (activeMatchId) {
       markMessagesAsRead(activeMatchId);
     }
   }, [activeMatchId, markMessagesAsRead]);
-  
-  // Handle sending a message
-  const handleSendMessage = (message: string) => {
-    if (!activeMatchId || !message.trim()) return;
-    sendMessage(activeMatchId, message);
+
+  const handleSendMessage = (content: string) => {
+    if (content.trim()) {
+      sendMessage(userId, content);
+      scrollToBottom();
+    }
   };
-  
-  // Handle sending a gift
+
   const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
-    if (!activeMatchId) return;
-    
-    const giftEmojis = {
-      rose: '🌹',
-      heart: '❤️',
-      teddy: '🧸'
-    };
-    
-    // Send a message with the gift
-    sendMessage(
-      activeMatchId, 
-      `I sent you a ${giftType}! ${giftEmojis[giftType]}`,
-      'gift',
-      giftType
-    );
-    
-    setIsGiftSelectorOpen(false);
+    sendMessage(userId, `I sent you a ${giftType}! 💝`, 'gift', giftType);
+    scrollToBottom();
+    setShowGiftSelector(false);
   };
-  
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
       
       <main className="flex flex-grow overflow-hidden">
-        {/* Sidebar with match list */}
         <div className={`w-full md:w-80 border-r flex-shrink-0 ${activeMatchId ? 'hidden md:block' : 'block'}`}>
           <div className="p-4 border-b">
             <h1 className="text-xl font-semibold mb-4">Messages</h1>
@@ -168,10 +145,8 @@ const Messages = () => {
           </div>
         </div>
         
-        {/* Active conversation */}
         {activeMatchId && activeUser ? (
           <div className="flex-grow flex flex-col h-[calc(100vh-4rem)]">
-            {/* Chat header */}
             <div className="p-4 border-b flex items-center justify-between">
               <div className="flex items-center">
                 <Button 
@@ -216,7 +191,6 @@ const Messages = () => {
               </div>
             </div>
             
-            {/* Chat messages */}
             <MessageChat 
               messages={messages[activeMatchId] || []} 
               currentUserId={currentUser.id}
