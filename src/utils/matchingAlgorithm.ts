@@ -1,3 +1,4 @@
+
 import { User } from '@/context/UserContext';
 
 export interface UserWithCoordinates extends User {
@@ -5,6 +6,8 @@ export interface UserWithCoordinates extends User {
     latitude: number;
     longitude: number;
   };
+  isBoosted?: boolean;
+  boostLevel?: 'standard' | 'super' | 'local' | 'international';
 }
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -75,5 +78,52 @@ export const filterUsersByPreferences = (currentUser: UserWithCoordinates, users
     }
 
     return true;
+  });
+};
+
+// Add the missing exported functions for Discover.tsx
+
+export const getAiEnhancedMatches = (
+  currentUser: UserWithCoordinates,
+  users: UserWithCoordinates[]
+): UserWithCoordinates[] => {
+  // First, filter by preferences
+  const filteredUsers = filterUsersByPreferences(currentUser, users);
+  
+  // Sort by compatibility score (descending)
+  return filteredUsers.sort((a, b) => {
+    const scoreA = a.compatibilityScore || 0;
+    const scoreB = b.compatibilityScore || 0;
+    return scoreB - scoreA;
+  });
+};
+
+export const shouldBoostProfile = (popularityScore: number): boolean => {
+  // Simple algorithm to determine if a profile should be boosted based on popularity
+  return popularityScore >= 75; // Boost profiles with popularity score >= 75
+};
+
+export const getNearbyUsers = (
+  currentUser: UserWithCoordinates,
+  users: UserWithCoordinates[],
+  maxDistance: number
+): UserWithCoordinates[] => {
+  if (!currentUser.coordinates) {
+    return users;
+  }
+  
+  return users.filter(user => {
+    if (!user.coordinates) {
+      return false;
+    }
+    
+    const distance = calculateDistance(
+      currentUser.coordinates.latitude,
+      currentUser.coordinates.longitude,
+      user.coordinates.latitude,
+      user.coordinates.longitude
+    );
+    
+    return distance <= maxDistance;
   });
 };

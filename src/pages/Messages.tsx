@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -7,9 +7,12 @@ import MessageChat from '@/components/MessageChat';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { formatDistanceToNow } from 'date-fns';
-import { Sparkles, Heart, ChevronLeft, MessageSquare, ArrowRightLeft, Gift } from 'lucide-react';
+import { Sparkles, Heart, ChevronLeft, MessageSquare, ArrowRightLeft, Gift, Search, Info } from 'lucide-react';
 import GiftSelector from '@/components/GiftSelector';
 import ProfileBoostPopup from '@/components/ProfileBoostPopup';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 const Messages = () => {
   const { id: activeMatchId } = useParams<{ id: string }>();
@@ -18,13 +21,19 @@ const Messages = () => {
   const [isGiftSelectorOpen, setIsGiftSelectorOpen] = useState(false);
   const [showGiftSelector, setShowGiftSelector] = useState(false);
   const navigate = useNavigate();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
+  const getOtherUserId = (match: any) => {
+    return match.userId1 === currentUser?.id ? match.userId2 : match.userId1;
+  };
+  
   const userId = activeMatchId ? getOtherUserId(matches.find(match => getOtherUserId(match) === activeMatchId)) : null;
 
   if (!currentUser) return null;
-
-  const getOtherUserId = (match: any) => {
-    return match.userId1 === currentUser.id ? match.userId2 : match.userId1;
-  };
 
   const getMatchedUsers = () => {
     return matches.map(match => {
@@ -64,16 +73,18 @@ const Messages = () => {
   }, [activeMatchId, markMessagesAsRead]);
 
   const handleSendMessage = (content: string) => {
-    if (content.trim()) {
+    if (content.trim() && userId) {
       sendMessage(userId, content);
       scrollToBottom();
     }
   };
 
   const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
-    sendMessage(userId, `I sent you a ${giftType}! 💝`, 'gift', giftType);
-    scrollToBottom();
-    setShowGiftSelector(false);
+    if (userId) {
+      sendMessage(userId, `I sent you a ${giftType}! 💝`, 'gift', giftType);
+      scrollToBottom();
+      setShowGiftSelector(false);
+    }
   };
 
   return (
@@ -191,12 +202,15 @@ const Messages = () => {
               </div>
             </div>
             
-            <MessageChat 
-              messages={messages[activeMatchId] || []} 
-              currentUserId={currentUser.id}
-              onSendMessage={handleSendMessage}
-              recipientName={activeUser.name}
-            />
+            {activeMatchId && (
+              <MessageChat 
+                messages={(messages[activeMatchId] || []) as any} 
+                currentUserId={currentUser.id}
+                onSendMessage={handleSendMessage}
+                recipientName={activeUser.name}
+              />
+            )}
+            <div ref={messagesEndRef} />
           </div>
         ) : (
           <div className="hidden md:flex flex-grow items-center justify-center bg-gray-50">
