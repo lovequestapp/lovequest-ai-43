@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useUser } from '@/context/UserContext';
 import { FilePen, FileText, Heart, MessageSquare, Plus, Share, Send, Trash, Edit } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from "sonner";
 
 type BlogPostType = {
   id: string;
@@ -42,19 +44,30 @@ interface BlogPostProps {
 const BlogPost: React.FC<BlogPostProps> = ({ post, isOwner, onEdit, onDelete, onLike, onComment }) => {
   const [comment, setComment] = useState('');
   const [showComments, setShowComments] = useState(false);
+  const navigate = useNavigate();
   
   const handleCommentSubmit = () => {
     if (comment.trim()) {
       onComment(post.id, comment);
       setComment('');
+      toast.success("Comment added!");
     }
+  };
+  
+  const handleViewFullPost = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/blog/${post.id}`);
   };
   
   return (
     <Card className="mb-6">
       <CardHeader>
         <div className="flex justify-between items-start">
-          <CardTitle className="text-xl">{post.title}</CardTitle>
+          <CardTitle className="text-xl">
+            <span className="cursor-pointer hover:underline" onClick={handleViewFullPost}>
+              {post.title}
+            </span>
+          </CardTitle>
           {isOwner && (
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" onClick={() => onEdit(post.id)}>
@@ -72,7 +85,9 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, isOwner, onEdit, onDelete, on
       </CardHeader>
       
       <CardContent>
-        <p className="mb-4 whitespace-pre-line">{post.content}</p>
+        <p className="mb-4 whitespace-pre-line cursor-pointer" onClick={handleViewFullPost}>
+          {post.content}
+        </p>
         
         <div className="flex flex-wrap gap-2 mb-4">
           {post.tags.map((tag, index) => (
@@ -88,7 +103,10 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, isOwner, onEdit, onDelete, on
               variant="ghost" 
               size="sm" 
               className="flex items-center gap-1"
-              onClick={() => onLike(post.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onLike(post.id);
+              }}
             >
               <Heart 
                 size={16} 
@@ -101,7 +119,10 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, isOwner, onEdit, onDelete, on
               variant="ghost" 
               size="sm" 
               className="flex items-center gap-1"
-              onClick={() => setShowComments(!showComments)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowComments(!showComments);
+              }}
             >
               <MessageSquare size={16} />
               <span>{post.comments.length}</span>
@@ -111,11 +132,35 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, isOwner, onEdit, onDelete, on
               variant="ghost" 
               size="sm" 
               className="flex items-center gap-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (navigator.share) {
+                  navigator.share({
+                    title: post.title,
+                    text: `Check out this post: ${post.title}`,
+                    url: `${window.location.origin}/blog/${post.id}`,
+                  })
+                  .then(() => toast.success("Shared successfully!"))
+                  .catch((error) => console.log('Error sharing:', error));
+                } else {
+                  // Fallback for browsers that don't support the Web Share API
+                  navigator.clipboard.writeText(`${window.location.origin}/blog/${post.id}`);
+                  toast.success("Link copied to clipboard!");
+                }
+              }}
             >
               <Share size={16} />
               <span>Share</span>
             </Button>
           </div>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleViewFullPost}
+          >
+            View Post
+          </Button>
         </div>
       </CardContent>
       
@@ -314,6 +359,7 @@ const Blog: React.FC = () => {
     content: string;
     tags: string[];
   } | null>(null);
+  const navigate = useNavigate();
   
   if (!currentUser) return null;
   
@@ -321,12 +367,14 @@ const Blog: React.FC = () => {
   
   const handleCreatePost = (title: string, content: string, tags: string[]) => {
     createBlogPost(title, content, tags);
+    toast.success("Post created successfully!");
   };
   
   const handleUpdatePost = (title: string, content: string, tags: string[]) => {
     if (editingPost) {
       updateBlogPost(editingPost.id, { title, content, tags });
       setEditingPost(null);
+      toast.success("Post updated successfully!");
     }
   };
   
@@ -344,14 +392,21 @@ const Blog: React.FC = () => {
   
   const handleDeletePost = (postId: string) => {
     deleteBlogPost(postId);
+    toast.success("Post deleted successfully!");
   };
   
   const handleLikePost = (postId: string) => {
     likeBlogPost(postId, currentUser.id);
+    toast.success("You liked this post!");
   };
   
   const handleCommentPost = (postId: string, comment: string) => {
     commentOnBlogPost(postId, comment);
+    toast.success("Comment added successfully!");
+  };
+  
+  const handleViewPost = (postId: string) => {
+    navigate(`/blog/${postId}`);
   };
   
   return (

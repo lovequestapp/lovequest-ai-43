@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -13,6 +13,7 @@ import { Heart, MessageSquare, Share, User, ArrowLeft, Gift, Send } from 'lucide
 import { useUser } from '@/context/UserContext';
 import { formatDistanceToNow } from 'date-fns';
 import GiftSelector from '@/components/GiftSelector';
+import { toast } from "sonner";
 
 const BlogPost: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
@@ -20,6 +21,11 @@ const BlogPost: React.FC = () => {
   const { currentUser, getAllPosts, likeBlogPost, commentOnBlogPost } = useUser();
   const [comment, setComment] = useState('');
   const [showGiftDialog, setShowGiftDialog] = useState(false);
+  
+  useEffect(() => {
+    // Log that we've reached the BlogPost page
+    console.log(`BlogPost page loaded for postId: ${postId}`);
+  }, [postId]);
   
   if (!currentUser) return null;
   
@@ -62,12 +68,14 @@ const BlogPost: React.FC = () => {
   
   const handleLike = () => {
     likeBlogPost(post.id, post.userId);
+    toast.success("You liked this post!");
   };
   
   const handleComment = () => {
     if (comment.trim()) {
       commentOnBlogPost(post.id, comment);
       setComment('');
+      toast.success("Comment added successfully!");
     }
   };
   
@@ -77,11 +85,27 @@ const BlogPost: React.FC = () => {
       // This is a simplified implementation since the UserContext doesn't have a direct 
       // method to send gifts to posts, but this would be the logical place to add it
       commentOnBlogPost(post.id, `I sent you a ${giftType}! 💝`);
-      
+      toast.success(`You sent a ${giftType}!`);
       // In a real implementation, you would update the gift count for the post
       // For now, we'll just add a comment
     }
     setShowGiftDialog(false);
+  };
+  
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: post.title,
+        text: `Check out this post: ${post.title}`,
+        url: window.location.href,
+      })
+      .then(() => toast.success("Shared successfully!"))
+      .catch((error) => console.log('Error sharing:', error));
+    } else {
+      // Fallback for browsers that don't support the Web Share API
+      navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied to clipboard!");
+    }
   };
   
   return (
@@ -156,6 +180,7 @@ const BlogPost: React.FC = () => {
                   variant="ghost" 
                   size="sm" 
                   className="flex items-center gap-1"
+                  onClick={handleShare}
                 >
                   <Share size={16} />
                   <span>Share</span>

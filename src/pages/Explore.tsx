@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -24,7 +23,6 @@ const Explore: React.FC = () => {
   const [showGiftSelector, setShowGiftSelector] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
   
-  // New post states
   const [showNewPostDialog, setShowNewPostDialog] = useState(false);
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
@@ -53,7 +51,6 @@ const Explore: React.FC = () => {
   };
   
   const handleViewProfile = (userId: string) => {
-    // For now just show an alert since we can't navigate to other user profiles directly
     if (userId === currentUser.id) {
       navigate('/profile');
     } else {
@@ -61,7 +58,11 @@ const Explore: React.FC = () => {
     }
   };
   
-  const handleViewPost = (postId: string) => {
+  const handleViewPost = (postId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     navigate(`/blog/${postId}`);
   };
   
@@ -72,8 +73,6 @@ const Explore: React.FC = () => {
   
   const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
     if (selectedPostId) {
-      // This would be replaced with a proper gift sending mechanism
-      // For now, just add a comment
       commentOnBlogPost(selectedPostId, `I sent you a ${giftType}! 💝`);
     }
     setShowGiftSelector(false);
@@ -245,7 +244,11 @@ const Explore: React.FC = () => {
                       : post.comments[0]?.userName || 'Unknown';
                     
                     return (
-                      <Card key={post.id} className="overflow-hidden h-full flex flex-col hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleViewPost(post.id)}>
+                      <Card 
+                        key={post.id}
+                        className="overflow-hidden h-full flex flex-col hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={(e) => handleViewPost(post.id, e)}
+                      >
                         <CardContent className="p-6 flex flex-col h-full">
                           <div className="flex justify-between items-start mb-3">
                             <div>
@@ -307,7 +310,7 @@ const Explore: React.FC = () => {
                                 className="flex items-center gap-1 px-1.5"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleViewPost(post.id);
+                                  handleViewPost(post.id, e);
                                 }}
                               >
                                 <MessageSquare size={16} />
@@ -372,7 +375,11 @@ const Explore: React.FC = () => {
                       : post.comments[0]?.userName || 'Unknown';
                     
                     return (
-                      <Card key={post.id} className="overflow-hidden h-full flex flex-col hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleViewPost(post.id)}>
+                      <Card 
+                        key={post.id}
+                        className="overflow-hidden h-full flex flex-col hover:shadow-md transition-shadow cursor-pointer"
+                        onClick={(e) => handleViewPost(post.id, e)}
+                      >
                         <CardContent className="p-6 flex flex-col h-full">
                           <div className="flex justify-between items-start mb-3">
                             <div>
@@ -434,7 +441,7 @@ const Explore: React.FC = () => {
                                 className="flex items-center gap-1 px-1.5"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleViewPost(post.id);
+                                  handleViewPost(post.id, e);
                                 }}
                               >
                                 <MessageSquare size={16} />
