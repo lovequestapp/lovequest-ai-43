@@ -1,435 +1,249 @@
-import React, { useState, useMemo, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useUser } from '@/context/UserContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import MessageList from '@/components/MessageList';
 import MessageChat from '@/components/MessageChat';
-import { useUser } from '@/context/UserContext';
-import { getConversationStarters } from '@/utils/matchingAlgorithm';
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Heart, Sparkles, Gamepad, Gift, MessageSquare } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import GiftSelector from '@/components/GiftSelector';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { Search, ChevronLeft, Info, Heart, Gift } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
 
 const Messages = () => {
-  const { matches, messages, potentialMatches, sendMessage, currentUser } = useUser();
-  const [activeMatchId, setActiveMatchId] = useState<string | undefined>(matches[0]?.id);
-  const { toast } = useToast();
-  const [gameDialogOpen, setGameDialogOpen] = useState(false);
-  const [activeGame, setActiveGame] = useState<{name: string, icon: React.ReactNode} | null>(null);
-  const [gamePrompt, setGamePrompt] = useState('');
-  const [gameResponses, setGameResponses] = useState<string[]>([]);
+  const { id: activeMatchId } = useParams<{ id: string }>();
+  const { currentUser, matches, messages, sendMessage, markMessagesAsRead, potentialMatches } = useUser();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isGiftSelectorOpen, setIsGiftSelectorOpen] = useState(false);
+  const navigate = useNavigate();
   
-  useEffect(() => {
-    if (matches.length > 0 && !activeMatchId) {
-      setActiveMatchId(matches[0].id);
-    }
-  }, [matches, activeMatchId]);
+  if (!currentUser) return null;
   
-  const matchListItems = useMemo(() => 
-    matches.map(match => {
-      const matchedUser = potentialMatches.find(user => user.id === match.matchedUserId);
-      const matchMessages = messages[match.id] || [];
+  // Function to get the other user ID in a match
+  const getOtherUserId = (match: any) => {
+    return match.userId1 === currentUser.id ? match.userId2 : match.userId1;
+  };
+  
+  // Get matched users details
+  const getMatchedUsers = () => {
+    return matches.map(match => {
+      const otherUserId = getOtherUserId(match);
+      const matchedUser = potentialMatches.find(user => user.id === match.matchedUserId) || 
+                        potentialMatches.find(user => user.id === otherUserId);
+      
+      // Get last message from the messages state
+      const userMessages = messages[otherUserId] || [];
+      const lastMessage = match.lastMessage || (userMessages.length > 0 ? userMessages[userMessages.length - 1].content : '');
+      const lastMessageTime = match.lastMessageTime || (userMessages.length > 0 ? userMessages[userMessages.length - 1].timestamp : new Date());
+      
+      // Count unread messages
+      const unreadCount = userMessages.filter(msg => !msg.read && msg.senderId !== currentUser.id).length;
       
       return {
         id: match.id,
+        userId: otherUserId,
         name: matchedUser?.name || 'Unknown User',
-        photo: matchedUser?.photos[0] || '/placeholder.svg',
-        lastMessage: match.lastMessage,
-        lastMessageTime: match.lastMessageTime,
-        unreadCount: matchMessages.filter(msg => !msg.read && msg.senderId !== currentUser?.id).length,
+        photo: matchedUser?.photos?.[0] || '',
+        lastMessage,
+        lastMessageTime,
+        unreadCount
       };
-    }),
-  [matches, potentialMatches, messages, currentUser]);
+    });
+  };
   
-  const activeMatch = useMemo(() => 
-    matches.find(match => match.id === activeMatchId),
-  [matches, activeMatchId]);
+  // Filter matches by search term
+  const filteredMatches = getMatchedUsers().filter(match => 
+    match.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
-  const activeMatchUser = useMemo(() => 
-    activeMatch 
-      ? potentialMatches.find(user => user.id === activeMatch.matchedUserId)
-      : undefined,
-  [activeMatch, potentialMatches]);
+  // Get current active match details
+  const activeMatch = activeMatchId ? matches.find(match => getOtherUserId(match) === activeMatchId) : null;
+  const activeUser = activeMatchId ? potentialMatches.find(user => user.id === activeMatchId) : null;
   
-  const chatMessages = useMemo(() => {
-    if (!activeMatchId || !currentUser) return [];
-    
-    const matchMessages = messages[activeMatchId] || [];
-    return matchMessages.map(msg => ({
-      id: msg.id,
-      content: msg.content,
-      timestamp: msg.timestamp,
-      sender: msg.senderId === currentUser.id ? 'user' as const : 'match' as const,
-      type: msg.type || 'text',
-      giftType: msg.giftType,
-    }));
-  }, [activeMatchId, messages, currentUser]);
-  
-  const handleSendMessage = (
-    content: string, 
-    type: 'text' | 'voice' | 'gift' | 'video-request' | 'video-accepted' | 'video-ended' = 'text', 
-    giftType?: string
-  ) => {
+  // Mark messages as read when opening a chat
+  useEffect(() => {
     if (activeMatchId) {
-      if (type === 'gift') {
-        toast({
-          title: "Virtual Gift Sent",
-          description: `You sent a ${giftType} to ${activeMatchUser?.name}. In a real app, this would connect to a payment system.`,
-        });
-      } else if (type === 'voice') {
-        toast({
-          title: "Voice Message Sent",
-          description: "Your voice message has been sent.",
-        });
-      } else if (type === 'video-request') {
-        toast({
-          title: "Video Call Requested",
-          description: `Waiting for ${activeMatchUser?.name} to accept your call...`,
-        });
-        
-        setTimeout(() => {
-          if (activeMatchId) {
-            const responseType = Math.random() > 0.3 ? 'video-accepted' : 'video-ended';
-            const responseMessage = responseType === 'video-accepted' 
-              ? "Video call accepted" 
-              : "Missed your call, sorry!";
-              
-            sendMessage(
-              activeMatchId, 
-              responseMessage, 
-              responseType as 'video-accepted' | 'video-ended'
-            );
-          }
-        }, 5000 + Math.random() * 5000);
-      }
-      
-      sendMessage(activeMatchId, content, type, giftType);
+      markMessagesAsRead(activeMatchId);
     }
+  }, [activeMatchId, markMessagesAsRead]);
+  
+  // Handle sending a message
+  const handleSendMessage = (message: string) => {
+    if (!activeMatchId || !message.trim()) return;
+    sendMessage(activeMatchId, message);
   };
   
-  const conversationStarters = useMemo(() => {
-    if (!activeMatchUser || !currentUser) return [];
+  // Handle sending a gift
+  const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
+    if (!activeMatchId) return;
     
-    return getConversationStarters(currentUser, activeMatchUser);
-  }, [activeMatchUser, currentUser]);
-  
-  const icebreakers = [
-    "What's your favorite place you've ever traveled to?",
-    "Do you have any hidden talents?",
-    "What's your ideal weekend look like?",
-    "Coffee or tea person?",
-    "Beach vacation or mountain getaway?",
-    "What's the last show you binged?",
-    "What's a hobby you've always wanted to try?",
-    "Early bird or night owl?",
-  ];
-  
-  const games = [
-    { name: "Truth or Dare", icon: <Sparkles className="text-purple-500" /> },
-    { name: "Would You Rather", icon: <Gamepad className="text-green-500" /> },
-    { name: "Never Have I Ever", icon: <Sparkles className="text-blue-500" /> },
-    { name: "Two Truths & A Lie", icon: <Gamepad className="text-amber-500" /> },
-  ];
-  
-  const popularGifts = [
-    { name: "Virtual Rose", price: 20, icon: <Gift className="text-rose-500" /> },
-    { name: "Virtual Heart", price: 100, icon: <Heart className="text-red-500 fill-red-500" /> },
-    { name: "Teddy Bear", price: 50, icon: <Gift className="text-amber-700" /> },
-  ];
-  
-  const handleIcebreakerClick = (starter: string) => {
-    if (activeMatchId && activeMatchUser) {
-      handleSendMessage(starter);
-      toast({
-        title: "Conversation Starter Sent",
-        description: `You sent an icebreaker to ${activeMatchUser.name}`,
-      });
-    } else {
-      toast({
-        title: "Select a Conversation",
-        description: "Please select a match to send this conversation starter to",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const handleGameSelect = (game: {name: string, icon: React.ReactNode}) => {
-    setActiveGame(game);
+    const giftEmojis = {
+      rose: '🌹',
+      heart: '❤️',
+      teddy: '🧸'
+    };
     
-    let initialPrompt = '';
-    let initialResponses: string[] = [];
-    
-    switch(game.name) {
-      case "Truth or Dare":
-        initialPrompt = "Truth or Dare?";
-        initialResponses = ["Truth", "Dare"];
-        break;
-      case "Would You Rather":
-        initialPrompt = "Would you rather...";
-        initialResponses = [
-          "Be able to teleport or fly?",
-          "Always be 10 minutes late or 20 minutes early?",
-          "Have unlimited money or unlimited time?",
-          "Live without music or live without movies?",
-        ];
-        break;
-      case "Never Have I Ever":
-        initialPrompt = "Never have I ever...";
-        initialResponses = [
-          "Traveled to another country",
-          "Gone skinny dipping",
-          "Broken a bone",
-          "Gotten a tattoo",
-        ];
-        break;
-      case "Two Truths & A Lie":
-        initialPrompt = "Two truths and a lie";
-        initialResponses = [
-          "Share three statements about yourself - two true and one false",
-          "Have the other person guess which one is the lie",
-        ];
-        break;
-    }
-    
-    setGamePrompt(initialPrompt);
-    setGameResponses(initialResponses);
-    setGameDialogOpen(true);
-  };
-  
-  const sendGamePrompt = (prompt: string) => {
-    if (activeMatchId && activeMatchUser) {
-      const gamePrefix = activeGame ? `[${activeGame.name}] ` : '';
-      handleSendMessage(`${gamePrefix}${prompt}`);
-      
-      toast({
-        title: `${activeGame?.name || 'Game'} Started`,
-        description: `You sent a game prompt to ${activeMatchUser.name}`,
-      });
-      
-      setGameDialogOpen(false);
-    } else {
-      toast({
-        title: "Select a Conversation",
-        description: "Please select a match to play this game with",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const sendGameResponse = (response: string) => {
-    if (activeMatchId && activeGame) {
-      sendGamePrompt(`${gamePrompt} ${response}`);
-    }
-  };
-  
-  const handleGiftSelect = (gift: {name: string, price: number}) => {
-    if (activeMatchId && activeMatchUser) {
-      const giftType = gift.name.toLowerCase().includes('rose') 
-        ? 'rose' 
-        : gift.name.toLowerCase().includes('heart') 
-          ? 'heart' 
-          : 'teddy';
-      
-      const inventory = currentUser?.giftInventory || {};
-      
-      if (!inventory[giftType] || inventory[giftType] <= 0) {
-        toast({
-          title: "Gift Not Available",
-          description: `You don't have any ${gift.name}s in your inventory. Visit the gift shop to purchase.`,
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      handleSendMessage(`I'm sending you a ${gift.name}!`, 'gift', giftType);
-      
-      toast({
-        title: `${gift.name} Sent`,
-        description: `You sent a ${gift.name} to ${activeMatchUser.name}`,
-      });
-    } else {
-      toast({
-        title: "Select a Conversation",
-        description: "Please select a match to send this gift to",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  if (matches.length === 0) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        
-        <main className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
-          <Card className="max-w-md mx-auto text-center">
-            <CardContent className="p-8 flex flex-col items-center">
-              <Heart size={48} className="text-love-500 mb-6" />
-              
-              <h2 className="text-2xl font-display font-semibold mb-3">No matches yet</h2>
-              
-              <p className="text-muted-foreground mb-6">
-                Start discovering and matching with people to begin conversations.
-              </p>
-            </CardContent>
-          </Card>
-        </main>
-        
-        <Footer />
-      </div>
+    // Send a message with the gift
+    sendMessage(
+      activeMatchId, 
+      `I sent you a ${giftType}! ${giftEmojis[giftType]}`,
+      'gift',
+      giftType
     );
-  }
+    
+    setIsGiftSelectorOpen(false);
+  };
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-8 flex flex-col">
-        <h1 className="text-3xl font-display font-bold mb-6">Messages</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" style={{ minHeight: "650px", height: "65vh" }}>
-          <div className="md:col-span-1 h-full overflow-hidden">
-            <MessageList
-              matches={matchListItems}
-              activeMatchId={activeMatchId}
-              onSelectMatch={setActiveMatchId}
-            />
+      <main className="flex flex-grow overflow-hidden">
+        {/* Sidebar with match list */}
+        <div className={`w-full md:w-80 border-r flex-shrink-0 ${activeMatchId ? 'hidden md:block' : 'block'}`}>
+          <div className="p-4 border-b">
+            <h1 className="text-xl font-semibold mb-4">Messages</h1>
+            
+            <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search conversations..."
+                className="w-full pl-8 pr-4 py-2 border rounded-md"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
           
-          <div className="md:col-span-2 h-full overflow-hidden">
-            {activeMatchUser && activeMatchId ? (
-              <MessageChat
-                matchName={activeMatchUser.name}
-                matchPhoto={activeMatchUser.photos[0]}
-                compatibilityScore={activeMatchUser.compatibilityScore}
-                messages={chatMessages}
-                onSendMessage={handleSendMessage}
-                suggestionStarters={conversationStarters}
-              />
+          <div className="overflow-y-auto h-[calc(100vh-10rem)]">
+            {filteredMatches.length > 0 ? (
+              filteredMatches.map((match) => (
+                <Link 
+                  key={match.userId} 
+                  to={`/messages/${match.userId}`}
+                  className={cn(
+                    "flex items-center p-3 border-b hover:bg-gray-50 transition-colors",
+                    activeMatchId === match.userId && "bg-love-50"
+                  )}
+                >
+                  <div className="relative">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={match.photo} alt={match.name} />
+                      <AvatarFallback>{match.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    {match.unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-love-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs">
+                        {match.unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="ml-3 overflow-hidden flex-grow">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium">{match.name}</span>
+                      <span className="text-xs text-gray-500">
+                        {formatDistanceToNow(new Date(match.lastMessageTime), { addSuffix: true })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 truncate">
+                      {match.lastMessage || 'Start a conversation!'}
+                    </p>
+                  </div>
+                </Link>
+              ))
             ) : (
-              <Card className="h-full flex items-center justify-center">
-                <CardContent className="text-center p-8">
-                  <p className="text-muted-foreground">
-                    Select a conversation to start messaging
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="p-4 text-center text-gray-500">
+                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-2">
+                  <Heart className="h-8 w-8 text-gray-300" />
+                </div>
+                <p className="font-medium">No matches yet</p>
+                <p className="text-sm">When you match with someone, they'll appear here</p>
+              </div>
             )}
           </div>
         </div>
         
-        <div className="space-y-6 mb-8">
-          <section>
-            <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
-              <MessageSquare className="text-purple-600" size={24} />
-              <span>Conversation Starters</span>
-            </h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {icebreakers.slice(0, 4).map((starter, index) => (
-                <Card 
-                  key={index} 
-                  className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-100 hover:shadow-md transition-shadow cursor-pointer hover:bg-purple-100"
-                  onClick={() => handleIcebreakerClick(starter)}
-                >
-                  <CardContent className="p-4">
-                    <p className="text-sm font-medium text-purple-800">{starter}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-          
-          <section>
-            <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
-              <Gamepad className="text-green-600" size={24} />
-              <span>Games to Play</span>
-            </h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-              {games.map((game, index) => (
-                <Card 
-                  key={index} 
-                  className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-100 hover:shadow-md transition-shadow cursor-pointer hover:bg-green-100"
-                  onClick={() => handleGameSelect(game)}
-                >
-                  <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                    <div className="text-2xl mb-2">{game.icon}</div>
-                    <h3 className="font-medium text-green-800">{game.name}</h3>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-          
-          <section>
-            <h2 className="text-2xl font-display font-semibold mb-4 flex items-center gap-2">
-              <Gift className="text-rose-600" size={24} />
-              <span>Popular Gifts</span>
-            </h2>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {popularGifts.map((gift, index) => (
-                <Card 
-                  key={index} 
-                  className="bg-gradient-to-br from-rose-50 to-pink-50 border-rose-100 hover:shadow-md transition-shadow cursor-pointer hover:bg-rose-100"
-                  onClick={() => handleGiftSelect(gift)}
-                >
-                  <CardContent className="p-4 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">{gift.icon}</div>
-                      <span className="font-medium text-rose-800">{gift.name}</span>
-                    </div>
-                    <Button size="sm" variant="outline" className="border-rose-200 text-rose-600 hover:bg-rose-50">
-                      ${gift.price}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
-        </div>
-      </main>
-      
-      <Dialog open={gameDialogOpen} onOpenChange={setGameDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {activeGame?.icon}
-              <span>{activeGame?.name}</span>
-            </DialogTitle>
-            <DialogDescription>
-              Play this game with your match to break the ice and have fun!
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 my-4">
-            <div className="p-4 bg-muted rounded-md">
-              <p className="font-medium">{gamePrompt}</p>
-            </div>
-            
-            <div className="space-y-2">
-              {gameResponses.map((response, index) => (
+        {/* Active conversation */}
+        {activeMatchId && activeUser ? (
+          <div className="flex-grow flex flex-col h-[calc(100vh-4rem)]">
+            {/* Chat header */}
+            <div className="p-4 border-b flex items-center justify-between">
+              <div className="flex items-center">
                 <Button 
-                  key={index} 
-                  variant="outline" 
-                  className="w-full justify-start text-left" 
-                  onClick={() => sendGameResponse(response)}
+                  variant="ghost" 
+                  size="icon" 
+                  className="md:hidden mr-2"
+                  onClick={() => navigate('/messages')}
                 >
-                  {response}
+                  <ChevronLeft className="h-5 w-5" />
                 </Button>
-              ))}
+                
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={activeUser.photos[0]} alt={activeUser.name} />
+                  <AvatarFallback>{activeUser.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                
+                <div className="ml-3">
+                  <div className="font-medium">{activeUser.name}</div>
+                  <div className="text-xs text-gray-500">
+                    {activeUser.location}
+                    {activeUser.compatibilityScore && (
+                      <Badge className="ml-2 bg-love-100 text-love-700 hover:bg-love-200" variant="secondary">
+                        {activeUser.compatibilityScore}% Match
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => setIsGiftSelectorOpen(true)}
+                >
+                  <Gift className="h-5 w-5 text-love-500" />
+                </Button>
+                
+                <Button variant="ghost" size="icon">
+                  <Info className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Chat messages */}
+            <MessageChat 
+              messages={messages[activeMatchId] || []} 
+              currentUserId={currentUser.id}
+              onSendMessage={handleSendMessage}
+              recipientName={activeUser.name}
+            />
+          </div>
+        ) : (
+          <div className="hidden md:flex flex-grow items-center justify-center bg-gray-50">
+            <div className="text-center max-w-md p-8">
+              <div className="mx-auto w-20 h-20 bg-love-100 rounded-full flex items-center justify-center mb-4">
+                <Heart className="h-10 w-10 text-love-500" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Your Messages</h2>
+              <p className="text-gray-600 mb-6">
+                Select a conversation from the list or match with someone new to start chatting.
+              </p>
             </div>
           </div>
-          
-          <DialogFooter>
-            <Button onClick={() => sendGamePrompt(gamePrompt)}>
-              Send Custom Prompt
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        )}
+      </main>
+      
+      <GiftSelector 
+        isOpen={isGiftSelectorOpen}
+        onClose={() => setIsGiftSelectorOpen(false)}
+        onSendGift={handleSendGift}
+      />
       
       <Footer />
     </div>

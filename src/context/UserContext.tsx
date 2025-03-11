@@ -109,10 +109,10 @@ type UserContextType = {
   passUser: (userId: string) => void;
   matches: Match[];
   messages: Record<string, Message[]>;
-  sendMessage: (receiverId: string, content: string) => void;
+  sendMessage: (receiverId: string, content: string, type?: 'text' | 'gift', giftType?: string) => void;
   markMessagesAsRead: (userId: string) => void;
   updateProfile: (updates: Partial<User>) => void;
-  boostProfile: (boostType: BoostType) => void;
+  boostProfile: (boostType: BoostType) => boolean;
   boostedProfiles: BoostProfile[];
   getGiftBenefits: () => { 
     coins: number; 
@@ -166,7 +166,7 @@ const UserContext = createContext<UserContextType>({
   sendMessage: () => {},
   markMessagesAsRead: () => {},
   updateProfile: () => {},
-  boostProfile: () => {},
+  boostProfile: () => false,
   boostedProfiles: [],
   getGiftBenefits: () => ({ 
     coins: 0, 
@@ -272,7 +272,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         accountNumber: '123456789',
         bankName: 'Chase Bank',
         swiftCode: 'CHASUS33'
-      }
+      },
+      compatibilityScore: 0
     };
 
     // Simulate fetching potential matches
@@ -602,7 +603,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Properly implement boostProfile function
-  const boostProfile = (boostType: BoostType) => {
+  const boostProfile = (boostType: BoostType): boolean => {
     if (!currentUser) {
       toast.error("You must be logged in to boost your profile");
       return false;
