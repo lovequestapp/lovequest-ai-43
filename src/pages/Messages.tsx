@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
@@ -204,10 +205,12 @@ const Messages = () => {
             
             {activeMatchId && (
               <MessageChat 
-                messages={(messages[activeMatchId] || []) as any} 
-                currentUserId={currentUser.id}
+                messages={(messages[activeMatchId] || []) as any}
+                matchName={activeUser.name}
+                matchPhoto={activeUser.photos[0] || ''}
+                compatibilityScore={activeUser.compatibilityScore}
                 onSendMessage={handleSendMessage}
-                recipientName={activeUser.name}
+                suggestionStarters={["Hey, how are you?", "What's your favorite movie?", "Do you like hiking?"]}
               />
             )}
             <div ref={messagesEndRef} />
