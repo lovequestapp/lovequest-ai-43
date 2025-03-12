@@ -21,7 +21,8 @@ import {
   MapPin, 
   Globe, 
   X,
-  Rocket
+  Rocket,
+  Info
 } from 'lucide-react';
 import { toast } from "sonner";
 import {
@@ -40,6 +41,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import ProfileBoostPopup from "@/components/ProfileBoostPopup";
 import { useBoostPopup } from "@/hooks/useBoostPopup";
+import { cn } from '@/lib/utils';
 
 const regions = [
   { value: "north-america", label: "North America" },
@@ -137,7 +139,7 @@ const Discover = () => {
           coordinates: userCoordinates
         };
         
-        // Get only nearby users
+        // Get only nearby users - fixed function call
         processedMatches = getNearbyUsers(
           currentUserWithCoords,
           processedMatches,
@@ -155,7 +157,7 @@ const Discover = () => {
         });
       }
       
-      // Use our enhanced algorithm to sort matches
+      // Use our enhanced algorithm to sort matches - fixed function call
       const currentUserWithCoords: UserWithCoordinates = userCoordinates 
         ? { ...(currentUser as UserWithCoordinates), coordinates: userCoordinates }
         : currentUser as UserWithCoordinates;
@@ -176,7 +178,7 @@ const Discover = () => {
           return {
             ...match,
             isBoosted: false,
-            boostLevel: 'standard' as const
+            boostLevel: 'none' as const
           };
         }
         
@@ -191,7 +193,7 @@ const Discover = () => {
         const isBoosted = shouldBoostProfile(popularityScore) || Boolean(isBoostedProfile);
         
         // Default boost level based on popularity
-        let boostLevel: 'standard' | 'super' | 'local' | 'international' = 
+        let boostLevel: 'standard' | 'super' | 'local' | 'international' | 'none' = 
           popularityScore >= 100 ? 'super' : 'standard';
         
         // Override with custom boost type if applicable
@@ -202,7 +204,7 @@ const Discover = () => {
         return {
           ...match,
           isBoosted,
-          boostLevel: isBoosted ? boostLevel : undefined
+          boostLevel: isBoosted ? boostLevel : 'none'
         };
       });
       
@@ -216,11 +218,12 @@ const Discover = () => {
           'international': 0,
           'local': 1,
           'super': 2,
-          'standard': 3
+          'standard': 3,
+          'none': 4
         };
         
-        const aOrder = boostOrder[a.boostLevel as keyof typeof boostOrder] || 3;
-        const bOrder = boostOrder[b.boostLevel as keyof typeof boostOrder] || 3;
+        const aOrder = boostOrder[a.boostLevel as keyof typeof boostOrder] || 4;
+        const bOrder = boostOrder[b.boostLevel as keyof typeof boostOrder] || 4;
         
         return aOrder - bOrder;
       });

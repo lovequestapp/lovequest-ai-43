@@ -1,3 +1,4 @@
+
 // Utility function to calculate distance between two coordinates
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; // Radius of the earth in km
@@ -49,24 +50,30 @@ const calculateCompatibilityScore = (user1: User, user2: User): number => {
   return normalizedScore;
 };
 
-// Add missing exports
-export const getAiEnhancedMatches = (users: UserWithCoordinates[], currentUser: User): UserWithCoordinates[] => {
-  // This is a placeholder implementation
-  return users.map(user => ({
-    ...user,
-    compatibilityScore: calculateCompatibilityScore(user, currentUser)
-  }));
-};
+// Update interface to include all needed properties
+export interface UserWithCoordinates extends User {
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  distance?: number;
+  isBoosted?: boolean;
+  boostLevel?: 'local' | 'international' | 'none' | 'standard' | 'super';
+  compatibilityScore?: number;
+}
 
-export const shouldBoostProfile = (user: User): boolean => {
-  // Placeholder logic to determine if a profile should be boosted
-  const hasLowMatches = true; // In a real app, this would be determined by actual data
-  return hasLowMatches;
-};
+import { User } from '@/context/UserContext';
 
-export const getNearbyUsers = (users: UserWithCoordinates[], currentUser: UserWithCoordinates, maxDistance: number): UserWithCoordinates[] => {
+// Function to get nearby users - fixed signature
+export const getNearbyUsers = (
+  currentUser: UserWithCoordinates,
+  users: UserWithCoordinates[],
+  maxDistance: number
+): UserWithCoordinates[] => {
+  if (!currentUser.coordinates) return users;
+  
   return users.filter(user => {
-    if (!user.coordinates || !currentUser.coordinates) return false;
+    if (!user.coordinates) return false;
     
     const distance = calculateDistance(
       currentUser.coordinates.latitude,
@@ -79,24 +86,20 @@ export const getNearbyUsers = (users: UserWithCoordinates[], currentUser: UserWi
   });
 };
 
-// Update the UserWithCoordinates interface to include new properties needed by Discover.tsx
-export interface UserWithCoordinates extends User {
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
-  distance?: number;
-  isBoosted?: boolean;
-  boostLevel?: 'local' | 'international' | 'none';
-}
-import { User } from '@/context/UserContext';
+// Function to determine if a profile should be boosted based on popularity
+export const shouldBoostProfile = (popularityPoints: number): boolean => {
+  // Logic to determine if a profile should be boosted based on popularity points
+  return popularityPoints > 90;
+};
 
-export interface UserWithCoordinates extends User {
-    coordinates?: {
-        latitude: number;
-        longitude: number;
-    };
-    distance?: number;
-    isBoosted?: boolean;
-    boostLevel?: 'local' | 'international' | 'none';
-}
+// Function to enhance matches with AI scoring
+export const getAiEnhancedMatches = (
+  currentUser: UserWithCoordinates,
+  users: UserWithCoordinates[]
+): UserWithCoordinates[] => {
+  // Apply compatibility scoring
+  return users.map(user => ({
+    ...user,
+    compatibilityScore: calculateCompatibilityScore(currentUser, user)
+  })).sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
+};

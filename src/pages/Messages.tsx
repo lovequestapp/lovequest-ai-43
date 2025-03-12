@@ -6,7 +6,7 @@ import MessageList from '@/components/MessageList';
 import MessageChat from '@/components/MessageChat';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { GiftSelector } from '@/components/GiftSelector';
+import GiftSelector from '@/components/GiftSelector';
 import { Link } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,24 @@ const Messages = () => {
   const [activeMatchId, setActiveMatchId] = useState<string | null>(paramId || null);
   const [showGiftSelector, setShowGiftSelector] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Process matches to match MessageList expected format
+  const processedMatches = matches.map(match => {
+    const otherUserId = getOtherUserId(match);
+    const user = potentialMatches.find(u => u.id === otherUserId);
+    const unreadCount = messages[otherUserId]?.filter(m => 
+      m.senderId === otherUserId && !m.read
+    ).length || 0;
+    
+    return {
+      id: otherUserId,
+      name: user?.name || 'Unknown User',
+      photo: user?.photos?.[0] || '',
+      lastMessage: match.lastMessage,
+      lastMessageTime: match.lastMessageTime,
+      unreadCount
+    };
+  });
   
   const getOtherUserId = (match: any): string => {
     if (!currentUser) return '';
@@ -68,7 +86,7 @@ const Messages = () => {
   };
 
   // Handle gift selection
-  const handleGiftSelect = (giftType: string) => {
+  const handleGiftSelect = (giftType: 'rose' | 'heart' | 'teddy') => {
     if (!currentUser) return;
     
     handleSendMessage(`Sent a ${giftType}`, 'gift', giftType);
@@ -127,9 +145,7 @@ const Messages = () => {
                 </div>
               ) : (
                 <MessageList 
-                  matches={matches} 
-                  messages={messages} 
-                  currentUser={currentUser}
+                  matches={processedMatches} 
                   activeMatchId={activeMatchId}
                   onSelectMatch={(matchId) => {
                     setActiveMatchId(matchId);
@@ -177,7 +193,7 @@ const Messages = () => {
                 </div>
                 
                 <MessageChat 
-                  messages={(messages[activeMatchId] || []) as any}
+                  messages={messages[activeMatchId] || []}
                   matchName={activeUser.name}
                   matchPhoto={activeUser.photos[0] || ''}
                   compatibilityScore={activeUser.compatibilityScore}
@@ -205,8 +221,9 @@ const Messages = () => {
       
       {showGiftSelector && (
         <GiftSelector 
-          onSelect={handleGiftSelect} 
+          isOpen={showGiftSelector}
           onClose={() => setShowGiftSelector(false)} 
+          onSendGift={handleGiftSelect} 
         />
       )}
       
