@@ -7,7 +7,7 @@ import { Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
-interface MessageListProps {
+export interface MessageListProps {
   matches: {
     id: string;
     name: string;
@@ -16,14 +16,16 @@ interface MessageListProps {
     lastMessageTime?: Date;
     unreadCount?: number;
   }[];
-  activeMatchId?: string;
+  activeMatchId?: string | null;
   onSelectMatch: (matchId: string) => void;
+  className?: string;
 }
 
 const MessageList: React.FC<MessageListProps> = ({
   matches,
   activeMatchId,
   onSelectMatch,
+  className
 }) => {
   return (
     <Card className="h-full border-love-100 flex flex-col">
@@ -37,7 +39,7 @@ const MessageList: React.FC<MessageListProps> = ({
           )}
         </div>
         
-        <ScrollArea className="flex-grow">
+        <ScrollArea className={cn("flex-grow", className)}>
           <div className="divide-y divide-love-100">
             {matches.map((match) => (
               <div

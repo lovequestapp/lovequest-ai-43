@@ -167,7 +167,7 @@ const Messages = () => {
                 <div className="p-4 border-b flex justify-between items-center">
                   <div className="flex items-center">
                     <Avatar className="h-10 w-10 mr-3">
-                      <AvatarImage src={activeUser.photos[0]} alt={activeUser.name} />
+                      <AvatarImage src={activeUser.photos?.[0]} alt={activeUser.name} />
                       <AvatarFallback>{activeUser.name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
                     <div>
@@ -193,9 +193,9 @@ const Messages = () => {
                 </div>
                 
                 <MessageChat 
-                  messages={messages[activeMatchId] || []}
+                  messages={activeMatchId ? (messages[activeMatchId] || []) : []}
                   matchName={activeUser.name}
-                  matchPhoto={activeUser.photos[0] || ''}
+                  matchPhoto={activeUser.photos?.[0] || ''}
                   compatibilityScore={activeUser.compatibilityScore}
                   onSendMessage={handleSendMessage}
                   suggestionStarters={["Hey, how are you?", "What's your favorite movie?", "Do you like hiking?"]}
