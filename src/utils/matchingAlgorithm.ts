@@ -1,3 +1,4 @@
+
 // Utility function to calculate distance between two coordinates
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; // Radius of the earth in km
@@ -49,6 +50,9 @@ const calculateCompatibilityScore = (user1: User, user2: User): number => {
   return normalizedScore;
 };
 
+// Define the specific boost level type
+export type BoostLevelType = 'local' | 'international' | 'none' | 'standard' | 'super';
+
 // Update interface to include all needed properties with correctly typed boostLevel
 export interface UserWithCoordinates extends User {
   coordinates?: {
@@ -57,7 +61,7 @@ export interface UserWithCoordinates extends User {
   };
   distance?: number;
   isBoosted?: boolean;
-  boostLevel?: 'local' | 'international' | 'none' | 'standard' | 'super';
+  boostLevel?: BoostLevelType;
   compatibilityScore?: number;
 }
 

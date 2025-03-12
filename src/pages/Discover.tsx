@@ -8,7 +8,8 @@ import {
   getAiEnhancedMatches, 
   shouldBoostProfile, 
   getNearbyUsers,
-  UserWithCoordinates 
+  UserWithCoordinates,
+  BoostLevelType
 } from '@/utils/matchingAlgorithm';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -178,7 +179,7 @@ const Discover = () => {
           return {
             ...match,
             isBoosted: false,
-            boostLevel: 'none' as const
+            boostLevel: 'none' as BoostLevelType
           };
         }
         
@@ -193,7 +194,7 @@ const Discover = () => {
         const isBoosted = shouldBoostProfile(popularityScore) || Boolean(isBoostedProfile);
         
         // Default boost level based on popularity
-        let boostLevel: 'standard' | 'super' | 'local' | 'international' | 'none' = 
+        let boostLevel: BoostLevelType = 
           popularityScore >= 100 ? 'super' : 'standard';
         
         // Override with custom boost type if applicable
