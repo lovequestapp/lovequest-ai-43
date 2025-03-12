@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -190,7 +191,7 @@ const Discover = () => {
         return {
           ...match,
           isBoosted,
-          boostLevel: isBoosted ? boostLevel : 'none'
+          boostLevel: isBoosted ? boostLevel : 'none' as BoostLevelType
         };
       });
       
@@ -198,7 +199,7 @@ const Discover = () => {
       const normalMatches = matchesWithBoostInfo.filter(m => !m.isBoosted);
       
       const sortedBoostedMatches = boostedMatches.sort((a, b) => {
-        const boostOrder = {
+        const boostOrder: Record<BoostLevelType, number> = {
           'international': 0,
           'local': 1,
           'super': 2,
@@ -206,8 +207,8 @@ const Discover = () => {
           'none': 4
         };
         
-        const aOrder = boostOrder[a.boostLevel as keyof typeof boostOrder] || 4;
-        const bOrder = boostOrder[b.boostLevel as keyof typeof boostOrder] || 4;
+        const aOrder = boostOrder[a.boostLevel as BoostLevelType] || 4;
+        const bOrder = boostOrder[b.boostLevel as BoostLevelType] || 4;
         
         return aOrder - bOrder;
       });
