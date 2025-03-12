@@ -26,6 +26,7 @@ type MessageType = {
 };
 
 const Messages = () => {
+  
   const { id: paramId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentUser, potentialMatches, matches, messages, sendMessage, markMessagesAsRead } = useUser();
@@ -204,7 +205,7 @@ const Messages = () => {
                 </div>
                 
                 <MessageChat 
-                  messages={activeMatchId ? (messages[activeMatchId] || []) as any[]}
+                  messages={(activeMatchId ? (messages[activeMatchId] || []) : []) as any}
                   matchName={activeUser?.name || ''}
                   matchPhoto={activeUser?.photos?.[0] || ''}
                   compatibilityScore={activeUser?.compatibilityScore}
