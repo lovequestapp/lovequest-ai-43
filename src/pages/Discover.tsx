@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -51,13 +50,11 @@ const regions = [
   { value: "asia", label: "Asia" },
   { value: "africa", label: "Africa" },
   { value: "oceania", label: "Oceania" },
-  // Add more specific regions/countries as needed
 ];
 
 const Discover = () => {
   console.log("Rendering Discover component");
   
-  // Get user context with safe fallbacks for all properties
   const { 
     currentUser = null, 
     potentialMatches = [], 
@@ -72,12 +69,11 @@ const Discover = () => {
   const [isFiltering, setIsFiltering] = useState(false);
   const [isLocationFiltering, setIsLocationFiltering] = useState(false);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
-  const [proximityRadius, setProximityRadius] = useState(50); // Default 50km radius
+  const [proximityRadius, setProximityRadius] = useState(50);
   const [userCoordinates, setUserCoordinates] = useState<{latitude: number, longitude: number} | null>(null);
   const [isNearbyFilterActive, setIsNearbyFilterActive] = useState(false);
   const { forceShowPopup } = useBoostPopup();
   
-  // Get user's geolocation
   useEffect(() => {
     console.log("Running geolocation effect");
     if (navigator.geolocation) {
@@ -105,7 +101,6 @@ const Discover = () => {
     }
   }, []);
   
-  // Process matches when dependencies change
   useEffect(() => {
     console.log("Running match processing effect with:", {
       hasCurrentUser: !!currentUser,
@@ -115,7 +110,6 @@ const Discover = () => {
       isNearbyFilterActive
     });
     
-    // Only process if we have the required data
     if (!currentUser) {
       console.log("No current user, skipping match processing");
       return;
@@ -129,10 +123,8 @@ const Discover = () => {
     try {
       console.log("Processing matches...");
       
-      // Apply geolocation and filters
       let processedMatches = [...potentialMatches] as UserWithCoordinates[];
       
-      // Set user coordinates to potential matches if available
       if (userCoordinates && isNearbyFilterActive) {
         console.log(`Filtering by proximity: ${proximityRadius}km radius`);
         const currentUserWithCoords: UserWithCoordinates = {
@@ -140,7 +132,6 @@ const Discover = () => {
           coordinates: userCoordinates
         };
         
-        // Get only nearby users - fixed function call
         processedMatches = getNearbyUsers(
           currentUserWithCoords,
           processedMatches,
@@ -148,7 +139,6 @@ const Discover = () => {
         );
       }
       
-      // Filter by selected regions if any
       if (isLocationFiltering && selectedRegions.length > 0) {
         console.log(`Filtering by regions: ${selectedRegions.join(', ')}`);
         processedMatches = processedMatches.filter(match => {
@@ -158,7 +148,6 @@ const Discover = () => {
         });
       }
       
-      // Use our enhanced algorithm to sort matches - fixed function call
       const currentUserWithCoords: UserWithCoordinates = userCoordinates 
         ? { ...(currentUser as UserWithCoordinates), coordinates: userCoordinates }
         : currentUser as UserWithCoordinates;
@@ -169,7 +158,6 @@ const Discover = () => {
         processedMatches
       );
       
-      // Apply visual indicators for boosted profiles
       console.log("Identifying boosted profiles");
       const safeBootedProfiles = boostedProfiles || [];
       
@@ -183,7 +171,6 @@ const Discover = () => {
           };
         }
         
-        // Check if this profile is boosted - safely handle potential undefined values
         const isBoostedProfile = safeBootedProfiles.some(p => p && p.userId === match.id);
         
         const isInternationalBoosted = safeBootedProfiles.some(
@@ -193,11 +180,9 @@ const Discover = () => {
         const popularityScore = match.popularityPoints || 0;
         const isBoosted = shouldBoostProfile(popularityScore) || Boolean(isBoostedProfile);
         
-        // Default boost level based on popularity
         let boostLevel: BoostLevelType = 
           popularityScore >= 100 ? 'super' : 'standard';
         
-        // Override with custom boost type if applicable
         if (isBoostedProfile) {
           boostLevel = isInternationalBoosted ? 'international' : 'local';
         }
@@ -209,11 +194,9 @@ const Discover = () => {
         };
       });
       
-      // Move boosted profiles to the top
       const boostedMatches = matchesWithBoostInfo.filter(m => m.isBoosted);
       const normalMatches = matchesWithBoostInfo.filter(m => !m.isBoosted);
       
-      // Sort boosted by type - international first, then local, then super, then standard
       const sortedBoostedMatches = boostedMatches.sort((a, b) => {
         const boostOrder = {
           'international': 0,
@@ -233,7 +216,6 @@ const Discover = () => {
       console.log(`Final matches: ${finalMatches.length} (${boostedMatches.length} boosted)`);
       setEnhancedMatches(finalMatches);
       
-      // Notify user about boosted profiles (only on initial load)
       const boostedCount = boostedMatches.length;
       if (boostedCount > 0) {
         toast(`${boostedCount} Boosted ${boostedCount === 1 ? 'Profile' : 'Profiles'}`,
@@ -259,12 +241,9 @@ const Discover = () => {
     boostedProfiles
   ]);
   
-  // Filter handling functions
   const togglePopularFilter = () => {
     setIsFiltering(!isFiltering);
     
-    // If turning on filter, only show boosted profiles
-    // If turning off, show all profiles again
     if (!isFiltering) {
       toast("Showing Popular Profiles", {
         description: "Displaying profiles that are trending right now",
@@ -327,7 +306,6 @@ const Discover = () => {
     );
   };
   
-  // Apply filters to matches
   const filteredMatches = isFiltering
     ? enhancedMatches.filter(match => match.isBoosted)
     : enhancedMatches;
