@@ -1,4 +1,3 @@
-
 // Utility function to calculate distance between two coordinates
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
   const R = 6371; // Radius of the earth in km
@@ -50,7 +49,7 @@ const calculateCompatibilityScore = (user1: User, user2: User): number => {
   return normalizedScore;
 };
 
-// Update interface to include all needed properties
+// Update interface to include all needed properties with correctly typed boostLevel
 export interface UserWithCoordinates extends User {
   coordinates?: {
     latitude: number;

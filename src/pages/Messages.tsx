@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
@@ -13,6 +12,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
 import { Search, Info } from 'lucide-react';
+
+// Define a local MessageType to avoid type conflicts with the imported component
+type MessageType = {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  timestamp: Date;
+  read: boolean;
+  type?: 'text' | 'gift';
+  giftType?: string;
+};
 
 const Messages = () => {
   const { id: paramId } = useParams<{ id: string }>();
@@ -193,10 +204,10 @@ const Messages = () => {
                 </div>
                 
                 <MessageChat 
-                  messages={activeMatchId ? (messages[activeMatchId] || []) : []}
-                  matchName={activeUser.name}
-                  matchPhoto={activeUser.photos?.[0] || ''}
-                  compatibilityScore={activeUser.compatibilityScore}
+                  messages={activeMatchId ? (messages[activeMatchId] || []) as any[]} 
+                  matchName={activeUser?.name || ''}
+                  matchPhoto={activeUser?.photos?.[0] || ''}
+                  compatibilityScore={activeUser?.compatibilityScore}
                   onSendMessage={handleSendMessage}
                   suggestionStarters={["Hey, how are you?", "What's your favorite movie?", "Do you like hiking?"]}
                 />
