@@ -15,6 +15,7 @@ interface ProfileCardProps {
   interests: string[];
   photos: string[];
   compatibilityScore?: number;
+  personalityTraits?: string[];
   onLike?: (id: string) => void;
   onPass?: (id: string) => void;
   onMessage?: (id: string) => void;
@@ -30,6 +31,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   interests,
   photos,
   compatibilityScore,
+  personalityTraits,
   onLike,
   onPass,
   onMessage,
@@ -87,9 +89,19 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           {bio}
         </p>
         
+        {personalityTraits && personalityTraits.length > 0 && detailed && (
+          <div className="flex flex-wrap gap-2">
+            {personalityTraits.map((trait, index) => (
+              <Badge key={`trait-${index}`} className="bg-love-500">
+                {trait}
+              </Badge>
+            ))}
+          </div>
+        )}
+        
         <div className="flex flex-wrap gap-2">
           {interests.map((interest, index) => (
-            <Badge key={index} variant="secondary" className="bg-love-50 text-love-700 hover:bg-love-100">
+            <Badge key={`interest-${index}`} variant="secondary" className="bg-love-50 text-love-700 hover:bg-love-100">
               {interest}
             </Badge>
           ))}
