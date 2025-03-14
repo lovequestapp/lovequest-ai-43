@@ -106,29 +106,33 @@ const CompatibilityQuiz: React.FC<CompatibilityQuizProps> = ({ onComplete }) => 
     if (currentQuestionData.isTextInput) {
       const minLength = currentQuestionData.minLength || 10;
       if (textInput.trim().length >= minLength) {
-        setAnswers(prev => ({
-          ...prev,
+        const updatedAnswers = {
+          ...answers,
           [currentQuestionData.id]: textInput
-        }));
+        };
+        setAnswers(updatedAnswers);
         
-        setCurrentQuestion(prev => prev + 1);
-        setTextInput("");
+        if (currentQuestion < quizQuestions.length - 1) {
+          setCurrentQuestion(prev => prev + 1);
+          setTextInput("");
+        } else {
+          // Quiz completed - call onComplete with all answers
+          onComplete(updatedAnswers);
+        }
       }
     } else if (selectedOption) {
-      setAnswers(prev => ({
-        ...prev,
+      const updatedAnswers = {
+        ...answers,
         [currentQuestionData.id]: selectedOption
-      }));
+      };
+      setAnswers(updatedAnswers);
       
       if (currentQuestion < quizQuestions.length - 1) {
         setCurrentQuestion(prev => prev + 1);
         setSelectedOption(null);
       } else {
-        // Quiz completed
-        onComplete({
-          ...answers,
-          [currentQuestionData.id]: selectedOption
-        });
+        // Quiz completed - call onComplete with all answers
+        onComplete(updatedAnswers);
       }
     }
   };
