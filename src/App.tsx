@@ -9,6 +9,7 @@ import { Suspense, lazy } from 'react';
 import Index from './pages/Index';
 import SignUp from './pages/SignUp';
 import NotFound from './pages/NotFound';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
 // Lazy load non-critical pages for better performance
@@ -33,64 +34,66 @@ function App() {
   const { showBoostPopup, closePopup } = useBoostPopup();
   
   return (
-    <UserProvider>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route 
-          path="/profile" 
-          element={
-            <Suspense fallback={<LoadingFallback />}>
-              <Profile />
-            </Suspense>
-          } 
-        />
-        <Route 
-          path="/discover" 
-          element={
-            <Suspense fallback={<LoadingFallback />}>
-              <Discover />
-            </Suspense>
-          } 
-        />
-        <Route 
-          path="/messages" 
-          element={
-            <Suspense fallback={<LoadingFallback />}>
-              <Messages />
-            </Suspense>
-          } 
-        />
-        <Route 
-          path="/messages/:id" 
-          element={
-            <Suspense fallback={<LoadingFallback />}>
-              <Messages />
-            </Suspense>
-          } 
-        />
-        <Route 
-          path="/explore" 
-          element={
-            <Suspense fallback={<LoadingFallback />}>
-              <Explore />
-            </Suspense>
-          } 
-        />
-        <Route 
-          path="/blog/:postId" 
-          element={
-            <Suspense fallback={<LoadingFallback />}>
-              <BlogPost />
-            </Suspense>
-          } 
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster position="top-right" richColors closeButton />
-      <CookieConsent />
-      <ProfileBoostPopup isOpen={showBoostPopup} onClose={closePopup} />
-    </UserProvider>
+    <ErrorBoundary>
+      <UserProvider>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route 
+            path="/profile" 
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <Profile />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/discover" 
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <Discover />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/messages" 
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <Messages />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/messages/:id" 
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <Messages />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/explore" 
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <Explore />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/blog/:postId" 
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <BlogPost />
+              </Suspense>
+            } 
+          />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Toaster position="top-right" richColors closeButton />
+        <CookieConsent />
+        <ProfileBoostPopup isOpen={showBoostPopup} onClose={closePopup} />
+      </UserProvider>
+    </ErrorBoundary>
   );
 }
 

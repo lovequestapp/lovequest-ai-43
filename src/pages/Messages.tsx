@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from '@/lib/utils';
 import { Search, Info } from 'lucide-react';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Define a local MessageType to avoid type conflicts with the imported component
 type MessageType = {
@@ -35,9 +37,9 @@ const Messages = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Process matches to match MessageList expected format
-  const processedMatches = matches.map(match => {
+  const processedMatches = matches?.map(match => {
     const otherUserId = getOtherUserId(match);
-    const user = potentialMatches.find(u => u.id === otherUserId);
+    const user = potentialMatches?.find(u => u.id === otherUserId);
     const unreadCount = messages[otherUserId]?.filter(m => 
       m.senderId === otherUserId && !m.read
     ).length || 0;
@@ -50,7 +52,7 @@ const Messages = () => {
       lastMessageTime: match.lastMessageTime,
       unreadCount
     };
-  });
+  }) || [];
   
   const getOtherUserId = (match: any): string => {
     if (!currentUser) return '';
@@ -58,10 +60,10 @@ const Messages = () => {
   };
 
   // Find the active user based on the active match
-  const activeMatch = matches.find(match => getOtherUserId(match) === activeMatchId);
+  const activeMatch = matches?.find(match => getOtherUserId(match) === activeMatchId);
   
   // Find the user object for the active match
-  const activeUser = potentialMatches.find(user => user.id === activeMatchId) || {
+  const activeUser = potentialMatches?.find(user => user.id === activeMatchId) || {
     id: activeMatchId || '',
     name: 'Unknown User',
     photos: [],
@@ -71,7 +73,7 @@ const Messages = () => {
   useEffect(() => {
     if (paramId) {
       setActiveMatchId(paramId);
-    } else if (matches.length > 0) {
+    } else if (matches?.length > 0) {
       const firstMatchId = getOtherUserId(matches[0]);
       setActiveMatchId(firstMatchId);
       navigate(`/messages/${firstMatchId}`, { replace: true });
@@ -146,7 +148,7 @@ const Messages = () => {
             </div>
             
             <div className="overflow-y-auto h-[calc(100%-64px)]">
-              {matches.length === 0 ? (
+              {(!matches || matches.length === 0) ? (
                 <div className="p-6 text-center">
                   <p className="text-gray-500 mb-4">No matches yet</p>
                   <Link to="/discover">
@@ -244,4 +246,11 @@ const Messages = () => {
   );
 };
 
-export default Messages;
+// Wrap the component with ErrorBoundary to prevent the entire app from crashing
+const MessagesWithErrorBoundary = () => (
+  <ErrorBoundary>
+    <Messages />
+  </ErrorBoundary>
+);
+
+export default MessagesWithErrorBoundary;
