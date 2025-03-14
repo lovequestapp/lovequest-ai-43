@@ -183,3 +183,42 @@
   border-color: var(--love-400);
   box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.15);
 }
+
+/* iPhone mockup animations */
+@keyframes glow {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+}
+
+.animate-glow {
+  animation: glow 4s ease-in-out infinite;
+}
+
+/* Screen transition animations */
+.screen-transition-enter {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.screen-transition-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 500ms, transform 500ms;
+}
+
+.screen-transition-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.screen-transition-exit-active {
+  opacity: 0;
+  transform: translateX(-100%);
+  transition: opacity 500ms, transform 500ms;
+}
