@@ -3,8 +3,9 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, X, MessageCircle, MapPin, Sparkles } from 'lucide-react';
+import { Heart, X, MessageCircle, MapPin, Sparkles, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ScreenReaderOnly from './ScreenReaderOnly';
 
 interface ProfileCardProps {
   id: string;
@@ -39,8 +40,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 }) => {
   return (
     <Card className={cn(
-      "overflow-hidden transition-all duration-300",
-      detailed ? "max-w-2xl mx-auto" : "max-w-sm w-full card-hover"
+      "overflow-hidden transition-all duration-300 animate-fade-in",
+      detailed ? "max-w-2xl mx-auto shadow-card" : "max-w-sm w-full card-hover"
     )}>
       <div className="relative">
         <img 
@@ -53,9 +54,26 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         />
         
         {compatibilityScore && (
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 px-3 rounded-full flex items-center gap-1.5 shadow-md">
-            <Sparkles size={16} className="text-love-500" />
+          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 px-3 rounded-full flex items-center gap-1.5 shadow-soft animate-soft-bounce">
+            <Sparkles size={16} className="text-love-500 animate-sparkle" />
             <span className="font-semibold text-love-700">{compatibilityScore}% Match</span>
+          </div>
+        )}
+
+        {detailed && (
+          <div className="absolute bottom-4 right-4 flex space-x-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star 
+                key={star} 
+                size={24} 
+                className={cn(
+                  "drop-shadow-md transition-all duration-300",
+                  star <= Math.ceil(compatibilityScore ? compatibilityScore / 20 : 0) 
+                    ? "fill-amber-400 text-amber-400" 
+                    : "text-white/40"
+                )}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -66,18 +84,20 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       )}>
         <div>
           <div className="flex justify-between items-start">
-            <h3 className="text-2xl font-display font-bold">{name}, {age}</h3>
+            <h3 className="text-2xl font-display font-bold group">
+              <span className="bg-clip-text bg-gradient-love text-transparent inline-block">{name}</span>, {age}
+            </h3>
             
             {detailed && compatibilityScore && (
-              <Badge variant="outline" className="bg-love-50 text-love-700 border-love-200 px-3 py-1">
-                <Sparkles size={14} className="mr-1 text-love-500" />
+              <Badge variant="outline" className="bg-love-50 text-love-700 border-love-200 px-3 py-1 animate-soft-bounce">
+                <Sparkles size={14} className="mr-1 text-love-500 animate-sparkle" />
                 {compatibilityScore}% Match
               </Badge>
             )}
           </div>
           
           <div className="flex items-center text-muted-foreground mt-1">
-            <MapPin size={16} className="mr-1" />
+            <MapPin size={16} className="mr-1 text-love-400" />
             <span>{location}</span>
           </div>
         </div>
@@ -92,7 +112,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         {personalityTraits && personalityTraits.length > 0 && detailed && (
           <div className="flex flex-wrap gap-2">
             {personalityTraits.map((trait, index) => (
-              <Badge key={`trait-${index}`} className="bg-love-500">
+              <Badge 
+                key={`trait-${index}`} 
+                className="bg-love-500 shadow-sm transition-all duration-300 hover:bg-love-600"
+                data-index={index}
+              >
                 {trait}
               </Badge>
             ))}
@@ -101,7 +125,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         
         <div className="flex flex-wrap gap-2">
           {interests.map((interest, index) => (
-            <Badge key={`interest-${index}`} variant="secondary" className="bg-love-50 text-love-700 hover:bg-love-100">
+            <Badge 
+              key={`interest-${index}`} 
+              variant="secondary" 
+              className="bg-love-50 text-love-700 hover:bg-love-100 transition-all duration-300 shadow-sm"
+              data-index={index}
+            >
               {interest}
             </Badge>
           ))}
@@ -113,20 +142,26 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="rounded-full h-12 w-12 border-gray-300"
-                onClick={() => onPass(id)}
+                className="rounded-full h-12 w-12 border-gray-300 hover:border-gray-400 btn-press-effect focus-ring"
+                onClick={() => {
+                  onPass(id);
+                }}
               >
                 <X size={24} className="text-gray-500" />
+                <ScreenReaderOnly>Pass on {name}'s profile</ScreenReaderOnly>
               </Button>
             )}
             
             {onLike && (
               <Button 
-                className="rounded-full h-12 w-12 bg-gradient-love hover:opacity-90"
+                className="rounded-full h-12 w-12 bg-gradient-love hover:opacity-90 btn-press-effect focus-ring btn-love-effect"
                 size="icon"
-                onClick={() => onLike(id)}
+                onClick={() => {
+                  onLike(id);
+                }}
               >
-                <Heart size={24} className="text-white" />
+                <Heart size={24} className="text-white animate-pulse-heart" />
+                <ScreenReaderOnly>Like {name}'s profile</ScreenReaderOnly>
               </Button>
             )}
           </div>
@@ -134,11 +169,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         
         {detailed && onMessage && (
           <Button 
-            className="w-full bg-gradient-love hover:opacity-90"
+            className="w-full bg-gradient-love hover:opacity-90 shadow-love transition-all duration-300 focus-ring btn-love-effect"
             onClick={() => onMessage(id)}
           >
             <MessageCircle size={18} className="mr-2" />
             Send Message
+            <ScreenReaderOnly>Send a message to {name}</ScreenReaderOnly>
           </Button>
         )}
       </CardContent>

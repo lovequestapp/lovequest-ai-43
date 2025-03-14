@@ -123,14 +123,44 @@ export default {
 				'slide-up-fade': {
 					'0%': { opacity: '0', transform: 'translateY(10px)' },
 					'100%': { opacity: '1', transform: 'translateY(0)' },
-				}
+				},
+				'sparkle': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.5', transform: 'scale(0.95) rotate(3deg)' },
+				},
+				'soft-bounce': {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-4px)' },
+				},
+				'glow': {
+					'0%, 100%': { boxShadow: '0 0 5px rgba(244, 63, 94, 0.3)' },
+					'50%': { boxShadow: '0 0 20px rgba(244, 63, 94, 0.6)' },
+				},
+				'gentle-wiggle': {
+					'0%, 100%': { transform: 'rotate(-1deg)' },
+					'50%': { transform: 'rotate(1deg)' },
+				},
+				'fade-in': {
+					'0%': { opacity: '0' },
+					'100%': { opacity: '1' },
+				},
+				'scale-in': {
+					'0%': { transform: 'scale(0.95)', opacity: '0' },
+					'100%': { transform: 'scale(1)', opacity: '1' },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-heart': 'pulse-heart 1.5s infinite ease-in-out',
 				'float': 'float 3s infinite ease-in-out',
-				'slide-up-fade': 'slide-up-fade 0.4s ease-out'
+				'slide-up-fade': 'slide-up-fade 0.4s ease-out',
+				'sparkle': 'sparkle 2s infinite ease-in-out',
+				'soft-bounce': 'soft-bounce 2s infinite ease-in-out',
+				'glow': 'glow 2s infinite ease-in-out',
+				'gentle-wiggle': 'gentle-wiggle 2s infinite ease-in-out',
+				'fade-in': 'fade-in 0.5s ease-out',
+				'scale-in': 'scale-in 0.4s ease-out',
 			},
 			fontFamily: {
 				display: ['Playfair Display', 'serif'],
@@ -138,6 +168,17 @@ export default {
 			},
 			backgroundImage: {
 				'gradient-love': 'linear-gradient(135deg, #f43f5e 0%, #ec4899 100%)',
+				'subtle-gradient': 'linear-gradient(120deg, #f9f9f9, #ffffff, #f8f8f8)',
+				'passion-gradient': 'linear-gradient(135deg, #ec4899 0%, #be123c 100%)',
+			},
+			boxShadow: {
+				'soft': '0 4px 15px rgba(0, 0, 0, 0.05)',
+				'hover': '0 8px 25px rgba(0, 0, 0, 0.1)',
+				'love': '0 4px 15px rgba(244, 63, 94, 0.15)',
+				'card': '0 2px 10px rgba(0, 0, 0, 0.03), 0 6px 20px rgba(0, 0, 0, 0.02)',
+			},
+			transitionDuration: {
+				'2000': '2000ms',
 			}
 		}
 	},
