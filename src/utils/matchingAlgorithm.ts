@@ -85,6 +85,9 @@ export const getNearbyUsers = (
       user.coordinates.longitude
     );
     
+    // Add distance to user object for use in UI
+    user.distance = distance;
+    
     return distance <= maxDistance;
   });
 };
@@ -105,4 +108,26 @@ export const getAiEnhancedMatches = (
     ...user,
     compatibilityScore: calculateCompatibilityScore(currentUser, user)
   })).sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
+};
+
+// Function to map string values to BoostLevelType
+export const asBoostLevelType = (level: string): BoostLevelType => {
+  switch (level) {
+    case 'local':
+    case 'international':
+    case 'standard':
+    case 'super':
+      return level as BoostLevelType;
+    default:
+      return 'none';
+  }
+};
+
+// Create a lookup object for boost level priorities
+export const BOOST_PRIORITY: Record<BoostLevelType, number> = {
+  'international': 0,
+  'local': 1,
+  'super': 2,
+  'standard': 3,
+  'none': 4
 };
