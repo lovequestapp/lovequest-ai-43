@@ -83,7 +83,7 @@ const quizQuestions: QuizQuestion[] = [
     question: 'How has your upbringing shaped your relationship approach?',
     options: [
       'I value the traditions I was raised with',
-      'I aim to improve upon my parents\' relationship model',
+      "I aim to improve upon my parents' relationship model",
       'My childhood taught me independence and self-reliance',
       'I learn from various relationship models, not just my upbringing'
     ]
