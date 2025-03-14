@@ -19,7 +19,7 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-sm",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        love: "bg-gradient-love text-white hover:opacity-90 shadow-love hover:shadow-hover",
+        love: "bg-gradient-love text-white hover:opacity-90 shadow-love hover:shadow",
         passion: "bg-passion-gradient text-white hover:opacity-90 shadow-sm hover:shadow",
       },
       size: {
@@ -31,8 +31,8 @@ const buttonVariants = cva(
       animation: {
         none: "",
         glow: "animate-glow",
-        wiggle: "animate-gentle-wiggle",
-        pulse: "animate-pulse-heart", // Replaced bounce with pulse
+        fade: "animate-fade-in",
+        scale: "animate-scale-in",
       },
     },
     defaultVariants: {
@@ -47,7 +47,7 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
-  animation?: "none" | "glow" | "wiggle" | "pulse" // Updated types
+  animation?: "none" | "glow" | "fade" | "scale"
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

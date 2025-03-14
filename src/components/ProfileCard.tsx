@@ -54,8 +54,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         />
         
         {compatibilityScore && (
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 px-3 rounded-full flex items-center gap-1.5 shadow-soft animate-soft-bounce">
-            <Sparkles size={16} className="text-love-500 animate-sparkle" />
+          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 px-3 rounded-full flex items-center gap-1.5 shadow-soft">
+            <Sparkles size={16} className="text-love-500" />
             <span className="font-semibold text-love-700">{compatibilityScore}% Match</span>
           </div>
         )}
@@ -89,8 +89,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             </h3>
             
             {detailed && compatibilityScore && (
-              <Badge variant="outline" className="bg-love-50 text-love-700 border-love-200 px-3 py-1 animate-soft-bounce">
-                <Sparkles size={14} className="mr-1 text-love-500 animate-sparkle" />
+              <Badge variant="outline" className="bg-love-50 text-love-700 border-love-200 px-3 py-1">
+                <Sparkles size={14} className="mr-1 text-love-500" />
                 {compatibilityScore}% Match
               </Badge>
             )}
@@ -160,7 +160,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                   onLike(id);
                 }}
               >
-                <Heart size={24} className="text-white animate-pulse-heart" />
+                <Heart size={24} className="text-white" />
                 <ScreenReaderOnly>Like {name}'s profile</ScreenReaderOnly>
               </Button>
             )}

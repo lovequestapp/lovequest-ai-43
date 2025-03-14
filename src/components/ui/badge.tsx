@@ -36,8 +36,8 @@ const badgeVariants = cva(
       },
       animation: {
         none: "",
-        pulse: "animate-pulse",
-        fade: "animate-fade-in",  // Replaced bounce with fade
+        glow: "animate-glow",
+        fade: "animate-fade-in",
       },
     },
     defaultVariants: {
@@ -52,7 +52,7 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {
   size?: "default" | "sm" | "lg";
-  animation?: "none" | "pulse" | "fade";  // Updated types
+  animation?: "none" | "glow" | "fade";
 }
 
 function Badge({ 
