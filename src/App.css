@@ -52,7 +52,8 @@
   }
 }
 
-.animate-float {
+/* Removing the float animation that was causing the bouncing */
+/* .animate-float {
   animation: float 3s ease-in-out infinite;
 }
 
@@ -63,7 +64,7 @@
   50% {
     transform: translateY(-10px);
   }
-}
+} */
 
 /* New Aesthetic Styles */
 .text-love-gradient {

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ const Index = () => {
               
               <div className="max-w-4xl mx-auto">
                 <div className="inline-block bg-white p-2 rounded-full mb-6 shadow-md">
-                  <Heart size={40} className="text-love-500 animate-pulse-heart" />
+                  <Heart size={40} className="text-love-500" />
                 </div>
                 
                 <h1 className="text-4xl md:text-6xl font-display font-bold mb-6 bg-gradient-love text-transparent bg-clip-text">
@@ -91,7 +92,7 @@ const Index = () => {
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
                   <Button 
                     onClick={() => setShowQuiz(true)}
-                    className="text-lg py-6 px-8 rounded-full bg-gradient-love hover:opacity-90 shadow-md animate-float w-full sm:w-auto"
+                    className="text-lg py-6 px-8 rounded-full bg-gradient-love hover:opacity-90 shadow-md w-full sm:w-auto"
                     size="lg"
                   >
                     <Sparkles size={20} className="mr-2" />
@@ -109,7 +110,7 @@ const Index = () => {
                   </Link>
                 </div>
                 
-                <div className="bg-white rounded-lg p-4 inline-block shadow-md animate-float">
+                <div className="bg-white rounded-lg p-4 inline-block shadow-md">
                   <p className="text-sm font-medium text-love-700 flex items-center">
                     <Shield size={16} className="mr-2 text-love-500" />
                     All profiles are verified for your safety
