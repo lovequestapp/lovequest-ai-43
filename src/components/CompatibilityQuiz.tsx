@@ -23,7 +23,7 @@ interface CompatibilityQuizProps {
 const quizQuestions: QuizQuestion[] = [
   {
     id: 'personal-story',
-    question: 'Briefly describe yourself and what you're looking for in a relationship.',
+    question: "Briefly describe yourself and what you're looking for in a relationship.",
     options: [],
     isTextInput: true,
     minLength: 50
