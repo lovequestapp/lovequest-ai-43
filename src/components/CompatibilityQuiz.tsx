@@ -23,10 +23,10 @@ interface CompatibilityQuizProps {
 const quizQuestions: QuizQuestion[] = [
   {
     id: 'personal-story',
-    question: 'Tell your personal story. The more details you share, the better we can match you with compatible partners!',
+    question: 'Briefly describe yourself and what you're looking for in a relationship.',
     options: [],
     isTextInput: true,
-    minLength: 100
+    minLength: 50
   },
   {
     id: 'communication',
@@ -79,18 +79,24 @@ const quizQuestions: QuizQuestion[] = [
     ]
   },
   {
-    id: 'childhood-influence',
-    question: 'Tell us about how your childhood has influenced your approach to relationships today.',
-    options: [],
-    isTextInput: true,
-    minLength: 100
+    id: 'childhood',
+    question: 'How has your upbringing shaped your relationship approach?',
+    options: [
+      'I value the traditions I was raised with',
+      'I aim to improve upon my parents\' relationship model',
+      'My childhood taught me independence and self-reliance',
+      'I learn from various relationship models, not just my upbringing'
+    ]
   },
   {
     id: 'life-goals',
-    question: 'Describe your most important life goals and how you hope a partner will fit into them.',
-    options: [],
-    isTextInput: true,
-    minLength: 100
+    question: 'What are your primary life goals?',
+    options: [
+      'Building a successful career and financial stability',
+      'Creating a loving family and home environment',
+      'Personal growth, learning, and self-improvement',
+      'Adventure, travel, and new experiences'
+    ]
   }
 ];
 
@@ -152,18 +158,13 @@ const CompatibilityQuiz: React.FC<CompatibilityQuizProps> = ({ onComplete }) => 
       };
     } else if (charCount < minLength * 2) {
       return {
-        message: `Good start! Consider adding more details (${charCount} characters)`,
+        message: `Good start! (${charCount} characters)`,
         color: 'text-amber-500'
-      };
-    } else if (charCount < minLength * 4) {
-      return {
-        message: `Great! Your detailed response helps us find better matches (${charCount} characters)`,
-        color: 'text-green-500'
       };
     } else {
       return {
-        message: `Excellent! Your thorough response will significantly improve your matches (${charCount} characters)`,
-        color: 'text-love-500'
+        message: `Great response! (${charCount} characters)`,
+        color: 'text-green-500'
       };
     }
   };
