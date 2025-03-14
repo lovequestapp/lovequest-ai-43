@@ -40,12 +40,13 @@ const Messages = () => {
   const processedMatches = matches?.map(match => {
     const otherUserId = getOtherUserId(match);
     const user = potentialMatches?.find(u => u.id === otherUserId);
-    const unreadCount = messages[otherUserId]?.filter(m => 
-      m.senderId === otherUserId && !m.read
-    ).length || 0;
+    const unreadCount = messages && otherUserId && messages[otherUserId] ? 
+      messages[otherUserId]?.filter(m => 
+        m.senderId === otherUserId && !m.read
+      ).length || 0 : 0;
     
     return {
-      id: otherUserId,
+      id: otherUserId || '',
       name: user?.name || 'Unknown User',
       photo: user?.photos?.[0] || '',
       lastMessage: match.lastMessage,
@@ -73,7 +74,7 @@ const Messages = () => {
   useEffect(() => {
     if (paramId) {
       setActiveMatchId(paramId);
-    } else if (matches?.length > 0) {
+    } else if (matches && matches.length > 0) {
       const firstMatchId = getOtherUserId(matches[0]);
       setActiveMatchId(firstMatchId);
       navigate(`/messages/${firstMatchId}`, { replace: true });
@@ -207,7 +208,7 @@ const Messages = () => {
                 </div>
                 
                 <MessageChat 
-                  messages={(activeMatchId ? (messages[activeMatchId] || []) : []) as any}
+                  messages={(activeMatchId && messages && messages[activeMatchId]) ? (messages[activeMatchId] || []) : []}
                   matchName={activeUser?.name || ''}
                   matchPhoto={activeUser?.photos?.[0] || ''}
                   compatibilityScore={activeUser?.compatibilityScore}
