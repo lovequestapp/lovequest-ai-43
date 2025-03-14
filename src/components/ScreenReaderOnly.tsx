@@ -1,6 +1,18 @@
 
 import React from 'react';
 
+type AriaRelevantType = 
+  | 'additions' 
+  | 'removals' 
+  | 'text' 
+  | 'all' 
+  | 'additions text' 
+  | 'additions removals' 
+  | 'removals additions' 
+  | 'removals text' 
+  | 'text additions' 
+  | 'text removals';
+
 type ScreenReaderOnlyProps = {
   children: React.ReactNode;
   className?: string;
@@ -19,7 +31,7 @@ type ScreenReaderOnlyProps = {
   /**
    * Sets the aria-relevant attribute to specify what types of changes are relevant
    */
-  ariaRelevant?: 'additions' | 'removals' | 'text' | 'all';
+  ariaRelevant?: AriaRelevantType;
 };
 
 /**
