@@ -32,7 +32,7 @@ const buttonVariants = cva(
         none: "",
         glow: "animate-glow",
         wiggle: "animate-gentle-wiggle",
-        bounce: "animate-soft-bounce",
+        pulse: "animate-pulse-heart", // Replaced bounce with pulse
       },
     },
     defaultVariants: {
@@ -47,7 +47,7 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
-  animation?: "none" | "glow" | "wiggle" | "bounce"
+  animation?: "none" | "glow" | "wiggle" | "pulse" // Updated types
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
