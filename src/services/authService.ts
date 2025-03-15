@@ -9,7 +9,31 @@ interface AuthCredentials {
 
 // Mock database of users for demo purposes
 // In a real app, this would be stored on a secure backend
-const DEMO_USERS: Record<string, { passwordHash: string; userData: User }> = {};
+const DEMO_USERS: Record<string, { passwordHash: string; userData: User }> = {
+  // Default admin account
+  "hunainm.qureshi@gmail.com": {
+    passwordHash: hashPassword("LoveQuest14"),
+    userData: {
+      id: "admin-user-1",
+      name: "Admin User",
+      age: 30,
+      email: "hunainm.qureshi@gmail.com",
+      photos: [],
+      bio: "System Administrator",
+      location: "System",
+      interests: ["Administration", "System Management"],
+      gender: "male",
+      interestedIn: ["female"],
+      popularityPoints: 0,
+      premiumStatus: 'vip',
+      giftInventory: { rose: 10, heart: 10, teddy: 10 },
+      receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+      compatibilityScore: 0,
+      personalityTraits: ["organized", "analytical", "detail-oriented"],
+      role: "admin" // This is important to access admin dashboard
+    }
+  }
+};
 
 export const authService = {
   /**
@@ -44,6 +68,7 @@ export const authService = {
         receivedGifts: { rose: 0, heart: 0, teddy: 0 },
         compatibilityScore: 0,
         personalityTraits: [],
+        role: userData.role || 'subscriber', // Default to subscriber role
       };
 
       // Save user to mock database
