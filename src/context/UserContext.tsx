@@ -110,7 +110,7 @@ type UserContextType = {
   sendMessage: (receiverId: string, content: string, type?: 'text' | 'gift', giftType?: string) => void;
   markMessagesAsRead: (userId: string) => void;
   updateProfile: (updates: Partial<User>) => void;
-  updateUserProfile: (profile: User) => void; // Adding the missing function type
+  updateUserProfile: (profile: User) => void;
   boostProfile: (boostType: BoostType) => boolean;
   boostedProfiles: BoostProfile[];
   getGiftBenefits: () => { 
@@ -167,7 +167,7 @@ const UserContext = createContext<UserContextType>({
   sendMessage: () => {},
   markMessagesAsRead: () => {},
   updateProfile: () => {},
-  updateUserProfile: () => {}, // Adding the default implementation
+  updateUserProfile: () => {},
   boostProfile: () => false,
   boostedProfiles: [],
   getGiftBenefits: () => ({ 
@@ -205,7 +205,6 @@ const UserContext = createContext<UserContextType>({
   getWithdrawalHistory: () => [],
   getPendingWithdrawal: () => null,
   
-  updateUserProfile: () => {},
   setCurrentUser: () => {},
   
   // Auth functions default values
