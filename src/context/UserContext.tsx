@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
 import { authService } from '@/services/authService';
@@ -111,6 +110,7 @@ type UserContextType = {
   sendMessage: (receiverId: string, content: string, type?: 'text' | 'gift', giftType?: string) => void;
   markMessagesAsRead: (userId: string) => void;
   updateProfile: (updates: Partial<User>) => void;
+  updateUserProfile: (profile: User) => void; // Adding the missing function type
   boostProfile: (boostType: BoostType) => boolean;
   boostedProfiles: BoostProfile[];
   getGiftBenefits: () => { 
@@ -167,6 +167,7 @@ const UserContext = createContext<UserContextType>({
   sendMessage: () => {},
   markMessagesAsRead: () => {},
   updateProfile: () => {},
+  updateUserProfile: () => {}, // Adding the default implementation
   boostProfile: () => false,
   boostedProfiles: [],
   getGiftBenefits: () => ({ 
@@ -872,156 +873,4 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   
   const purchaseGifts = (gifts: Record<string, number>) => {
     if (!gifts || !currentUser) {
-      console.error("Invalid gifts data or currentUser is null");
-      return;
-    }
-    
-    setCurrentUser(prevUser => {
-      if (prevUser) {
-        const currentInventory = prevUser.giftInventory || { rose: 0, heart: 0, teddy: 0 };
-        const updatedInventory = {
-          rose: (currentInventory.rose || 0) + (gifts.rose || 0),
-          heart: (currentInventory.heart || 0) + (gifts.heart || 0),
-          teddy: (currentInventory.teddy || 0) + (gifts.teddy || 0),
-        };
-        
-        return { ...prevUser, giftInventory: updatedInventory };
-      }
-      return prevUser;
-    });
-    
-    toast.success("Gifts purchased successfully!");
-  };
-  
-  const getGiftInventory = () => {
-    return currentUser?.giftInventory || { rose: 0, heart: 0, teddy: 0 };
-  };
-  
-  const getGiftMonetizationDetails = () => {
-    const receivedGifts = currentUser?.receivedGifts || { rose: 0, heart: 0, teddy: 0 };
-    
-    // Calculate available balance based on received gifts
-    const availableBalance = 
-      receivedGifts.rose * giftValues.rose + 
-      receivedGifts.heart * giftValues.heart + 
-      receivedGifts.teddy * giftValues.teddy;
-    
-    return {
-      giftValues,
-      minimumWithdrawal: 50,
-      availableBalance,
-      currency: 'USD',
-      exchangeRates
-    };
-  };
-  
-  const initiateWithdrawal = (amount: number): boolean => {
-    if (!currentUser) {
-      toast.error("You must be logged in to initiate a withdrawal");
-      return false;
-    }
-    
-    const details = getGiftMonetizationDetails();
-    if (amount > details.availableBalance) {
-      toast.error("Insufficient balance for withdrawal");
-      return false;
-    }
-    
-    if (amount < details.minimumWithdrawal) {
-      toast.error(`Minimum withdrawal amount is ${details.minimumWithdrawal} ${details.currency}`);
-      return false;
-    }
-    
-    const newWithdrawal: WithdrawalType = {
-      id: `w-${Date.now()}`,
-      userId: currentUser.id,
-      amount,
-      date: new Date(),
-      status: 'pending'
-    };
-    
-    setPendingWithdrawal(newWithdrawal);
-    setWithdrawals(prev => [...prev, newWithdrawal]);
-    
-    toast.success("Withdrawal request initiated!", {
-      description: "You will receive your funds soon."
-    });
-    
-    return true;
-  };
-  
-  const updateBankDetails = (details: User['bankDetails']) => {
-    if (!details || !currentUser) {
-      console.error("Invalid bank details or currentUser is null");
-      return;
-    }
-    
-    setCurrentUser(prevUser => {
-      if (prevUser) {
-        return { ...prevUser, bankDetails: details };
-      }
-      return prevUser;
-    });
-    
-    toast.success("Bank details updated successfully!");
-  };
-  
-  const getWithdrawalHistory = (): WithdrawalType[] => {
-    return withdrawals;
-  };
-  
-  const getPendingWithdrawal = (): WithdrawalType | null => {
-    return pendingWithdrawal;
-  };
-
-  return (
-    <UserContext.Provider
-      value={{
-        currentUser,
-        potentialMatches,
-        likeUser,
-        passUser,
-        matches,
-        messages,
-        sendMessage,
-        markMessagesAsRead,
-        updateProfile,
-        boostProfile,
-        boostedProfiles,
-        getGiftBenefits,
-        redeemGift,
-        updateMatchPreferences,
-        
-        // Blog functions
-        createBlogPost,
-        updateBlogPost,
-        deleteBlogPost,
-        likeBlogPost,
-        commentOnBlogPost,
-        getUserPosts,
-        getAllPosts,
-        getFilteredPosts,
-        
-        // Gift and monetization
-        purchaseGifts,
-        getGiftInventory,
-        getGiftMonetizationDetails,
-        initiateWithdrawal,
-        updateBankDetails,
-        getWithdrawalHistory,
-        getPendingWithdrawal,
-        
-        // Auth functions
-        setCurrentUser,
-        login,
-        register,
-        logout,
-        isAuthenticated,
-      }}
-    >
-      {children}
-    </UserContext.Provider>
-  );
-};
-
-export const useUser = () => useContext(UserContext);
+      console.error("Invalid gifts data or currentUser is
