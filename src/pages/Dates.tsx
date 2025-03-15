@@ -44,6 +44,7 @@ import {
   Trash2,
   Map
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Types for our date objects
 interface DateSuggestion {
@@ -427,12 +428,16 @@ const Dates: React.FC = () => {
           date.id === editingDateId ? dateToAdd : date
         ));
         setEditingDateId(null);
+        toast.success("Date updated successfully!");
       } else {
         setScheduledDates([...scheduledDates, dateToAdd]);
+        toast.success("New date scheduled successfully!");
       }
       
       setShowCreateModal(false);
       resetNewDate();
+    } else {
+      toast.error("Please fill in all required fields");
     }
   };
   
@@ -473,6 +478,7 @@ const Dates: React.FC = () => {
   // Function to handle deleting a date
   const handleDeleteDate = (id: string) => {
     setScheduledDates(scheduledDates.filter(date => date.id !== id));
+    toast.success("Date removed successfully");
   };
   
   // Function to handle editing a date
@@ -508,6 +514,52 @@ const Dates: React.FC = () => {
     
     return hasDate ? 'bg-love-100 text-love-900 font-bold rounded-full' : undefined;
   };
+  
+  // Load example dates on first render for demo purposes
+  useEffect(() => {
+    if (scheduledDates.length === 0) {
+      const today = new Date();
+      const tomorrow = addDays(today, 1);
+      const nextWeek = addDays(today, 7);
+      
+      const exampleDates: ScheduledDate[] = [
+        {
+          id: '1',
+          title: 'Coffee Date',
+          description: 'First date at a cozy coffee shop',
+          date: format(today, 'yyyy-MM-dd'),
+          time: '15:30',
+          location: 'Starbucks, Union Square',
+          city: 'San Francisco',
+          status: 'confirmed',
+          withUserName: 'Jamie Smith'
+        },
+        {
+          id: '2',
+          title: 'Museum Visit',
+          description: 'Exploring the modern art museum',
+          date: format(tomorrow, 'yyyy-MM-dd'),
+          time: '13:00',
+          location: 'SFMOMA, 151 3rd St',
+          city: 'San Francisco',
+          status: 'pending'
+        },
+        {
+          id: '3',
+          title: 'Dinner Date',
+          description: 'Trying out the new Italian restaurant',
+          date: format(nextWeek, 'yyyy-MM-dd'),
+          time: '19:30',
+          location: 'Il Fornaio, 1265 Battery St',
+          city: 'San Francisco',
+          status: 'pending',
+          notes: 'Remember to make a reservation'
+        }
+      ];
+      
+      setScheduledDates(exampleDates);
+    }
+  }, []);
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -779,14 +831,18 @@ const Dates: React.FC = () => {
             </div>
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-2">
             <Button variant="outline" onClick={() => {
               setShowCreateModal(false);
               resetNewDate();
             }}>
               Cancel
             </Button>
-            <Button onClick={handleCreateDate} className="bg-gradient-love hover:opacity-90">
+            <Button 
+              onClick={handleCreateDate} 
+              className="bg-gradient-love hover:opacity-90"
+              type="button"
+            >
               {editingDateId ? 'Update Date' : 'Schedule Date'}
             </Button>
           </DialogFooter>
