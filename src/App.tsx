@@ -23,6 +23,7 @@ const Explore = lazy(() => import('./pages/Explore'));
 const Dates = lazy(() => import('./pages/Dates'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
 const ProfileDetails = lazy(() => import('./pages/ProfileDetails'));
+const Admin = lazy(() => import('./pages/Admin'));
 
 // Simple loading fallback for lazy-loaded components
 const LoadingFallback = () => (
@@ -107,6 +108,14 @@ function App() {
             element={
               <Suspense fallback={<LoadingFallback />}>
                 <BlogPost />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/admin" 
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <Admin />
               </Suspense>
             } 
           />
