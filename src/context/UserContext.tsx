@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from 'sonner';
+import { authService } from '@/services/authService';
 
 // Define types
 export type User = {
@@ -123,7 +124,7 @@ type UserContextType = {
   redeemGift: (giftId: string) => void;
   updateMatchPreferences: (preferences: User['matchPreferences']) => void;
   
-  // Add missing functions for blog functionality
+  // Blog functionality
   createBlogPost: (title: string, content: string, tags: string[]) => void;
   updateBlogPost: (postId: string, updates: { title?: string; content?: string; tags?: string[] }) => void;
   deleteBlogPost: (postId: string) => void;
@@ -133,7 +134,7 @@ type UserContextType = {
   getAllPosts: () => BlogPostType[];
   getFilteredPosts: (tag?: string) => BlogPostType[];
   
-  // Add missing functions for gift and monetization
+  // Gift and monetization
   purchaseGifts: (gifts: Record<string, number>) => void;
   getGiftInventory: () => { rose: number; heart: number; teddy: number };
   getGiftMonetizationDetails: () => {
@@ -148,9 +149,12 @@ type UserContextType = {
   getWithdrawalHistory: () => WithdrawalType[];
   getPendingWithdrawal: () => WithdrawalType | null;
   
-  // Add missing function for user profile
-  updateUserProfile: (updates: User) => void;
+  // Auth functions
   setCurrentUser: (user: User | null) => void;
+  login: (email: string, password: string) => Promise<User | null>;
+  register: (name: string, email: string, password: string) => Promise<User | null>;
+  logout: () => void;
+  isAuthenticated: () => boolean;
 };
 
 // Create context with default values to prevent undefined errors
@@ -203,6 +207,12 @@ const UserContext = createContext<UserContextType>({
   
   updateUserProfile: () => {},
   setCurrentUser: () => {},
+  
+  // Auth functions default values
+  login: async () => null,
+  register: async () => null,
+  logout: () => {},
+  isAuthenticated: () => false,
 });
 
 // Provider component
@@ -236,8 +246,25 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     INR: 75
   };
 
-  // Load initial data
+  // Check for saved user on initial load
   useEffect(() => {
+    const loadSavedUser = async () => {
+      const savedUser = authService.getCurrentUser();
+      
+      if (savedUser) {
+        console.log("Found saved user:", savedUser.name);
+        setCurrentUser(savedUser);
+      } else {
+        // Load mock data only if no user is authenticated
+        loadMockData();
+      }
+    };
+    
+    loadSavedUser();
+  }, []);
+
+  // Load initial data (for demo purposes)
+  const loadMockData = () => {
     console.log("Loading mock data in UserProvider");
     
     // Simulate fetching the current user
@@ -486,7 +513,39 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     ];
     
     setWithdrawals(mockWithdrawals);
-  }, []);
+  };
+
+  const login = async (email: string, password: string): Promise<User | null> => {
+    const user = await authService.login({ email, password });
+    if (user) {
+      setCurrentUser(user);
+      return user;
+    }
+    return null;
+  };
+
+  const register = async (name: string, email: string, password: string): Promise<User | null> => {
+    const user = await authService.register(
+      { email, password },
+      { name, email }
+    );
+    
+    if (user) {
+      setCurrentUser(user);
+      return user;
+    }
+    return null;
+  };
+
+  const logout = () => {
+    authService.logout();
+    setCurrentUser(null);
+    toast.success('Logged out successfully');
+  };
+
+  const isAuthenticated = () => {
+    return authService.isAuthenticated();
+  };
 
   // Handler functions
   const likeUser = (userId: string) => {
@@ -576,6 +635,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
+  // Update this function to persist user data
   const updateProfile = (updates: Partial<User>) => {
     if (!updates) {
       console.error("Invalid updates");
@@ -584,13 +644,18 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     
     setCurrentUser((prevUser) => {
       if (prevUser) {
-        return { ...prevUser, ...updates };
+        const updatedUser = { ...prevUser, ...updates };
+        
+        // Persist updated user data
+        authService.updateUserData(updatedUser);
+        
+        return updatedUser;
       }
       return prevUser;
     });
   };
 
-  // Add updateUserProfile which is just an alias for updateProfile with full User object
+  // Also update this function to persist the full user data
   const updateUserProfile = (updates: User) => {
     if (!updates) {
       console.error("Invalid updates");
@@ -598,6 +663,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }
     
     setCurrentUser(updates);
+    
+    // Persist updated user data
+    authService.updateUserData(updates);
+    
     toast.success('Profile updated successfully!');
   };
 
@@ -811,181 +880,3 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }
       return post;
     }));
-    
-    toast.success("Comment added successfully!");
-  };
-  
-  const getUserPosts = (userId: string): BlogPostType[] => {
-    return blogPosts.filter(post => post.userId === userId);
-  };
-  
-  const getAllPosts = (): BlogPostType[] => {
-    return [...blogPosts].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  };
-  
-  const getFilteredPosts = (tag?: string): BlogPostType[] => {
-    if (!tag) return getAllPosts();
-    return blogPosts.filter(post => post.tags.includes(tag))
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  };
-  
-  // Gift and monetization
-  const purchaseGifts = (gifts: Record<string, number>) => {
-    if (!gifts || !currentUser) {
-      console.error("Invalid gifts or currentUser is null");
-      return;
-    }
-    
-    setCurrentUser(prev => {
-      if (!prev) return prev;
-      
-      const currentInventory = prev.giftInventory || { rose: 0, heart: 0, teddy: 0 };
-      
-      return {
-        ...prev,
-        giftInventory: {
-          rose: currentInventory.rose + (gifts.rose || 0),
-          heart: currentInventory.heart + (gifts.heart || 0),
-          teddy: currentInventory.teddy + (gifts.teddy || 0)
-        }
-      };
-    });
-    
-    toast.success("Gifts purchased successfully!");
-  };
-  
-  const getGiftInventory = () => {
-    return currentUser?.giftInventory || { rose: 0, heart: 0, teddy: 0 };
-  };
-  
-  const getGiftMonetizationDetails = () => {
-    return {
-      giftValues,
-      minimumWithdrawal: 50,
-      availableBalance: 275, // Mock balance
-      currency: 'USD',
-      exchangeRates
-    };
-  };
-  
-  const initiateWithdrawal = (amount: number): boolean => {
-    if (!amount || amount <= 0 || !currentUser) {
-      toast.error("Invalid withdrawal amount");
-      return false;
-    }
-    
-    // Validate minimum withdrawal
-    if (amount < 50) {
-      toast.error("Minimum withdrawal amount is $50");
-      return false;
-    }
-    
-    // Check if user already has a pending withdrawal
-    if (pendingWithdrawal) {
-      toast.error("You already have a pending withdrawal");
-      return false;
-    }
-    
-    // Create new withdrawal
-    const newWithdrawal: WithdrawalType = {
-      id: `withdrawal-${Date.now()}`,
-      userId: currentUser.id,
-      amount,
-      date: new Date(),
-      status: 'pending'
-    };
-    
-    setPendingWithdrawal(newWithdrawal);
-    toast.success("Withdrawal initiated successfully!");
-    return true;
-  };
-  
-  const updateBankDetails = (details: User['bankDetails']) => {
-    if (!details || !currentUser) {
-      console.error("Invalid bank details or currentUser is null");
-      return;
-    }
-    
-    setCurrentUser(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        bankDetails: details
-      };
-    });
-    
-    toast.success("Bank details updated successfully!");
-  };
-  
-  const getWithdrawalHistory = (): WithdrawalType[] => {
-    return withdrawals;
-  };
-  
-  const getPendingWithdrawal = (): WithdrawalType | null => {
-    return pendingWithdrawal;
-  };
-
-  // Create the context value with all our state and functions
-  const contextValue = {
-    currentUser,
-    potentialMatches,
-    likeUser,
-    passUser,
-    matches,
-    messages,
-    sendMessage,
-    markMessagesAsRead,
-    updateProfile,
-    boostProfile,
-    boostedProfiles,
-    getGiftBenefits,
-    redeemGift,
-    updateMatchPreferences,
-    // Blog functionality
-    createBlogPost,
-    updateBlogPost,
-    deleteBlogPost,
-    likeBlogPost,
-    commentOnBlogPost,
-    getUserPosts,
-    getAllPosts,
-    getFilteredPosts,
-    // Gift and monetization
-    purchaseGifts,
-    getGiftInventory,
-    getGiftMonetizationDetails,
-    initiateWithdrawal,
-    updateBankDetails,
-    getWithdrawalHistory,
-    getPendingWithdrawal,
-    // User profile 
-    updateUserProfile,
-    setCurrentUser,
-  };
-  
-  console.log("Providing UserContext with boostedProfiles:", boostedProfiles?.length || 0);
-
-  return (
-    <UserContext.Provider value={contextValue}>
-      {children}
-    </UserContext.Provider>
-  );
-};
-
-// Custom hook for using the context
-export const useUser = () => {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  
-  // Provide safe fallbacks for all values
-  return {
-    ...context,
-    currentUser: context.currentUser || null,
-    potentialMatches: context.potentialMatches || [],
-    matches: context.matches || [],
-    messages: context.messages || {},
-    boostedProfiles: context.boostedProfiles || [],
-  };
-};

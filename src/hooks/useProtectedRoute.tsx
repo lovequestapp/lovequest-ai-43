@@ -8,15 +8,16 @@ import { toast } from 'sonner';
  * Hook to protect routes that require authentication
  */
 export const useProtectedRoute = () => {
-  const { currentUser } = useUser();
+  const { currentUser, isAuthenticated } = useUser();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!currentUser) {
+    // Check if user is authenticated
+    if (!isAuthenticated() || !currentUser) {
       toast.error("Please log in to access this page");
-      navigate('/signup');
+      navigate('/login');
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, isAuthenticated, navigate]);
 
   return { isAuthenticated: !!currentUser };
 };

@@ -8,6 +8,7 @@ import { useBoostPopup } from './hooks/useBoostPopup';
 import { Suspense, lazy } from 'react';
 import Index from './pages/Index';
 import SignUp from './pages/SignUp';
+import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
@@ -39,6 +40,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/signup" element={<SignUp />} />
+          <Route path="/login" element={<Login />} />
           <Route 
             path="/profile" 
             element={
