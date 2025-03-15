@@ -46,7 +46,7 @@ const MessageList: React.FC<MessageListProps> = ({
           <div className="divide-y divide-love-100">
             {validMatches.map((match) => (
               <div
-                key={match.id}
+                key={`match-${match.id}`}
                 className={cn(
                   "p-4 flex items-center gap-3 hover:bg-love-50 cursor-pointer transition-colors",
                   activeMatchId === match.id && "bg-love-50"

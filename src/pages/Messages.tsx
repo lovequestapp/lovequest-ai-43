@@ -15,8 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from '@/lib/utils';
-import { Search, Info, MenuIcon, ArrowLeft } from 'lucide-react';
+import { Search, Info, MenuIcon, ArrowLeft, MessageCircle } from 'lucide-react';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { useToast } from "@/hooks/use-toast";
 
 // Define a local MessageType to avoid type conflicts with the imported component
 type MessageType = {
@@ -53,6 +54,7 @@ type Match = {
 const Messages = () => {
   const { isAuthenticated } = useProtectedRoute();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   
   const { id: paramId } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -60,6 +62,7 @@ const Messages = () => {
   const [activeMatchId, setActiveMatchId] = useState<string | null>(paramId || null);
   const [showGiftSelector, setShowGiftSelector] = useState(false);
   const [showMobileList, setShowMobileList] = useState(!paramId);
+  const [searchTerm, setSearchTerm] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Function to safely get the other user ID from a match
@@ -85,12 +88,20 @@ const Messages = () => {
     return {
       id: otherUserId || '',
       name: user?.name || 'Unknown User',
-      photo: user?.photos?.[0] || '',
+      photo: user?.photos?.[0] || '/placeholder.svg',
       lastMessage: matchData.lastMessage || '',
-      lastMessageTime: matchData.lastMessageTime || new Date(),
+      lastMessageTime: matchData.lastMessageTime ? new Date(matchData.lastMessageTime) : new Date(),
       unreadCount
     };
   }) : [];
+  
+  // Filter matches by search term if provided
+  const filteredMatches = searchTerm 
+    ? processedMatches.filter(match => 
+        match.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        match.lastMessage?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : processedMatches;
   
   // Find the active user based on the active match
   const activeMatch = Array.isArray(matches) ? matches.find(match => getOtherUserId(match) === activeMatchId) : undefined;
@@ -100,7 +111,7 @@ const Messages = () => {
   const activeUser = potentialMatches?.find(user => user.id === activeMatchId) || {
     id: activeMatchId || '',
     name: 'Unknown User',
-    photos: [],
+    photos: ['/placeholder.svg'],
     compatibilityScore: 0,
   };
 
@@ -111,7 +122,7 @@ const Messages = () => {
     return contextMessages.map(msg => ({
       id: msg.id,
       content: msg.content,
-      timestamp: msg.timestamp,
+      timestamp: new Date(msg.timestamp),
       sender: msg.senderId === currentUser.id ? 'user' : 'match',
       type: msg.type || 'text',
       giftType: msg.giftType
@@ -122,7 +133,7 @@ const Messages = () => {
     if (paramId) {
       setActiveMatchId(paramId);
       setShowMobileList(false);
-    } else if (matches && matches.length > 0) {
+    } else if (matches && matches.length > 0 && Array.isArray(matches)) {
       const firstMatchId = getOtherUserId(matches[0]);
       setActiveMatchId(firstMatchId);
       if (!isMobile) {
@@ -139,10 +150,21 @@ const Messages = () => {
 
   // Function to handle sending messages
   const handleSendMessage = (content: string, type = 'text', giftType?: keyof GiftInventory) => {
-    if (!activeMatchId || !currentUser) return;
+    if (!activeMatchId || !currentUser) {
+      toast({
+        title: "Cannot send message",
+        description: "Please select a match to message",
+        variant: "destructive"
+      });
+      return;
+    }
     
     if (type === 'gift' && giftType) {
       sendMessage(activeMatchId, content, giftType);
+      toast({
+        title: "Gift sent",
+        description: `You sent a ${giftType} to ${activeUser.name}`,
+      });
     } else {
       sendMessage(activeMatchId, content);
     }
@@ -186,7 +208,13 @@ const Messages = () => {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow container mx-auto p-4 flex items-center justify-center">
-          <p>Please sign in to view messages.</p>
+          <div className="text-center">
+            <MessageCircle size={48} className="mx-auto mb-4 text-love-400" />
+            <p className="text-lg mb-4">Please sign in to view your messages.</p>
+            <Link to="/login">
+              <Button variant="love">Sign In</Button>
+            </Link>
+          </div>
         </main>
         <Footer />
       </div>
@@ -215,14 +243,17 @@ const Messages = () => {
                       type="text"
                       placeholder="Search messages..."
                       className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-love-500"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                     />
                     <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
                   </div>
                 </div>
                 
                 <div className="overflow-y-auto h-[calc(100%-64px)]">
-                  {(!matches || matches.length === 0) ? (
+                  {(!matches || matches.length === 0 || !Array.isArray(matches)) ? (
                     <div className="p-6 text-center">
+                      <MessageCircle size={48} className="mx-auto mb-4 text-love-300" />
                       <p className="text-gray-500 mb-4">No matches yet</p>
                       <Link to="/discover">
                         <Button className="bg-gradient-love hover:opacity-90">
@@ -232,7 +263,7 @@ const Messages = () => {
                     </div>
                   ) : (
                     <MessageList 
-                      matches={processedMatches} 
+                      matches={filteredMatches}
                       activeMatchId={activeMatchId}
                       onSelectMatch={handleSelectMatch}
                       className="divide-y max-h-full overflow-y-auto"
@@ -280,7 +311,7 @@ const Messages = () => {
                 <MessageChat 
                   messages={activeMessages}
                   matchName={activeUser?.name || ''}
-                  matchPhoto={activeUser?.photos?.[0] || ''}
+                  matchPhoto={activeUser?.photos?.[0] || '/placeholder.svg'}
                   compatibilityScore={activeUser?.compatibilityScore}
                   onSendMessage={handleSendMessage}
                   suggestionStarters={["Hey, how are you?", "What's your favorite movie?", "Do you like hiking?"]}
@@ -299,14 +330,17 @@ const Messages = () => {
                       type="text"
                       placeholder="Search messages..."
                       className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-love-500"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                     />
                     <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
                   </div>
                 </div>
                 
                 <div className="overflow-y-auto h-[calc(100%-64px)]">
-                  {(!matches || matches.length === 0) ? (
+                  {(!matches || matches.length === 0 || !Array.isArray(matches)) ? (
                     <div className="p-6 text-center">
+                      <MessageCircle size={48} className="mx-auto mb-4 text-love-300" />
                       <p className="text-gray-500 mb-4">No matches yet</p>
                       <Link to="/discover">
                         <Button className="bg-gradient-love hover:opacity-90">
@@ -316,7 +350,7 @@ const Messages = () => {
                     </div>
                   ) : (
                     <MessageList 
-                      matches={processedMatches} 
+                      matches={filteredMatches}
                       activeMatchId={activeMatchId}
                       onSelectMatch={handleSelectMatch}
                       className={cn(
@@ -335,7 +369,7 @@ const Messages = () => {
                     <div className="p-4 border-b flex justify-between items-center">
                       <div className="flex items-center">
                         <Avatar className="h-10 w-10 mr-3">
-                          <AvatarImage src={activeUser.photos?.[0]} alt={activeUser.name} />
+                          <AvatarImage src={activeUser.photos?.[0] || '/placeholder.svg'} alt={activeUser.name} />
                           <AvatarFallback>{activeUser.name?.charAt(0) || 'U'}</AvatarFallback>
                         </Avatar>
                         <div>
@@ -363,7 +397,7 @@ const Messages = () => {
                     <MessageChat 
                       messages={activeMessages}
                       matchName={activeUser?.name || ''}
-                      matchPhoto={activeUser?.photos?.[0] || ''}
+                      matchPhoto={activeUser?.photos?.[0] || '/placeholder.svg'}
                       compatibilityScore={activeUser?.compatibilityScore}
                       onSendMessage={handleSendMessage}
                       suggestionStarters={["Hey, how are you?", "What's your favorite movie?", "Do you like hiking?"]}
@@ -373,6 +407,7 @@ const Messages = () => {
                 ) : (
                   <div className="flex-grow flex items-center justify-center">
                     <div className="text-center p-6">
+                      <MessageCircle size={64} className="mx-auto mb-4 text-love-300" />
                       <h3 className="text-xl font-semibold mb-2">Welcome to Messages</h3>
                       <p className="text-gray-500 mb-4">Select a conversation or start a new one</p>
                       <Link to="/discover">
