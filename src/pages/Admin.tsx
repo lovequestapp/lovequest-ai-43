@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
 import { useNavigate } from 'react-router-dom';
@@ -207,7 +208,7 @@ const Admin = () => {
         <h1 className="text-3xl font-semibold">Admin Dashboard</h1>
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="primary">
+            <Button variant="default">
               <Plus className="mr-2 h-4 w-4" />
               Add User
             </Button>
