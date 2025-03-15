@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Heart, Menu, X } from 'lucide-react';
+import { Heart, Menu, X, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/context/UserContext';
 
@@ -17,6 +17,8 @@ const Header = () => {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+  
+  const isPrimaryAdmin = currentUser?.email === 'hunainm.qureshi@gmail.com';
   
   return (
     <header className="py-4 border-b border-border sticky top-0 bg-background z-50">
@@ -60,6 +62,17 @@ const Header = () => {
             >
               Messages
             </Link>
+            {isPrimaryAdmin && (
+              <Link 
+                to="/admin" 
+                className={`text-sm font-medium transition-colors hover:text-love-500 flex items-center gap-1 ${
+                  isActive('/admin') ? 'text-love-500' : 'text-foreground'
+                }`}
+              >
+                <ShieldCheck size={16} />
+                Admin
+              </Link>
+            )}
           </nav>
           
           <div className="flex items-center gap-4">
@@ -138,6 +151,18 @@ const Header = () => {
               >
                 Messages
               </Link>
+              {isPrimaryAdmin && (
+                <Link 
+                  to="/admin" 
+                  className={`text-sm font-medium transition-colors hover:text-love-500 flex items-center gap-1 ${
+                    isActive('/admin') ? 'text-love-500' : 'text-foreground'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <ShieldCheck size={16} />
+                  Admin
+                </Link>
+              )}
               
               <div className="flex items-center justify-between py-2">
                 {currentUser ? (
