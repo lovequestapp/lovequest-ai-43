@@ -13,7 +13,7 @@ export const useProtectedRoute = () => {
 
   useEffect(() => {
     // Check if user is authenticated
-    if (!isAuthenticated() || !currentUser) {
+    if (!isAuthenticated()) {
       toast.error("Please log in to access this page");
       navigate('/login');
     }

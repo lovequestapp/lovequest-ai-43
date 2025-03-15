@@ -100,7 +100,6 @@ type WithdrawalType = {
   status: 'pending' | 'completed' | 'rejected';
 };
 
-// More comprehensive UserContextType
 type UserContextType = {
   currentUser: User | null;
   potentialMatches: User[];
@@ -157,7 +156,6 @@ type UserContextType = {
   isAuthenticated: () => boolean;
 };
 
-// Create context with default values to prevent undefined errors
 const UserContext = createContext<UserContextType>({
   currentUser: null,
   potentialMatches: [],
@@ -215,7 +213,6 @@ const UserContext = createContext<UserContextType>({
   isAuthenticated: () => false,
 });
 
-// Provider component
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   console.log("Initializing UserProvider");
   
@@ -246,7 +243,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     INR: 75
   };
 
-  // Check for saved user on initial load
   useEffect(() => {
     const loadSavedUser = async () => {
       const savedUser = authService.getCurrentUser();
@@ -263,7 +259,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     loadSavedUser();
   }, []);
 
-  // Load initial data (for demo purposes)
   const loadMockData = () => {
     console.log("Loading mock data in UserProvider");
     
@@ -302,7 +297,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       popularityPoints: 75
     };
 
-    // Simulate fetching potential matches with compatibilityScore
     const mockPotentialMatches: User[] = [
       {
         id: 'user2',
@@ -375,7 +369,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       },
     ];
 
-    // Simulate fetching matches
     const mockMatches: Match[] = [
       {
         id: 'match1',
@@ -399,7 +392,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       },
     ];
 
-    // Simulate fetching messages
     const mockMessages: Record<string, Message[]> = {
       user2: [
         {
@@ -434,7 +426,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       ],
     };
     
-    // Mock blog posts
     const mockBlogPosts: BlogPostType[] = [
       {
         id: 'post1',
@@ -467,12 +458,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }
     ];
 
-    // Set initial app state
     setCurrentUser(mockUser);
     setPotentialMatches(mockPotentialMatches);
     setBlogPosts(mockBlogPosts);
     
-    // Set up initial boosted profiles
     const mockBoostedProfiles: BoostProfile[] = [
       {
         userId: 'user2',
@@ -494,7 +483,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     setMatches(mockMatches);
     setMessages(mockMessages);
     
-    // Mock withdrawal history
     const mockWithdrawals: WithdrawalType[] = [
       {
         id: 'w1',
@@ -547,7 +535,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     return authService.isAuthenticated();
   };
 
-  // Handler functions
   const likeUser = (userId: string) => {
     if (!userId || !currentUser) {
       console.error("Invalid userId or currentUser is null");
@@ -607,7 +594,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       [receiverId]: [...(prevMessages[receiverId] || []), newMessage],
     }));
     
-    // Update last message in match
     setMatches((prevMatches) => {
       return prevMatches.map(match => {
         if ((match.userId1 === currentUser.id && match.userId2 === receiverId) ||
@@ -635,7 +621,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  // Update this function to persist user data
   const updateProfile = (updates: Partial<User>) => {
     if (!updates) {
       console.error("Invalid updates");
@@ -646,7 +631,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       if (prevUser) {
         const updatedUser = { ...prevUser, ...updates };
         
-        // Persist updated user data
         authService.updateUserData(updatedUser);
         
         return updatedUser;
@@ -655,7 +639,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  // Also update this function to persist the full user data
   const updateUserProfile = (updates: User) => {
     if (!updates) {
       console.error("Invalid updates");
@@ -664,13 +647,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     
     setCurrentUser(updates);
     
-    // Persist updated user data
     authService.updateUserData(updates);
     
     toast.success('Profile updated successfully!');
   };
 
-  // Properly implement boostProfile function
   const boostProfile = (boostType: BoostType): boolean => {
     if (!currentUser) {
       toast.error("You must be logged in to boost your profile");
@@ -682,7 +663,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const now = new Date();
     const endTime = new Date();
     
-    // Set boost duration based on type
     if (boostType === 'local') {
       endTime.setHours(endTime.getHours() + 24); // 24 hours for local boost
     } else {
@@ -696,7 +676,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       endTime: endTime,
     };
     
-    // Add the new boost
     setBoostedProfiles(prev => {
       const newBoostedProfiles = [...(prev || []), newBoost];
       console.log("Updated boosted profiles:", newBoostedProfiles);
@@ -710,14 +689,10 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
   
-  // Properly implement getGiftBenefits
   const getGiftBenefits = () => {
-    // For example, return the sum of all gift benefits the user has received
-    // This is a placeholder implementation
     console.log("Getting gift benefits");
     const receivedGifts = currentUser?.receivedGifts || { rose: 0, heart: 0, teddy: 0 };
     
-    // Calculate if user has active boost
     const userBoost = boostedProfiles.find(
       boost => boost.userId === currentUser?.id && boost.endTime > new Date()
     );
@@ -754,19 +729,16 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     const giftBenefits = giftValues[giftId as keyof typeof giftValues];
 
     if (giftBenefits) {
-      // Update user's coins
       setCurrentUser((prevUser) => {
         if (prevUser) {
           return {
             ...prevUser,
-            // Add the gift's coins to popularity points
             popularityPoints: (prevUser.popularityPoints || 0) + giftBenefits,
           };
         }
         return prevUser;
       });
 
-      // Boost user's profile
       if (giftBenefits > 50) {
         boostProfile('local'); // Or implement a way to choose boost type
       }
@@ -795,7 +767,6 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     toast.success('Match preferences updated!');
   };
   
-  // Blog functionality
   const createBlogPost = (title: string, content: string, tags: string[]) => {
     if (!title || !content || !currentUser) {
       console.error("Invalid blog post data or currentUser is null");
@@ -880,3 +851,29 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       }
       return post;
     }));
+    
+    toast.success("Comment added successfully!");
+  };
+  
+  const getUserPosts = (userId: string): BlogPostType[] => {
+    return blogPosts.filter(post => post.userId === userId);
+  };
+  
+  const getAllPosts = (): BlogPostType[] => {
+    return [...blogPosts].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  };
+  
+  const getFilteredPosts = (tag?: string): BlogPostType[] => {
+    if (!tag) return getAllPosts();
+    return blogPosts.filter(post => post.tags.includes(tag))
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  };
+  
+  const purchaseGifts = (gifts: Record<string, number>) => {
+    if (!gifts || !currentUser) {
+      console.error("Invalid gifts data or currentUser is null");
+      return;
+    }
+    
+    setCurrentUser(prevUser => {
+      if (prevUser) {
