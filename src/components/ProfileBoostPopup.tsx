@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Badge } from "@/components/ui/badge";
 import { Rocket, Globe, MapPin, Check, Sparkles } from 'lucide-react';
 import { BoostType, useUser } from '@/context/UserContext';
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ProfileBoostPopupProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ const ProfileBoostPopup: React.FC<ProfileBoostPopupProps> = ({ isOpen, onClose }
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-amber-500" />
@@ -44,71 +45,73 @@ const ProfileBoostPopup: React.FC<ProfileBoostPopupProps> = ({ isOpen, onClose }
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid gap-4 py-4">
-          <div
-            className={`relative flex flex-col items-start rounded-md border p-4 cursor-pointer hover:border-love-200 transition-colors ${
-              boostType === 'local' ? 'border-love-500 bg-love-50' : ''
-            }`}
-            onClick={() => setBoostType('local')}
-          >
-            <div className="flex items-center mb-2">
-              <div className="mr-2 h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
-                <MapPin className="h-4 w-4 text-amber-600" />
+        <ScrollArea className="flex-1 overflow-y-auto pr-3">
+          <div className="grid gap-4 py-4">
+            <div
+              className={`relative flex flex-col items-start rounded-md border p-4 cursor-pointer hover:border-love-200 transition-colors ${
+                boostType === 'local' ? 'border-love-500 bg-love-50' : ''
+              }`}
+              onClick={() => setBoostType('local')}
+            >
+              <div className="flex items-center mb-2">
+                <div className="mr-2 h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center">
+                  <MapPin className="h-4 w-4 text-amber-600" />
+                </div>
+                <div>
+                  <h4 className="text-base font-medium">Local Boost</h4>
+                </div>
               </div>
-              <div>
-                <h4 className="text-base font-medium">Local Boost</h4>
-              </div>
+              <p className="text-sm text-muted-foreground mb-2">
+                Show your profile at the top for users in your country
+              </p>
+              <Badge variant="outline" className="bg-amber-50 text-amber-700">
+                $2.99 for 24 hours
+              </Badge>
             </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              Show your profile at the top for users in your country
-            </p>
-            <Badge variant="outline" className="bg-amber-50 text-amber-700">
-              $2.99 for 24 hours
-            </Badge>
-          </div>
-          
-          <div
-            className={`relative flex flex-col items-start rounded-md border p-4 cursor-pointer hover:border-love-200 transition-colors ${
-              boostType === 'international' ? 'border-love-500 bg-love-50' : ''
-            }`}
-            onClick={() => setBoostType('international')}
-          >
-            <div className="flex items-center mb-2">
-              <div className="mr-2 h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                <Globe className="h-4 w-4 text-purple-600" />
+            
+            <div
+              className={`relative flex flex-col items-start rounded-md border p-4 cursor-pointer hover:border-love-200 transition-colors ${
+                boostType === 'international' ? 'border-love-500 bg-love-50' : ''
+              }`}
+              onClick={() => setBoostType('international')}
+            >
+              <div className="flex items-center mb-2">
+                <div className="mr-2 h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
+                  <Globe className="h-4 w-4 text-purple-600" />
+                </div>
+                <div>
+                  <h4 className="text-base font-medium">International Boost</h4>
+                </div>
               </div>
-              <div>
-                <h4 className="text-base font-medium">International Boost</h4>
-              </div>
+              <p className="text-sm text-muted-foreground mb-2">
+                Show your profile at the top for users across all countries
+              </p>
+              <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                $4.99 for 24 hours
+              </Badge>
             </div>
-            <p className="text-sm text-muted-foreground mb-2">
-              Show your profile at the top for users across all countries
-            </p>
-            <Badge variant="outline" className="bg-purple-50 text-purple-700">
-              $4.99 for 24 hours
-            </Badge>
+            
+            <div className="bg-gray-50 p-3 rounded-md">
+              <h4 className="text-sm font-medium mb-2">Boost Benefits</h4>
+              <ul className="space-y-2">
+                <li className="text-sm flex">
+                  <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>Appear at the top of Discover page</span>
+                </li>
+                <li className="text-sm flex">
+                  <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>Get up to 10x more profile views</span>
+                </li>
+                <li className="text-sm flex">
+                  <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                  <span>Increased match likelihood</span>
+                </li>
+              </ul>
+            </div>
           </div>
-          
-          <div className="bg-gray-50 p-3 rounded-md">
-            <h4 className="text-sm font-medium mb-2">Boost Benefits</h4>
-            <ul className="space-y-2">
-              <li className="text-sm flex">
-                <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                <span>Appear at the top of Discover page</span>
-              </li>
-              <li className="text-sm flex">
-                <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                <span>Get up to 10x more profile views</span>
-              </li>
-              <li className="text-sm flex">
-                <Check className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                <span>Increased match likelihood</span>
-              </li>
-            </ul>
-          </div>
-        </div>
+        </ScrollArea>
         
-        <DialogFooter>
+        <DialogFooter className="pt-4 border-t mt-4">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
