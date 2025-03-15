@@ -3,9 +3,9 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Heart } from 'lucide-react';
+import { Heart, Sparkles, Clock, MessageCircleHeart } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, isToday, isYesterday } from 'date-fns';
 
 export interface MessageListProps {
   matches: {
@@ -30,11 +30,21 @@ const MessageList: React.FC<MessageListProps> = ({
   // Add a check to make sure matches is an array before rendering
   const validMatches = Array.isArray(matches) ? matches : [];
   
+  const formatMessageDate = (date: Date) => {
+    if (isToday(date)) {
+      return format(date, 'h:mm a');
+    } else if (isYesterday(date)) {
+      return 'Yesterday';
+    } else {
+      return format(date, 'MMM d');
+    }
+  };
+  
   return (
-    <Card className="h-full border-love-100 flex flex-col">
+    <Card className="h-full border-love-100 flex flex-col bg-gradient-to-b from-white to-love-50/30">
       <CardContent className="p-0 flex flex-col h-full">
-        <div className="p-4 border-b border-love-100 flex-shrink-0">
-          <h2 className="text-xl font-display font-semibold">Messages</h2>
+        <div className="p-4 border-b border-love-100 flex-shrink-0 bg-white">
+          <h2 className="text-xl font-display font-semibold text-love-900">Messages</h2>
           {validMatches.length === 0 && (
             <p className="text-muted-foreground text-sm mt-2">
               No matches yet. Start discovering!
@@ -46,22 +56,28 @@ const MessageList: React.FC<MessageListProps> = ({
           <div className="divide-y divide-love-100">
             {validMatches.map((match) => (
               <div
-                key={`match-${match.id}`}
+                key={`message-match-${match.id}`}
                 className={cn(
-                  "p-4 flex items-center gap-3 hover:bg-love-50 cursor-pointer transition-colors",
-                  activeMatchId === match.id && "bg-love-50"
+                  "p-4 flex items-center gap-3 hover:bg-love-50/70 cursor-pointer transition-all duration-300",
+                  activeMatchId === match.id ? "bg-love-50 border-l-4 border-l-love-500" : "border-l-4 border-l-transparent"
                 )}
                 onClick={() => onSelectMatch(match.id)}
               >
                 <div className="relative">
-                  <img
-                    src={match.photo || '/placeholder.svg'}
-                    alt={match.name}
-                    className="h-12 w-12 rounded-full object-cover"
-                  />
+                  <div className={cn(
+                    "h-12 w-12 rounded-full overflow-hidden border-2",
+                    activeMatchId === match.id ? "border-love-500" : "border-love-200"
+                  )}>
+                    <img
+                      src={match.photo || '/placeholder.svg'}
+                      alt={match.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  
                   {match.unreadCount && match.unreadCount > 0 && (
                     <Badge 
-                      className="absolute -top-1 -right-1 bg-love-500 text-white h-5 w-5 flex items-center justify-center p-0"
+                      className="absolute -top-1 -right-1 bg-love-500 text-white h-5 w-5 flex items-center justify-center p-0 shadow-md animate-pulse"
                     >
                       {match.unreadCount}
                     </Badge>
@@ -70,25 +86,40 @@ const MessageList: React.FC<MessageListProps> = ({
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-medium truncate">{match.name}</h3>
+                    <h3 className={cn(
+                      "font-medium truncate",
+                      match.unreadCount && match.unreadCount > 0 ? "font-semibold text-love-900" : "text-gray-700"
+                    )}>
+                      {match.name}
+                    </h3>
                     {match.lastMessageTime && (
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(match.lastMessageTime), 'h:mm a')}
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock size={10} />
+                        {formatMessageDate(new Date(match.lastMessageTime))}
                       </span>
                     )}
                   </div>
                   
                   {match.lastMessage ? (
-                    <p className="text-sm text-muted-foreground truncate">
+                    <p className={cn(
+                      "text-sm truncate",
+                      match.unreadCount && match.unreadCount > 0 
+                        ? "text-love-800 font-medium" 
+                        : "text-muted-foreground"
+                    )}>
                       {match.lastMessage}
                     </p>
                   ) : (
                     <p className="text-sm text-love-500 flex items-center gap-1">
-                      <Heart size={12} className="fill-love-500" />
-                      New match! Say hello
+                      <MessageCircleHeart size={12} className="fill-love-500" />
+                      <span className="text-love-700">New match! Say hello</span>
                     </p>
                   )}
                 </div>
+                
+                {activeMatchId === match.id && (
+                  <Sparkles size={14} className="text-love-500 animate-pulse ml-1" />
+                )}
               </div>
             ))}
           </div>

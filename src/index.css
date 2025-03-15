@@ -124,4 +124,102 @@
   .btn-passion {
     @apply bg-passion-500 text-white hover:bg-passion-600 transition-colors;
   }
+  
+  /* Enhanced luxury styles for the messaging interface */
+  .message-bubble-user {
+    @apply relative bg-gradient-to-r from-love-500 to-passion-500 text-white rounded-2xl rounded-br-none px-4 py-2 shadow-sm;
+  }
+  
+  .message-bubble-match {
+    @apply relative bg-gray-100 rounded-2xl rounded-bl-none px-4 py-2 shadow-sm;
+  }
+  
+  .luxury-card {
+    @apply bg-white border border-love-100 rounded-xl shadow-sm transition-all duration-300;
+  }
+  
+  .luxury-input {
+    @apply border border-love-200 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-love-300 focus:border-transparent transition-all duration-300;
+  }
+  
+  .luxury-button {
+    @apply rounded-full shadow-sm hover:shadow-md transition-all duration-300;
+  }
+  
+  .premium-badge {
+    @apply bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-xs px-2 py-0.5 rounded-full shadow-sm;
+  }
+  
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-sm;
+  }
+  
+  .premium-gradient {
+    @apply bg-gradient-to-r from-amber-200 to-yellow-100;
+  }
+  
+  .hover-scale {
+    @apply transition-transform duration-200 hover:scale-105;
+  }
+  
+  .message-date-divider {
+    @apply flex items-center justify-center my-4;
+  }
+  
+  .message-date-divider::before,
+  .message-date-divider::after {
+    content: "";
+    @apply flex-grow h-px bg-love-100 mx-2;
+  }
+  
+  .message-date-badge {
+    @apply bg-love-50 text-love-700 px-3 py-1 rounded-full text-xs font-medium;
+  }
+  
+  /* Animations for message components */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out forwards;
+  }
+  
+  .animate-bounce-in {
+    animation: bounceIn 0.5s ease-out forwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    70% {
+      transform: scale(1.05);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
 }
