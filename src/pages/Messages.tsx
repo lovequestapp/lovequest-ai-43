@@ -27,6 +27,16 @@ type MessageType = {
   giftType?: string;
 };
 
+// Define the MessageChat component's expected message type
+type MessageChatMessageType = {
+  id: string;
+  content: string;
+  timestamp: Date;
+  sender: 'user' | 'match';
+  type?: 'text' | 'voice' | 'gift' | 'video-request' | 'video-accepted' | 'video-ended';
+  giftType?: string;
+};
+
 const Messages = () => {
   
   const { id: paramId } = useParams<{ id: string }>();
@@ -69,6 +79,20 @@ const Messages = () => {
     name: 'Unknown User',
     photos: [],
     compatibilityScore: 0,
+  };
+
+  // Convert context messages to MessageChat component format
+  const convertMessages = (contextMessages: MessageType[] | undefined): MessageChatMessageType[] => {
+    if (!contextMessages || !currentUser) return [];
+    
+    return contextMessages.map(msg => ({
+      id: msg.id,
+      content: msg.content,
+      timestamp: msg.timestamp,
+      sender: msg.senderId === currentUser.id ? 'user' : 'match',
+      type: msg.type || 'text',
+      giftType: msg.giftType
+    }));
   };
 
   useEffect(() => {
@@ -128,6 +152,11 @@ const Messages = () => {
       </div>
     );
   }
+
+  // Get the messages for the active match and convert them to the format expected by MessageChat
+  const activeMessages = activeMatchId && messages && messages[activeMatchId] 
+    ? convertMessages(messages[activeMatchId]) 
+    : [];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -208,7 +237,7 @@ const Messages = () => {
                 </div>
                 
                 <MessageChat 
-                  messages={(activeMatchId && messages && messages[activeMatchId]) ? (messages[activeMatchId] || []) : []}
+                  messages={activeMessages}
                   matchName={activeUser?.name || ''}
                   matchPhoto={activeUser?.photos?.[0] || ''}
                   compatibilityScore={activeUser?.compatibilityScore}
