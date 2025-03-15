@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, X, MessageCircle, MapPin, Sparkles, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ScreenReaderOnly from './ScreenReaderOnly';
+import { useNavigate } from 'react-router-dom';
 
 interface ProfileCardProps {
   id: string;
@@ -38,11 +38,23 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   onMessage,
   detailed = false,
 }) => {
+  const navigate = useNavigate();
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Only navigate if the click is on the card itself, not on buttons
+    if (!(e.target as HTMLElement).closest('button')) {
+      navigate(`/profiles/${id}`);
+    }
+  };
+
   return (
-    <Card className={cn(
-      "overflow-hidden transition-all duration-300 animate-fade-in",
-      detailed ? "max-w-2xl mx-auto shadow-card" : "max-w-sm w-full card-hover"
-    )}>
+    <Card 
+      className={cn(
+        "overflow-hidden transition-all duration-300 animate-fade-in",
+        detailed ? "max-w-2xl mx-auto shadow-card" : "max-w-sm w-full card-hover cursor-pointer"
+      )}
+      onClick={!detailed ? handleCardClick : undefined}
+    >
       <div className="relative">
         <img 
           src={photos[0]} 

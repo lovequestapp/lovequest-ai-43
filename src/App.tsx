@@ -19,6 +19,7 @@ const Discover = lazy(() => import('./pages/Discover'));
 const Messages = lazy(() => import('./pages/Messages'));
 const Explore = lazy(() => import('./pages/Explore'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
+const ProfileDetails = lazy(() => import('./pages/ProfileDetails'));
 
 // Simple loading fallback for lazy-loaded components
 const LoadingFallback = () => (
@@ -54,6 +55,14 @@ function App() {
             element={
               <Suspense fallback={<LoadingFallback />}>
                 <Discover />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/profiles/:userId" 
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <ProfileDetails />
               </Suspense>
             } 
           />
