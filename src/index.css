@@ -99,6 +99,13 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
   }
+  
+  /* Add padding to the bottom of the main content area on mobile */
+  @media (max-width: 768px) {
+    main, .main-content {
+      padding-bottom: 5rem;
+    }
+  }
 }
 
 @layer components {

@@ -5,6 +5,8 @@ import { Toaster } from './components/ui/sonner';
 import CookieConsent from './components/CookieConsent';
 import ProfileBoostPopup from './components/ProfileBoostPopup';
 import { useBoostPopup } from './hooks/useBoostPopup';
+import { useIsMobile } from './hooks/use-mobile';
+import MobileToolbar from './components/MobileToolbar';
 import { Suspense, lazy } from 'react';
 import Index from './pages/Index';
 import SignUp from './pages/SignUp';
@@ -34,6 +36,7 @@ const LoadingFallback = () => (
 
 function App() {
   const { showBoostPopup, closePopup } = useBoostPopup();
+  const isMobile = useIsMobile();
   
   return (
     <ErrorBoundary>
@@ -103,6 +106,7 @@ function App() {
         <Toaster position="top-right" richColors closeButton />
         <CookieConsent />
         <ProfileBoostPopup isOpen={showBoostPopup} onClose={closePopup} />
+        {isMobile && <MobileToolbar />}
       </UserProvider>
     </ErrorBoundary>
   );
