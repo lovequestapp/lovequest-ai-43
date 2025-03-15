@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { authService } from '@/services/authService';
@@ -84,6 +85,16 @@ export interface User {
   personalityTraits?: string[];
   favoriteMusic?: string;
   bankDetails?: BankDetails;
+  lastMessage?: string;
+  lastMessageTime?: Date;
+  status?: string;
+}
+
+// Match type for messaging
+export interface Match extends User {
+  lastMessage?: string;
+  lastMessageTime?: Date;
+  status?: string;
 }
 
 // Gift benefit type
@@ -839,9 +850,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const getGiftMonetizationDetails = (): MonetizationDetails => {
     if (!currentUser) {
       return {
-        totalEarned: 0,
-        availableBalance: 0,
-        pendingBalance: 0,
+        totalEarned: 0, 
+        availableBalance: 0, 
+        pendingBalance: 0, 
         conversionRate: 0,
         giftsReceived: 0,
         withdrawalFee: 0,
@@ -973,3 +984,48 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       updateUserData,
       purchaseGift,
       sendGift,
+      boostProfile,
+      allUsers,
+      addUser,
+      deleteUser,
+      
+      // Blog methods
+      createBlogPost,
+      updateBlogPost,
+      deleteBlogPost,
+      likeBlogPost,
+      commentOnBlogPost,
+      getUserPosts,
+      getAllPosts,
+      getFilteredPosts,
+      
+      // User interaction methods
+      updateUserProfile,
+      likeUser,
+      passUser,
+      potentialMatches,
+      matches,
+      boostedProfiles,
+      
+      // Messaging methods
+      messages,
+      sendMessage,
+      markMessagesAsRead,
+      
+      // Gift and monetization methods
+      getGiftBenefits,
+      getGiftInventory,
+      purchaseGifts,
+      getGiftMonetizationDetails,
+      initiateWithdrawal,
+      updateBankDetails,
+      getWithdrawalHistory,
+      getPendingWithdrawal
+    }}>
+      {children}
+    </UserContext.Provider>
+  );
+};
+
+// Hook for using the user context
+export const useUser = () => useContext(UserContext);
