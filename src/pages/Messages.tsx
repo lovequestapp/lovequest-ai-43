@@ -62,8 +62,14 @@ const Messages = () => {
   const [showMobileList, setShowMobileList] = useState(!paramId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Process matches to match MessageList expected format
-  const processedMatches = matches?.map(match => {
+  // Function to safely get the other user ID from a match
+  const getOtherUserId = (match: any): string => {
+    if (!currentUser) return '';
+    return match.userId1 === currentUser.id ? match.userId2 : match.userId1;
+  };
+  
+  // Process matches to match MessageList expected format - with additional validation
+  const processedMatches = Array.isArray(matches) ? matches.map(match => {
     const otherUserId = getOtherUserId(match);
     const user = potentialMatches?.find(u => u.id === otherUserId);
     
@@ -84,15 +90,10 @@ const Messages = () => {
       lastMessageTime: matchData.lastMessageTime || new Date(),
       unreadCount
     };
-  }) || [];
+  }) : [];
   
-  const getOtherUserId = (match: any): string => {
-    if (!currentUser) return '';
-    return match.userId1 === currentUser.id ? match.userId2 : match.userId1;
-  };
-
   // Find the active user based on the active match
-  const activeMatch = matches?.find(match => getOtherUserId(match) === activeMatchId);
+  const activeMatch = Array.isArray(matches) ? matches.find(match => getOtherUserId(match) === activeMatchId) : undefined;
   const matchData = activeMatch as unknown as Match;
   
   // Find the user object for the active match
