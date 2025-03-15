@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format, parseISO, addDays } from 'date-fns';
 import { useUser } from '@/context/UserContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import MapView from '@/components/MapView';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   Dialog, 
   DialogContent, 
@@ -37,7 +39,10 @@ import {
   Music, 
   Bike, 
   Heart, 
-  Plus 
+  Plus,
+  Search,
+  Trash2,
+  Map
 } from 'lucide-react';
 
 // Types for our date objects
@@ -57,6 +62,8 @@ interface ScheduledDate {
   date: string;
   time: string;
   location: string;
+  city?: string;
+  coordinates?: [number, number];
   withUserId?: string;
   withUserName?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
@@ -64,10 +71,60 @@ interface ScheduledDate {
   suggestionId?: string;
 }
 
+interface CitySuggestion {
+  name: string;
+  venueTags: string[];
+}
+
+// City data for suggestions
+const cityData: CitySuggestion[] = [
+  { 
+    name: "New York", 
+    venueTags: ["Central Park", "restaurants", "Broadway", "museums", "cafes", "High Line"] 
+  },
+  { 
+    name: "San Francisco", 
+    venueTags: ["Golden Gate Park", "tech museums", "seafood", "Fisherman's Wharf", "Alcatraz"] 
+  },
+  { 
+    name: "Los Angeles", 
+    venueTags: ["beaches", "Hollywood", "Griffith Observatory", "entertainment", "studios"] 
+  },
+  { 
+    name: "Chicago", 
+    venueTags: ["Millennium Park", "deep dish pizza", "museums", "architecture tours", "jazz"] 
+  },
+  { 
+    name: "Miami", 
+    venueTags: ["beaches", "Art Deco", "Cuban food", "nightlife", "water sports"] 
+  },
+  { 
+    name: "Seattle", 
+    venueTags: ["Space Needle", "coffee shops", "Pike Place Market", "seafood", "nature"] 
+  },
+  { 
+    name: "Austin", 
+    venueTags: ["live music", "BBQ", "food trucks", "outdoor activities", "bars"] 
+  },
+  { 
+    name: "Boston", 
+    venueTags: ["Freedom Trail", "historic sites", "seafood", "universities", "breweries"] 
+  },
+  { 
+    name: "Denver", 
+    venueTags: ["mountain views", "outdoor activities", "breweries", "arts", "museums"] 
+  },
+  { 
+    name: "Portland", 
+    venueTags: ["food trucks", "nature", "coffee", "craft beer", "bookstores"] 
+  }
+];
+
 const DateSuggestions: React.FC<{ 
   onSelect: (suggestion: DateSuggestion) => void,
-  interests: string[]
-}> = ({ onSelect, interests }) => {
+  interests: string[],
+  cityName?: string
+}> = ({ onSelect, interests, cityName }) => {
   // Date activity suggestions based on interests
   const suggestions: DateSuggestion[] = [
     {
@@ -128,6 +185,31 @@ const DateSuggestions: React.FC<{
     }
   ];
   
+  // Function to add city-specific suggestions
+  const generateCitySuggestions = (): DateSuggestion[] => {
+    if (!cityName) return [];
+    
+    const matchedCity = cityData.find(city => 
+      city.name.toLowerCase() === cityName.toLowerCase() ||
+      cityName.toLowerCase().includes(city.name.toLowerCase())
+    );
+    
+    if (!matchedCity) return [];
+    
+    // Create city-specific date suggestions
+    return matchedCity.venueTags.map((tag, index) => ({
+      id: `city-${index}`,
+      title: `${tag} in ${matchedCity.name}`,
+      description: `Enjoy ${tag} in ${matchedCity.name}, a local favorite activity.`,
+      icon: <MapPin className="h-8 w-8 text-love-500" />,
+      tags: [tag, matchedCity.name.toLowerCase(), 'local', 'city'],
+      location: matchedCity.name
+    }));
+  };
+  
+  // Combine standard suggestions with city-specific ones
+  const allSuggestions = [...suggestions, ...generateCitySuggestions()];
+  
   // Filter suggestions by matching tags with user interests
   const getRelevanceScore = (suggestion: DateSuggestion) => {
     let score = 0;
@@ -139,16 +221,22 @@ const DateSuggestions: React.FC<{
         score += 1;
       }
     });
+    
+    // Give city suggestions a boost
+    if (suggestion.id.startsWith('city-')) {
+      score += 2;
+    }
+    
     return score;
   };
   
   // Sort suggestions by relevance to user interests
-  const sortedSuggestions = [...suggestions].sort((a, b) => {
+  const sortedSuggestions = [...allSuggestions].sort((a, b) => {
     return getRelevanceScore(b) - getRelevanceScore(a);
   });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-20 md:pb-0">
       {sortedSuggestions.map((suggestion) => (
         <Card key={suggestion.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onSelect(suggestion)}>
           <CardHeader className="flex flex-row items-center gap-4 pb-2">
@@ -194,8 +282,110 @@ const DateSuggestions: React.FC<{
   );
 };
 
+const DateDetailsCard: React.FC<{
+  date: ScheduledDate;
+  onDelete?: (id: string) => void;
+  onEdit?: (date: ScheduledDate) => void;
+}> = ({ date, onDelete, onEdit }) => {
+  const [showMap, setShowMap] = useState(false);
+  
+  return (
+    <Card className="overflow-hidden mb-4">
+      <div className={`h-2 ${
+        date.status === 'confirmed' ? 'bg-green-500' :
+        date.status === 'pending' ? 'bg-amber-500' :
+        date.status === 'completed' ? 'bg-blue-500' :
+        'bg-red-500'
+      }`} />
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <CardTitle>{date.title}</CardTitle>
+          <Badge variant={
+            date.status === 'confirmed' ? 'default' :
+            date.status === 'pending' ? 'outline' :
+            date.status === 'completed' ? 'secondary' :
+            'destructive'
+          }>
+            {date.status.charAt(0).toUpperCase() + date.status.slice(1)}
+          </Badge>
+        </div>
+        
+        <div className="flex flex-wrap items-center gap-4 mt-2">
+          <div className="flex items-center text-muted-foreground">
+            <CalendarIcon size={16} className="mr-1" />
+            <span>{format(new Date(date.date), 'MMM d, yyyy')}</span>
+          </div>
+          <div className="flex items-center text-muted-foreground">
+            <Clock size={16} className="mr-1" />
+            <span>{date.time}</span>
+          </div>
+        </div>
+        
+        <div className="flex items-center text-muted-foreground mt-1">
+          <MapPin size={16} className="mr-1 flex-shrink-0" />
+          <span className="truncate">{date.location}</span>
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        <p className="text-sm">{date.description}</p>
+        
+        {date.withUserName && (
+          <div className="mt-3 flex items-center gap-2">
+            <Heart size={16} className="text-love-500" />
+            <span className="text-sm font-medium">Date with: {date.withUserName}</span>
+          </div>
+        )}
+        
+        {date.notes && (
+          <div className="mt-3 pt-3 border-t">
+            <p className="text-sm text-muted-foreground">{date.notes}</p>
+          </div>
+        )}
+        
+        {showMap && date.city && (
+          <div className="mt-3">
+            <MapView 
+              location={date.city} 
+              height="200px"
+            />
+          </div>
+        )}
+      </CardContent>
+      
+      <CardFooter className="flex justify-between gap-2">
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowMap(!showMap)}>
+            <Map size={16} className="mr-1" />
+            {showMap ? 'Hide Map' : 'Show Map'}
+          </Button>
+          {onDelete && (
+            <Button variant="outline" size="sm" onClick={() => onDelete(date.id)} className="text-destructive">
+              <Trash2 size={16} className="mr-1" />
+              Delete
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {onEdit && (
+            <Button variant="outline" size="sm" onClick={() => onEdit(date)}>Edit</Button>
+          )}
+          <Button 
+            variant={date.status === 'confirmed' ? 'default' : 'outline'} 
+            size="sm"
+            className={date.status === 'confirmed' ? 'bg-gradient-love hover:opacity-90' : ''}
+          >
+            {date.status === 'confirmed' ? 'Confirmed' : 'Confirm'}
+          </Button>
+        </div>
+      </CardFooter>
+    </Card>
+  );
+};
+
 const Dates: React.FC = () => {
   const { currentUser } = useUser();
+  const isMobile = useIsMobile();
   const [selectedDay, setSelectedDay] = useState<Date | undefined>(new Date());
   const [scheduledDates, setScheduledDates] = useState<ScheduledDate[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -205,9 +395,12 @@ const Dates: React.FC = () => {
     date: format(new Date(), 'yyyy-MM-dd'),
     time: '18:00',
     location: '',
+    city: '',
     status: 'pending'
   });
   const [selectedSuggestion, setSelectedSuggestion] = useState<DateSuggestion | null>(null);
+  const [selectedTabView, setSelectedTabView] = useState('calendar');
+  const [editingDateId, setEditingDateId] = useState<string | null>(null);
   
   // Simulate user interests (would come from user profile)
   const userInterests = currentUser?.interests || ['music', 'outdoors', 'food', 'art', 'movies'];
@@ -216,18 +409,28 @@ const Dates: React.FC = () => {
   const handleCreateDate = () => {
     if (newDate.title && newDate.date && newDate.time && newDate.location) {
       const dateToAdd: ScheduledDate = {
-        id: Math.random().toString(36).substring(2, 9),
+        id: editingDateId || Math.random().toString(36).substring(2, 9),
         title: newDate.title || '',
         description: newDate.description || '',
         date: newDate.date || '',
         time: newDate.time || '',
         location: newDate.location || '',
+        city: newDate.city || '',
+        coordinates: newDate.coordinates,
         status: 'pending',
         notes: newDate.notes,
         suggestionId: selectedSuggestion?.id
       };
       
-      setScheduledDates([...scheduledDates, dateToAdd]);
+      if (editingDateId) {
+        setScheduledDates(scheduledDates.map(date => 
+          date.id === editingDateId ? dateToAdd : date
+        ));
+        setEditingDateId(null);
+      } else {
+        setScheduledDates([...scheduledDates, dateToAdd]);
+      }
+      
       setShowCreateModal(false);
       resetNewDate();
     }
@@ -241,9 +444,11 @@ const Dates: React.FC = () => {
       date: format(new Date(), 'yyyy-MM-dd'),
       time: '18:00',
       location: '',
+      city: '',
       status: 'pending'
     });
     setSelectedSuggestion(null);
+    setEditingDateId(null);
   };
   
   // Handle selecting a date suggestion
@@ -265,6 +470,34 @@ const Dates: React.FC = () => {
     return scheduledDates.filter(date => date.date === formattedSelectedDay);
   };
   
+  // Function to handle deleting a date
+  const handleDeleteDate = (id: string) => {
+    setScheduledDates(scheduledDates.filter(date => date.id !== id));
+  };
+  
+  // Function to handle editing a date
+  const handleEditDate = (date: ScheduledDate) => {
+    setNewDate({
+      ...date
+    });
+    setEditingDateId(date.id);
+    setShowCreateModal(true);
+  };
+  
+  // Handle location selection from the map
+  const handleLocationSelect = (location: string, coordinates?: [number, number]) => {
+    // Extract city from location (usually the first part before the comma)
+    const cityMatch = location.match(/^([^,]+)/);
+    const city = cityMatch ? cityMatch[1].trim() : '';
+    
+    setNewDate({
+      ...newDate,
+      location: location,
+      city: city,
+      coordinates: coordinates
+    });
+  };
+  
   // Dates for the selected day
   const datesForSelectedDay = getDatesForSelectedDay();
   
@@ -280,26 +513,26 @@ const Dates: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-8 pb-24 md:pb-8">
         <div className="mb-6">
           <h1 className="text-3xl font-display font-bold flex items-center gap-2">
-            <CalendarIcon className="h-8 w-8" />
+            <CalendarIcon className="h-7 w-7" />
             <span>Date Planner</span>
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-muted-foreground mt-1">
             Schedule and manage your dates with potential matches
           </p>
         </div>
         
-        <Tabs defaultValue="calendar" className="mb-8">
+        <Tabs value={selectedTabView} onValueChange={setSelectedTabView} className="mb-8">
           <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto">
             <TabsTrigger value="calendar">Calendar</TabsTrigger>
             <TabsTrigger value="suggestions">Date Ideas</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="calendar" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="md:col-span-1">
+          <TabsContent value="calendar" className="mt-6 pb-16 md:pb-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+              <Card className="md:col-span-1 order-2 md:order-1">
                 <CardHeader>
                   <CardTitle className="text-xl">Select a Date</CardTitle>
                   <CardDescription>Choose a day to view or add dates</CardDescription>
@@ -331,13 +564,25 @@ const Dates: React.FC = () => {
                 </CardFooter>
               </Card>
               
-              <Card className="md:col-span-2">
+              <Card className="md:col-span-2 order-1 md:order-2">
                 <CardHeader>
-                  <CardTitle className="text-xl">
-                    {selectedDay ? (
-                      <>Dates for {format(selectedDay, 'MMMM d, yyyy')}</>
-                    ) : (
-                      <>Select a day</>
+                  <CardTitle className="text-xl flex items-center justify-between">
+                    <span>
+                      {selectedDay ? (
+                        <>Dates for {format(selectedDay, 'MMMM d, yyyy')}</>
+                      ) : (
+                        <>Select a day</>
+                      )}
+                    </span>
+                    {isMobile && (
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => setShowCreateModal(true)}
+                        className="flex md:hidden"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
                     )}
                   </CardTitle>
                   <CardDescription>
@@ -363,66 +608,15 @@ const Dates: React.FC = () => {
                       </Button>
                     </div>
                   ) : (
-                    <ScrollArea className="h-[400px] md:h-auto md:max-h-[600px]">
+                    <ScrollArea className="h-[400px] md:h-auto md:max-h-[600px] pr-4">
                       <div className="space-y-4">
                         {datesForSelectedDay.map((date) => (
-                          <Card key={date.id} className="overflow-hidden">
-                            <div className={`h-2 ${
-                              date.status === 'confirmed' ? 'bg-green-500' :
-                              date.status === 'pending' ? 'bg-amber-500' :
-                              date.status === 'completed' ? 'bg-blue-500' :
-                              'bg-red-500'
-                            }`} />
-                            <CardHeader className="pb-3">
-                              <div className="flex justify-between items-start">
-                                <CardTitle>{date.title}</CardTitle>
-                                <Badge variant={
-                                  date.status === 'confirmed' ? 'default' :
-                                  date.status === 'pending' ? 'outline' :
-                                  date.status === 'completed' ? 'secondary' :
-                                  'destructive'
-                                }>
-                                  {date.status.charAt(0).toUpperCase() + date.status.slice(1)}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-4 mt-2">
-                                <div className="flex items-center text-muted-foreground">
-                                  <Clock size={16} className="mr-1" />
-                                  <span>{date.time}</span>
-                                </div>
-                                <div className="flex items-center text-muted-foreground">
-                                  <MapPin size={16} className="mr-1" />
-                                  <span>{date.location}</span>
-                                </div>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              <p className="text-sm">{date.description}</p>
-                              
-                              {date.withUserName && (
-                                <div className="mt-3 flex items-center gap-2">
-                                  <Heart size={16} className="text-love-500" />
-                                  <span className="text-sm font-medium">Date with: {date.withUserName}</span>
-                                </div>
-                              )}
-                              
-                              {date.notes && (
-                                <div className="mt-3 pt-3 border-t">
-                                  <p className="text-sm text-muted-foreground">{date.notes}</p>
-                                </div>
-                              )}
-                            </CardContent>
-                            <CardFooter className="flex justify-end gap-2">
-                              <Button variant="outline" size="sm">Edit</Button>
-                              <Button 
-                                variant={date.status === 'confirmed' ? 'default' : 'outline'} 
-                                size="sm"
-                                className={date.status === 'confirmed' ? 'bg-gradient-love hover:opacity-90' : ''}
-                              >
-                                {date.status === 'confirmed' ? 'Confirmed' : 'Confirm'}
-                              </Button>
-                            </CardFooter>
-                          </Card>
+                          <DateDetailsCard 
+                            key={date.id} 
+                            date={date} 
+                            onDelete={handleDeleteDate}
+                            onEdit={handleEditDate}
+                          />
                         ))}
                       </div>
                     </ScrollArea>
@@ -432,13 +626,32 @@ const Dates: React.FC = () => {
             </div>
           </TabsContent>
           
-          <TabsContent value="suggestions" className="mt-6">
+          <TabsContent value="suggestions" className="mt-6 pb-20 md:pb-0">
             <div className="mb-6">
               <h2 className="text-2xl font-display font-semibold mb-3">Date Suggestions</h2>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mb-4">
                 Browse these date ideas based on your interests and preferences. 
                 The highlighted tags match your profile interests.
               </p>
+              
+              <div className="mb-6">
+                <Label htmlFor="citySearch" className="mb-2 block">Search for city-specific date ideas:</Label>
+                <div className="relative max-w-md">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    id="citySearch"
+                    placeholder="Enter a city name (e.g., New York, San Francisco)"
+                    className="pl-10"
+                    value={newDate.city || ''}
+                    onChange={(e) => setNewDate({...newDate, city: e.target.value})}
+                  />
+                </div>
+                {newDate.city && (
+                  <p className="text-sm text-love-500 mt-2">
+                    Showing suggestions for {newDate.city}
+                  </p>
+                )}
+              </div>
             </div>
             
             <DateSuggestions 
@@ -447,18 +660,22 @@ const Dates: React.FC = () => {
                 setShowCreateModal(true);
               }}
               interests={userInterests}
+              cityName={newDate.city}
             />
           </TabsContent>
         </Tabs>
       </main>
       
       {/* Dialog for creating a new date */}
-      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="sm:max-w-[550px]">
+      <Dialog open={showCreateModal} onOpenChange={(open) => {
+        if (!open) resetNewDate();
+        setShowCreateModal(open);
+      }}>
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Schedule a New Date</DialogTitle>
+            <DialogTitle>{editingDateId ? 'Edit Date' : 'Schedule a New Date'}</DialogTitle>
             <DialogDescription>
-              Fill in the details to add this date to your calendar.
+              Fill in the details to {editingDateId ? 'update' : 'add'} this date to your calendar.
             </DialogDescription>
           </DialogHeader>
           
@@ -511,13 +728,31 @@ const Dates: React.FC = () => {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
+              <Label htmlFor="city">City</Label>
+              <Input
+                id="city"
+                value={newDate.city || ''}
+                onChange={(e) => setNewDate({...newDate, city: e.target.value})}
+                placeholder="City name (e.g., New York, San Francisco)"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="location">Full Address/Location</Label>
               <Input
                 id="location"
                 value={newDate.location}
                 onChange={(e) => setNewDate({...newDate, location: e.target.value})}
                 placeholder="Where will you meet?"
                 required
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Search on Map (Optional)</Label>
+              <MapView 
+                location={newDate.location || newDate.city || ''}
+                onLocationSelect={handleLocationSelect}
               />
             </div>
             
@@ -552,7 +787,7 @@ const Dates: React.FC = () => {
               Cancel
             </Button>
             <Button onClick={handleCreateDate} className="bg-gradient-love hover:opacity-90">
-              Schedule Date
+              {editingDateId ? 'Update Date' : 'Schedule Date'}
             </Button>
           </DialogFooter>
         </DialogContent>
