@@ -19,7 +19,8 @@ import {
   Music, 
   Sparkles,
   Camera,
-  Users
+  Users,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 
