@@ -36,13 +36,14 @@ export const authService = {
         bio: userData.bio || '',
         location: userData.location || '',
         interests: userData.interests || [],
-        gender: userData.gender || '',
+        gender: userData.gender as 'male' | 'female' | 'non-binary' || 'non-binary',
         interestedIn: userData.interestedIn || [],
         popularityPoints: 0,
         premiumStatus: 'basic',
         giftInventory: { rose: 0, heart: 0, teddy: 0 },
         receivedGifts: { rose: 0, heart: 0, teddy: 0 },
         compatibilityScore: 0,
+        personalityTraits: [],
       };
 
       // Save user to mock database
