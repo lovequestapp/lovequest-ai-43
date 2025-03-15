@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ import {
   MessageCircleHeart,
   Crown
 } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from '@/context/UserContext';
@@ -885,4 +886,61 @@ const MessageChat: React.FC<MessageChatProps> = ({
                     className="h-8 w-8 text-love-400 hover:text-love-500 z-10 hover:bg-love-50"
                   >
                     <SmilePlus size={18} />
-                  </Button
+                  </Button>
+                  <Button
+                    onClick={() => setShowQuickActions(!showQuickActions)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-love-400 hover:text-love-500 z-10 hover:bg-love-50"
+                  >
+                    <Calendar size={18} />
+                  </Button>
+                  <Button
+                    onClick={() => setShowGiftMenu(!showGiftMenu)}
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-love-400 hover:text-love-500 z-10 hover:bg-love-50"
+                  >
+                    <Gift size={18} />
+                  </Button>
+                </div>
+                
+                <Button
+                  onClick={startRecording}
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-love-400 hover:text-love-500 z-10 hover:bg-love-50"
+                  disabled={isRecording}
+                >
+                  <Mic size={18} />
+                </Button>
+              </div>
+              
+              <div className="flex gap-2 items-center" onClick={handleInputAreaClick}>
+                <Input
+                  ref={inputRef}
+                  type="text"
+                  placeholder={`Message ${matchName}...`}
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  className="flex-grow border-love-100 focus-visible:ring-love-200 z-10"
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  size="icon"
+                  className="bg-love-500 hover:bg-love-600 z-10"
+                  disabled={!messageText.trim()}
+                >
+                  <Send size={16} className="text-white" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardFooter>
+      )}
+    </Card>
+  );
+};
+
+export default MessageChat;
