@@ -26,6 +26,7 @@ type MessageType = {
   content: string;
   timestamp: Date;
   read: boolean;
+  isRead?: boolean; // Added this field to accommodate both read and isRead properties
   type?: 'text' | 'gift';
   giftType?: string;
 };
@@ -65,8 +66,11 @@ const Messages = () => {
   const processedMatches = matches?.map(match => {
     const otherUserId = getOtherUserId(match);
     const user = potentialMatches?.find(u => u.id === otherUserId);
-    const unreadCount = messages?.filter(m => 
-      m.senderId === otherUserId && !m.isRead
+    
+    // Check if messages[otherUserId] exists before trying to filter it
+    const matchMessages = messages && messages[otherUserId] ? messages[otherUserId] : [];
+    const unreadCount = matchMessages.filter(m => 
+      m.senderId === otherUserId && (m.read === false || m.isRead === false)
     ).length || 0;
     
     // Get the match object which contains lastMessage and lastMessageTime
@@ -188,7 +192,7 @@ const Messages = () => {
     );
   }
 
-  // Get the messages for the active match and convert them to the format expected by MessageChat
+  // Safely get the messages for the active match and convert them
   const activeMessages = activeMatchId && messages && messages[activeMatchId] 
     ? convertMessages(messages[activeMatchId]) 
     : [];

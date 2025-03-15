@@ -27,12 +27,15 @@ const MessageList: React.FC<MessageListProps> = ({
   onSelectMatch,
   className
 }) => {
+  // Add a check to make sure matches is an array before rendering
+  const validMatches = Array.isArray(matches) ? matches : [];
+  
   return (
     <Card className="h-full border-love-100 flex flex-col">
       <CardContent className="p-0 flex flex-col h-full">
         <div className="p-4 border-b border-love-100 flex-shrink-0">
           <h2 className="text-xl font-display font-semibold">Messages</h2>
-          {matches.length === 0 && (
+          {validMatches.length === 0 && (
             <p className="text-muted-foreground text-sm mt-2">
               No matches yet. Start discovering!
             </p>
@@ -41,7 +44,7 @@ const MessageList: React.FC<MessageListProps> = ({
         
         <ScrollArea className={cn("flex-grow", className)}>
           <div className="divide-y divide-love-100">
-            {matches.map((match) => (
+            {validMatches.map((match) => (
               <div
                 key={match.id}
                 className={cn(
@@ -52,7 +55,7 @@ const MessageList: React.FC<MessageListProps> = ({
               >
                 <div className="relative">
                   <img
-                    src={match.photo}
+                    src={match.photo || '/placeholder.svg'}
                     alt={match.name}
                     className="h-12 w-12 rounded-full object-cover"
                   />
@@ -70,7 +73,7 @@ const MessageList: React.FC<MessageListProps> = ({
                     <h3 className="font-medium truncate">{match.name}</h3>
                     {match.lastMessageTime && (
                       <span className="text-xs text-muted-foreground">
-                        {format(match.lastMessageTime, 'h:mm a')}
+                        {format(new Date(match.lastMessageTime), 'h:mm a')}
                       </span>
                     )}
                   </div>
