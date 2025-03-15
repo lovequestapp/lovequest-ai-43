@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { authService } from '@/services/authService';
@@ -15,7 +14,8 @@ interface BankDetails {
   accountName: string;
   accountNumber: string;
   bankName: string;
-  routingNumber: string;
+  swiftCode?: string;
+  routingNumber?: string;
 }
 
 // Blog post type
@@ -54,9 +54,10 @@ export interface Withdrawal {
   id: string;
   userId: string;
   amount: number;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
   requestDate: Date;
   processedDate?: Date;
+  date?: Date; // For backward compatibility
 }
 
 // Boost type
@@ -101,6 +102,23 @@ interface MonetizationDetails {
   conversionRate: number;
   giftsReceived: number;
   withdrawalFee: number;
+  giftValues: {
+    rose: number;
+    heart: number;
+    teddy: number;
+  };
+  minimumWithdrawal: number;
+  currency: string;
+  exchangeRates: {
+    USD: number;
+    EUR: number;
+    GBP: number;
+    JPY: number;
+    CAD: number;
+    AUD: number;
+    CNY: number;
+    INR: number;
+  };
 }
 
 // Define the context structure
@@ -198,7 +216,24 @@ const UserContext = createContext<UserContextType>({
     pendingBalance: 0, 
     conversionRate: 0,
     giftsReceived: 0,
-    withdrawalFee: 0 
+    withdrawalFee: 0,
+    giftValues: {
+      rose: 0.25,
+      heart: 0.75,
+      teddy: 1.5
+    },
+    minimumWithdrawal: 10,
+    currency: 'USD',
+    exchangeRates: {
+      USD: 1,
+      EUR: 0.85,
+      GBP: 0.73,
+      JPY: 110.25,
+      CAD: 1.25,
+      AUD: 1.35,
+      CNY: 6.5,
+      INR: 73.5
+    }
   }),
   initiateWithdrawal: () => false,
   updateBankDetails: () => false,
@@ -801,7 +836,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     return filtered;
   };
   
-  // Monetization functions
   const getGiftMonetizationDetails = (): MonetizationDetails => {
     if (!currentUser) {
       return {
@@ -810,7 +844,24 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         pendingBalance: 0,
         conversionRate: 0,
         giftsReceived: 0,
-        withdrawalFee: 0
+        withdrawalFee: 0,
+        giftValues: {
+          rose: 0.25,
+          heart: 0.75,
+          teddy: 1.5
+        },
+        minimumWithdrawal: 10,
+        currency: 'USD',
+        exchangeRates: {
+          USD: 1,
+          EUR: 0.85,
+          GBP: 0.73,
+          JPY: 110.25,
+          CAD: 1.25,
+          AUD: 1.35,
+          CNY: 6.5,
+          INR: 73.5
+        }
       };
     }
     
@@ -832,7 +883,24 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       pendingBalance,
       conversionRate,
       giftsReceived: totalGifts,
-      withdrawalFee: 1.0 // $1.00 fee
+      withdrawalFee: 1.0, // $1.00 fee
+      giftValues: {
+        rose: 0.25,
+        heart: 0.75,
+        teddy: 1.5
+      },
+      minimumWithdrawal: 10,
+      currency: 'USD',
+      exchangeRates: {
+        USD: 1,
+        EUR: 0.85,
+        GBP: 0.73,
+        JPY: 110.25,
+        CAD: 1.25,
+        AUD: 1.35,
+        CNY: 6.5,
+        INR: 73.5
+      }
     };
   };
   
@@ -905,48 +973,3 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       updateUserData,
       purchaseGift,
       sendGift,
-      boostProfile,
-      allUsers,
-      addUser,
-      deleteUser,
-      
-      // Blog methods
-      createBlogPost,
-      updateBlogPost,
-      deleteBlogPost,
-      likeBlogPost,
-      commentOnBlogPost,
-      getUserPosts,
-      getAllPosts,
-      getFilteredPosts,
-      
-      // User interaction methods
-      updateUserProfile,
-      likeUser,
-      passUser,
-      potentialMatches,
-      matches,
-      boostedProfiles,
-      
-      // Messaging methods
-      messages,
-      sendMessage,
-      markMessagesAsRead,
-      
-      // Gift and monetization methods
-      getGiftBenefits,
-      getGiftInventory,
-      purchaseGifts,
-      getGiftMonetizationDetails,
-      initiateWithdrawal,
-      updateBankDetails,
-      getWithdrawalHistory,
-      getPendingWithdrawal
-    }}>
-      {children}
-    </UserContext.Provider>
-  );
-};
-
-// Hook for using the user context
-export const useUser = () => useContext(UserContext);

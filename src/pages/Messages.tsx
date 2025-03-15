@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
@@ -17,6 +16,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from '@/lib/utils';
 import { Search, Info, MenuIcon, ArrowLeft } from 'lucide-react';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import { GiftInventory } from '@/context/UserContext';
 
 // Define a local MessageType to avoid type conflicts with the imported component
 type MessageType = {
@@ -40,6 +40,15 @@ type MessageChatMessageType = {
   giftType?: string;
 };
 
+// Add a Match type definition to properly type the matches array
+type Match = {
+  userId1: string;
+  userId2: string;
+  lastMessage?: string;
+  lastMessageTime?: Date;
+  status?: 'matched' | 'pending';
+};
+
 const Messages = () => {
   const { isAuthenticated } = useProtectedRoute();
   const isMobile = useIsMobile();
@@ -56,17 +65,19 @@ const Messages = () => {
   const processedMatches = matches?.map(match => {
     const otherUserId = getOtherUserId(match);
     const user = potentialMatches?.find(u => u.id === otherUserId);
-    const unreadCount = messages && otherUserId && messages[otherUserId] ? 
-      messages[otherUserId]?.filter(m => 
-        m.senderId === otherUserId && !m.read
-      ).length || 0 : 0;
+    const unreadCount = messages?.filter(m => 
+      m.senderId === otherUserId && !m.isRead
+    ).length || 0;
+    
+    // Get the match object which contains lastMessage and lastMessageTime
+    const matchData = match as unknown as Match;
     
     return {
       id: otherUserId || '',
       name: user?.name || 'Unknown User',
       photo: user?.photos?.[0] || '',
-      lastMessage: match.lastMessage,
-      lastMessageTime: match.lastMessageTime,
+      lastMessage: matchData.lastMessage || '',
+      lastMessageTime: matchData.lastMessageTime || new Date(),
       unreadCount
     };
   }) || [];
@@ -78,6 +89,7 @@ const Messages = () => {
 
   // Find the active user based on the active match
   const activeMatch = matches?.find(match => getOtherUserId(match) === activeMatchId);
+  const matchData = activeMatch as unknown as Match;
   
   // Find the user object for the active match
   const activeUser = potentialMatches?.find(user => user.id === activeMatchId) || {
@@ -121,11 +133,11 @@ const Messages = () => {
   }, [activeMatchId, currentUser, markMessagesAsRead]);
 
   // Function to handle sending messages
-  const handleSendMessage = (content: string, type = 'text', giftType?: string) => {
+  const handleSendMessage = (content: string, type = 'text', giftType?: keyof GiftInventory) => {
     if (!activeMatchId || !currentUser) return;
     
     if (type === 'gift' && giftType) {
-      sendMessage(activeMatchId, `Sent a ${giftType}`, 'gift', giftType);
+      sendMessage(activeMatchId, content, giftType);
     } else {
       sendMessage(activeMatchId, content);
     }

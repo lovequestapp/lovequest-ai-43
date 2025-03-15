@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -100,16 +99,13 @@ const GiftShop: React.FC = () => {
       return;
     }
 
-    // Process purchase
-    const purchasedGifts: Record<string, number> = {};
+    // Process each purchase
     Object.keys(quantities).forEach(key => {
       if (quantities[key] > 0) {
-        purchasedGifts[key] = quantities[key];
+        // Call the purchaseGifts function for each gift type with quantity
+        purchaseGifts(key as 'rose' | 'heart' | 'teddy', quantities[key]);
       }
     });
-
-    // Call the purchaseGifts function from UserContext
-    purchaseGifts(purchasedGifts);
 
     // Show success message
     toast({

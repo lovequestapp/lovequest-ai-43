@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useUser } from '@/context/UserContext';
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { CheckIcon, CircleDollarSign, Wallet, CreditCard, ArrowDownToLine, History, BanknoteIcon, HeartIcon, GiftIcon, BadgeDollarSign, ArrowRight, Calendar, ChevronDown } from 'lucide-react';
 
 const Monetization = () => {
@@ -22,13 +21,14 @@ const Monetization = () => {
     getPendingWithdrawal 
   } = useUser();
   
+  const monetizationDetails = getGiftMonetizationDetails();
   const { 
-    giftValues, 
-    minimumWithdrawal, 
     availableBalance,
+    giftValues,
+    minimumWithdrawal,
     currency,
-    exchangeRates 
-  } = getGiftMonetizationDetails();
+    exchangeRates
+  } = monetizationDetails;
   
   const [activeTab, setActiveTab] = useState('balance');
   const [withdrawalAmount, setWithdrawalAmount] = useState('');
@@ -39,6 +39,7 @@ const Monetization = () => {
     accountNumber: currentUser?.bankDetails?.accountNumber || '',
     bankName: currentUser?.bankDetails?.bankName || '',
     swiftCode: currentUser?.bankDetails?.swiftCode || '',
+    routingNumber: currentUser?.bankDetails?.routingNumber || ''
   });
   
   const pendingWithdrawal = getPendingWithdrawal();
@@ -47,11 +48,7 @@ const Monetization = () => {
   const handleWithdrawal = () => {
     const amount = parseFloat(withdrawalAmount);
     if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid withdrawal amount",
-        variant: "destructive"
-      });
+      toast("Invalid Amount - Please enter a valid withdrawal amount");
       return;
     }
     
@@ -64,11 +61,7 @@ const Monetization = () => {
   const handleSaveBankDetails = () => {
     // Validate bank details
     if (!bankDetails.accountName || !bankDetails.accountNumber || !bankDetails.bankName) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields",
-        variant: "destructive"
-      });
+      toast("Missing Information - Please fill in all required fields");
       return;
     }
     
@@ -118,6 +111,7 @@ const Monetization = () => {
       default: return currencyCode;
     }
   };
+  
   
   return (
     <div className="space-y-6">
@@ -305,7 +299,7 @@ const Monetization = () => {
                   
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Date Requested</span>
-                    <span>{new Date(pendingWithdrawal.date).toLocaleDateString()}</span>
+                    <span>{new Date(pendingWithdrawal.requestDate).toLocaleDateString()}</span>
                   </div>
                   
                   <div className="flex justify-between items-center">
@@ -444,16 +438,16 @@ const Monetization = () => {
                     <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                          withdrawal.status === 'completed' ? 'bg-green-50' : 'bg-red-50'
+                          withdrawal.status === 'approved' ? 'bg-green-50' : 'bg-red-50'
                         }`}>
                           <ArrowDownToLine className={`h-5 w-5 ${
-                            withdrawal.status === 'completed' ? 'text-green-500' : 'text-red-500'
+                            withdrawal.status === 'approved' ? 'text-green-500' : 'text-red-500'
                           }`} />
                         </div>
                         <div>
                           <p className="font-medium">Withdrawal</p>
                           <p className="text-sm text-gray-500">
-                            {new Date(withdrawal.date).toLocaleDateString()}
+                            {new Date(withdrawal.requestDate).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
@@ -462,7 +456,7 @@ const Monetization = () => {
                           {formatCurrency(convertCurrency(withdrawal.amount))}
                         </p>
                         <Badge className={`mt-1 ${
-                          withdrawal.status === 'completed' 
+                          withdrawal.status === 'approved' 
                             ? 'bg-green-100 text-green-800 border-green-200' 
                             : 'bg-red-100 text-red-800 border-red-200'
                         }`}>
