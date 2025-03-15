@@ -19,5 +19,5 @@ export const useProtectedRoute = () => {
     }
   }, [currentUser, isAuthenticated, navigate]);
 
-  return { isAuthenticated: !!currentUser };
+  return { isAuthenticated: isAuthenticated() };
 };
