@@ -347,7 +347,7 @@ const sampleMessages: Message[] = [
     id: 'msg2',
     senderId: 'user2',
     receiverId: 'user1',
-    content: 'Hello! Thanks for reaching out. I'd love to get to know you better. What are your interests?',
+    content: 'Hello! Thanks for reaching out. I\'d love to get to know you better. What are your interests?',
     timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
     isRead: false
   }
