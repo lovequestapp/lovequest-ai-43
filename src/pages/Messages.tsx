@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useUser } from '@/context/UserContext';
+import { useUser, GiftInventory } from '@/context/UserContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MessageList from '@/components/MessageList';
 import MessageChat from '@/components/MessageChat';
@@ -16,7 +17,6 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from '@/lib/utils';
 import { Search, Info, MenuIcon, ArrowLeft } from 'lucide-react';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { GiftInventory } from '@/context/UserContext';
 
 // Define a local MessageType to avoid type conflicts with the imported component
 type MessageType = {
@@ -146,7 +146,7 @@ const Messages = () => {
   };
 
   // Handle gift selection
-  const handleGiftSelect = (giftType: 'rose' | 'heart' | 'teddy') => {
+  const handleGiftSelect = (giftType: keyof GiftInventory) => {
     if (!currentUser) return;
     
     handleSendMessage(`Sent a ${giftType}`, 'gift', giftType);

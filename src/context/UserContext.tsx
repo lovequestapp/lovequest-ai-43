@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { authService } from '@/services/authService';
 
 // Gift types
-interface GiftInventory {
+export interface GiftInventory {
   rose: number;
   heart: number;
   teddy: number;
@@ -849,7 +849,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   
   const getGiftMonetizationDetails = (): MonetizationDetails => {
     if (!currentUser) {
-      return {
+      return { 
         totalEarned: 0, 
         availableBalance: 0, 
         pendingBalance: 0, 
