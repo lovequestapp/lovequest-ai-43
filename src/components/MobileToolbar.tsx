@@ -15,6 +15,9 @@ const MobileToolbar = () => {
     if (path === '/messages' && (currentPath === '/messages' || currentPath.startsWith('/messages/'))) {
       return true;
     }
+    if (path === '/dates' && currentPath === '/dates') {
+      return true;
+    }
     return currentPath === path;
   };
   
@@ -48,15 +51,15 @@ const MobileToolbar = () => {
         </Link>
         
         <Link 
-          to="/explore" 
+          to="/dates" 
           className={cn(
             "flex flex-col items-center justify-center w-1/3 py-2 transition-colors",
-            isActive('/explore') 
+            isActive('/dates') 
               ? "text-love-500" 
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <Calendar size={22} className={cn(isActive('/explore') ? "fill-love-500" : "")} />
+          <Calendar size={22} className={cn(isActive('/dates') ? "fill-love-500" : "")} />
           <span className="text-xs mt-1 font-medium">Dates</span>
         </Link>
       </div>

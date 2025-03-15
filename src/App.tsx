@@ -20,6 +20,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 const Discover = lazy(() => import('./pages/Discover'));
 const Messages = lazy(() => import('./pages/Messages'));
 const Explore = lazy(() => import('./pages/Explore'));
+const Dates = lazy(() => import('./pages/Dates'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
 const ProfileDetails = lazy(() => import('./pages/ProfileDetails'));
 
@@ -90,6 +91,14 @@ function App() {
             element={
               <Suspense fallback={<LoadingFallback />}>
                 <Explore />
+              </Suspense>
+            } 
+          />
+          <Route 
+            path="/dates" 
+            element={
+              <Suspense fallback={<LoadingFallback />}>
+                <Dates />
               </Suspense>
             } 
           />
