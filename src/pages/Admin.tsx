@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
 import { useNavigate } from 'react-router-dom';
@@ -815,3 +816,400 @@ const Admin = () => {
                     <div className="font-medium">Maintenance Mode</div>
                     <div className="text-sm text-muted-foreground">Temporarily disable the platform for maintenance</div>
                   </div>
+                  <Switch />
+                </div>
+                
+                <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <div className="font-medium">New User Approvals</div>
+                    <div className="text-sm text-muted-foreground">Require admin approval for new user accounts</div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <div className="font-medium">Content Moderation</div>
+                    <div className="text-sm text-muted-foreground">Auto-moderate images and messages</div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <div className="font-medium">Email Notifications</div>
+                    <div className="text-sm text-muted-foreground">Send email notifications for admin events</div>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* GIFTS TAB */}
+          <TabsContent value="gifts" className="space-y-4">
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Gift Management</CardTitle>
+                <CardDescription>Manage virtual gifts available in the platform</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Gift Name</TableHead>
+                        <TableHead>Icon</TableHead>
+                        <TableHead>Price (Coins)</TableHead>
+                        <TableHead>Popularity</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>Rose</TableCell>
+                        <TableCell>🌹</TableCell>
+                        <TableCell>50</TableCell>
+                        <TableCell>High</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
+                            Active
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Heart</TableCell>
+                        <TableCell>❤️</TableCell>
+                        <TableCell>100</TableCell>
+                        <TableCell>Very High</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
+                            Active
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Teddy Bear</TableCell>
+                        <TableCell>🧸</TableCell>
+                        <TableCell>200</TableCell>
+                        <TableCell>Medium</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
+                            Active
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>Diamond</TableCell>
+                        <TableCell>💎</TableCell>
+                        <TableCell>500</TableCell>
+                        <TableCell>Low</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">
+                            Coming Soon
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* REPORTS TAB */}
+          <TabsContent value="reports" className="space-y-4">
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Content Reports</CardTitle>
+                <CardDescription>Handle reported content and user violations</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Report ID</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Reported User</TableHead>
+                        <TableHead>Reason</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>RPT-1234</TableCell>
+                        <TableCell>Profile</TableCell>
+                        <TableCell>john.doe@example.com</TableCell>
+                        <TableCell>Inappropriate photo</TableCell>
+                        <TableCell>2023-06-15</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">
+                            Pending
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            Review
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>RPT-1235</TableCell>
+                        <TableCell>Message</TableCell>
+                        <TableCell>sarah.smith@example.com</TableCell>
+                        <TableCell>Harassment</TableCell>
+                        <TableCell>2023-06-14</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
+                            Resolved
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell>RPT-1236</TableCell>
+                        <TableCell>Profile</TableCell>
+                        <TableCell>mike.jones@example.com</TableCell>
+                        <TableCell>Fake profile</TableCell>
+                        <TableCell>2023-06-13</TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">
+                            Investigating
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm">
+                            Review
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+      
+      {/* Edit User Drawer */}
+      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+        <DrawerContent className="px-4">
+          <DrawerHeader>
+            <DrawerTitle>Edit User</DrawerTitle>
+            <DrawerDescription>
+              Update user details and permissions. Click save when you're done.
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4">
+            {selectedUser && (
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSaveUser)} className="space-y-8">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="age"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Age</FormLabel>
+                        <FormControl>
+                          <Input {...field} type="number" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="moderator">Moderator</SelectItem>
+                            <SelectItem value="subscriber">Subscriber</SelectItem>
+                            <SelectItem value="vip">VIP</SelectItem>
+                            <SelectItem value="trial">Trial</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="premiumStatus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Premium Status</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a premium status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="basic">Basic</SelectItem>
+                            <SelectItem value="premium">Premium</SelectItem>
+                            <SelectItem value="vip">VIP</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bio</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Gender</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a gender" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                            <SelectItem value="non-binary">Non-Binary</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="terms"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            Accept terms and conditions
+                          </FormLabel>
+                          <FormDescription>
+                            User has agreed to the terms and privacy policy.
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit">Save changes</Button>
+                </form>
+              </Form>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </div>
+  );
+};
+
+export default Admin;
