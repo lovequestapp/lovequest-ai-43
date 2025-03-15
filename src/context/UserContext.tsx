@@ -873,4 +873,167 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   
   const purchaseGifts = (gifts: Record<string, number>) => {
     if (!gifts || !currentUser) {
-      console.error("Invalid gifts data or currentUser is
+      console.error("Invalid gifts data or currentUser is null");
+      return;
+    }
+    
+    // Update the user's gift inventory
+    setCurrentUser(prevUser => {
+      if (!prevUser) return prevUser;
+      
+      const updatedInventory = { ...(prevUser.giftInventory || { rose: 0, heart: 0, teddy: 0 }) };
+      
+      // Add purchased gifts to inventory
+      Object.entries(gifts).forEach(([giftType, quantity]) => {
+        const giftKey = giftType as keyof typeof updatedInventory;
+        updatedInventory[giftKey] = (updatedInventory[giftKey] || 0) + quantity;
+      });
+      
+      return {
+        ...prevUser,
+        giftInventory: updatedInventory
+      };
+    });
+    
+    toast.success("Gifts purchased successfully!");
+  };
+  
+  const getGiftInventory = () => {
+    return currentUser?.giftInventory || { rose: 0, heart: 0, teddy: 0 };
+  };
+  
+  const getGiftMonetizationDetails = () => {
+    const receivedGifts = currentUser?.receivedGifts || { rose: 0, heart: 0, teddy: 0 };
+    const totalValue = 
+      (receivedGifts.rose * giftValues.rose) + 
+      (receivedGifts.heart * giftValues.heart) + 
+      (receivedGifts.teddy * giftValues.teddy);
+    
+    return {
+      giftValues,
+      minimumWithdrawal: 50,
+      availableBalance: totalValue,
+      currency: 'USD',
+      exchangeRates
+    };
+  };
+  
+  const initiateWithdrawal = (amount: number): boolean => {
+    if (!currentUser) {
+      toast.error("You must be logged in to withdraw funds");
+      return false;
+    }
+    
+    if (amount < 50) {
+      toast.error("Minimum withdrawal amount is $50");
+      return false;
+    }
+    
+    const monetizationDetails = getGiftMonetizationDetails();
+    if (amount > monetizationDetails.availableBalance) {
+      toast.error("Insufficient funds for withdrawal");
+      return false;
+    }
+    
+    if (pendingWithdrawal) {
+      toast.error("You already have a pending withdrawal request");
+      return false;
+    }
+    
+    const newWithdrawal: WithdrawalType = {
+      id: `withdrawal-${Date.now()}`,
+      userId: currentUser.id,
+      amount,
+      date: new Date(),
+      status: 'pending'
+    };
+    
+    setPendingWithdrawal(newWithdrawal);
+    setWithdrawals(prev => [...prev, newWithdrawal]);
+    
+    toast.success(`Withdrawal request for $${amount} initiated`, {
+      description: "Your request is being processed and funds will be transferred to your bank account."
+    });
+    
+    return true;
+  };
+  
+  const updateBankDetails = (details: User['bankDetails']) => {
+    if (!details || !currentUser) {
+      console.error("Invalid bank details or currentUser is null");
+      return;
+    }
+    
+    setCurrentUser(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        bankDetails: details
+      };
+    });
+    
+    toast.success("Bank details updated successfully!");
+  };
+  
+  const getWithdrawalHistory = (): WithdrawalType[] => {
+    if (!currentUser) return [];
+    return withdrawals.filter(w => w.userId === currentUser.id);
+  };
+  
+  const getPendingWithdrawal = (): WithdrawalType | null => {
+    if (!currentUser) return null;
+    return pendingWithdrawal;
+  };
+
+  return (
+    <UserContext.Provider
+      value={{
+        currentUser,
+        potentialMatches,
+        likeUser,
+        passUser,
+        matches,
+        messages,
+        sendMessage,
+        markMessagesAsRead,
+        updateProfile,
+        updateUserProfile,
+        boostProfile,
+        boostedProfiles,
+        getGiftBenefits,
+        redeemGift,
+        updateMatchPreferences,
+        
+        // Blog functionality
+        createBlogPost,
+        updateBlogPost,
+        deleteBlogPost,
+        likeBlogPost,
+        commentOnBlogPost,
+        getUserPosts,
+        getAllPosts,
+        getFilteredPosts,
+        
+        // Gift and monetization
+        purchaseGifts,
+        getGiftInventory,
+        getGiftMonetizationDetails,
+        initiateWithdrawal,
+        updateBankDetails,
+        getWithdrawalHistory,
+        getPendingWithdrawal,
+        
+        // Auth functions
+        setCurrentUser,
+        login,
+        register,
+        logout,
+        isAuthenticated,
+      }}
+    >
+      {children}
+    </UserContext.Provider>
+  );
+};
+
+export const useUser = () => useContext(UserContext);
