@@ -15,6 +15,16 @@ interface AdminMobileContainerProps {
   preventOverflow?: boolean;
 }
 
+// Define the extended props for admin tables
+interface AdminTableProps {
+  editingUser?: number | null;
+  userFormData?: any;
+  onEditUser?: (userId: number, userData: any) => void;
+  onSaveUser?: (userId: number) => void;
+  onCancelEdit?: () => void;
+  className?: string;
+}
+
 const AdminMobileContainer = ({
   children,
   className,
@@ -146,7 +156,8 @@ const AdminMobileContainer = ({
   // Create modified children with edit functionality
   const enhancedChildren = React.Children.map(children, child => {
     // Check if it's an admin table that needs edit functionality
-    if (React.isValidElement(child) && child.props?.className?.includes('admin-table')) {
+    if (React.isValidElement(child) && 
+        child.props?.className?.includes('admin-table')) {
       // Clone and enhance with edit functionality
       return React.cloneElement(child, {
         editingUser,
@@ -154,7 +165,7 @@ const AdminMobileContainer = ({
         onEditUser: handleEditUser,
         onSaveUser: handleSaveUser,
         onCancelEdit: handleCancelEdit,
-      });
+      } as AdminTableProps);
     }
     return child;
   });
