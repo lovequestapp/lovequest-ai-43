@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { authService } from '@/services/authService';
@@ -88,6 +87,8 @@ export interface User {
   lastMessage?: string;
   lastMessageTime?: Date;
   status?: string;
+  isBanned?: boolean;
+  verificationStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
 }
 
 // Match type for messaging
@@ -270,7 +271,9 @@ const sampleUsers: User[] = [
     giftInventory: { rose: 3, heart: 1, teddy: 0 },
     receivedGifts: { rose: 5, heart: 2, teddy: 1 },
     compatibilityScore: 89,
-    role: 'subscriber'
+    role: 'subscriber',
+    isBanned: false,
+    verificationStatus: 'verified'
   },
   {
     id: 'user2',
@@ -288,7 +291,9 @@ const sampleUsers: User[] = [
     giftInventory: { rose: 10, heart: 5, teddy: 2 },
     receivedGifts: { rose: 3, heart: 1, teddy: 0 },
     compatibilityScore: 75,
-    role: 'subscriber'
+    role: 'subscriber',
+    isBanned: false,
+    verificationStatus: 'verified'
   },
   {
     id: 'user3',
@@ -306,7 +311,9 @@ const sampleUsers: User[] = [
     giftInventory: { rose: 50, heart: 50, teddy: 50 },
     receivedGifts: { rose: 0, heart: 0, teddy: 0 },
     compatibilityScore: 50,
-    role: 'admin'
+    role: 'admin',
+    isBanned: false,
+    verificationStatus: 'verified'
   },
   {
     id: 'user4',
@@ -324,7 +331,9 @@ const sampleUsers: User[] = [
     giftInventory: { rose: 1, heart: 0, teddy: 0 },
     receivedGifts: { rose: 8, heart: 3, teddy: 1 },
     compatibilityScore: 82,
-    role: 'subscriber'
+    role: 'subscriber',
+    isBanned: false,
+    verificationStatus: 'pending'
   },
   {
     id: 'user5',
@@ -342,7 +351,9 @@ const sampleUsers: User[] = [
     giftInventory: { rose: 5, heart: 2, teddy: 1 },
     receivedGifts: { rose: 1, heart: 0, teddy: 0 },
     compatibilityScore: 71,
-    role: 'subscriber'
+    role: 'subscriber',
+    isBanned: false,
+    verificationStatus: 'verified'
   }
 ];
 
@@ -961,71 +972,4 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     if (!currentUser) return null;
     
     return withdrawals.find(
-      withdrawal => withdrawal.userId === currentUser.id && withdrawal.status === 'pending'
-    ) || null;
-  };
-  
-  // Add a new user to the system (admin function)
-  const addUser = (user: User) => {
-    setAllUsers(prevUsers => [...prevUsers, user]);
-  };
-  
-  // Delete a user from the system (admin function)
-  const deleteUser = (userId: string) => {
-    setAllUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-  };
-  
-  return (
-    <UserContext.Provider value={{
-      currentUser,
-      setCurrentUser,
-      isAuthenticated,
-      logout,
-      updateUserData,
-      purchaseGift,
-      sendGift,
-      boostProfile,
-      allUsers,
-      addUser,
-      deleteUser,
-      
-      // Blog methods
-      createBlogPost,
-      updateBlogPost,
-      deleteBlogPost,
-      likeBlogPost,
-      commentOnBlogPost,
-      getUserPosts,
-      getAllPosts,
-      getFilteredPosts,
-      
-      // User interaction methods
-      updateUserProfile,
-      likeUser,
-      passUser,
-      potentialMatches,
-      matches,
-      boostedProfiles,
-      
-      // Messaging methods
-      messages,
-      sendMessage,
-      markMessagesAsRead,
-      
-      // Gift and monetization methods
-      getGiftBenefits,
-      getGiftInventory,
-      purchaseGifts,
-      getGiftMonetizationDetails,
-      initiateWithdrawal,
-      updateBankDetails,
-      getWithdrawalHistory,
-      getPendingWithdrawal
-    }}>
-      {children}
-    </UserContext.Provider>
-  );
-};
-
-// Hook for using the user context
-export const useUser = () => useContext(UserContext);
+      withdrawal => withdrawal.userId

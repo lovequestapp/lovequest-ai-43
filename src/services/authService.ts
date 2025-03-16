@@ -30,7 +30,9 @@ const DEMO_USERS: Record<string, { passwordHash: string; userData: User }> = {
       receivedGifts: { rose: 0, heart: 0, teddy: 0 },
       compatibilityScore: 0,
       personalityTraits: ["organized", "analytical", "detail-oriented"],
-      role: "admin" // This is important to access admin dashboard
+      role: "admin", // This is important to access admin dashboard
+      isBanned: false,
+      verificationStatus: 'verified'
     }
   }
 };
@@ -69,6 +71,8 @@ export const authService = {
         compatibilityScore: 0,
         personalityTraits: [],
         role: userData.role || 'subscriber', // Default to subscriber role
+        isBanned: false,
+        verificationStatus: 'unverified'
       };
 
       // Save user to mock database
