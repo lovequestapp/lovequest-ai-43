@@ -31,6 +31,11 @@ const AdminMobileContainer = ({
     const style = document.createElement('style');
     // Add CSS to hide export/import buttons using multiple selectors to be more robust
     style.textContent = `
+      /* TEST CHANGE - OBVIOUS VISUAL CHANGE */
+      .admin-dashboard {
+        background-color: #f0f8ff !important;
+      }
+      
       /* Hide by data attribute if present */
       .admin-dashboard button:has([data-export-users]),
       .admin-dashboard button:has([data-import-users]),
@@ -71,7 +76,7 @@ const AdminMobileContainer = ({
         {isMobile && (
           <div className="sticky top-0 z-10 w-full bg-background shadow-sm border-b p-3">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold">Admin Dashboard</h1>
+              <h1 className="text-xl font-bold">Admin Dashboard - TEST CHANGE</h1>
               <Menu className="h-6 w-6" />
             </div>
           </div>
