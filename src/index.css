@@ -288,4 +288,138 @@
   .admin-action-buttons > button {
     @apply flex-1 sm:flex-initial;
   }
+  
+  /* Enhanced mobile-friendly admin dashboard styles */
+  .admin-dashboard {
+    @apply w-full overflow-x-hidden px-2 sm:px-4;
+  }
+  
+  .admin-panel {
+    @apply w-full overflow-x-auto;
+  }
+  
+  .admin-card {
+    @apply w-full overflow-hidden;
+  }
+  
+  .admin-table-container {
+    @apply w-full overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
+  }
+  
+  .admin-content-scroll {
+    @apply max-w-full overflow-x-auto pb-2;
+  }
+  
+  .admin-data-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4;
+  }
+  
+  .admin-card-mobile {
+    @apply flex flex-col sm:flex-row p-3 sm:p-4;
+  }
+  
+  .admin-stats-grid {
+    @apply grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4;
+  }
+  
+  .admin-action-buttons {
+    @apply flex flex-wrap gap-2;
+  }
+  
+  .admin-action-buttons > button {
+    @apply flex-1 sm:flex-initial;
+  }
+  
+  .admin-form-container {
+    @apply max-w-full overflow-x-hidden;
+  }
+  
+  .admin-form-field {
+    @apply w-full break-words;
+  }
+  
+  /* Mobile-friendly table */
+  .mobile-table {
+    @apply block sm:table w-full;
+  }
+  
+  .mobile-table-header {
+    @apply hidden sm:table-header-group;
+  }
+  
+  .mobile-table-row {
+    @apply block sm:table-row border-b sm:border-none mb-4 sm:mb-0;
+  }
+  
+  .mobile-table-cell {
+    @apply block sm:table-cell p-2 sm:p-4;
+  }
+  
+  .mobile-table-cell:before {
+    @apply font-medium sm:hidden mr-2 inline-block;
+    content: attr(data-label);
+  }
+  
+  /* Mobile-friendly form controls */
+  .mobile-form-control {
+    @apply min-h-[44px]; /* Minimum touch target size */
+  }
+  
+  /* Enhanced scrolling for tables and charts */
+  .horizontal-scroll {
+    @apply overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0;
+  }
+  
+  /* Mobile data visualization adjustments */
+  .mobile-chart {
+    @apply w-full max-w-full overflow-x-auto h-[300px] sm:h-[400px];
+  }
+  
+  /* Mobile-friendly user cards */
+  .user-card-mobile {
+    @apply w-full p-3 sm:p-4 mb-3;
+  }
+  
+  /* Enhanced pagination for mobile */
+  .mobile-pagination {
+    @apply flex justify-center space-x-1 mt-4 flex-wrap;
+  }
+  
+  .mobile-pagination-item {
+    @apply min-w-[40px] h-10 flex items-center justify-center;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  70% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

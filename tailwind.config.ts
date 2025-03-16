@@ -196,6 +196,13 @@ export default {
 				'safe-left': 'env(safe-area-inset-left)',
 				'safe-right': 'env(safe-area-inset-right)',
 			},
+			maxWidth: {
+				'mobile-card': '100vw',
+				'mobile-content': 'calc(100vw - 2rem)',
+			},
+			minHeight: {
+				'touch-target': '44px',
+			},
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
