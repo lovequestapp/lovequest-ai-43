@@ -5,15 +5,25 @@ import { cn } from "@/lib/utils"
 
 const Table = React.forwardRef<
   HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => {
+  React.HTMLAttributes<HTMLTableElement> & { 
+    adminResponsive?: boolean;
+  }
+>(({ className, adminResponsive = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
-    <div className={cn("relative w-full overflow-auto", isMobile ? "overflow-x-auto -mx-4 px-4" : "")}>
+    <div className={cn(
+      "relative w-full overflow-auto", 
+      isMobile ? "overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0" : "",
+      adminResponsive && isMobile ? "admin-horizontal-scroll" : ""
+    )}>
       <table
         ref={ref}
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(
+          "w-full caption-bottom text-sm", 
+          adminResponsive && isMobile ? "admin-mobile-table" : "",
+          className
+        )}
         {...props}
       />
     </div>
@@ -58,23 +68,32 @@ TableFooter.displayName = "TableFooter"
 
 const TableRow = React.forwardRef<
   HTMLTableRowElement,
-  React.HTMLAttributes<HTMLTableRowElement>
->(({ className, ...props }, ref) => (
-  <tr
-    ref={ref}
-    className={cn(
-      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-      className
-    )}
-    {...props}
-  />
-))
+  React.HTMLAttributes<HTMLTableRowElement> & { 
+    adminResponsive?: boolean;
+  }
+>(({ className, adminResponsive = false, ...props }, ref) => {
+  const isMobile = useIsMobile()
+  
+  return (
+    <tr
+      ref={ref}
+      className={cn(
+        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+        adminResponsive && isMobile ? "block sm:table-row border rounded-lg mb-3 sm:mb-0 sm:border-0 sm:rounded-none" : "",
+        className
+      )}
+      {...props}
+    />
+  )
+})
 TableRow.displayName = "TableRow"
 
 const TableHead = React.forwardRef<
   HTMLTableCellElement,
-  React.ThHTMLAttributes<HTMLTableCellElement>
->(({ className, ...props }, ref) => {
+  React.ThHTMLAttributes<HTMLTableCellElement> & { 
+    adminResponsive?: boolean;
+  }
+>(({ className, adminResponsive = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -82,6 +101,7 @@ const TableHead = React.forwardRef<
       ref={ref}
       className={cn(
         "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
+        (isMobile && adminResponsive) ? "hidden sm:table-cell" : "",
         isMobile ? "hidden sm:table-cell" : "",
         className
       )}
@@ -95,8 +115,9 @@ const TableCell = React.forwardRef<
   HTMLTableCellElement,
   React.TdHTMLAttributes<HTMLTableCellElement> & {
     mobileLabel?: string;
+    adminResponsive?: boolean;
   }
->(({ className, mobileLabel, ...props }, ref) => {
+>(({ className, mobileLabel, adminResponsive = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -104,7 +125,9 @@ const TableCell = React.forwardRef<
       ref={ref}
       className={cn(
         "p-4 align-middle [&:has([role=checkbox])]:pr-0",
-        isMobile && mobileLabel ? "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:mr-2 before:inline-block sm:before:hidden" : "",
+        (isMobile && mobileLabel && adminResponsive) ? 
+          "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:text-xs before:uppercase before:text-muted-foreground before:sm:hidden before:inline-block before:mb-1 before:w-full" : 
+          (isMobile && mobileLabel) ? "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:mr-2 before:inline-block sm:before:hidden" : "",
         className
       )}
       data-label={mobileLabel}

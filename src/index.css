@@ -295,27 +295,28 @@
   }
   
   .admin-panel {
-    @apply w-full overflow-x-auto;
+    @apply w-full overflow-x-auto rounded-lg;
   }
   
   .admin-card {
-    @apply w-full overflow-hidden;
+    @apply w-full overflow-hidden break-words;
   }
   
   .admin-table-container {
-    @apply w-full overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0;
+    @apply w-full overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0 rounded-lg;
   }
   
   .admin-content-scroll {
     @apply max-w-full overflow-x-auto pb-2;
   }
   
+  /* Enhanced admin data visualization */
   .admin-data-grid {
-    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4;
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4;
   }
   
   .admin-card-mobile {
-    @apply flex flex-col sm:flex-row p-3 sm:p-4;
+    @apply flex flex-col sm:flex-row p-3 sm:p-4 rounded-lg;
   }
   
   .admin-stats-grid {
@@ -327,7 +328,7 @@
   }
   
   .admin-action-buttons > button {
-    @apply flex-1 sm:flex-initial;
+    @apply flex-1 min-h-[40px] sm:flex-initial;
   }
   
   .admin-form-container {
@@ -338,55 +339,69 @@
     @apply w-full break-words;
   }
   
-  /* Mobile-friendly table */
-  .mobile-table {
-    @apply block sm:table w-full;
+  /* Mobile-optimized tables for admin */
+  .admin-mobile-table {
+    @apply w-full text-sm;
   }
   
-  .mobile-table-header {
-    @apply hidden sm:table-header-group;
+  .admin-mobile-table th {
+    @apply hidden sm:table-cell px-4 py-2 text-left font-medium text-muted-foreground;
   }
   
-  .mobile-table-row {
-    @apply block sm:table-row border-b sm:border-none mb-4 sm:mb-0;
+  .admin-mobile-table td {
+    @apply block sm:table-cell px-4 py-3 border-b sm:border-0;
   }
   
-  .mobile-table-cell {
-    @apply block sm:table-cell p-2 sm:p-4;
+  .admin-mobile-table tr {
+    @apply block sm:table-row border rounded-lg mb-3 sm:mb-0 sm:border-0 sm:rounded-none;
   }
   
-  .mobile-table-cell:before {
-    @apply font-medium sm:hidden mr-2 inline-block;
+  .admin-mobile-table td:before {
+    @apply font-medium text-xs uppercase text-muted-foreground sm:hidden inline-block mb-1 w-full;
     content: attr(data-label);
   }
   
-  /* Mobile-friendly form controls */
-  .mobile-form-control {
-    @apply min-h-[44px]; /* Minimum touch target size */
+  /* Enhanced admin charts for mobile */
+  .admin-mobile-chart {
+    @apply w-full max-w-full overflow-x-auto h-[250px] sm:h-[350px] md:h-[400px];
   }
   
-  /* Enhanced scrolling for tables and charts */
-  .horizontal-scroll {
-    @apply overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0;
+  /* Better scrolling for admin tables */
+  .admin-horizontal-scroll {
+    @apply overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0;
+    scrollbar-width: thin;
   }
   
-  /* Mobile data visualization adjustments */
-  .mobile-chart {
-    @apply w-full max-w-full overflow-x-auto h-[300px] sm:h-[400px];
+  .admin-horizontal-scroll::-webkit-scrollbar {
+    height: 6px;
   }
   
-  /* Mobile-friendly user cards */
-  .user-card-mobile {
-    @apply w-full p-3 sm:p-4 mb-3;
+  .admin-horizontal-scroll::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
   }
   
-  /* Enhanced pagination for mobile */
-  .mobile-pagination {
-    @apply flex justify-center space-x-1 mt-4 flex-wrap;
+  /* Admin pagination for mobile */
+  .admin-mobile-pagination {
+    @apply flex flex-wrap justify-center gap-1 mt-4;
   }
   
-  .mobile-pagination-item {
-    @apply min-w-[40px] h-10 flex items-center justify-center;
+  .admin-mobile-pagination-item {
+    @apply min-w-[36px] h-9 flex items-center justify-center rounded;
+  }
+  
+  /* Admin responsive form controls */
+  .admin-mobile-form-control {
+    @apply min-h-[44px] w-full;
+  }
+  
+  /* Admin mobile tabs */
+  .admin-mobile-tabs {
+    @apply overflow-x-auto flex pb-2 -mx-2 px-2;
+    scrollbar-width: none;
+  }
+  
+  .admin-mobile-tabs::-webkit-scrollbar {
+    display: none;
   }
 }
 
