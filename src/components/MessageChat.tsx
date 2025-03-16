@@ -174,6 +174,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
 
   const handleSendMessage = () => {
     if (messageText.trim()) {
+      console.log(`Sending message: ${messageText}`);
       onSendMessage(messageText, 'text');
       setMessageText('');
       setTimeout(scrollToBottom, 100);
@@ -208,6 +209,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
           const base64data = reader.result as string;
+          console.log("Voice message recorded");
           onSendMessage(base64data, 'voice');
         };
         
@@ -257,6 +259,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const startVideoCall = async () => {
     try {
       setIsVideoCallRequested(true);
+      console.log("Requesting video call");
       onSendMessage("Video call request", 'video-request');
       
       toast({
@@ -302,6 +305,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
       
       setIsInVideoCall(true);
       setIncomingVideoCall(false);
+      console.log("Accepting video call");
       onSendMessage("Video call accepted", 'video-accepted');
       
       toast({
@@ -333,6 +337,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
     
     setIsInVideoCall(false);
     setIsVideoCallRequested(false);
+    console.log("Ending video call");
     onSendMessage("Video call ended", 'video-ended');
     
     toast({
@@ -343,6 +348,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
 
   const sendGift = (giftId: string) => {
     if (giftInventory[giftId] && giftInventory[giftId] > 0) {
+      console.log(`Sending gift: ${giftId}`);
       onSendMessage(giftId, 'gift', giftId);
       setShowGiftMenu(false);
       
@@ -437,6 +443,10 @@ const MessageChat: React.FC<MessageChatProps> = ({
         scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
+    
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
   
   // Group messages by date for better display
@@ -472,10 +482,17 @@ const MessageChat: React.FC<MessageChatProps> = ({
 
   const messageGroups = groupMessagesByDate();
 
+  // Scroll to bottom on component mount and when messages change
   useEffect(() => {
-    scrollToBottom();
+    // Use a small timeout to ensure the DOM has updated
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [messages]);
   
+  // Initial setup
   useEffect(() => {
     focusInput();
     
@@ -499,6 +516,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
     };
   }, []);
   
+  // Focus input when matchName changes (conversation switch)
   useEffect(() => {
     focusInput();
   }, [matchName]);
@@ -519,17 +537,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
     
     return () => {
       clearTimeout(timer);
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(track => track.stop());
-      }
-      
-      if (peerConnectionRef.current) {
-        peerConnectionRef.current.close();
-      }
     };
   }, []);
   
@@ -612,7 +619,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
           </div>
         </div>
       ) : (
-        <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
+        <div className="flex-grow flex flex-col min-h-0 relative">
           {incomingVideoCall && (
             <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
               <div className="bg-white p-6 rounded-lg shadow-lg text-center">
@@ -642,7 +649,10 @@ const MessageChat: React.FC<MessageChatProps> = ({
             </div>
           )}
           
-          <ScrollArea className="flex-grow min-h-0" ref={scrollAreaRef}>
+          <ScrollArea 
+            className="flex-grow min-h-0 overflow-y-auto" 
+            ref={scrollAreaRef}
+          >
             <div className="p-4 space-y-6">
               {messages.length === 0 ? (
                 <div className="text-center py-8">
@@ -944,3 +954,4 @@ const MessageChat: React.FC<MessageChatProps> = ({
 };
 
 export default MessageChat;
+

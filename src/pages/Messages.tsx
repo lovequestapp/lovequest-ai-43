@@ -72,7 +72,7 @@ const Messages = () => {
   };
   
   // Process matches to match MessageList expected format - with additional validation
-  const processedMatches = Array.isArray(matches) ? matches.map(match => {
+  const processedMatches = Array.isArray(matches) ? matches.map((match, index) => {
     const otherUserId = getOtherUserId(match);
     const user = potentialMatches?.find(u => u.id === otherUserId);
     
@@ -91,7 +91,9 @@ const Messages = () => {
       photo: user?.photos?.[0] || '/placeholder.svg',
       lastMessage: matchData.lastMessage || '',
       lastMessageTime: matchData.lastMessageTime ? new Date(matchData.lastMessageTime) : new Date(),
-      unreadCount
+      unreadCount,
+      // Ensure each match has a unique key
+      key: `message-match-${otherUserId}-${index}`
     };
   }) : [];
   
@@ -160,12 +162,14 @@ const Messages = () => {
     }
     
     if (type === 'gift' && giftType) {
+      console.log(`Sending gift ${giftType} to ${activeMatchId}: ${content}`);
       sendMessage(activeMatchId, content, giftType);
       toast({
         title: "Gift sent",
         description: `You sent a ${giftType} to ${activeUser.name}`,
       });
     } else {
+      console.log(`Sending message to ${activeMatchId}: ${content}`);
       sendMessage(activeMatchId, content);
     }
     
@@ -231,7 +235,10 @@ const Messages = () => {
       <Header />
       
       <main className="flex-grow container mx-auto my-4 md:my-8 px-2 md:px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-200px)] md:h-[calc(100vh-250px)] max-h-[800px]">
+        <div className={cn(
+          "grid grid-cols-1 md:grid-cols-3 gap-4",
+          "h-[calc(100vh-150px)] md:h-[calc(100vh-200px)] max-h-[900px]"
+        )}>
           {/* Mobile view - Show either list or chat */}
           {isMobile ? (
             showMobileList ? (
@@ -308,14 +315,16 @@ const Messages = () => {
                   </Button>
                 </div>
                 
-                <MessageChat 
-                  messages={activeMessages}
-                  matchName={activeUser?.name || ''}
-                  matchPhoto={activeUser?.photos?.[0] || '/placeholder.svg'}
-                  compatibilityScore={activeUser?.compatibilityScore}
-                  onSendMessage={handleSendMessage}
-                  suggestionStarters={["Hey, how are you?", "What's your favorite movie?", "Do you like hiking?"]}
-                />
+                <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
+                  <MessageChat 
+                    messages={activeMessages}
+                    matchName={activeUser?.name || ''}
+                    matchPhoto={activeUser?.photos?.[0] || '/placeholder.svg'}
+                    compatibilityScore={activeUser?.compatibilityScore}
+                    onSendMessage={handleSendMessage}
+                    suggestionStarters={["Hey, how are you?", "What's your favorite movie?", "Do you like hiking?"]}
+                  />
+                </div>
                 <div ref={messagesEndRef} />
               </div>
             )
@@ -323,7 +332,7 @@ const Messages = () => {
             /* Desktop view - Show both panels */
             <>
               {/* Messages List Panel for Desktop */}
-              <div className="bg-white rounded-lg shadow overflow-hidden border md:col-span-1">
+              <div className="bg-white rounded-lg shadow overflow-hidden border md:col-span-1 h-full">
                 <div className="p-4 border-b">
                   <div className="relative">
                     <input
@@ -353,17 +362,14 @@ const Messages = () => {
                       matches={filteredMatches}
                       activeMatchId={activeMatchId}
                       onSelectMatch={handleSelectMatch}
-                      className={cn(
-                        "divide-y max-h-[calc(100vh-350px)]",
-                        "md:max-h-[calc(100vh-300px)]"
-                      )}
+                      className="divide-y"
                     />
                   )}
                 </div>
               </div>
               
               {/* Chat View for Desktop */}
-              <div className="bg-white rounded-lg shadow overflow-hidden border md:col-span-2 flex flex-col">
+              <div className="bg-white rounded-lg shadow overflow-hidden border md:col-span-2 flex flex-col h-full">
                 {activeMatchId ? (
                   <>
                     <div className="p-4 border-b flex justify-between items-center">
@@ -394,14 +400,16 @@ const Messages = () => {
                       </Button>
                     </div>
                     
-                    <MessageChat 
-                      messages={activeMessages}
-                      matchName={activeUser?.name || ''}
-                      matchPhoto={activeUser?.photos?.[0] || '/placeholder.svg'}
-                      compatibilityScore={activeUser?.compatibilityScore}
-                      onSendMessage={handleSendMessage}
-                      suggestionStarters={["Hey, how are you?", "What's your favorite movie?", "Do you like hiking?"]}
-                    />
+                    <div className="flex-grow flex flex-col min-h-0 overflow-hidden">
+                      <MessageChat 
+                        messages={activeMessages}
+                        matchName={activeUser?.name || ''}
+                        matchPhoto={activeUser?.photos?.[0] || '/placeholder.svg'}
+                        compatibilityScore={activeUser?.compatibilityScore}
+                        onSendMessage={handleSendMessage}
+                        suggestionStarters={["Hey, how are you?", "What's your favorite movie?", "Do you like hiking?"]}
+                      />
+                    </div>
                     <div ref={messagesEndRef} />
                   </>
                 ) : (
@@ -445,3 +453,4 @@ const MessagesWithErrorBoundary = () => (
 );
 
 export default MessagesWithErrorBoundary;
+
