@@ -25,7 +25,7 @@ const AdminMobileContainer = ({
   const breakpoint = useBreakpoint();
   const [menuOpen, setMenuOpen] = useState(false);
   
-  console.log("💥💥💥 ADMIN MOBILE CONTAINER IS RENDERING - NEW TEST 💥💥💥");
+  console.log("AdminMobileContainer is rendering - Production Ready");
   
   // Hide export/import buttons
   useEffect(() => {
@@ -56,10 +56,10 @@ const AdminMobileContainer = ({
     
     return (
       <div className="fixed inset-0 bg-black/50 z-50 animate-fadeIn">
-        <div className="absolute top-0 left-0 h-full w-3/4 max-w-xs bg-purple-200 shadow-xl animate-slideInLeft">
-          <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="font-bold text-lg">PURPLE MENU - NEW TEST</h2>
-            <button onClick={() => setMenuOpen(false)} className="p-2">
+        <div className="absolute top-0 left-0 h-full w-3/4 max-w-xs bg-white shadow-xl animate-slideInLeft">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 className="font-bold text-lg">Admin Menu</h2>
+            <button onClick={() => setMenuOpen(false)} className="p-2 rounded-full hover:bg-gray-100">
               <X className="h-5 w-5" />
             </button>
           </div>
@@ -79,8 +79,8 @@ const AdminMobileContainer = ({
   
   const NavItem = ({ icon, label, active = false }) => (
     <div className={cn(
-      "flex items-center p-3 rounded-lg mb-1",
-      active ? "bg-purple-500 text-white" : "hover:bg-gray-100"
+      "flex items-center p-3 rounded-lg mb-1 cursor-pointer",
+      active ? "bg-blue-500 text-white" : "hover:bg-gray-100"
     )}>
       <div className="mr-3">{icon}</div>
       <span>{label}</span>
@@ -89,7 +89,7 @@ const AdminMobileContainer = ({
   );
   
   return (
-    <div className="min-h-screen flex w-full overflow-hidden bg-purple-50">
+    <div className="min-h-screen flex w-full overflow-hidden bg-gray-50">
       {/* Mobile Menu Overlay */}
       <MobileMenu />
       
@@ -105,11 +105,14 @@ const AdminMobileContainer = ({
       >
         {/* Header for mobile */}
         {isMobile && (
-          <div className="sticky top-0 z-10 w-full bg-purple-400 shadow-md border-b p-3">
+          <div className="sticky top-0 z-10 w-full bg-white shadow-md border-b p-3">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-white">🟣 PURPLE ADMIN PANEL 🟣</h1>
-              <button onClick={() => setMenuOpen(true)}>
-                <Menu className="h-6 w-6 text-white" />
+              <h1 className="text-xl font-bold text-gray-800">Admin Dashboard</h1>
+              <button 
+                onClick={() => setMenuOpen(true)}
+                className="p-2 rounded-full hover:bg-gray-100"
+              >
+                <Menu className="h-6 w-6 text-gray-600" />
               </button>
             </div>
           </div>
@@ -123,10 +126,10 @@ const AdminMobileContainer = ({
         )}>
           {/* Stat Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <StatCard icon={<Users className="h-8 w-8 text-purple-500" />} title="Users" value="1,245" />
-            <StatCard icon={<Bell className="h-8 w-8 text-purple-500" />} title="Alerts" value="18" />
-            <StatCard icon={<BarChart2 className="h-8 w-8 text-purple-500" />} title="Matches" value="843" />
-            <StatCard icon={<FileText className="h-8 w-8 text-purple-500" />} title="Reports" value="24" />
+            <StatCard icon={<Users className="h-8 w-8 text-blue-500" />} title="Users" value="1,245" />
+            <StatCard icon={<Bell className="h-8 w-8 text-blue-500" />} title="Alerts" value="18" />
+            <StatCard icon={<BarChart2 className="h-8 w-8 text-blue-500" />} title="Matches" value="843" />
+            <StatCard icon={<FileText className="h-8 w-8 text-blue-500" />} title="Reports" value="24" />
           </div>
           
           {children}
@@ -135,7 +138,7 @@ const AdminMobileContainer = ({
       
       {/* Bottom navigation for mobile */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-purple-400 shadow-lg border-t z-40">
+        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t z-40">
           <div className="flex justify-around items-center">
             <BottomNavItem icon={<Home className="h-5 w-5" />} label="Home" active />
             <BottomNavItem icon={<Users className="h-5 w-5" />} label="Users" />
@@ -160,7 +163,7 @@ const StatCard = ({ icon, title, value }) => (
 const BottomNavItem = ({ icon, label, active = false }) => (
   <button className={cn(
     "flex flex-col items-center justify-center py-3 px-2 w-full",
-    active ? "text-white" : "text-purple-100"
+    active ? "text-blue-500" : "text-gray-500 hover:text-blue-400"
   )}>
     {icon}
     <span className="text-xs mt-1">{label}</span>

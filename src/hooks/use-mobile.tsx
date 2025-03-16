@@ -9,9 +9,9 @@ export function useIsMobile() {
   )
 
   React.useEffect(() => {
-    console.log("🔴 useIsMobile hook is being used! TESTING PROJECT UPDATES");
+    console.log("useIsMobile hook initialized");
     
-    // Create event listener for window resize
+    // Create event listener for window resize with debounce
     const handleResize = () => {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
     }
@@ -34,22 +34,28 @@ export function useBreakpoint() {
   const [breakpoint, setBreakpoint] = React.useState<string>('sm')
 
   React.useEffect(() => {
-    console.log("useBreakpoint hook is being used!");
+    console.log("useBreakpoint hook initialized");
+    
+    // Create debounced event handler
+    let resizeTimeout: ReturnType<typeof setTimeout>;
     
     const handleResize = () => {
-      const width = window.innerWidth
-      
-      if (width < 640) {
-        setBreakpoint('xs')
-      } else if (width < 768) {
-        setBreakpoint('sm')
-      } else if (width < 1024) {
-        setBreakpoint('md')
-      } else if (width < 1280) {
-        setBreakpoint('lg')
-      } else {
-        setBreakpoint('xl')
-      }
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        const width = window.innerWidth
+        
+        if (width < 640) {
+          setBreakpoint('xs')
+        } else if (width < 768) {
+          setBreakpoint('sm')
+        } else if (width < 1024) {
+          setBreakpoint('md')
+        } else if (width < 1280) {
+          setBreakpoint('lg')
+        } else {
+          setBreakpoint('xl')
+        }
+      }, 100);
     }
     
     // Set initial value
@@ -59,21 +65,22 @@ export function useBreakpoint() {
     window.addEventListener("resize", handleResize)
     
     // Clean up
-    return () => window.removeEventListener("resize", handleResize)
+    return () => {
+      clearTimeout(resizeTimeout);
+      window.removeEventListener("resize", handleResize)
+    }
   }, [])
 
   return breakpoint
 }
 
-// New hook for responsive layout management in admin dashboard
+// Admin layout management hook
 export function useAdminLayout() {
   const isMobile = useIsMobile()
   const breakpoint = useBreakpoint()
   const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile)
   
   React.useEffect(() => {
-    console.log("useAdminLayout hook is being used!");
-    
     // Close sidebar by default on mobile
     if (isMobile) {
       setSidebarOpen(false)
