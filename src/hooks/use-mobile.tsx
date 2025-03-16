@@ -9,6 +9,8 @@ export function useIsMobile() {
   )
 
   React.useEffect(() => {
+    console.log("useIsMobile hook is being used!");
+    
     // Create event listener for window resize
     const handleResize = () => {
       setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
@@ -32,6 +34,8 @@ export function useBreakpoint() {
   const [breakpoint, setBreakpoint] = React.useState<string>('sm')
 
   React.useEffect(() => {
+    console.log("useBreakpoint hook is being used!");
+    
     const handleResize = () => {
       const width = window.innerWidth
       
@@ -68,6 +72,8 @@ export function useAdminLayout() {
   const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile)
   
   React.useEffect(() => {
+    console.log("useAdminLayout hook is being used!");
+    
     // Close sidebar by default on mobile
     if (isMobile) {
       setSidebarOpen(false)
