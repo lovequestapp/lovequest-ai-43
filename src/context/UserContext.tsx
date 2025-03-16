@@ -616,7 +616,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     return true;
   };
   
-  // Get gift benefits
+  // Calculate based on gifts received
   const getGiftBenefits = (): GiftBenefits => {
     if (!currentUser) {
       return {
@@ -626,7 +626,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       };
     }
     
-    // Calculate based on gifts received
     const totalGifts = currentUser.receivedGifts.rose + 
                       currentUser.receivedGifts.heart * 2 + 
                       currentUser.receivedGifts.teddy * 3;
@@ -970,4 +969,5 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const getPendingWithdrawal = (): Withdrawal | null => {
     if (!currentUser) return null;
     
-    return withdrawals
+    return withdrawals.find(
+      withdrawal
