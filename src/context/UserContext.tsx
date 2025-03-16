@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { authService } from '@/services/authService';
@@ -970,3 +971,80 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     if (!currentUser) return null;
     
     return withdrawals.find(
+      withdrawal => withdrawal.userId === currentUser.id && withdrawal.status === 'pending'
+    );
+  };
+  
+  // Add a user to the system (for admin purposes)
+  const addUser = (user: User) => {
+    setAllUsers([...allUsers, user]);
+  };
+  
+  // Delete a user from the system (for admin purposes)
+  const deleteUser = (userId: string) => {
+    setAllUsers(allUsers.filter(user => user.id !== userId));
+  };
+  
+  // Create context value object with all the functions and state
+  const contextValue: UserContextType = {
+    currentUser,
+    setCurrentUser,
+    isAuthenticated,
+    logout,
+    updateUserData,
+    purchaseGift,
+    sendGift,
+    boostProfile,
+    allUsers,
+    addUser,
+    deleteUser,
+    
+    // Blog related methods
+    createBlogPost,
+    updateBlogPost,
+    deleteBlogPost,
+    likeBlogPost,
+    commentOnBlogPost,
+    getUserPosts,
+    getAllPosts,
+    getFilteredPosts,
+    
+    // User interaction methods
+    updateUserProfile,
+    likeUser,
+    passUser,
+    potentialMatches,
+    matches,
+    boostedProfiles,
+    
+    // Messaging methods
+    messages,
+    sendMessage,
+    markMessagesAsRead,
+    
+    // Gift and monetization methods
+    getGiftBenefits,
+    getGiftInventory,
+    purchaseGifts,
+    getGiftMonetizationDetails,
+    initiateWithdrawal,
+    updateBankDetails,
+    getWithdrawalHistory,
+    getPendingWithdrawal
+  };
+  
+  return (
+    <UserContext.Provider value={contextValue}>
+      {children}
+    </UserContext.Provider>
+  );
+};
+
+// Custom hook for using the user context
+export const useUser = () => {
+  const context = useContext(UserContext);
+  if (context === undefined) {
+    throw new Error('useUser must be used within a UserProvider');
+  }
+  return context;
+};
