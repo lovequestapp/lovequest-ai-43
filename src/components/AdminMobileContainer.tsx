@@ -25,6 +25,8 @@ const AdminMobileContainer = ({
   const isMobile = useIsMobile();
   const breakpoint = useBreakpoint();
   
+  console.log("AdminMobileContainer rendering! You should see this in console if viewing the admin page.");
+  
   // Add a style to hide export/import buttons
   useEffect(() => {
     // Create a style element
@@ -33,7 +35,7 @@ const AdminMobileContainer = ({
     style.textContent = `
       /* TEST CHANGE - OBVIOUS VISUAL CHANGE */
       .admin-dashboard {
-        background-color: #f0f8ff !important;
+        background-color: red !important;
       }
       
       /* Hide by data attribute if present */
@@ -74,10 +76,10 @@ const AdminMobileContainer = ({
       >
         {/* Header for mobile */}
         {isMobile && (
-          <div className="sticky top-0 z-10 w-full bg-background shadow-sm border-b p-3">
+          <div className="sticky top-0 z-10 w-full bg-red-500 shadow-sm border-b p-3">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold">Admin Dashboard - TEST CHANGE</h1>
-              <Menu className="h-6 w-6" />
+              <h1 className="text-xl font-bold text-white">ADMIN TEST - PLEASE CONFIRM THIS TEXT</h1>
+              <Menu className="h-6 w-6 text-white" />
             </div>
           </div>
         )}
@@ -118,21 +120,21 @@ const AdminMobileContainer = ({
       
       {/* Bottom navigation for mobile */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-card shadow-lg border-t z-50 admin-mobile-nav">
+        <div className="fixed bottom-0 left-0 right-0 bg-red-500 shadow-lg border-t z-50 admin-mobile-nav">
           <div className="flex justify-around items-center p-2">
-            <button className="flex flex-col items-center justify-center p-2 text-primary">
+            <button className="flex flex-col items-center justify-center p-2 text-white">
               <Users className="h-5 w-5" />
               <span className="text-xs mt-1">Users</span>
             </button>
-            <button className="flex flex-col items-center justify-center p-2 text-muted-foreground">
+            <button className="flex flex-col items-center justify-center p-2 text-white">
               <BarChart2 className="h-5 w-5" />
               <span className="text-xs mt-1">Stats</span>
             </button>
-            <button className="flex flex-col items-center justify-center p-2 text-muted-foreground">
+            <button className="flex flex-col items-center justify-center p-2 text-white">
               <Settings className="h-5 w-5" />
               <span className="text-xs mt-1">Settings</span>
             </button>
-            <button className="flex flex-col items-center justify-center p-2 text-muted-foreground">
+            <button className="flex flex-col items-center justify-center p-2 text-white">
               <LogOut className="h-5 w-5" />
               <span className="text-xs mt-1">Logout</span>
             </button>
