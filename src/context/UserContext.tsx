@@ -970,4 +970,3 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     if (!currentUser) return null;
     
     return withdrawals.find(
-      withdrawal
