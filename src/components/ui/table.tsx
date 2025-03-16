@@ -14,7 +14,7 @@ const Table = React.forwardRef<
   return (
     <div className={cn(
       "relative w-full overflow-auto", 
-      isMobile ? "overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0" : "",
+      isMobile ? "overflow-x-auto -mx-0 px-0 sm:mx-0 sm:px-0" : "",
       adminResponsive && isMobile ? "admin-horizontal-scroll" : ""
     )}>
       <table
@@ -70,8 +70,9 @@ const TableRow = React.forwardRef<
   HTMLTableRowElement,
   React.HTMLAttributes<HTMLTableRowElement> & { 
     adminResponsive?: boolean;
+    clickable?: boolean;
   }
->(({ className, adminResponsive = false, ...props }, ref) => {
+>(({ className, adminResponsive = false, clickable = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -80,6 +81,7 @@ const TableRow = React.forwardRef<
       className={cn(
         "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
         adminResponsive && isMobile ? "block sm:table-row border rounded-lg mb-3 sm:mb-0 sm:border-0 sm:rounded-none" : "",
+        clickable ? "cursor-pointer active:bg-muted" : "",
         className
       )}
       {...props}
@@ -92,8 +94,9 @@ const TableHead = React.forwardRef<
   HTMLTableCellElement,
   React.ThHTMLAttributes<HTMLTableCellElement> & { 
     adminResponsive?: boolean;
+    hideOnMobile?: boolean;
   }
->(({ className, adminResponsive = false, ...props }, ref) => {
+>(({ className, adminResponsive = false, hideOnMobile = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -102,7 +105,7 @@ const TableHead = React.forwardRef<
       className={cn(
         "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
         (isMobile && adminResponsive) ? "hidden sm:table-cell" : "",
-        isMobile ? "hidden sm:table-cell" : "",
+        (isMobile && hideOnMobile) ? "hidden sm:table-cell" : "",
         className
       )}
       {...props}
@@ -116,8 +119,10 @@ const TableCell = React.forwardRef<
   React.TdHTMLAttributes<HTMLTableCellElement> & {
     mobileLabel?: string;
     adminResponsive?: boolean;
+    hideOnMobile?: boolean;
+    highlightInMobile?: boolean;
   }
->(({ className, mobileLabel, adminResponsive = false, ...props }, ref) => {
+>(({ className, mobileLabel, adminResponsive = false, hideOnMobile = false, highlightInMobile = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -128,6 +133,8 @@ const TableCell = React.forwardRef<
         (isMobile && mobileLabel && adminResponsive) ? 
           "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:text-xs before:uppercase before:text-muted-foreground before:sm:hidden before:inline-block before:mb-1 before:w-full" : 
           (isMobile && mobileLabel) ? "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:mr-2 before:inline-block sm:before:hidden" : "",
+        (isMobile && hideOnMobile) ? "hidden sm:table-cell" : "",
+        (isMobile && highlightInMobile) ? "font-medium text-foreground" : "",
         className
       )}
       data-label={mobileLabel}

@@ -84,9 +84,7 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-}
 
-@layer base {
   * {
     @apply border-border;
   }
@@ -122,6 +120,7 @@
   button, a, [role="button"] {
     @apply outline-none;
     touch-action: manipulation;
+    min-height: 44px; /* Better touch targets */
   }
 }
 
@@ -282,32 +281,32 @@
   }
   
   .admin-action-buttons {
-    @apply flex flex-wrap gap-2;
+    @apply flex flex-wrap gap-2 w-full justify-center sm:justify-start overflow-x-visible;
   }
   
   .admin-action-buttons > button {
-    @apply flex-1 sm:flex-initial;
+    @apply flex-none min-h-[44px] min-w-[44px] sm:flex-initial;
   }
   
   /* Enhanced mobile-friendly admin dashboard styles */
   .admin-dashboard {
-    @apply w-full overflow-x-hidden px-2 sm:px-4;
+    @apply w-full max-w-[100vw] overflow-x-hidden px-2 sm:px-4;
   }
   
   .admin-panel {
-    @apply w-full overflow-x-auto rounded-lg;
+    @apply w-full overflow-hidden rounded-lg;
   }
   
   .admin-card {
-    @apply w-full overflow-hidden break-words;
+    @apply w-full overflow-hidden break-words shadow-sm rounded-lg;
   }
   
   .admin-table-container {
-    @apply w-full overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0 rounded-lg;
+    @apply w-full overflow-x-auto -mx-0 px-0 sm:mx-0 sm:px-0 rounded-lg;
   }
   
   .admin-content-scroll {
-    @apply max-w-full overflow-x-auto pb-2;
+    @apply max-w-full overflow-y-auto overflow-x-hidden pb-2;
   }
   
   /* Enhanced admin data visualization */
@@ -321,22 +320,6 @@
   
   .admin-stats-grid {
     @apply grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4;
-  }
-  
-  .admin-action-buttons {
-    @apply flex flex-wrap gap-2;
-  }
-  
-  .admin-action-buttons > button {
-    @apply flex-1 min-h-[40px] sm:flex-initial;
-  }
-  
-  .admin-form-container {
-    @apply max-w-full overflow-x-hidden;
-  }
-  
-  .admin-form-field {
-    @apply w-full break-words;
   }
   
   /* Mobile-optimized tables for admin */
@@ -361,6 +344,105 @@
     content: attr(data-label);
   }
   
+  /* Enhanced admin charts for mobile */
+  .admin-mobile-chart {
+    @apply w-full max-w-full overflow-x-auto h-[250px] sm:h-[350px] md:h-[400px];
+  }
+  
+  /* Better scrolling for admin tables */
+  .admin-horizontal-scroll {
+    @apply overflow-y-visible overflow-x-auto pb-2 -mx-0 px-0 sm:mx-0 sm:px-0 max-w-[100vw];
+    scrollbar-width: thin;
+  }
+  
+  .admin-horizontal-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+  
+  .admin-horizontal-scroll::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+  
+  /* Admin pagination for mobile */
+  .admin-mobile-pagination {
+    @apply flex flex-wrap justify-center gap-1 mt-4;
+  }
+  
+  .admin-mobile-pagination-item {
+    @apply min-w-[36px] h-9 flex items-center justify-center rounded;
+  }
+  
+  /* Admin responsive form controls */
+  .admin-mobile-form-control {
+    @apply min-h-[44px] w-full;
+  }
+  
+  /* Admin mobile tabs */
+  .admin-mobile-tabs {
+    @apply overflow-x-auto flex pb-2 -mx-2 px-2;
+    scrollbar-width: none;
+  }
+  
+  .admin-mobile-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Admin mobile form styling */
+  .admin-form-container {
+    @apply flex flex-col gap-4 w-full max-w-md mx-auto;
+  }
+  
+  .admin-form-field {
+    @apply flex flex-col gap-2 w-full;
+  }
+  
+  .admin-form-label {
+    @apply text-sm font-medium;
+  }
+  
+  .admin-form-input {
+    @apply h-11 rounded-md border px-3 py-2 text-base w-full;
+  }
+  
+  .admin-form-actions {
+    @apply flex flex-col sm:flex-row gap-2 w-full mt-4;
+  }
+  
+  .admin-form-actions > button {
+    @apply flex-1 min-h-[44px];
+  }
+  
+  /* Admin user detail panel */
+  .admin-user-detail {
+    @apply fixed inset-0 z-50 bg-background/95 backdrop-blur-sm p-4 overflow-auto;
+    animation: slideInRight 0.3s ease-out;
+  }
+  
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+  
+  .admin-user-detail-header {
+    @apply flex justify-between items-center mb-4 sticky top-0 bg-background/90 backdrop-blur-sm py-2 z-10;
+  }
+  
+  .admin-user-detail-content {
+    @apply space-y-4;
+  }
+  
+  .admin-user-detail-section {
+    @apply bg-card p-4 rounded-lg border shadow-sm;
+  }
+  
+  .admin-user-detail-close {
+    @apply fixed top-4 right-4 z-50 bg-background/90 rounded-full p-2 shadow-sm border;
+  }
+
   /* Enhanced admin charts for mobile */
   .admin-mobile-chart {
     @apply w-full max-w-full overflow-x-auto h-[250px] sm:h-[350px] md:h-[400px];

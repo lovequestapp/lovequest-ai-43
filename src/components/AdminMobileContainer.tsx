@@ -9,6 +9,7 @@ interface AdminMobileContainerProps {
   fullWidth?: boolean;
   scrollable?: boolean;
   padding?: boolean;
+  preventOverflow?: boolean;
 }
 
 const AdminMobileContainer = ({
@@ -17,6 +18,7 @@ const AdminMobileContainer = ({
   fullWidth = false,
   scrollable = true,
   padding = true,
+  preventOverflow = true,
 }: AdminMobileContainerProps) => {
   const isMobile = useIsMobile();
   const breakpoint = useBreakpoint();
@@ -28,14 +30,10 @@ const AdminMobileContainer = ({
         fullWidth ? "w-full" : "container mx-auto",
         scrollable ? "admin-content-scroll" : "",
         padding ? "px-2 sm:px-4 py-3 sm:py-4" : "",
-        isMobile ? "max-w-[100vw] overflow-x-hidden" : "",
+        isMobile && preventOverflow ? "max-w-[100vw] overflow-x-hidden" : "",
         breakpoint === 'xs' ? "pb-20" : "pb-16", // Extra bottom padding for mobile toolbar
         className
       )}
-      style={{
-        maxWidth: isMobile ? '100vw' : undefined,
-        overflowX: isMobile ? 'hidden' : undefined
-      }}
     >
       {children}
     </div>
