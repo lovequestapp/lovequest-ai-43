@@ -27,10 +27,20 @@ const AdminMobileContainer = ({
   useEffect(() => {
     // Create a style element
     const style = document.createElement('style');
-    // Add CSS to hide export/import buttons
+    // Add CSS to hide export/import buttons using multiple selectors to be more robust
     style.textContent = `
+      /* Hide by data attribute if present */
       .admin-dashboard button:has([data-export-users]),
-      .admin-dashboard button:has([data-import-users]) {
+      .admin-dashboard button:has([data-import-users]),
+      /* Hide by text content as fallback */
+      .admin-dashboard button:has(span:contains("Export Users")),
+      .admin-dashboard button:has(span:contains("Import Users")),
+      /* Hide by class if they use specific classes */
+      .admin-dashboard .export-users-btn,
+      .admin-dashboard .import-users-btn,
+      /* Hide any button that contains Export/Import in its text */
+      .admin-dashboard button:contains("Export"),
+      .admin-dashboard button:contains("Import") {
         display: none !important;
       }
     `;
