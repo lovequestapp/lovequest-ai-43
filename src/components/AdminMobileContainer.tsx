@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile, useBreakpoint } from '@/hooks/use-mobile';
 
@@ -22,6 +22,26 @@ const AdminMobileContainer = ({
 }: AdminMobileContainerProps) => {
   const isMobile = useIsMobile();
   const breakpoint = useBreakpoint();
+  
+  // Add a style to hide export/import buttons
+  useEffect(() => {
+    // Create a style element
+    const style = document.createElement('style');
+    // Add CSS to hide export/import buttons
+    style.textContent = `
+      .admin-dashboard button:has([data-export-users]),
+      .admin-dashboard button:has([data-import-users]) {
+        display: none !important;
+      }
+    `;
+    // Append the style to the document head
+    document.head.appendChild(style);
+
+    // Cleanup function
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   
   return (
     <div 
