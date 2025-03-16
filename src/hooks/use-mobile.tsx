@@ -9,7 +9,7 @@ export function useIsMobile() {
   )
 
   React.useEffect(() => {
-    console.log("useIsMobile hook is being used!");
+    console.log("🔴 useIsMobile hook is being used! TESTING PROJECT UPDATES");
     
     // Create event listener for window resize
     const handleResize = () => {

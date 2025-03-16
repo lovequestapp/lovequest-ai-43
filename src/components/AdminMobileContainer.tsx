@@ -25,7 +25,7 @@ const AdminMobileContainer = ({
   const breakpoint = useBreakpoint();
   const [menuOpen, setMenuOpen] = useState(false);
   
-  console.log("!!! ADMIN MOBILE CONTAINER IS RENDERING !!!");
+  console.log("🚨🚨🚨 ADMIN MOBILE CONTAINER IS RENDERING - UPDATE TEST 🚨🚨🚨");
   
   // Hide export/import buttons
   useEffect(() => {
@@ -56,9 +56,9 @@ const AdminMobileContainer = ({
     
     return (
       <div className="fixed inset-0 bg-black/50 z-50 animate-fadeIn">
-        <div className="absolute top-0 left-0 h-full w-3/4 max-w-xs bg-red-200 shadow-xl animate-slideInLeft">
+        <div className="absolute top-0 left-0 h-full w-3/4 max-w-xs bg-green-200 shadow-xl animate-slideInLeft">
           <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="font-bold text-lg">DEBUG MENU CHANGES</h2>
+            <h2 className="font-bold text-lg">UPDATED MENU - TEST</h2>
             <button onClick={() => setMenuOpen(false)} className="p-2">
               <X className="h-5 w-5" />
             </button>
@@ -80,7 +80,7 @@ const AdminMobileContainer = ({
   const NavItem = ({ icon, label, active = false }) => (
     <div className={cn(
       "flex items-center p-3 rounded-lg mb-1",
-      active ? "bg-red-500 text-white" : "hover:bg-gray-100"
+      active ? "bg-green-500 text-white" : "hover:bg-gray-100"
     )}>
       <div className="mr-3">{icon}</div>
       <span>{label}</span>
@@ -89,7 +89,7 @@ const AdminMobileContainer = ({
   );
   
   return (
-    <div className="min-h-screen flex w-full overflow-hidden bg-red-50">
+    <div className="min-h-screen flex w-full overflow-hidden bg-green-50">
       {/* Mobile Menu Overlay */}
       <MobileMenu />
       
@@ -105,9 +105,9 @@ const AdminMobileContainer = ({
       >
         {/* Header for mobile */}
         {isMobile && (
-          <div className="sticky top-0 z-10 w-full bg-red-400 shadow-md border-b p-3">
+          <div className="sticky top-0 z-10 w-full bg-green-400 shadow-md border-b p-3">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-white">⚠️ DEBUG ADMIN PANEL ⚠️</h1>
+              <h1 className="text-xl font-bold text-white">🔄 UPDATED ADMIN PANEL 🔄</h1>
               <button onClick={() => setMenuOpen(true)}>
                 <Menu className="h-6 w-6 text-white" />
               </button>
@@ -123,10 +123,10 @@ const AdminMobileContainer = ({
         )}>
           {/* Stat Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <StatCard icon={<Users className="h-8 w-8 text-red-500" />} title="Users" value="1,245" />
-            <StatCard icon={<Bell className="h-8 w-8 text-red-500" />} title="Alerts" value="18" />
-            <StatCard icon={<BarChart2 className="h-8 w-8 text-red-500" />} title="Matches" value="843" />
-            <StatCard icon={<FileText className="h-8 w-8 text-red-500" />} title="Reports" value="24" />
+            <StatCard icon={<Users className="h-8 w-8 text-green-500" />} title="Users" value="1,245" />
+            <StatCard icon={<Bell className="h-8 w-8 text-green-500" />} title="Alerts" value="18" />
+            <StatCard icon={<BarChart2 className="h-8 w-8 text-green-500" />} title="Matches" value="843" />
+            <StatCard icon={<FileText className="h-8 w-8 text-green-500" />} title="Reports" value="24" />
           </div>
           
           {children}
@@ -135,7 +135,7 @@ const AdminMobileContainer = ({
       
       {/* Bottom navigation for mobile */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-red-400 shadow-lg border-t z-40">
+        <div className="fixed bottom-0 left-0 right-0 bg-green-400 shadow-lg border-t z-40">
           <div className="flex justify-around items-center">
             <BottomNavItem icon={<Home className="h-5 w-5" />} label="Home" active />
             <BottomNavItem icon={<Users className="h-5 w-5" />} label="Users" />
@@ -160,7 +160,7 @@ const StatCard = ({ icon, title, value }) => (
 const BottomNavItem = ({ icon, label, active = false }) => (
   <button className={cn(
     "flex flex-col items-center justify-center py-3 px-2 w-full",
-    active ? "text-white" : "text-red-100"
+    active ? "text-white" : "text-green-100"
   )}>
     {icon}
     <span className="text-xs mt-1">{label}</span>
