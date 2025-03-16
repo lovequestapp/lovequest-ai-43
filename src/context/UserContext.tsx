@@ -631,7 +631,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
                       currentUser.receivedGifts.heart * 2 + 
                       currentUser.receivedGifts.teddy * 3;
     
-    const isProfileBoosted = boostedProfiles.some(profile => profile.userId === currentUser.id);\n    
+    const isProfileBoosted = boostedProfiles.some(profile => profile.userId === currentUser.id);
     const boostProfile = boostedProfiles.find(profile => profile.userId === currentUser.id);
     const timeRemaining = boostProfile ? 
       Math.max(0, Math.floor((boostProfile.endTime.getTime() - Date.now()) / (1000 * 60 * 60))) + " hours" 
@@ -969,3 +969,5 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   
   const getPendingWithdrawal = (): Withdrawal | null => {
     if (!currentUser) return null;
+    
+    return withdrawals
