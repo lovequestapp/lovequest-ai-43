@@ -1,8 +1,10 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile, useBreakpoint } from '@/hooks/use-mobile';
-import { Menu, Users, BarChart2, Settings, LogOut, FileText, Bell, Home, X, ChevronRight } from 'lucide-react';
+import { Menu, Users, BarChart2, Settings, LogOut, FileText, Bell, Home, X, ChevronRight, Edit, Save } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { toast } from "sonner";
 
 interface AdminMobileContainerProps {
   children: React.ReactNode;
@@ -24,8 +26,8 @@ const AdminMobileContainer = ({
   const isMobile = useIsMobile();
   const breakpoint = useBreakpoint();
   const [menuOpen, setMenuOpen] = useState(false);
-  
-  console.log("AdminMobileContainer is rendering - Production Ready");
+  const [editingUser, setEditingUser] = useState<number | null>(null);
+  const [userFormData, setUserFormData] = useState({});
   
   // Hide export/import buttons
   useEffect(() => {
@@ -43,6 +45,16 @@ const AdminMobileContainer = ({
       .admin-dashboard button:contains("Import") {
         display: none !important;
       }
+      
+      /* Smooth transitions for edit mode */
+      .edit-transition {
+        transition: all 0.3s ease-in-out;
+      }
+      
+      /* Prevent layout shifts during editing */
+      .admin-table-row {
+        min-height: 64px;
+      }
     `;
     document.head.appendChild(style);
     return () => {
@@ -50,13 +62,56 @@ const AdminMobileContainer = ({
     };
   }, []);
   
+  // Enhanced edit mode handlers
+  const handleEditUser = useCallback((userId: number, userData: any) => {
+    // Prevent multiple edit sessions
+    if (editingUser !== null) {
+      handleCancelEdit();
+    }
+    
+    setEditingUser(userId);
+    setUserFormData(userData);
+    // Add smooth animation class to the edited row
+    const row = document.querySelector(`[data-user-id="${userId}"]`);
+    if (row) {
+      row.classList.add('edit-transition');
+    }
+  }, [editingUser]);
+  
+  const handleSaveUser = useCallback((userId: number) => {
+    // Here you would typically save to API
+    // For now, we'll just simulate success
+    
+    setTimeout(() => {
+      setEditingUser(null);
+      setUserFormData({});
+      toast.success("User updated successfully");
+      
+      // Remove animation class
+      const row = document.querySelector(`[data-user-id="${userId}"]`);
+      if (row) {
+        row.classList.remove('edit-transition');
+      }
+    }, 300);
+  }, []);
+  
+  const handleCancelEdit = useCallback(() => {
+    const row = document.querySelector(`[data-user-id="${editingUser}"]`);
+    if (row) {
+      row.classList.remove('edit-transition');
+    }
+    
+    setEditingUser(null);
+    setUserFormData({});
+  }, [editingUser]);
+  
   // Side drawer menu for mobile
   const MobileMenu = () => {
     if (!menuOpen) return null;
     
     return (
-      <div className="fixed inset-0 bg-black/50 z-50 animate-fadeIn">
-        <div className="absolute top-0 left-0 h-full w-3/4 max-w-xs bg-white shadow-xl animate-slideInLeft">
+      <div className="fixed inset-0 bg-black/50 z-50 animate-fadeIn" onClick={() => setMenuOpen(false)}>
+        <div className="absolute top-0 left-0 h-full w-3/4 max-w-xs bg-white shadow-xl animate-slideInLeft" onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <h2 className="font-bold text-lg">Admin Menu</h2>
             <button onClick={() => setMenuOpen(false)} className="p-2 rounded-full hover:bg-gray-100">
@@ -87,6 +142,22 @@ const AdminMobileContainer = ({
       <ChevronRight className="h-4 w-4 ml-auto" />
     </div>
   );
+  
+  // Create modified children with edit functionality
+  const enhancedChildren = React.Children.map(children, child => {
+    // Check if it's an admin table that needs edit functionality
+    if (React.isValidElement(child) && child.props?.className?.includes('admin-table')) {
+      // Clone and enhance with edit functionality
+      return React.cloneElement(child, {
+        editingUser,
+        userFormData,
+        onEditUser: handleEditUser,
+        onSaveUser: handleSaveUser,
+        onCancelEdit: handleCancelEdit,
+      });
+    }
+    return child;
+  });
   
   return (
     <div className="min-h-screen flex w-full overflow-hidden bg-gray-50">
@@ -132,7 +203,8 @@ const AdminMobileContainer = ({
             <StatCard icon={<FileText className="h-8 w-8 text-blue-500" />} title="Reports" value="24" />
           </div>
           
-          {children}
+          {/* Pass the enhanced children with edit functionality */}
+          {enhancedChildren}
         </div>
       </div>
       
@@ -145,6 +217,24 @@ const AdminMobileContainer = ({
             <BottomNavItem icon={<BarChart2 className="h-5 w-5" />} label="Stats" />
             <BottomNavItem icon={<Settings className="h-5 w-5" />} label="Settings" />
           </div>
+        </div>
+      )}
+      
+      {/* Edit mode indicators */}
+      {editingUser !== null && (
+        <div className="fixed bottom-16 right-4 p-4 bg-white shadow-lg rounded-lg z-50 flex space-x-3">
+          <button 
+            onClick={() => handleSaveUser(editingUser)}
+            className="flex items-center justify-center p-2 bg-green-500 text-white rounded-full hover:bg-green-600"
+          >
+            <Save className="h-5 w-5" />
+          </button>
+          <button 
+            onClick={handleCancelEdit}
+            className="flex items-center justify-center p-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
       )}
     </div>

@@ -9,21 +9,27 @@ export function useIsMobile() {
   )
 
   React.useEffect(() => {
-    console.log("useIsMobile hook initialized");
+    // Debounced resize handler to prevent excessive re-renders
+    let resizeTimer: ReturnType<typeof setTimeout>;
     
-    // Create event listener for window resize with debounce
     const handleResize = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+      }, 100);
     }
     
     // Set initial value
-    handleResize()
+    handleResize();
     
     // Add event listener
-    window.addEventListener("resize", handleResize)
+    window.addEventListener("resize", handleResize);
     
     // Clean up
-    return () => window.removeEventListener("resize", handleResize)
+    return () => {
+      clearTimeout(resizeTimer);
+      window.removeEventListener("resize", handleResize);
+    }
   }, [])
 
   return isMobile
@@ -34,8 +40,6 @@ export function useBreakpoint() {
   const [breakpoint, setBreakpoint] = React.useState<string>('sm')
 
   React.useEffect(() => {
-    console.log("useBreakpoint hook initialized");
-    
     // Create debounced event handler
     let resizeTimeout: ReturnType<typeof setTimeout>;
     
@@ -89,9 +93,9 @@ export function useAdminLayout() {
     }
   }, [isMobile])
   
-  const toggleSidebar = () => {
+  const toggleSidebar = React.useCallback(() => {
     setSidebarOpen(prev => !prev)
-  }
+  }, [])
   
   return {
     isMobile,
