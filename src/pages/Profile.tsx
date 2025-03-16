@@ -6,6 +6,8 @@ import GiftShop from '@/components/GiftShop';
 import Monetization from '@/components/Monetization';
 import Blog from '@/components/Blog';
 import PersonalityTraitSelector from '@/components/PersonalityTraitSelector';
+import VoiceRecorder from '@/components/VoiceRecorder';
+import VoicePlayer from '@/components/VoicePlayer';
 import { useUser } from '@/context/UserContext';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,9 +33,12 @@ import {
   FileText,
   Music,
   Upload,
-  Camera
+  Camera,
+  Mic
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
 const Profile = () => {
   const { currentUser, updateUserProfile, getGiftBenefits } = useUser();
@@ -42,6 +47,7 @@ const Profile = () => {
   const [newInterest, setNewInterest] = useState('');
   const [activeTab, setActiveTab] = useState('profile');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
   
   if (!currentUser || !profile) {
     return null;
@@ -51,6 +57,7 @@ const Profile = () => {
     if (profile) {
       updateUserProfile(profile);
       setEditing(false);
+      toast.success('Profile updated successfully');
     }
   };
   
@@ -121,6 +128,20 @@ const Profile = () => {
     setProfile({
       ...profile,
       personalityTraits: traits
+    });
+  };
+  
+  const handleVoiceRecordingComplete = (audioBlob: string) => {
+    setProfile({
+      ...profile,
+      voiceIntro: audioBlob
+    });
+  };
+  
+  const handleDeleteVoiceIntro = () => {
+    setProfile({
+      ...profile,
+      voiceIntro: undefined
     });
   };
 
@@ -263,6 +284,38 @@ const Profile = () => {
                         </div>
                       )}
                     </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="mt-4">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold">Voice Introduction</h3>
+                      {profile.voiceIntro && !editing && (
+                        <Badge variant="outline" className="bg-love-50 text-love-700">
+                          <Mic className="h-3 w-3 mr-1" />
+                          <span>Recorded</span>
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {editing ? (
+                      <VoiceRecorder 
+                        onRecordingComplete={handleVoiceRecordingComplete}
+                        initialAudio={profile.voiceIntro}
+                        onDelete={handleDeleteVoiceIntro}
+                      />
+                    ) : profile.voiceIntro ? (
+                      <VoicePlayer 
+                        audioUrl={profile.voiceIntro} 
+                        compact={isMobile}
+                      />
+                    ) : (
+                      <p className="text-sm text-gray-500 italic">
+                        No voice introduction recorded yet. Edit your profile to add one!
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
                 

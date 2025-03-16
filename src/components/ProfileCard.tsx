@@ -1,11 +1,13 @@
+
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, X, MessageCircle, MapPin, Sparkles, Star } from 'lucide-react';
+import { Heart, X, MessageCircle, MapPin, Sparkles, Star, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ScreenReaderOnly from './ScreenReaderOnly';
 import { useNavigate } from 'react-router-dom';
+import VoicePlayer from './VoicePlayer';
 
 interface ProfileCardProps {
   id: string;
@@ -17,6 +19,7 @@ interface ProfileCardProps {
   photos: string[];
   compatibilityScore?: number;
   personalityTraits?: string[];
+  voiceIntro?: string;
   onLike?: (id: string) => void;
   onPass?: (id: string) => void;
   onMessage?: (id: string) => void;
@@ -33,6 +36,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   photos,
   compatibilityScore,
   personalityTraits,
+  voiceIntro,
   onLike,
   onPass,
   onMessage,
@@ -69,6 +73,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
           <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 px-3 rounded-full flex items-center gap-1.5 shadow-soft">
             <Sparkles size={16} className="text-love-500" />
             <span className="font-semibold text-love-700">{compatibilityScore}% Match</span>
+          </div>
+        )}
+
+        {voiceIntro && (
+          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-1 px-2 rounded-full flex items-center gap-1 shadow-soft">
+            <Mic size={14} className="text-love-500" />
+            <span className="text-xs font-medium text-love-700">Voice Intro</span>
           </div>
         )}
 
@@ -113,6 +124,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             <span>{location}</span>
           </div>
         </div>
+        
+        {voiceIntro && (
+          <VoicePlayer audioUrl={voiceIntro} compact={true} />
+        )}
         
         <p className={cn(
           "text-gray-700",

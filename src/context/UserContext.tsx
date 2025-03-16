@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { authService } from '@/services/authService';
@@ -90,6 +89,7 @@ export interface User {
   status?: string;
   isBanned?: boolean;
   verificationStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
+  voiceIntro?: string; // URL to the voice intro recording
 }
 
 // Match type for messaging
@@ -430,6 +430,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [matches, setMatches] = useState<User[]>([]);
   const [potentialMatches, setPotentialMatches] = useState<User[]>([]);
+  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
   
   useEffect(() => {
     // Initialize from auth service or localStorage
@@ -927,8 +928,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     };
   };
   
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
-  
   const initiateWithdrawal = (amount: number): boolean => {
     if (!currentUser) return false;
     
@@ -971,73 +970,3 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   
   const getPendingWithdrawal = (): Withdrawal | null => {
     if (!currentUser) return null;
-    
-    return withdrawals.find(
-      withdrawal => withdrawal.userId === currentUser.id && withdrawal.status === 'pending'
-    ) || null;
-  };
-  
-  // Add a new user to the system (admin function)
-  const addUser = (user: User) => {
-    setAllUsers(prevUsers => [...prevUsers, user]);
-  };
-  
-  // Delete a user from the system (admin function)
-  const deleteUser = (userId: string) => {
-    setAllUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
-  };
-  
-  return (
-    <UserContext.Provider value={{
-      currentUser,
-      setCurrentUser,
-      isAuthenticated,
-      logout,
-      updateUserData,
-      purchaseGift,
-      sendGift,
-      boostProfile,
-      allUsers,
-      addUser,
-      deleteUser,
-      
-      // Blog methods
-      createBlogPost,
-      updateBlogPost,
-      deleteBlogPost,
-      likeBlogPost,
-      commentOnBlogPost,
-      getUserPosts,
-      getAllPosts,
-      getFilteredPosts,
-      
-      // User interaction methods
-      updateUserProfile,
-      likeUser,
-      passUser,
-      potentialMatches,
-      matches,
-      boostedProfiles,
-      
-      // Messaging methods
-      messages,
-      sendMessage,
-      markMessagesAsRead,
-      
-      // Gift and monetization methods
-      getGiftBenefits,
-      getGiftInventory,
-      purchaseGifts,
-      getGiftMonetizationDetails,
-      initiateWithdrawal,
-      updateBankDetails,
-      getWithdrawalHistory,
-      getPendingWithdrawal
-    }}>
-      {children}
-    </UserContext.Provider>
-  );
-};
-
-// Hook for using the user context
-export const useUser = () => useContext(UserContext);
