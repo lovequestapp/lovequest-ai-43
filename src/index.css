@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
 @tailwind base;
@@ -94,6 +93,12 @@
 
   body {
     @apply bg-background text-foreground font-sans;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -105,6 +110,18 @@
     main, .main-content {
       padding-bottom: 5rem;
     }
+  }
+
+  /* Improve input usability on mobile */
+  input, select, textarea {
+    @apply text-base;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  /* Improve touch targets on mobile */
+  button, a, [role="button"] {
+    @apply outline-none;
+    touch-action: manipulation;
   }
 }
 
@@ -221,5 +238,54 @@
       opacity: 1;
       transform: scale(1);
     }
+  }
+  
+  /* Mobile-friendly card styles */
+  .mobile-card {
+    @apply w-full p-3 sm:p-4;
+  }
+  
+  /* Mobile-friendly table */
+  .mobile-table {
+    @apply block sm:table w-full;
+  }
+  
+  .mobile-table-header {
+    @apply hidden sm:table-header-group;
+  }
+  
+  .mobile-table-row {
+    @apply block sm:table-row border-b sm:border-none mb-4 sm:mb-0;
+  }
+  
+  .mobile-table-cell {
+    @apply block sm:table-cell p-2 sm:p-4;
+  }
+  
+  .mobile-table-cell:before {
+    @apply font-medium sm:hidden mr-2 inline-block;
+    content: attr(data-label);
+  }
+  
+  /* Mobile-friendly form controls */
+  .mobile-form-control {
+    @apply min-h-[44px]; /* Minimum touch target size */
+  }
+  
+  /* Admin dashboard mobile styles */
+  .admin-card-mobile {
+    @apply flex-col sm:flex-row p-3 sm:p-4;
+  }
+  
+  .admin-stats-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4;
+  }
+  
+  .admin-action-buttons {
+    @apply flex flex-wrap gap-2;
+  }
+  
+  .admin-action-buttons > button {
+    @apply flex-1 sm:flex-initial;
   }
 }
