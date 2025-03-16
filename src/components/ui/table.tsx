@@ -13,9 +13,9 @@ const Table = React.forwardRef<
   
   return (
     <div className={cn(
-      "relative w-full overflow-auto", 
+      "relative w-full overflow-auto rounded-lg border bg-card", 
       isMobile ? "overflow-x-auto -mx-0 px-0 sm:mx-0 sm:px-0" : "",
-      adminResponsive && isMobile ? "admin-horizontal-scroll" : ""
+      adminResponsive && isMobile ? "admin-horizontal-scroll shadow-sm" : ""
     )}>
       <table
         ref={ref}
@@ -35,7 +35,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+  <thead ref={ref} className={cn("[&_tr]:border-b bg-muted/50", className)} {...props} />
 ))
 TableHeader.displayName = "TableHeader"
 
@@ -79,8 +79,10 @@ const TableRow = React.forwardRef<
     <tr
       ref={ref}
       className={cn(
-        "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
-        adminResponsive && isMobile ? "block sm:table-row border rounded-lg mb-3 sm:mb-0 sm:border-0 sm:rounded-none" : "",
+        "transition-colors data-[state=selected]:bg-muted",
+        adminResponsive && isMobile 
+          ? "block sm:table-row border-b rounded-lg mb-2 sm:mb-0 sm:rounded-none bg-card even:bg-muted/30" 
+          : "border-b hover:bg-muted/50",
         clickable ? "cursor-pointer active:bg-muted" : "",
         className
       )}
@@ -103,7 +105,7 @@ const TableHead = React.forwardRef<
     <th
       ref={ref}
       className={cn(
-        "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
+        "h-10 px-3 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
         (isMobile && adminResponsive) ? "hidden sm:table-cell" : "",
         (isMobile && hideOnMobile) ? "hidden sm:table-cell" : "",
         className
@@ -129,9 +131,9 @@ const TableCell = React.forwardRef<
     <td
       ref={ref}
       className={cn(
-        "p-4 align-middle [&:has([role=checkbox])]:pr-0",
+        "p-3 align-middle [&:has([role=checkbox])]:pr-0",
         (isMobile && mobileLabel && adminResponsive) ? 
-          "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:text-xs before:uppercase before:text-muted-foreground before:sm:hidden before:inline-block before:mb-1 before:w-full" : 
+          "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:text-xs before:uppercase before:text-primary/70 before:sm:hidden before:inline-block before:mb-1 before:w-full" : 
           (isMobile && mobileLabel) ? "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:mr-2 before:inline-block sm:before:hidden" : "",
         (isMobile && hideOnMobile) ? "hidden sm:table-cell" : "",
         (isMobile && highlightInMobile) ? "font-medium text-foreground" : "",

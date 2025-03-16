@@ -60,3 +60,30 @@ export function useBreakpoint() {
 
   return breakpoint
 }
+
+// New hook for responsive layout management in admin dashboard
+export function useAdminLayout() {
+  const isMobile = useIsMobile()
+  const breakpoint = useBreakpoint()
+  const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile)
+  
+  React.useEffect(() => {
+    // Close sidebar by default on mobile
+    if (isMobile) {
+      setSidebarOpen(false)
+    } else {
+      setSidebarOpen(true)
+    }
+  }, [isMobile])
+  
+  const toggleSidebar = () => {
+    setSidebarOpen(prev => !prev)
+  }
+  
+  return {
+    isMobile,
+    breakpoint,
+    sidebarOpen,
+    toggleSidebar
+  }
+}
