@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,8 @@ import CompatibilityQuiz from '@/components/CompatibilityQuiz';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AppPreviewMockup from '@/components/AppPreviewMockup';
-import { Heart, Sparkles, Users, MessageCircleHeart, Shield, UserCheck, Gift, Smartphone } from 'lucide-react';
+import { Heart, Sparkles, Users, MessageCircleHeart, Shield, UserCheck, Gift, Smartphone, Star } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
@@ -223,9 +225,13 @@ const Index = () => {
                   </Card>
                   
                   <Card className="border-love-500 shadow-xl hover:-translate-y-2 transition-all duration-300 relative">
-                    <div className="absolute -top-3 left-0 right-0 mx-auto w-max bg-love-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                    <Badge 
+                      variant="success" 
+                      className="absolute -top-3 left-0 right-0 mx-auto w-max px-3 py-1 font-medium flex items-center gap-1"
+                    >
+                      <Star size={14} className="text-green-700" />
                       Most Popular
-                    </div>
+                    </Badge>
                     <CardContent className="p-6">
                       <h3 className="text-2xl font-display font-bold mb-2">Premium</h3>
                       <p className="text-3xl font-bold mb-4">$9.99<span className="text-lg font-normal text-gray-500">/month</span></p>
@@ -243,7 +249,7 @@ const Index = () => {
                           Priority in search results
                         </li>
                         <li className="flex items-center">
-                          <Heart size={16} className="text-love-500 mr-2" />
+                          <Heart size={16} className "text-love-500 mr-2" />
                           See who liked you
                         </li>
                       </ul>
