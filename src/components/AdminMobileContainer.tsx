@@ -220,9 +220,9 @@ const AdminMobileContainer = ({
     
     // If it's an Input component, add the large prop
     if (node.type === Input) {
-      // Fix: Check if the props (large) are valid for this component
-      return React.cloneElement(node, { 
-        ...(node.props as object),
+      // Fixed TypeScript error by using proper typing for the props
+      return React.cloneElement(node as React.ReactElement<any>, { 
+        ...node.props,
         large: true 
       });
     }
@@ -246,9 +246,9 @@ const AdminMobileContainer = ({
     
     // Check if it's an admin table that needs edit functionality
     if (child.props?.className?.includes('admin-table')) {
-      // Fix: Use type assertion to safely add props
-      enhancedChild = React.cloneElement(child, {
-        ...(child.props as object),
+      // Fixed TypeScript error using proper typing
+      enhancedChild = React.cloneElement(child as React.ReactElement<any>, {
+        ...child.props,
         editingUser,
         userFormData,
         onEditUser: handleEditUser,
@@ -261,10 +261,10 @@ const AdminMobileContainer = ({
     if (child.props?.className?.includes('form') || 
         child.type === 'form' || 
         (typeof child.type === 'string' && child.type.toLowerCase() === 'form')) {
-      // Fix: Use type assertion to safely add className
+      // Fixed TypeScript error using proper typing
       const newClassName = `${child.props.className || ''} admin-form`;
-      enhancedChild = React.cloneElement(enhancedChild, { 
-        ...(enhancedChild.props as object),
+      enhancedChild = React.cloneElement(enhancedChild as React.ReactElement<any>, { 
+        ...enhancedChild.props,
         className: newClassName 
       });
     }
