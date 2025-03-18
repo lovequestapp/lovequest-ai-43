@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile, useBreakpoint } from '@/hooks/use-mobile';
@@ -219,7 +220,11 @@ const AdminMobileContainer = ({
     
     // If it's an Input component, add the large prop
     if (node.type === Input) {
-      return React.cloneElement(node, { large: true });
+      // Fix: Check if the props (large) are valid for this component
+      return React.cloneElement(node, { 
+        ...(node.props as object),
+        large: true 
+      });
     }
     
     // If it has children, recursively enhance them
@@ -241,21 +246,27 @@ const AdminMobileContainer = ({
     
     // Check if it's an admin table that needs edit functionality
     if (child.props?.className?.includes('admin-table')) {
+      // Fix: Use type assertion to safely add props
       enhancedChild = React.cloneElement(child, {
+        ...(child.props as object),
         editingUser,
         userFormData,
         onEditUser: handleEditUser,
         onSaveUser: handleSaveUser,
         onCancelEdit: handleCancelEdit,
-      } as AdminTableProps);
+      });
     }
     
     // Add admin-form class to forms within the container
     if (child.props?.className?.includes('form') || 
         child.type === 'form' || 
         (typeof child.type === 'string' && child.type.toLowerCase() === 'form')) {
+      // Fix: Use type assertion to safely add className
       const newClassName = `${child.props.className || ''} admin-form`;
-      enhancedChild = React.cloneElement(enhancedChild, { className: newClassName });
+      enhancedChild = React.cloneElement(enhancedChild, { 
+        ...(enhancedChild.props as object),
+        className: newClassName 
+      });
     }
     
     // Enhance inputs recursively
