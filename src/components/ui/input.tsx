@@ -11,6 +11,8 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   animated?: boolean;
   /* Makes the input circular when true */
   circular?: boolean;
+  /* Makes the input larger for admin forms */
+  large?: boolean;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
@@ -23,6 +25,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     isInvalid, 
     animated = false,
     circular = false,
+    large = false,
     ...props 
   }, ref) => {
     const [focused, setFocused] = React.useState(false);
@@ -30,13 +33,15 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={cn(
         "relative group", 
-        animated && "transition-all duration-300"
+        animated && "transition-all duration-300",
+        large && "w-full"
       )}>
         {icon && iconPosition === 'left' && (
           <div className={cn(
             "absolute left-3 top-1/2 -translate-y-1/2 transition-colors duration-300",
             focused ? "text-love-500" : "text-muted-foreground",
-            animated && "group-hover:text-love-400"
+            animated && "group-hover:text-love-400",
+            large && "left-4 text-lg"
           )}>
             {icon}
           </div>
@@ -51,6 +56,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             isInvalid && "border-red-500 focus-visible:ring-red-500/20",
             animated && "input-highlight hover:border-love-200",
             circular && "rounded-full aspect-square w-10 p-0 flex items-center justify-center text-center",
+            large && "h-12 px-4 py-3 text-base md:text-base rounded-lg",
+            large && iconPosition === 'left' && icon ? "pl-12" : "",
+            large && iconPosition === 'right' && icon ? "pr-12" : "",
             className
           )}
           ref={ref}
@@ -62,13 +70,17 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <div className={cn(
             "absolute right-3 top-1/2 -translate-y-1/2 transition-colors duration-300",
             focused ? "text-love-500" : "text-muted-foreground",
-            animated && "group-hover:text-love-400"
+            animated && "group-hover:text-love-400",
+            large && "right-4 text-lg"
           )}>
             {icon}
           </div>
         )}
         {isValid && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500">
+          <div className={cn(
+            "absolute right-3 top-1/2 -translate-y-1/2 text-green-500",
+            large && "right-4"
+          )}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 6L9 17l-5-5"></path>
             </svg>

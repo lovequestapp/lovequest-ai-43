@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile, useBreakpoint } from '@/hooks/use-mobile';
@@ -64,6 +63,65 @@ const AdminMobileContainer = ({
       /* Prevent layout shifts during editing */
       .admin-table-row {
         min-height: 64px;
+      }
+      
+      /* Admin form styling */
+      .admin-form input,
+      .admin-form select,
+      .admin-form textarea {
+        height: 42px !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 1rem !important;
+        border-radius: 0.5rem !important;
+        width: 100% !important;
+      }
+      
+      .admin-form .form-group,
+      .admin-form .form-field {
+        margin-bottom: 1rem !important;
+      }
+      
+      .admin-form label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: #374151;
+      }
+      
+      /* Add user form styling */
+      .add-user-form {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+      }
+      
+      .add-user-form h3 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+      }
+      
+      /* Form grid for better layout */
+      .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      @media (min-width: 640px) {
+        .form-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      
+      @media (min-width: 1024px) {
+        .form-grid {
+          grid-template-columns: 1fr 1fr 1fr;
+        }
       }
     `;
     document.head.appendChild(style);
@@ -153,13 +211,37 @@ const AdminMobileContainer = ({
     </div>
   );
   
-  // Create modified children with edit functionality
+  // Enhance input fields in any forms within AdminMobileContainer
+  const enhanceInputs = (node: React.ReactNode): React.ReactNode => {
+    if (!React.isValidElement(node)) {
+      return node;
+    }
+    
+    // If it's an Input component, add the large prop
+    if (node.type === Input) {
+      return React.cloneElement(node, { large: true });
+    }
+    
+    // If it has children, recursively enhance them
+    if (node.props.children) {
+      const children = React.Children.map(node.props.children, enhanceInputs);
+      return React.cloneElement(node, {}, children);
+    }
+    
+    return node;
+  };
+  
+  // Create modified children with edit functionality and enhanced inputs
   const enhancedChildren = React.Children.map(children, child => {
+    if (!React.isValidElement(child)) {
+      return child;
+    }
+    
+    let enhancedChild = child;
+    
     // Check if it's an admin table that needs edit functionality
-    if (React.isValidElement(child) && 
-        child.props?.className?.includes('admin-table')) {
-      // Clone and enhance with edit functionality
-      return React.cloneElement(child, {
+    if (child.props?.className?.includes('admin-table')) {
+      enhancedChild = React.cloneElement(child, {
         editingUser,
         userFormData,
         onEditUser: handleEditUser,
@@ -167,7 +249,17 @@ const AdminMobileContainer = ({
         onCancelEdit: handleCancelEdit,
       } as AdminTableProps);
     }
-    return child;
+    
+    // Add admin-form class to forms within the container
+    if (child.props?.className?.includes('form') || 
+        child.type === 'form' || 
+        (typeof child.type === 'string' && child.type.toLowerCase() === 'form')) {
+      const newClassName = `${child.props.className || ''} admin-form`;
+      enhancedChild = React.cloneElement(enhancedChild, { className: newClassName });
+    }
+    
+    // Enhance inputs recursively
+    return enhanceInputs(enhancedChild);
   });
   
   return (
