@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -11,17 +11,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useUser } from '@/context/UserContext';
-import { Heart, MessageSquare, Share, Search, Book, User, Plus, Gift } from 'lucide-react';
+import { useProtectedRoute } from '@/hooks/useProtectedRoute';
+import { Heart, MessageSquare, Share, Search, Book, User, Plus, Gift, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { UserWithCoordinates } from '@/utils/matchingAlgorithm';
+import { toast } from 'sonner';
 import GiftSelector from '@/components/GiftSelector';
 
 const Explore: React.FC = () => {
+  const { isAuthenticated } = useProtectedRoute();
   const { currentUser, getFilteredPosts, getAllPosts, likeBlogPost, commentOnBlogPost, createBlogPost } = useUser();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string>('foryou');
   const [showGiftSelector, setShowGiftSelector] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [showNewPostDialog, setShowNewPostDialog] = useState(false);
   const [newPostTitle, setNewPostTitle] = useState('');
@@ -31,10 +34,38 @@ const Explore: React.FC = () => {
   
   const navigate = useNavigate();
   
-  if (!currentUser) return null;
+  // Add loading state to handle initial render
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Set a small timeout to allow context to fully initialize
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated]);
   
-  const allPosts = getAllPosts();
-  const filteredPosts = getFilteredPosts();
+  if (!isAuthenticated) {
+    return null; // Protected route hook will handle redirect
+  }
+  
+  if (isLoading || !currentUser) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-8 flex items-center justify-center">
+          <div className="flex flex-col items-center">
+            <Loader2 className="h-12 w-12 animate-spin text-love-500 mb-4" />
+            <p className="text-muted-foreground">Loading content...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+  
+  const allPosts = getAllPosts() || [];
+  const filteredPosts = getFilteredPosts() || [];
   
   const displayPosts = activeTab === 'foryou' ? filteredPosts : allPosts;
   
@@ -47,14 +78,20 @@ const Explore: React.FC = () => {
     : displayPosts;
   
   const handleLikePost = (postId: string, userId: string) => {
-    likeBlogPost(postId, userId);
+    try {
+      likeBlogPost(postId, userId);
+      toast.success("Post liked successfully");
+    } catch (error) {
+      console.error("Error liking post:", error);
+      toast.error("Failed to like post");
+    }
   };
   
   const handleViewProfile = (userId: string) => {
     if (userId === currentUser.id) {
       navigate('/profile');
     } else {
-      alert(`Viewing ${userId}'s profile`);
+      navigate(`/profiles/${userId}`);
     }
   };
   
@@ -74,6 +111,7 @@ const Explore: React.FC = () => {
   const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
     if (selectedPostId) {
       commentOnBlogPost(selectedPostId, `I sent you a ${giftType}! 💝`);
+      toast.success(`You sent a ${giftType}!`);
     }
     setShowGiftSelector(false);
     setSelectedPostId(null);
@@ -81,11 +119,19 @@ const Explore: React.FC = () => {
   
   const handleCreatePost = () => {
     if (newPostTitle.trim() && newPostContent.trim()) {
-      createBlogPost(newPostTitle.trim(), newPostContent.trim(), newPostTags);
-      setNewPostTitle('');
-      setNewPostContent('');
-      setNewPostTags([]);
-      setShowNewPostDialog(false);
+      try {
+        createBlogPost(newPostTitle.trim(), newPostContent.trim(), newPostTags);
+        setNewPostTitle('');
+        setNewPostContent('');
+        setNewPostTags([]);
+        setShowNewPostDialog(false);
+        toast.success("Post created successfully");
+      } catch (error) {
+        console.error("Error creating post:", error);
+        toast.error("Failed to create post");
+      }
+    } else {
+      toast.error("Title and content are required");
     }
   };
   
@@ -233,6 +279,13 @@ const Explore: React.FC = () => {
                         ? "No posts match your search criteria. Try different keywords."
                         : "There are no posts from users matching your preferences yet."}
                     </p>
+                    <Button 
+                      onClick={() => setShowNewPostDialog(true)}
+                      className="bg-gradient-love hover:opacity-90 mt-2"
+                    >
+                      <Plus size={16} className="mr-2" />
+                      Create First Post
+                    </Button>
                   </div>
                 </Card>
               ) : (
@@ -364,6 +417,13 @@ const Explore: React.FC = () => {
                         ? "No posts match your search criteria. Try different keywords."
                         : "There are no posts from any users yet."}
                     </p>
+                    <Button 
+                      onClick={() => setShowNewPostDialog(true)}
+                      className="bg-gradient-love hover:opacity-90 mt-2"
+                    >
+                      <Plus size={16} className="mr-2" />
+                      Create First Post
+                    </Button>
                   </div>
                 </Card>
               ) : (
