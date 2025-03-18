@@ -77,7 +77,11 @@ const AIProfileGenerator: React.FC<AIProfileGeneratorProps> = ({
       disabled={loading}
       className="w-full flex items-center gap-2"
     >
-      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+      {loading ? (
+        <Loader2 className="h-4 w-4 animate-spin aspect-square" />
+      ) : (
+        <RefreshCw className="h-4 w-4 aspect-square" />
+      )}
       <span>{loading ? "Generating..." : "Generate AI Profile Image"}</span>
     </Button>
   );

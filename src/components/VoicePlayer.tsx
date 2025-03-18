@@ -122,7 +122,7 @@ const VoicePlayer: React.FC<VoicePlayerProps> = ({ audioUrl, className, compact 
           onClick={togglePlay}
           size="icon"
           variant="outline"
-          className="h-9 w-9 rounded-full border-love-200 bg-white hover:bg-love-50 hover:border-love-300 transition-all duration-300"
+          className="h-9 w-9 rounded-full border-love-200 bg-white hover:bg-love-50 hover:border-love-300 transition-all duration-300 aspect-square"
         >
           {isPlaying ? (
             <Pause className="h-4 w-4 text-love-500" />
@@ -153,7 +153,7 @@ const VoicePlayer: React.FC<VoicePlayerProps> = ({ audioUrl, className, compact 
               onClick={toggleMute}
               size="icon"
               variant="ghost"
-              className="h-8 w-8 hover:bg-gray-100 transition-all duration-300"
+              className="h-8 w-8 hover:bg-gray-100 transition-all duration-300 rounded-full aspect-square"
             >
               {isMuted ? (
                 <VolumeX className="h-4 w-4 text-gray-500" />
@@ -181,7 +181,7 @@ const VoicePlayer: React.FC<VoicePlayerProps> = ({ audioUrl, className, compact 
             {[...Array(3)].map((_, i) => (
               <div 
                 key={i} 
-                className="w-1.5 h-1.5 rounded-full bg-love-300 animate-pulse" 
+                className="w-1.5 h-1.5 rounded-full bg-love-300 animate-pulse aspect-square" 
                 style={{ animationDelay: `${i * 0.15}s` }}
               />
             ))}
