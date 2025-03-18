@@ -226,9 +226,9 @@ const Index = () => {
                   <Card className="border-love-500 shadow-xl hover:-translate-y-2 transition-all duration-300 relative">
                     <Badge 
                       variant="success" 
-                      className="absolute -top-3 left-0 right-0 mx-auto w-max px-3 py-1 font-medium flex items-center gap-1"
+                      className="absolute top-2 right-2 px-2 py-1 text-xs font-medium flex items-center gap-1"
                     >
-                      <Star size={14} className="text-green-700" />
+                      <Star size={12} className="text-green-700" />
                       Most Popular
                     </Badge>
                     <CardContent className="p-6">
