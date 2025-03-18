@@ -338,16 +338,19 @@ const AppPreviewMockup = () => {
             ))}
           </div>
           
-          {/* Navigation Dots */}
+          {/* Navigation Dots - Updated to use small circular dots */}
           <div className="absolute bottom-20 left-0 right-0 flex justify-center space-x-2 z-10">
             {mockScreens.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setActiveScreen(index)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  index === activeScreen ? 'bg-love-600 scale-125' : 'bg-gray-400'
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
+                  index === activeScreen 
+                    ? 'bg-love-600 scale-125' 
+                    : 'bg-gray-300 hover:bg-gray-400'
                 }`}
                 aria-label={`Go to screen ${index + 1}`}
+                aria-current={index === activeScreen ? "true" : "false"}
               />
             ))}
           </div>
@@ -362,10 +365,10 @@ const AppPreviewMockup = () => {
         <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1/3 h-1 bg-gray-600 rounded-full"></div>
       </div>
       
-      {/* Navigation Arrows */}
+      {/* Navigation Arrows - Improved with better styling */}
       <button 
         onClick={goToPrevScreen}
-        className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-12 bg-white rounded-full p-2 shadow-md hover:bg-gray-50 transition-colors"
+        className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-12 bg-white rounded-full p-2 shadow-md hover:bg-gray-50 hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-love-300"
         aria-label="Previous screen"
       >
         <ChevronLeft className="text-love-600" size={20} />
@@ -373,7 +376,7 @@ const AppPreviewMockup = () => {
       
       <button 
         onClick={goToNextScreen}
-        className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-12 bg-white rounded-full p-2 shadow-md hover:bg-gray-50 transition-colors"
+        className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-12 bg-white rounded-full p-2 shadow-md hover:bg-gray-50 hover:shadow-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-love-300"
         aria-label="Next screen"
       >
         <ChevronRight className="text-love-600" size={20} />

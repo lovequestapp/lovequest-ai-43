@@ -111,7 +111,7 @@ const VoicePlayer: React.FC<VoicePlayerProps> = ({ audioUrl, className, compact 
 
   return (
     <div className={cn(
-      "flex flex-col gap-2 p-2 rounded-md bg-gray-50",
+      "flex flex-col gap-2 p-3 rounded-lg bg-gray-50 shadow-sm border border-gray-100",
       compact ? "w-full max-w-xs" : "w-full max-w-md",
       className
     )}>
@@ -122,12 +122,12 @@ const VoicePlayer: React.FC<VoicePlayerProps> = ({ audioUrl, className, compact 
           onClick={togglePlay}
           size="icon"
           variant="outline"
-          className="h-8 w-8 rounded-full border-love-200 bg-white"
+          className="h-9 w-9 rounded-full border-love-200 bg-white hover:bg-love-50 hover:border-love-300 transition-all duration-300"
         >
           {isPlaying ? (
             <Pause className="h-4 w-4 text-love-500" />
           ) : (
-            <Play className="h-4 w-4 text-love-500" />
+            <Play className="h-4 w-4 text-love-500 ml-0.5" />
           )}
         </Button>
         
@@ -141,7 +141,7 @@ const VoicePlayer: React.FC<VoicePlayerProps> = ({ audioUrl, className, compact 
             className="cursor-pointer"
           />
           
-          <div className="flex justify-between text-xs text-gray-500 mt-0.5">
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
@@ -153,7 +153,7 @@ const VoicePlayer: React.FC<VoicePlayerProps> = ({ audioUrl, className, compact 
               onClick={toggleMute}
               size="icon"
               variant="ghost"
-              className="h-7 w-7"
+              className="h-8 w-8 hover:bg-gray-100 transition-all duration-300"
             >
               {isMuted ? (
                 <VolumeX className="h-4 w-4 text-gray-500" />
@@ -173,6 +173,21 @@ const VoicePlayer: React.FC<VoicePlayerProps> = ({ audioUrl, className, compact 
           </div>
         )}
       </div>
+      
+      {/* Add loading/buffering indicator for better UX */}
+      {duration === 0 && (
+        <div className="flex justify-center items-center py-1">
+          <div className="flex space-x-1">
+            {[...Array(3)].map((_, i) => (
+              <div 
+                key={i} 
+                className="w-1.5 h-1.5 rounded-full bg-love-300 animate-pulse" 
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

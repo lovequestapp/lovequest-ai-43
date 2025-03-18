@@ -52,20 +52,6 @@
   }
 }
 
-/* Removing the float animation that was causing the bouncing */
-/* .animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-} */
-
 /* New Aesthetic Styles */
 .text-love-gradient {
   background: linear-gradient(135deg, var(--love-500), var(--love-700));
@@ -221,4 +207,32 @@
   opacity: 0;
   transform: translateX(-100%);
   transition: opacity 500ms, transform 500ms;
+}
+
+/* Carousel Navigation Dots */
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #D1D5DB;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+
+.carousel-dot:hover {
+  background-color: #9CA3AF;
+}
+
+.carousel-dot.active {
+  background-color: var(--love-500);
+  transform: scale(1.2);
 }

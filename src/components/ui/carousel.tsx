@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
@@ -204,7 +205,7 @@ const CarouselPrevious = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "absolute  h-8 w-8 rounded-full",
+        "absolute h-8 w-8 rounded-full",
         orientation === "horizontal"
           ? "-left-12 top-1/2 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
@@ -250,6 +251,63 @@ const CarouselNext = React.forwardRef<
 })
 CarouselNext.displayName = "CarouselNext"
 
+// Adding a new carousel dots component for better navigation
+const CarouselDots = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => {
+  const { api } = useCarousel()
+  const [selectedIndex, setSelectedIndex] = React.useState(0)
+  const [slideCount, setSlideCount] = React.useState(0)
+
+  React.useEffect(() => {
+    if (!api) return
+
+    setSlideCount(api.scrollSnapList().length)
+    
+    const onSelect = () => {
+      setSelectedIndex(api.selectedScrollSnap())
+    }
+    
+    api.on("select", onSelect)
+    // Initialize
+    onSelect()
+    
+    return () => {
+      api.off("select", onSelect)
+    }
+  }, [api])
+
+  if (slideCount <= 1) return null
+
+  return (
+    <div 
+      ref={ref} 
+      className={cn(
+        "flex justify-center items-center gap-2 mt-2",
+        className
+      )}
+      {...props}
+    >
+      {Array.from({ length: slideCount }).map((_, index) => (
+        <button
+          key={index}
+          className={cn(
+            "w-2 h-2 rounded-full transition-all",
+            selectedIndex === index 
+              ? "bg-love-500 scale-125" 
+              : "bg-gray-300 hover:bg-gray-400"
+          )}
+          onClick={() => api?.scrollTo(index)}
+          aria-label={`Go to slide ${index + 1}`}
+          aria-current={selectedIndex === index ? "true" : "false"}
+        />
+      ))}
+    </div>
+  )
+})
+CarouselDots.displayName = "CarouselDots"
+
 export {
   type CarouselApi,
   Carousel,
@@ -257,4 +315,5 @@ export {
   CarouselItem,
   CarouselPrevious,
   CarouselNext,
+  CarouselDots,
 }
