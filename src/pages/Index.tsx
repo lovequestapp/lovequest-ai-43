@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -249,7 +248,7 @@ const Index = () => {
                           Priority in search results
                         </li>
                         <li className="flex items-center">
-                          <Heart size={16} className "text-love-500 mr-2" />
+                          <Heart size={16} className="text-love-500 mr-2" />
                           See who liked you
                         </li>
                       </ul>
