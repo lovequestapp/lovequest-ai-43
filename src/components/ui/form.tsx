@@ -73,8 +73,11 @@ const FormItemContext = React.createContext<FormItemContextValue>(
 
 const FormItem = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { fullWidth?: boolean }
->(({ className, fullWidth = false, ...props }, ref) => {
+  React.HTMLAttributes<HTMLDivElement> & { 
+    fullWidth?: boolean;
+    glassMorphism?: boolean;
+  }
+>(({ className, fullWidth = false, glassMorphism = false, ...props }, ref) => {
   const id = React.useId()
 
   return (
@@ -84,6 +87,7 @@ const FormItem = React.forwardRef<
         className={cn(
           "space-y-2", 
           fullWidth && "w-full",
+          glassMorphism && "p-4 backdrop-blur-sm bg-white/80 border border-love-100 rounded-lg shadow-sm",
           className
         )} 
         {...props} 
@@ -95,14 +99,20 @@ FormItem.displayName = "FormItem"
 
 const FormLabel = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
->(({ className, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> & {
+    gradient?: boolean;
+  }
+>(({ className, gradient = false, ...props }, ref) => {
   const { error, formItemId } = useFormField()
 
   return (
     <Label
       ref={ref}
-      className={cn(error && "text-destructive", className)}
+      className={cn(
+        error && "text-destructive",
+        gradient && "font-medium bg-gradient-love text-transparent bg-clip-text",
+        className
+      )}
       htmlFor={formItemId}
       {...props}
     />
@@ -112,8 +122,11 @@ FormLabel.displayName = "FormLabel"
 
 const FormControl = React.forwardRef<
   React.ElementRef<typeof Slot>,
-  React.ComponentPropsWithoutRef<typeof Slot> & { fullWidth?: boolean }
->(({ fullWidth = false, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof Slot> & { 
+    fullWidth?: boolean;
+    luxuryStyle?: boolean;
+  }
+>(({ fullWidth = false, luxuryStyle = false, ...props }, ref) => {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
 
   return (
@@ -126,7 +139,10 @@ const FormControl = React.forwardRef<
           : `${formDescriptionId} ${formMessageId}`
       }
       aria-invalid={!!error}
-      className={cn(fullWidth && "w-full")}
+      className={cn(
+        fullWidth && "w-full",
+        luxuryStyle && "focus:ring-2 focus:ring-love-300 focus:border-love-300 transition-all duration-200",
+      )}
       {...props}
     />
   )
@@ -152,8 +168,10 @@ FormDescription.displayName = "FormDescription"
 
 const FormMessage = React.forwardRef<
   HTMLParagraphElement,
-  React.HTMLAttributes<HTMLParagraphElement>
->(({ className, children, ...props }, ref) => {
+  React.HTMLAttributes<HTMLParagraphElement> & {
+    animated?: boolean;
+  }
+>(({ className, children, animated = false, ...props }, ref) => {
   const { error, formMessageId } = useFormField()
   const body = error ? String(error?.message) : children
 
@@ -165,7 +183,11 @@ const FormMessage = React.forwardRef<
     <p
       ref={ref}
       id={formMessageId}
-      className={cn("text-sm font-medium text-destructive", className)}
+      className={cn(
+        "text-sm font-medium text-destructive",
+        animated && "animate-slide-up-fade",
+        className
+      )}
       {...props}
     >
       {body}
