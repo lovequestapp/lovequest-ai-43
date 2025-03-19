@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
@@ -72,13 +73,21 @@ const FormItemContext = React.createContext<FormItemContextValue>(
 
 const FormItem = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => {
+  React.HTMLAttributes<HTMLDivElement> & { fullWidth?: boolean }
+>(({ className, fullWidth = false, ...props }, ref) => {
   const id = React.useId()
 
   return (
     <FormItemContext.Provider value={{ id }}>
-      <div ref={ref} className={cn("space-y-2", className)} {...props} />
+      <div 
+        ref={ref} 
+        className={cn(
+          "space-y-2", 
+          fullWidth && "w-full",
+          className
+        )} 
+        {...props} 
+      />
     </FormItemContext.Provider>
   )
 })
@@ -103,8 +112,8 @@ FormLabel.displayName = "FormLabel"
 
 const FormControl = React.forwardRef<
   React.ElementRef<typeof Slot>,
-  React.ComponentPropsWithoutRef<typeof Slot>
->(({ ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof Slot> & { fullWidth?: boolean }
+>(({ fullWidth = false, ...props }, ref) => {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
 
   return (
@@ -117,6 +126,7 @@ const FormControl = React.forwardRef<
           : `${formDescriptionId} ${formMessageId}`
       }
       aria-invalid={!!error}
+      className={cn(fullWidth && "w-full")}
       {...props}
     />
   )

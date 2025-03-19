@@ -7,21 +7,24 @@ const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement> & { 
     adminResponsive?: boolean;
+    fullWidth?: boolean;
   }
->(({ className, adminResponsive = false, ...props }, ref) => {
+>(({ className, adminResponsive = false, fullWidth = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
     <div className={cn(
       "relative w-full overflow-auto rounded-lg border bg-card", 
       isMobile ? "overflow-x-auto max-w-full" : "",
-      adminResponsive && isMobile ? "admin-horizontal-scroll shadow-sm max-w-full" : ""
+      adminResponsive && isMobile ? "admin-horizontal-scroll shadow-sm max-w-full" : "",
+      fullWidth && "w-full"
     )}>
       <table
         ref={ref}
         className={cn(
           "w-full caption-bottom text-sm", 
           adminResponsive && isMobile ? "admin-mobile-table" : "",
+          fullWidth && "w-full",
           className
         )}
         {...props}
@@ -41,11 +44,17 @@ TableHeader.displayName = "TableHeader"
 
 const TableBody = React.forwardRef<
   HTMLTableSectionElement,
-  React.HTMLAttributes<HTMLTableSectionElement>
->(({ className, ...props }, ref) => (
+  React.HTMLAttributes<HTMLTableSectionElement> & {
+    fullWidth?: boolean;
+  }
+>(({ className, fullWidth = false, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn("[&_tr:last-child]:border-0", className)}
+    className={cn(
+      "[&_tr:last-child]:border-0", 
+      fullWidth && "w-full",
+      className
+    )}
     {...props}
   />
 ))
@@ -71,8 +80,9 @@ const TableRow = React.forwardRef<
   React.HTMLAttributes<HTMLTableRowElement> & { 
     adminResponsive?: boolean;
     clickable?: boolean;
+    fullWidth?: boolean;
   }
->(({ className, adminResponsive = false, clickable = false, ...props }, ref) => {
+>(({ className, adminResponsive = false, clickable = false, fullWidth = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -84,6 +94,7 @@ const TableRow = React.forwardRef<
           ? "block sm:table-row border-b rounded-lg mb-2 sm:mb-0 sm:rounded-none bg-card even:bg-muted/30 max-w-full" 
           : "border-b hover:bg-muted/50",
         clickable ? "cursor-pointer active:bg-muted" : "",
+        fullWidth && "w-full",
         className
       )}
       {...props}
@@ -97,8 +108,9 @@ const TableHead = React.forwardRef<
   React.ThHTMLAttributes<HTMLTableCellElement> & { 
     adminResponsive?: boolean;
     hideOnMobile?: boolean;
+    fullWidth?: boolean;
   }
->(({ className, adminResponsive = false, hideOnMobile = false, ...props }, ref) => {
+>(({ className, adminResponsive = false, hideOnMobile = false, fullWidth = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -108,6 +120,7 @@ const TableHead = React.forwardRef<
         "h-10 px-3 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
         (isMobile && adminResponsive) ? "hidden sm:table-cell" : "",
         (isMobile && hideOnMobile) ? "hidden sm:table-cell" : "",
+        fullWidth && "w-full",
         className
       )}
       {...props}
@@ -123,8 +136,9 @@ const TableCell = React.forwardRef<
     adminResponsive?: boolean;
     hideOnMobile?: boolean;
     highlightInMobile?: boolean;
+    fullWidth?: boolean;
   }
->(({ className, mobileLabel, adminResponsive = false, hideOnMobile = false, highlightInMobile = false, ...props }, ref) => {
+>(({ className, mobileLabel, adminResponsive = false, hideOnMobile = false, highlightInMobile = false, fullWidth = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -137,6 +151,7 @@ const TableCell = React.forwardRef<
           (isMobile && mobileLabel) ? "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:mr-2 before:inline-block sm:before:hidden truncate-text" : "",
         (isMobile && hideOnMobile) ? "hidden sm:table-cell" : "",
         (isMobile && highlightInMobile) ? "font-medium text-foreground" : "",
+        fullWidth && "w-full",
         className
       )}
       data-label={mobileLabel}
