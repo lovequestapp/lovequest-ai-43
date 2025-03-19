@@ -13,9 +13,8 @@ import { Link } from 'react-router-dom';
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from '@/lib/utils';
-import { Search, Info, MenuIcon, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Search, Info, ArrowLeft, MessageCircle } from 'lucide-react';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { useToast } from "@/hooks/use-toast";
 
@@ -77,20 +76,26 @@ const Messages = () => {
     const user = potentialMatches?.find(u => u.id === otherUserId);
     
     // Check if messages[otherUserId] exists before trying to filter it
-    const matchMessages = messages && messages[otherUserId] ? messages[otherUserId] : [];
+    const matchMessages = messages && Array.isArray(messages) 
+      ? messages.filter(m => (m.senderId === otherUserId && m.receiverId === currentUser?.id) || 
+                           (m.senderId === currentUser?.id && m.receiverId === otherUserId))
+      : [];
+      
     const unreadCount = matchMessages.filter(m => 
       m.senderId === otherUserId && (m.read === false || m.isRead === false)
     ).length || 0;
     
-    // Get the match object which contains lastMessage and lastMessageTime
-    const matchData = match as unknown as Match;
+    // Get the most recent message for this match
+    const lastMessage = matchMessages.length > 0 
+      ? matchMessages.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0]
+      : null;
     
     return {
       id: otherUserId || '',
       name: user?.name || 'Unknown User',
       photo: user?.photos?.[0] || '/placeholder.svg',
-      lastMessage: matchData.lastMessage || '',
-      lastMessageTime: matchData.lastMessageTime ? new Date(matchData.lastMessageTime) : new Date(),
+      lastMessage: lastMessage?.content || match.lastMessage || '',
+      lastMessageTime: lastMessage?.timestamp || match.lastMessageTime || new Date(),
       unreadCount,
       // Ensure each match has a unique key
       key: `message-match-${otherUserId}-${index}`
@@ -107,7 +112,6 @@ const Messages = () => {
   
   // Find the active user based on the active match
   const activeMatch = Array.isArray(matches) ? matches.find(match => getOtherUserId(match) === activeMatchId) : undefined;
-  const matchData = activeMatch as unknown as Match;
   
   // Find the user object for the active match
   const activeUser = potentialMatches?.find(user => user.id === activeMatchId) || {
@@ -119,9 +123,15 @@ const Messages = () => {
 
   // Convert context messages to MessageChat component format
   const convertMessages = (contextMessages: MessageType[] | undefined): MessageChatMessageType[] => {
-    if (!contextMessages || !currentUser) return [];
+    if (!contextMessages || !currentUser || !Array.isArray(contextMessages)) return [];
     
-    return contextMessages.map(msg => ({
+    // Filter messages for the active match only
+    const activeMatchMessages = contextMessages.filter(msg => 
+      (msg.senderId === currentUser.id && msg.receiverId === activeMatchId) || 
+      (msg.senderId === activeMatchId && msg.receiverId === currentUser.id)
+    );
+    
+    return activeMatchMessages.map(msg => ({
       id: msg.id,
       content: msg.content,
       timestamp: new Date(msg.timestamp),
@@ -225,10 +235,8 @@ const Messages = () => {
     );
   }
 
-  // Safely get the messages for the active match and convert them
-  const activeMessages = activeMatchId && messages && messages[activeMatchId] 
-    ? convertMessages(messages[activeMatchId]) 
-    : [];
+  // Get all messages and convert them for the active match
+  const activeMessages = convertMessages(messages);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -453,4 +461,3 @@ const MessagesWithErrorBoundary = () => (
 );
 
 export default MessagesWithErrorBoundary;
-
