@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Dialog,
@@ -152,6 +153,7 @@ const CookieConsent = () => {
                 id="necessary" 
                 checked={consentOptions.necessary} 
                 disabled 
+                className="mt-0.5 border-gray-400"
               />
               <div className="space-y-1 leading-none">
                 <Label htmlFor="necessary" className="font-medium">
@@ -168,6 +170,7 @@ const CookieConsent = () => {
                 id="functional" 
                 checked={consentOptions.functional}
                 onCheckedChange={() => handleOptionChange('functional')}
+                className="mt-0.5 border-gray-400"
               />
               <div className="space-y-1 leading-none">
                 <Label htmlFor="functional" className="font-medium">
@@ -184,6 +187,7 @@ const CookieConsent = () => {
                 id="analytics" 
                 checked={consentOptions.analytics}
                 onCheckedChange={() => handleOptionChange('analytics')}
+                className="mt-0.5 border-gray-400"
               />
               <div className="space-y-1 leading-none">
                 <Label htmlFor="analytics" className="font-medium">
@@ -200,6 +204,7 @@ const CookieConsent = () => {
                 id="marketing" 
                 checked={consentOptions.marketing}
                 onCheckedChange={() => handleOptionChange('marketing')}
+                className="mt-0.5 border-gray-400"
               />
               <div className="space-y-1 leading-none">
                 <Label htmlFor="marketing" className="font-medium">
