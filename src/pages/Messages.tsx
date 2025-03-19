@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useUser, GiftInventory } from '@/context/UserContext';
+import { useUser, GiftInventory, Message as UserContextMessage } from '@/context/UserContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MessageList from '@/components/MessageList';
 import MessageChat from '@/components/MessageChat';
@@ -75,14 +75,14 @@ const Messages = () => {
     const otherUserId = getOtherUserId(match);
     const user = potentialMatches?.find(u => u.id === otherUserId);
     
-    // Check if messages[otherUserId] exists before trying to filter it
+    // Check if messages exists before trying to filter it
     const matchMessages = messages && Array.isArray(messages) 
       ? messages.filter(m => (m.senderId === otherUserId && m.receiverId === currentUser?.id) || 
                            (m.senderId === currentUser?.id && m.receiverId === otherUserId))
       : [];
       
     const unreadCount = matchMessages.filter(m => 
-      m.senderId === otherUserId && (m.read === false || m.isRead === false)
+      m.senderId === otherUserId && m.isRead === false
     ).length || 0;
     
     // Get the most recent message for this match
@@ -122,7 +122,7 @@ const Messages = () => {
   };
 
   // Convert context messages to MessageChat component format
-  const convertMessages = (contextMessages: MessageType[] | undefined): MessageChatMessageType[] => {
+  const convertMessages = (contextMessages: UserContextMessage[] | undefined): MessageChatMessageType[] => {
     if (!contextMessages || !currentUser || !Array.isArray(contextMessages)) return [];
     
     // Filter messages for the active match only
@@ -136,7 +136,7 @@ const Messages = () => {
       content: msg.content,
       timestamp: new Date(msg.timestamp),
       sender: msg.senderId === currentUser.id ? 'user' : 'match',
-      type: msg.type || 'text',
+      type: msg.giftType ? 'gift' : 'text',
       giftType: msg.giftType
     }));
   };
