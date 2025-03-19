@@ -39,7 +39,7 @@ const AdminMobileContainer = ({
   const [editingUser, setEditingUser] = useState<number | null>(null);
   const [userFormData, setUserFormData] = useState({});
   
-  // Hide export/import buttons
+  // Hide export/import buttons and fix overflow
   useEffect(() => {
     // Create a style element
     const style = document.createElement('style');
@@ -54,6 +54,46 @@ const AdminMobileContainer = ({
       .admin-dashboard button:contains("Export"),
       .admin-dashboard button:contains("Import") {
         display: none !important;
+      }
+      
+      /* Fix horizontal overflow issues */
+      .admin-dashboard {
+        max-width: 100vw !important;
+        overflow-x: hidden !important;
+      }
+      
+      /* Fix tables on mobile */
+      .admin-table-container {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .admin-horizontal-scroll {
+        max-width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+      }
+      
+      /* Adjust responsive grid layouts */
+      .admin-stats-grid {
+        width: 100%;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 8px;
+      }
+      
+      /* Fix overflowing content */
+      .admin-card, .admin-panel {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+      
+      /* Truncate long text */
+      .truncate-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       
       /* Smooth transitions for edit mode */
@@ -283,7 +323,7 @@ const AdminMobileContainer = ({
         className={cn(
           "admin-dashboard relative flex-1",
           scrollable ? "overflow-y-auto" : "",
-          preventOverflow ? "max-w-[100vw] overflow-x-hidden" : "",
+          "max-w-[100vw] overflow-x-hidden",
           breakpoint === 'xs' ? "pb-20" : "pb-16",
           className
         )}
@@ -292,7 +332,7 @@ const AdminMobileContainer = ({
         {isMobile && (
           <div className="sticky top-0 z-10 w-full bg-white shadow-md border-b p-3">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-gray-800">Admin Dashboard</h1>
+              <h1 className="text-xl font-bold text-gray-800 truncate-text">Admin Dashboard</h1>
               <button 
                 onClick={() => setMenuOpen(true)}
                 className="p-2 rounded-full hover:bg-gray-100"
@@ -306,11 +346,11 @@ const AdminMobileContainer = ({
         {/* Main content area */}
         <div className={cn(
           "w-full",
-          fullWidth ? "w-full" : "container mx-auto",
+          fullWidth ? "w-full" : "max-w-full mx-auto",
           padding ? "px-3 py-3 sm:px-4 sm:py-4" : ""
         )}>
-          {/* Stat Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          {/* Stat Cards - Fix grid for small screens */}
+          <div className="admin-stats-grid mb-4">
             <StatCard icon={<Users className="h-8 w-8 text-blue-500" />} title="Users" value="1,245" />
             <StatCard icon={<Bell className="h-8 w-8 text-blue-500" />} title="Alerts" value="18" />
             <StatCard icon={<BarChart2 className="h-8 w-8 text-blue-500" />} title="Matches" value="843" />
@@ -359,8 +399,8 @@ const AdminMobileContainer = ({
 const StatCard = ({ icon, title, value }) => (
   <div className="bg-white rounded-lg shadow-sm p-3 border flex flex-col items-center justify-center text-center">
     <div className="mb-1">{icon}</div>
-    <h3 className="text-sm font-medium text-gray-600">{title}</h3>
-    <p className="text-2xl font-bold">{value}</p>
+    <h3 className="text-sm font-medium text-gray-600 truncate-text">{title}</h3>
+    <p className="text-2xl font-bold truncate-text">{value}</p>
   </div>
 );
 
@@ -370,7 +410,7 @@ const BottomNavItem = ({ icon, label, active = false }) => (
     active ? "text-blue-500" : "text-gray-500 hover:text-blue-400"
   )}>
     {icon}
-    <span className="text-xs mt-1">{label}</span>
+    <span className="text-xs mt-1 truncate-text">{label}</span>
   </button>
 );
 

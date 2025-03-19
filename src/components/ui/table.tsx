@@ -14,8 +14,8 @@ const Table = React.forwardRef<
   return (
     <div className={cn(
       "relative w-full overflow-auto rounded-lg border bg-card", 
-      isMobile ? "overflow-x-auto -mx-0 px-0 sm:mx-0 sm:px-0" : "",
-      adminResponsive && isMobile ? "admin-horizontal-scroll shadow-sm" : ""
+      isMobile ? "overflow-x-auto max-w-full" : "",
+      adminResponsive && isMobile ? "admin-horizontal-scroll shadow-sm max-w-full" : ""
     )}>
       <table
         ref={ref}
@@ -81,7 +81,7 @@ const TableRow = React.forwardRef<
       className={cn(
         "transition-colors data-[state=selected]:bg-muted",
         adminResponsive && isMobile 
-          ? "block sm:table-row border-b rounded-lg mb-2 sm:mb-0 sm:rounded-none bg-card even:bg-muted/30" 
+          ? "block sm:table-row border-b rounded-lg mb-2 sm:mb-0 sm:rounded-none bg-card even:bg-muted/30 max-w-full" 
           : "border-b hover:bg-muted/50",
         clickable ? "cursor-pointer active:bg-muted" : "",
         className
@@ -133,8 +133,8 @@ const TableCell = React.forwardRef<
       className={cn(
         "p-3 align-middle [&:has([role=checkbox])]:pr-0",
         (isMobile && mobileLabel && adminResponsive) ? 
-          "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:text-xs before:uppercase before:text-primary/70 before:sm:hidden before:inline-block before:mb-1 before:w-full" : 
-          (isMobile && mobileLabel) ? "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:mr-2 before:inline-block sm:before:hidden" : "",
+          "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:text-xs before:uppercase before:text-primary/70 before:sm:hidden before:inline-block before:mb-1 before:w-full truncate-text" : 
+          (isMobile && mobileLabel) ? "block w-full sm:table-cell before:content-[attr(data-label)] before:font-medium before:mr-2 before:inline-block sm:before:hidden truncate-text" : "",
         (isMobile && hideOnMobile) ? "hidden sm:table-cell" : "",
         (isMobile && highlightInMobile) ? "font-medium text-foreground" : "",
         className
