@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Heart, Menu, X, ShieldCheck, LogIn, LogOut } from 'lucide-react';
@@ -7,7 +6,7 @@ import { useUser } from '@/context/UserContext';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { currentUser, logoutUser } = useUser();
+  const { currentUser, logout } = useUser();
   const location = useLocation();
   
   const isActive = (path: string) => {
@@ -21,7 +20,7 @@ const Header = () => {
   const isPrimaryAdmin = currentUser?.email === 'hunainm.qureshi@gmail.com';
   
   const handleLogout = () => {
-    logoutUser();
+    logout();
   };
   
   return (
