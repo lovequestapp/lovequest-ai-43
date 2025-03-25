@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -101,7 +102,7 @@ export default {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)',
-				'circle': '50%'  // Add explicit circle radius
+				'circle': '50%'
 			},
 			keyframes: {
 				'accordion-down': {

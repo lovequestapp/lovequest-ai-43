@@ -524,12 +524,12 @@
 @layer components {
   /* Ensure circular UI elements */
   .circular {
-    @apply aspect-square rounded-full overflow-hidden;
+    @apply rounded-full overflow-hidden;
   }
   
   /* Fix for navigation dots */
   .navigation-dot {
-    @apply w-2 h-2 rounded-full bg-gray-300 aspect-square overflow-hidden transition-all duration-200;
+    @apply w-2 h-2 rounded-full bg-gray-300 transition-all duration-200;
   }
   
   .navigation-dot.active {
@@ -538,6 +538,6 @@
   
   /* Circular buttons */
   .btn-circle {
-    @apply rounded-full aspect-square flex items-center justify-center;
+    @apply rounded-full flex items-center justify-center;
   }
 }
