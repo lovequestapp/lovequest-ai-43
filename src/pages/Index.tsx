@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -647,4 +648,23 @@ const Index = () => {
                   {faqs.map((faq, index) => (
                     <AccordionItem key={index} value={`item-${index}`} className={index > 0 ? 'border-t border-love-100' : ''}>
                       <AccordionTrigger className="px-6 py-4 hover:bg-love-50/50">
-                        <span className="text-left font-medium">{faq.
+                        <span className="text-left font-medium">{faq.question}</span>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-6 py-4 text-gray-700">
+                        {faq.answer}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
+            </section>
+          </>
+        )}
+      </main>
+      
+      <Footer />
+    </div>
+  );
+};
+
+export default Index;
