@@ -37,16 +37,38 @@ import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useUser } from '@/context/UserContext';
 
 const Index = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const navigate = useNavigate();
+  const { currentUser } = useUser();
   
   const handleQuizComplete = (results: Record<string, string>) => {
     console.log('Quiz results:', results);
-    // In a real app, we would save these results to the user profile
-    navigate('/discover');
+    // If user is not logged in, redirect to signup with return to quiz
+    if (!currentUser) {
+      navigate('/signup', { state: { returnToQuiz: true, quizResults: results } });
+    } else {
+      // In a real app, we would save these results to the user profile
+      navigate('/discover');
+    }
+  };
+  
+  const handleTakeQuiz = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowQuiz(true);
+  };
+  
+  const handleSignUp = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate('/signup');
+  };
+  
+  const handleSafetyInfoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate('/safety');
   };
   
   const handleBannerClick = () => {
@@ -220,10 +242,7 @@ const Index = () => {
                 
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 pointer-events-auto">
                   <Button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowQuiz(true);
-                    }}
+                    onClick={handleTakeQuiz}
                     className="text-lg py-6 px-8 rounded-full bg-gradient-love hover:opacity-90 shadow-md w-full sm:w-auto"
                     size="lg"
                   >
@@ -231,18 +250,20 @@ const Index = () => {
                     Take the Compatibility Quiz
                   </Button>
                   
-                  <Link to="/signup" onClick={(e) => e.stopPropagation()}>
-                    <Button 
-                      className="text-lg py-6 px-8 rounded-full bg-white text-love-600 border border-love-200 hover:bg-love-50 shadow-md w-full sm:w-auto"
-                      size="lg"
-                    >
-                      <UserCheck size={20} className="mr-2" />
-                      Sign Up Now
-                    </Button>
-                  </Link>
+                  <Button 
+                    onClick={handleSignUp}
+                    className="text-lg py-6 px-8 rounded-full bg-white text-love-600 border border-love-200 hover:bg-love-50 shadow-md w-full sm:w-auto"
+                    size="lg"
+                  >
+                    <UserCheck size={20} className="mr-2" />
+                    Sign Up Now
+                  </Button>
                 </div>
                 
-                <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4 inline-block shadow-md pointer-events-auto">
+                <div 
+                  className="bg-white/90 backdrop-blur-sm rounded-lg p-4 inline-block shadow-md pointer-events-auto cursor-pointer hover:bg-white/100 transition-colors"
+                  onClick={handleSafetyInfoClick}
+                >
                   <p className="text-sm font-medium text-love-700 flex items-center">
                     <Shield size={16} className="mr-2 text-love-500" />
                     All profiles are verified for your safety

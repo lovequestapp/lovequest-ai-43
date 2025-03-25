@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Sparkles } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { useUser } from '@/context/UserContext';
 
 interface QuizQuestion {
   id: string;
@@ -105,6 +106,7 @@ const CompatibilityQuiz: React.FC<CompatibilityQuizProps> = ({ onComplete }) => 
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [textInput, setTextInput] = useState("");
+  const { currentUser } = useUser();
   
   const handleNext = () => {
     const currentQuestionData = quizQuestions[currentQuestion];
@@ -178,6 +180,7 @@ const CompatibilityQuiz: React.FC<CompatibilityQuizProps> = ({ onComplete }) => 
         </div>
         <CardDescription>
           Answer these questions to help our AI find your perfect match
+          {!currentUser && ' (you\'ll need to create an account to see your matches)'}
         </CardDescription>
         <Progress value={progress} className="h-2 bg-gray-100" />
       </CardHeader>
@@ -232,7 +235,7 @@ const CompatibilityQuiz: React.FC<CompatibilityQuizProps> = ({ onComplete }) => 
           disabled={!buttonEnabled}
           className="w-full bg-gradient-love hover:opacity-90"
         >
-          {currentQuestion < quizQuestions.length - 1 ? 'Next Question' : 'Complete Quiz'}
+          {currentQuestion < quizQuestions.length - 1 ? 'Next Question' : currentUser ? 'Complete Quiz' : 'Complete & Sign Up'}
         </Button>
       </CardFooter>
     </Card>
