@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -47,6 +46,10 @@ const Index = () => {
     console.log('Quiz results:', results);
     // In a real app, we would save these results to the user profile
     navigate('/discover');
+  };
+  
+  const handleBannerClick = () => {
+    navigate('/signup');
   };
   
   const features = [
@@ -194,26 +197,32 @@ const Index = () => {
           </div>
         ) : (
           <>
-            <section className="py-16 md:py-24 px-4 text-center relative overflow-hidden">
+            <section 
+              className="py-16 md:py-24 px-4 text-center relative overflow-hidden cursor-pointer"
+              onClick={handleBannerClick}
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-love-50 to-passion-50 -z-10" />
               <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_var(--love-100),transparent_70%)]" />
               
               <div className="max-w-4xl mx-auto">
-                <div className="inline-block bg-white p-2 rounded-full mb-6 shadow-md">
+                <div className="inline-block bg-white p-2 rounded-full mb-6 shadow-md pointer-events-auto">
                   <Heart size={40} className="text-love-500" />
                 </div>
                 
-                <h1 className="text-4xl md:text-6xl font-display font-bold mb-6 bg-gradient-love text-transparent bg-clip-text">
+                <h1 className="text-4xl md:text-6xl font-display font-bold mb-6 bg-gradient-love text-transparent bg-clip-text pointer-events-auto">
                   Find Your Perfect Match with AI
                 </h1>
                 
-                <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
+                <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto pointer-events-auto">
                   Experience a smarter way to date. Our AI algorithm finds deep compatibility beyond just photos and profiles.
                 </p>
                 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 pointer-events-auto">
                   <Button 
-                    onClick={() => setShowQuiz(true)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowQuiz(true);
+                    }}
                     className="text-lg py-6 px-8 rounded-full bg-gradient-love hover:opacity-90 shadow-md w-full sm:w-auto"
                     size="lg"
                   >
@@ -221,7 +230,7 @@ const Index = () => {
                     Take the Compatibility Quiz
                   </Button>
                   
-                  <Link to="/signup">
+                  <Link to="/signup" onClick={(e) => e.stopPropagation()}>
                     <Button 
                       className="text-lg py-6 px-8 rounded-full bg-white text-love-600 border border-love-200 hover:bg-love-50 shadow-md w-full sm:w-auto"
                       size="lg"
@@ -232,7 +241,7 @@ const Index = () => {
                   </Link>
                 </div>
                 
-                <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4 inline-block shadow-md">
+                <div className="bg-white/90 backdrop-blur-sm rounded-lg p-4 inline-block shadow-md pointer-events-auto">
                   <p className="text-sm font-medium text-love-700 flex items-center">
                     <Shield size={16} className="mr-2 text-love-500" />
                     All profiles are verified for your safety
@@ -638,93 +647,4 @@ const Index = () => {
                   {faqs.map((faq, index) => (
                     <AccordionItem key={index} value={`item-${index}`} className={index > 0 ? 'border-t border-love-100' : ''}>
                       <AccordionTrigger className="px-6 py-4 hover:bg-love-50/50">
-                        <span className="text-left font-medium">{faq.question}</span>
-                      </AccordionTrigger>
-                      <AccordionContent className="px-6 pb-4 pt-2 text-gray-700">
-                        {faq.answer}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-                
-                <div className="text-center mt-10">
-                  <p className="mb-4 text-gray-600">Still have questions?</p>
-                  <Link to="/contact">
-                    <Button variant="outline" className="border-love-200">
-                      Contact Support
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </section>
-            
-            {/* Press & Recognition */}
-            <section className="py-12 px-4 bg-white border-t border-love-100">
-              <div className="max-w-6xl mx-auto">
-                <div className="text-center mb-8">
-                  <h3 className="text-xl font-semibold text-gray-600">Featured In</h3>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center">
-                  {pressLogos.map((press, index) => (
-                    <div key={index} className="text-center">
-                      <div className="text-xl md:text-2xl font-display font-bold text-gray-400">{press.name}</div>
-                      <p className="text-sm text-gray-500 italic">"{press.quote}"</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-            
-            {/* Enhanced CTA Section */}
-            <section className="py-16 md:py-24 px-4 bg-gradient-to-br from-love-50 to-passion-50 relative overflow-hidden">
-              <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_bottom_right,_var(--love-100),transparent_70%)]" />
-              
-              <div className="max-w-4xl mx-auto text-center relative z-10">
-                <h2 className="text-3xl md:text-5xl font-display font-bold mb-6">
-                  Ready to Find <span className="bg-gradient-love text-transparent bg-clip-text">True Love</span>?
-                </h2>
-                
-                <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
-                  Join thousands who've found meaningful connections through our AI-powered matching.
-                </p>
-                
-                <div className="flex flex-col sm:flex-row justify-center gap-4">
-                  <Button 
-                    onClick={() => setShowQuiz(true)}
-                    className="text-lg py-6 px-8 rounded-full bg-gradient-love hover:opacity-90 shadow-md"
-                    size="lg"
-                  >
-                    <Heart size={20} className="mr-2" />
-                    Start Your Love Journey
-                  </Button>
-                  
-                  <Link to="/signup">
-                    <Button 
-                      className="text-lg py-6 px-8 rounded-full bg-white text-love-600 border border-love-200 hover:bg-love-50 shadow-md"
-                      size="lg"
-                    >
-                      <UserCheck size={20} className="mr-2" />
-                      Create Your Account
-                    </Button>
-                  </Link>
-                </div>
-                
-                <div className="mt-10 text-center">
-                  <p className="text-gray-600 flex items-center justify-center gap-2">
-                    <Lock size={16} />
-                    Your privacy is our priority. We never share your data.
-                  </p>
-                </div>
-              </div>
-            </section>
-          </>
-        )}
-      </main>
-      
-      <Footer />
-    </div>
-  );
-};
-
-export default Index;
+                        <span className="text-left font-medium">{faq.
