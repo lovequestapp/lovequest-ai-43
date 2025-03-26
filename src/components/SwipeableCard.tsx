@@ -57,7 +57,6 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       const profile = profiles[index];
       // Only call onSwipe if we have a valid profile
       if (profile && profile.id) {
-        // Fixed: Calling onSwipe function properly
         onSwipe(profile.id, dir > 0 ? 'right' : 'left');
       }
     }
@@ -115,7 +114,6 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     // Then call onSwipe separately, not inside the api.start callback
     // Make sure we have a valid profile before calling onSwipe
     if (profiles && index < profiles.length && profiles[index] && profiles[index].id) {
-      // Fixed: Calling onSwipe function correctly without trying to capture a return value
       onSwipe(profiles[index].id, direction);
     }
     
