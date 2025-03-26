@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
@@ -95,13 +96,11 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     const dir = direction === 'left' ? -1 : 1;
     gone.add(index);
     
+    // First update the UI animation without calling onSwipe inside
     api.start(i => {
       if (index !== i) return;
       const x = (200 + window.innerWidth) * dir;
       const rot = dir * 10;
-      
-      // FIX: Don't call onSwipe within api.start, just use it directly
-      // This avoids trying to use a void return value as a function
       
       return {
         x,
@@ -112,8 +111,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       };
     });
     
-    // MOVED: Call onSwipe outside the api.start to fix the TypeScript error
-    if (profiles && profiles.length > index && profiles[index] && profiles[index].id) {
+    // Then call onSwipe separately, not trying to use its return value
+    // Make sure we have a valid profile before calling onSwipe
+    if (profiles && index < profiles.length && profiles[index] && profiles[index].id) {
       onSwipe(profiles[index].id, direction);
     }
     
