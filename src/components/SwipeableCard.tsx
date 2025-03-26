@@ -1,35 +1,10 @@
-
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
-import { Badge } from "@/components/ui/badge";
-import { 
-  Heart, 
-  X,
-  Sparkles,
-  Crown,
-  Globe,
-  MapPin,
-  ArrowLeft,
-  ArrowRight
-} from 'lucide-react';
-import { Button } from "@/components/ui/button";
-import { cn } from '@/lib/utils';
-
-// Define the card styles and properties
-const to = (i: number) => ({
-  x: 0,
-  y: i * -4,
-  scale: 1,
-  rot: -10 + Math.random() * 20,
-  delay: i * 100,
-});
-
-const from = (_i: number) => ({ x: 0, rot: 0, scale: 1.5, y: -1000 });
-
-// Transform when card is being dragged
-const trans = (r: number, s: number) =>
-  `perspective(1500px) rotateX(10deg) rotateY(${r / 10}deg) rotateZ(${r}deg) scale(${s})`;
+import CardContent from './CardContent';
+import ActionButtons from './ActionButtons';
+import SwipeHints from './SwipeHints';
+import { to, from, trans, getVelocityValue } from './CardAnimation';
 
 export interface SwipeableCardProps {
   profiles: any[];
@@ -47,8 +22,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
 
   // Create a drag handler for the cards
   const bind = useDrag(({ args: [index], active, movement: [mx], direction: [xDir], velocity }) => {
-    // Fix #1: Convert Vector2 velocity to number by checking its magnitude
-    const velocityValue = typeof velocity === 'number' ? velocity : Math.sqrt(velocity[0] * velocity[0] + velocity[1] * velocity[1]);
+    // Convert Vector2 velocity to number by checking its magnitude
+    const velocityValue = getVelocityValue(velocity);
     const trigger = velocityValue > 0.2; // Minimum velocity to trigger swipe
     const dir = xDir < 0 ? -1 : 1; // Direction is either left or right
     
@@ -68,7 +43,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       // When a card is gone, fly it out
       const x = isGone ? (200 + window.innerWidth) * dir : active ? mx : 0;
       
-      // Fix #2: Ensure numeric operation by explicitly converting mx to number
+      // Ensure numeric operation by explicitly converting mx to number
       const rot = (typeof mx === 'number' ? mx : 0) / 100 + (isGone ? dir * 10 * velocityValue : 0);
       
       // Scale up slightly when active
@@ -92,7 +67,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     }
   });
 
-  const handleButtonSwipe = (direction: 'left' | 'right', index: number = 0) => {
+  const handleButtonSwipe = (direction: 'left' | 'right') => {
+    const index = 0; // Always handle the top card
     const dir = direction === 'left' ? -1 : 1;
     gone.add(index);
     
@@ -111,8 +87,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       };
     });
     
-    // Then call onSwipe separately, not inside the api.start callback
-    // Make sure we have a valid profile before calling onSwipe
+    // Then call onSwipe separately
     if (profiles && index < profiles.length && profiles[index] && profiles[index].id) {
       onSwipe(profiles[index].id, direction);
     }
@@ -128,15 +103,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
   
   return (
     <div className="relative w-full h-[60vh] flex items-center justify-center">
-      {/* Swipe hint arrows */}
-      <div className="absolute top-1/2 -translate-y-1/2 left-4 text-muted-foreground/30 hidden md:block">
-        <ArrowLeft size={32} />
-        <div className="mt-2 text-xs font-medium text-center">PASS</div>
-      </div>
-      <div className="absolute top-1/2 -translate-y-1/2 right-4 text-love-400/30 hidden md:block">
-        <ArrowRight size={32} />
-        <div className="mt-2 text-xs font-medium text-center">LIKE</div>
-      </div>
+      <SwipeHints />
       
       {props.map(({ x, y, rot, scale }, i) => (
         <animated.div
@@ -159,103 +126,16 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
             }}
             className="relative cursor-grab active:cursor-grabbing"
           >
-            {/* Boost badge if profile is boosted */}
-            {profiles[i]?.isBoosted && (
-              <div className="absolute top-3 right-3 z-10">
-                <Badge className={`py-1 px-3 flex items-center gap-1 ${
-                  profiles[i].boostLevel === 'super' 
-                    ? 'bg-amber-500 text-amber-950 border-amber-600' 
-                    : profiles[i].boostLevel === 'international'
-                      ? 'bg-purple-500 text-white'
-                      : profiles[i].boostLevel === 'local'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gradient-love text-white'
-                }`}>
-                  {profiles[i].boostLevel === 'super' ? (
-                    <Crown size={14} className="mr-1" />
-                  ) : profiles[i].boostLevel === 'international' ? (
-                    <Globe size={14} className="mr-1" />
-                  ) : profiles[i].boostLevel === 'local' ? (
-                    <MapPin size={14} className="mr-1" />
-                  ) : (
-                    <Sparkles size={14} className="mr-1" />
-                  )}
-                  {profiles[i].boostLevel === 'super' ? 'Super Popular' : 
-                    profiles[i].boostLevel === 'international' ? 'International Boost' :
-                    profiles[i].boostLevel === 'local' ? 'Local Boost' : 'Popular'}
-                </Badge>
-              </div>
-            )}
-            
-            {/* Card content overlay */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white rounded-b-[16px]">
-              <h3 className="text-2xl font-semibold font-display">
-                {profiles[i]?.name}, {profiles[i]?.age}
-              </h3>
-              
-              <div className="flex items-center text-white/80 mb-2">
-                <MapPin size={14} className="mr-1" />
-                <span className="text-sm">{profiles[i]?.location}</span>
-              </div>
-              
-              {profiles[i]?.compatibilityScore && (
-                <div className="mb-3">
-                  <div className="flex items-center gap-1 text-sm">
-                    <Sparkles size={14} className="text-love-300" />
-                    <span className="font-medium">Match: {profiles[i].compatibilityScore}%</span>
-                  </div>
-                  <div className="w-full bg-gray-700/50 rounded-full h-1.5 mt-1">
-                    <div 
-                      className="bg-gradient-to-r from-love-400 to-love-600 h-1.5 rounded-full" 
-                      style={{ width: `${profiles[i].compatibilityScore}%` }}
-                    ></div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Interests tags */}
-              {profiles[i]?.interests && profiles[i].interests.length > 0 && (
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {profiles[i].interests.slice(0, 3).map((interest: string, idx: number) => (
-                    <Badge 
-                      key={idx} 
-                      variant="secondary" 
-                      className="bg-white/10 border-0 text-white/90 text-xs"
-                    >
-                      {interest}
-                    </Badge>
-                  ))}
-                  {profiles[i].interests.length > 3 && (
-                    <Badge variant="secondary" className="bg-white/10 border-0 text-white/90 text-xs">
-                      +{profiles[i].interests.length - 3}
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </div>
+            <CardContent profile={profiles[i]} index={i} />
           </animated.div>
         </animated.div>
       ))}
       
-      {/* Action buttons - non-circular styles */}
-      {profiles.length > 0 && (
-        <div className="absolute bottom-[-70px] left-0 right-0 flex justify-center gap-6">
-          <Button 
-            variant="outline"
-            className="h-12 w-12 sm:h-14 sm:w-16 bg-white border-gray-200 shadow-md hover:bg-gray-100"
-            onClick={() => handleButtonSwipe('left', 0)}
-          >
-            <X size={24} className="text-gray-500" />
-          </Button>
-          
-          <Button 
-            className="h-12 w-12 sm:h-14 sm:w-16 bg-gradient-love hover:opacity-90 shadow-md"
-            onClick={() => handleButtonSwipe('right', 0)}
-          >
-            <Heart size={24} />
-          </Button>
-        </div>
-      )}
+      <ActionButtons 
+        profilesLength={profiles.length} 
+        onSwipeLeft={() => handleButtonSwipe('left')}
+        onSwipeRight={() => handleButtonSwipe('right')}
+      />
     </div>
   );
 };

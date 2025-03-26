@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import Home from './pages/home';
 import Register from './pages/register';
 import Login from './pages/Login';
@@ -9,52 +9,47 @@ import Messages from './pages/Messages';
 import EditProfile from './pages/edit-profile';
 import Discover from './pages/discover';
 import ProtectedRoute from './components/protected-route';
-import { UserProvider } from './context/UserContext';
 import './index.css';
 
 function App() {
   return (
-    <UserProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route 
-            path="/profile/:userId" 
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/messages/:userId" 
-            element={
-              <ProtectedRoute>
-                <Messages />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/edit-profile" 
-            element={
-              <ProtectedRoute>
-                <EditProfile />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/discover" 
-            element={
-              <ProtectedRoute>
-                <Discover />
-              </ProtectedRoute>
-            } 
-          />
-        </Routes>
-      </Router>
-    </UserProvider>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Login />} />
+      <Route 
+        path="/profile/:userId" 
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/messages/:userId" 
+        element={
+          <ProtectedRoute>
+            <Messages />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/edit-profile" 
+        element={
+          <ProtectedRoute>
+            <EditProfile />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/discover" 
+        element={
+          <ProtectedRoute>
+            <Discover />
+          </ProtectedRoute>
+        } 
+      />
+    </Routes>
   );
 }
 
