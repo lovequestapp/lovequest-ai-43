@@ -69,6 +69,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
   });
 
   const handleButtonSwipe = (direction: 'left' | 'right') => {
+    // Only proceed if there are profiles to swipe
+    if (!profiles || profiles.length === 0) return;
+    
     const index = 0; // Always handle the top card
     const dir = direction === 'left' ? -1 : 1;
     gone.add(index);
@@ -88,8 +91,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       };
     });
     
-    // Then call onSwipe separately
+    // Then call onSwipe separately (make sure to check if the profile exists)
     if (profiles && profiles.length > 0 && profiles[index] && profiles[index].id) {
+      // Call onSwipe directly as a function
       onSwipe(profiles[index].id, direction);
     }
     
