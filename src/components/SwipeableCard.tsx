@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
@@ -101,11 +100,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       const x = (200 + window.innerWidth) * dir;
       const rot = dir * 10;
       
-      // Critical fix: Call onSwipe directly and don't try to use its return value
-      if (profiles && profiles.length > index && profiles[index] && profiles[index].id) {
-        // Just call onSwipe without storing or using its return value
-        onSwipe(profiles[index].id, direction);
-      }
+      // FIX: Don't call onSwipe within api.start, just use it directly
+      // This avoids trying to use a void return value as a function
       
       return {
         x,
@@ -115,6 +111,11 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
         config: { friction: 50, tension: 200 },
       };
     });
+    
+    // MOVED: Call onSwipe outside the api.start to fix the TypeScript error
+    if (profiles && profiles.length > index && profiles[index] && profiles[index].id) {
+      onSwipe(profiles[index].id, direction);
+    }
     
     // If all cards are gone, reset
     if (gone.size === profiles.length) {
