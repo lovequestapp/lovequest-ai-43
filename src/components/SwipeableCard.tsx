@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
@@ -47,7 +46,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
 
   // Create a drag handler for the cards
   const bind = useDrag(({ args: [index], active, movement: [mx], direction: [xDir], velocity }) => {
-    const trigger = velocity > 0.2; // Minimum velocity to trigger swipe
+    // Fix #1: Convert Vector2 velocity to number by checking its magnitude
+    const velocityValue = typeof velocity === 'number' ? velocity : Math.sqrt(velocity[0] * velocity[0] + velocity[1] * velocity[1]);
+    const trigger = velocityValue > 0.2; // Minimum velocity to trigger swipe
     const dir = xDir < 0 ? -1 : 1; // Direction is either left or right
     
     if (!active && trigger) {
@@ -63,8 +64,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       // When a card is gone, fly it out
       const x = isGone ? (200 + window.innerWidth) * dir : active ? mx : 0;
       
-      // Rotation based on drag distance
-      const rot = mx / 100 + (isGone ? dir * 10 * velocity : 0);
+      // Fix #2: Ensure numeric operation by explicitly converting mx to number
+      const rot = (typeof mx === 'number' ? mx : 0) / 100 + (isGone ? dir * 10 * velocityValue : 0);
       
       // Scale up slightly when active
       const scale = active ? 1.05 : 1;
@@ -91,11 +92,13 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     const dir = direction === 'left' ? -1 : 1;
     gone.add(index);
     
+    // Fix #3: Make sure we correctly use the api.start method
     api.start(i => {
       if (index !== i) return;
       const x = (200 + window.innerWidth) * dir;
       const rot = dir * 10;
       
+      // Call onSwipe separately, not as part of the return value
       onSwipe(profiles[index].id, direction);
       
       return {
@@ -116,6 +119,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     }
   };
 
+  
   return (
     <div className="relative w-full h-[60vh] flex items-center justify-center">
       {/* Swipe hint arrows */}

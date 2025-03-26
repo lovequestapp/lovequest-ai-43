@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 
 // Get Stripe key from environment variable
@@ -93,6 +92,11 @@ export const boostProducts: BoostProduct[] = [
 
 const isStripeConfigured = !!stripePublishableKey && stripePublishableKey !== 'YOUR_STRIPE_PUBLISHABLE_KEY';
 
+// Type definition for window.Stripe
+interface Window {
+  Stripe?: (key: string) => any;
+}
+
 export const paymentService = {
   /**
    * Check if Stripe is properly configured
@@ -109,7 +113,8 @@ export const paymentService = {
     }
     
     try {
-      if (!window.Stripe) {
+      // Fix: Add proper type checking for window.Stripe
+      if (!(window as any).Stripe) {
         // Load Stripe.js dynamically if not already available
         const script = document.createElement('script');
         script.src = 'https://js.stripe.com/v3/';
@@ -118,14 +123,14 @@ export const paymentService = {
         
         return new Promise((resolve) => {
           script.onload = () => {
-            // @ts-ignore - Stripe will be defined after script loads
-            const stripe = window.Stripe(stripePublishableKey);
+            // Use type assertion to access Stripe
+            const stripe = (window as any).Stripe(stripePublishableKey);
             resolve(stripe);
           };
         });
       } else {
-        // @ts-ignore - Stripe is already loaded
-        return window.Stripe(stripePublishableKey);
+        // Use type assertion to access Stripe
+        return (window as any).Stripe(stripePublishableKey);
       }
     } catch (error) {
       console.error('Error initializing Stripe:', error);
@@ -133,6 +138,7 @@ export const paymentService = {
     }
   },
 
+  
   /**
    * Create a checkout session for subscription
    */
