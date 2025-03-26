@@ -7,7 +7,7 @@ import Footer from '@/components/Footer';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
 
-// Import our new components
+// Import our components
 import Hero from '@/components/homepage/Hero';
 import AppPreview from '@/components/homepage/AppPreview';
 import HowItWorks from '@/components/homepage/HowItWorks';
