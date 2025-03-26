@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 /**
@@ -16,6 +16,23 @@ export const useProtectedRoute = (options: { requireAuth?: boolean } = {}) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        const isAuthenticated = !!session;
+        setIsAuth(isAuthenticated);
+        
+        if (requireAuth && !isAuthenticated) {
+          // Use setTimeout to avoid potential auth deadlocks
+          setTimeout(() => {
+            toast.error("Please log in to access this page");
+            navigate('/login');
+          }, 0);
+        }
+      }
+    );
+
+    // THEN check for existing session
     const checkAuth = async () => {
       try {
         const { data } = await supabase.auth.getSession();
@@ -35,19 +52,6 @@ export const useProtectedRoute = (options: { requireAuth?: boolean } = {}) => {
         }
       }
     };
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        const isAuthenticated = !!session;
-        setIsAuth(isAuthenticated);
-        
-        if (requireAuth && !isAuthenticated) {
-          toast.error("Please log in to access this page");
-          navigate('/login');
-        }
-      }
-    );
 
     // Initial auth check
     checkAuth();

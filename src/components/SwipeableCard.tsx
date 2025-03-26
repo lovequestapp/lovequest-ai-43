@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
@@ -54,8 +55,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     if (!active && trigger) {
       gone.add(index);
       const profile = profiles[index];
+      // Only call onSwipe if we have a valid profile
       if (profile && profile.id) {
-        // Call onSwipe directly, don't store the result
+        // Fix: Don't try to store the result of onSwipe
         onSwipe(profile.id, dir > 0 ? 'right' : 'left');
       }
     }

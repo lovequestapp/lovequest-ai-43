@@ -17,7 +17,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Check if Supabase is properly configured
 export const getSupabaseStatus = () => ({
   isConfigured: true,
-  url: 'Connected'
+  url: supabaseUrl
 });
 
 // Authenticate with email and password

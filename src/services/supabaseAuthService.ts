@@ -7,6 +7,26 @@ interface AuthCredentials {
   password: string;
 }
 
+// Define a type that matches our database structure
+interface ProfileRecord {
+  id: string;
+  name: string | null;
+  age: number | null;
+  email: string | null;
+  bio: string | null;
+  location: string | null;
+  interests: string[] | null;
+  gender: string | null;
+  interested_in: string[] | null;
+  premium_status: string | null;
+  photos: string[] | null;
+  popularity_points: number | null;
+  personality_traits: string[] | null;
+  is_verified: boolean | null;
+  is_banned: boolean | null;
+  role: string | null;
+}
+
 export const supabaseAuthService = {
   /**
    * Register a new user with Supabase
@@ -33,27 +53,25 @@ export const supabaseAuthService = {
       if (error) throw error;
       
       if (data?.user) {
-        // Create a user profile in Supabase
+        // The profile is created automatically via database trigger
+        // Let's update it with additional data
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([
-            {
-              id: data.user.id,
-              name: userData.name,
-              age: userData.age,
-              email: credentials.email,
-              bio: userData.bio || '',
-              location: userData.location || '',
-              interests: userData.interests || [],
-              gender: userData.gender || 'non-binary',
-              interested_in: userData.interestedIn || [],
-              premium_status: 'basic',
-              photos: userData.photos || [],
-              popularity_points: 0,
-              personality_traits: userData.personalityTraits || [],
-              is_verified: userData.verificationId ? true : false,
-            }
-          ]);
+          .update({
+            name: userData.name,
+            age: userData.age,
+            bio: userData.bio || '',
+            location: userData.location || '',
+            interests: userData.interests || [],
+            gender: userData.gender || 'non-binary',
+            interested_in: userData.interestedIn || [],
+            premium_status: 'basic',
+            photos: userData.photos || [],
+            popularity_points: 0,
+            personality_traits: userData.personalityTraits || [],
+            is_verified: false,
+          })
+          .eq('id', data.user.id);
           
         if (profileError) throw profileError;
         
@@ -77,7 +95,7 @@ export const supabaseAuthService = {
           personalityTraits: userData.personalityTraits || [],
           role: 'subscriber',
           isBanned: false,
-          verificationStatus: userData.verificationId ? 'verified' : 'unverified',
+          verificationStatus: 'unverified',
         };
       }
       
@@ -110,27 +128,47 @@ export const supabaseAuthService = {
           
         if (profileError) throw profileError;
         
+        // Handle missing profile data with defaults
+        const profile = profileData as ProfileRecord || {
+          id: data.user.id,
+          name: null,
+          age: null,
+          email: data.user.email,
+          bio: null,
+          location: null,
+          interests: [],
+          gender: 'non-binary',
+          interested_in: [],
+          premium_status: 'basic',
+          photos: [],
+          popularity_points: 0,
+          personality_traits: [],
+          is_verified: false,
+          is_banned: false,
+          role: 'subscriber'
+        };
+        
         // Return the user data
         return {
           id: data.user.id,
-          name: profileData.name,
+          name: profile.name || 'User',
           email: data.user.email || '',
-          age: profileData.age,
-          bio: profileData.bio || '',
-          location: profileData.location || '',
-          interests: profileData.interests || [],
-          photos: profileData.photos || [],
-          gender: profileData.gender || 'non-binary',
-          interestedIn: profileData.interested_in || [],
-          popularityPoints: profileData.popularity_points || 0,
-          premiumStatus: profileData.premium_status || 'basic',
+          age: profile.age || 25,
+          bio: profile.bio || '',
+          location: profile.location || '',
+          interests: profile.interests || [],
+          photos: profile.photos || [],
+          gender: (profile.gender || 'non-binary') as 'male' | 'female' | 'non-binary',
+          interestedIn: profile.interested_in || [],
+          popularityPoints: profile.popularity_points || 0,
+          premiumStatus: (profile.premium_status || 'basic') as 'basic' | 'premium' | 'vip',
           giftInventory: { rose: 0, heart: 0, teddy: 0 },
           receivedGifts: { rose: 0, heart: 0, teddy: 0 },
           compatibilityScore: 0,
-          personalityTraits: profileData.personality_traits || [],
-          role: profileData.role || 'subscriber',
-          isBanned: profileData.is_banned || false,
-          verificationStatus: profileData.is_verified ? 'verified' : 'unverified',
+          personalityTraits: profile.personality_traits || [],
+          role: (profile.role || 'subscriber') as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial',
+          isBanned: profile.is_banned || false,
+          verificationStatus: profile.is_verified ? 'verified' : 'unverified',
         };
       }
       
@@ -180,29 +218,45 @@ export const supabaseAuthService = {
           .eq('id', data.user.id)
           .single();
           
-        if (profileError) throw profileError;
+        if (profileError) {
+          // If there's an error but the user exists in auth, create a basic profile
+          return {
+            id: data.user.id,
+            name: data.user.email?.split('@')[0] || 'User',
+            email: data.user.email || '',
+            interests: [],
+            popularityPoints: 0,
+            premiumStatus: 'basic',
+            giftInventory: { rose: 0, heart: 0, teddy: 0 },
+            receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+            interestedIn: []
+          };
+        }
+        
+        // Handle missing profile data with defaults
+        const profile = profileData as ProfileRecord;
         
         // Return the user data
         return {
           id: data.user.id,
-          name: profileData.name,
+          name: profile.name || 'User',
           email: data.user.email || '',
-          age: profileData.age,
-          bio: profileData.bio || '',
-          location: profileData.location || '',
-          interests: profileData.interests || [],
-          photos: profileData.photos || [],
-          gender: profileData.gender || 'non-binary',
-          interestedIn: profileData.interested_in || [],
-          popularityPoints: profileData.popularity_points || 0,
-          premiumStatus: profileData.premium_status || 'basic',
+          age: profile.age || 25,
+          bio: profile.bio || '',
+          location: profile.location || '',
+          interests: profile.interests || [],
+          photos: profile.photos || [],
+          gender: (profile.gender || 'non-binary') as 'male' | 'female' | 'non-binary',
+          interestedIn: profile.interested_in || [],
+          popularityPoints: profile.popularity_points || 0,
+          premiumStatus: (profile.premium_status || 'basic') as 'basic' | 'premium' | 'vip',
           giftInventory: { rose: 0, heart: 0, teddy: 0 },
           receivedGifts: { rose: 0, heart: 0, teddy: 0 },
           compatibilityScore: 0,
-          personalityTraits: profileData.personality_traits || [],
-          role: profileData.role || 'subscriber',
-          isBanned: profileData.is_banned || false,
-          verificationStatus: profileData.is_verified ? 'verified' : 'unverified',
+          personalityTraits: profile.personality_traits || [],
+          role: (profile.role || 'subscriber') as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial',
+          isBanned: profile.is_banned || false,
+          verificationStatus: profile.is_verified ? 'verified' : 'unverified',
         };
       }
       
@@ -247,27 +301,30 @@ export const supabaseAuthService = {
         
       if (profileError) throw profileError;
       
+      // Handle missing profile data with defaults
+      const profile = profileData as ProfileRecord;
+      
       // Return the updated user data
       return {
         id: authData.user.id,
-        name: profileData.name,
+        name: profile.name || 'User',
         email: authData.user.email || '',
-        age: profileData.age,
-        bio: profileData.bio || '',
-        location: profileData.location || '',
-        interests: profileData.interests || [],
-        photos: profileData.photos || [],
-        gender: profileData.gender || 'non-binary',
-        interestedIn: profileData.interested_in || [],
-        popularityPoints: profileData.popularity_points || 0,
-        premiumStatus: profileData.premium_status || 'basic',
+        age: profile.age || 25,
+        bio: profile.bio || '',
+        location: profile.location || '',
+        interests: profile.interests || [],
+        photos: profile.photos || [],
+        gender: (profile.gender || 'non-binary') as 'male' | 'female' | 'non-binary',
+        interestedIn: profile.interested_in || [],
+        popularityPoints: profile.popularity_points || 0,
+        premiumStatus: (profile.premium_status || 'basic') as 'basic' | 'premium' | 'vip',
         giftInventory: { rose: 0, heart: 0, teddy: 0 },
         receivedGifts: { rose: 0, heart: 0, teddy: 0 },
         compatibilityScore: 0,
-        personalityTraits: profileData.personality_traits || [],
-        role: profileData.role || 'subscriber',
-        isBanned: profileData.is_banned || false,
-        verificationStatus: profileData.is_verified ? 'verified' : 'unverified',
+        personalityTraits: profile.personality_traits || [],
+        role: (profile.role || 'subscriber') as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial',
+        isBanned: profile.is_banned || false,
+        verificationStatus: profile.is_verified ? 'verified' : 'unverified',
       };
     } catch (error) {
       console.error('Error updating user data:', error);
