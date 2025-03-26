@@ -7,12 +7,14 @@ import ProfileBoostPopup from './components/ProfileBoostPopup';
 import { useBoostPopup } from './hooks/useBoostPopup';
 import { useIsMobile } from './hooks/use-mobile';
 import MobileToolbar from './components/MobileToolbar';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import Index from './pages/Index';
 import SignUp from './pages/SignUp';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 import './App.css';
 
 // Lazy load non-critical pages for better performance
@@ -40,6 +42,15 @@ const LoadingFallback = () => (
 function App() {
   const { showBoostPopup, closePopup } = useBoostPopup();
   const isMobile = useIsMobile();
+  
+  // Initialize any required services when the app starts
+  useEffect(() => {
+    // This will be used when connecting to Supabase and Stripe
+    // Example: supabase.auth.onAuthStateChange()
+    // Example: paymentService.initializeStripe()
+    
+    console.log('App initialized');
+  }, []);
   
   return (
     <ErrorBoundary>
@@ -128,6 +139,9 @@ function App() {
               </Suspense>
             } 
           />
+          {/* New routes for app store compliance pages */}
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster position="top-right" richColors closeButton />
