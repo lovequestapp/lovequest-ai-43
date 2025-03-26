@@ -92,7 +92,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     }
   });
 
-  const handleButtonSwipe = (direction: 'left' | 'right', index: number) => {
+  const handleButtonSwipe = (direction: 'left' | 'right', index: number = 0) => {
     const dir = direction === 'left' ? -1 : 1;
     gone.add(index);
     

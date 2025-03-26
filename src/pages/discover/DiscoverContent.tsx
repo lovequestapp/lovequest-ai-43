@@ -112,7 +112,12 @@ const DiscoverContent = () => {
         <NoMatchesCard />
       )}
       
-      {showBoostPopup && <ProfileBoostPopup isOpen={showBoostPopup} onClose={closePopup} />}
+      {showBoostPopup && (
+        <ProfileBoostPopup 
+          isOpen={showBoostPopup} 
+          onClose={closePopup} 
+        />
+      )}
     </main>
   );
 };
