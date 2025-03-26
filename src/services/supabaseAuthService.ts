@@ -27,6 +27,17 @@ interface ProfileRecord {
   role: string | null;
 }
 
+// Type guard function to check if string is a valid gender type
+function isValidGender(gender: string | null): gender is 'male' | 'female' | 'non-binary' {
+  return gender === 'male' || gender === 'female' || gender === 'non-binary';
+}
+
+// Convert string[] to gender array
+function toGenderArray(arr: string[] | null): ('male' | 'female' | 'non-binary')[] {
+  if (!arr) return [];
+  return arr.filter(isValidGender);
+}
+
 export const supabaseAuthService = {
   /**
    * Register a new user with Supabase
@@ -76,6 +87,14 @@ export const supabaseAuthService = {
         if (profileError) throw profileError;
         
         // Return the user data
+        const gender = isValidGender(userData.gender || 'non-binary') 
+          ? userData.gender || 'non-binary' 
+          : 'non-binary';
+        
+        const interestedIn = Array.isArray(userData.interestedIn) 
+          ? toGenderArray(userData.interestedIn as string[]) 
+          : [];
+          
         return {
           id: data.user.id,
           name: userData.name || 'New User',
@@ -85,8 +104,8 @@ export const supabaseAuthService = {
           location: userData.location || '',
           interests: userData.interests || [],
           photos: userData.photos || [],
-          gender: userData.gender as 'male' | 'female' | 'non-binary' || 'non-binary',
-          interestedIn: userData.interestedIn || [],
+          gender: gender,
+          interestedIn: interestedIn,
           popularityPoints: 0,
           premiumStatus: 'basic',
           giftInventory: { rose: 0, heart: 0, teddy: 0 },
@@ -147,6 +166,14 @@ export const supabaseAuthService = {
           is_banned: false,
           role: 'subscriber'
         };
+
+        const gender = isValidGender(profile.gender) 
+          ? profile.gender 
+          : 'non-binary';
+        
+        const interestedIn = Array.isArray(profile.interested_in) 
+          ? toGenderArray(profile.interested_in) 
+          : [];
         
         // Return the user data
         return {
@@ -158,8 +185,8 @@ export const supabaseAuthService = {
           location: profile.location || '',
           interests: profile.interests || [],
           photos: profile.photos || [],
-          gender: (profile.gender || 'non-binary') as 'male' | 'female' | 'non-binary',
-          interestedIn: profile.interested_in || [],
+          gender: gender,
+          interestedIn: interestedIn,
           popularityPoints: profile.popularity_points || 0,
           premiumStatus: (profile.premium_status || 'basic') as 'basic' | 'premium' | 'vip',
           giftInventory: { rose: 0, heart: 0, teddy: 0 },
@@ -225,16 +252,34 @@ export const supabaseAuthService = {
             name: data.user.email?.split('@')[0] || 'User',
             email: data.user.email || '',
             interests: [],
+            photos: [], // Added missing required property
+            age: 25,
+            bio: '',
+            location: '',
+            gender: 'non-binary',
             popularityPoints: 0,
             premiumStatus: 'basic',
             giftInventory: { rose: 0, heart: 0, teddy: 0 },
             receivedGifts: { rose: 0, heart: 0, teddy: 0 },
-            interestedIn: []
+            interestedIn: [],
+            personalityTraits: [],
+            compatibilityScore: 0,
+            role: 'subscriber',
+            isBanned: false,
+            verificationStatus: 'unverified'
           };
         }
         
         // Handle missing profile data with defaults
         const profile = profileData as ProfileRecord;
+        
+        const gender = isValidGender(profile.gender) 
+          ? profile.gender 
+          : 'non-binary';
+        
+        const interestedIn = Array.isArray(profile.interested_in) 
+          ? toGenderArray(profile.interested_in) 
+          : [];
         
         // Return the user data
         return {
@@ -246,8 +291,8 @@ export const supabaseAuthService = {
           location: profile.location || '',
           interests: profile.interests || [],
           photos: profile.photos || [],
-          gender: (profile.gender || 'non-binary') as 'male' | 'female' | 'non-binary',
-          interestedIn: profile.interested_in || [],
+          gender: gender,
+          interestedIn: interestedIn,
           popularityPoints: profile.popularity_points || 0,
           premiumStatus: (profile.premium_status || 'basic') as 'basic' | 'premium' | 'vip',
           giftInventory: { rose: 0, heart: 0, teddy: 0 },
@@ -304,6 +349,14 @@ export const supabaseAuthService = {
       // Handle missing profile data with defaults
       const profile = profileData as ProfileRecord;
       
+      const gender = isValidGender(profile.gender) 
+        ? profile.gender 
+        : 'non-binary';
+      
+      const interestedIn = Array.isArray(profile.interested_in) 
+        ? toGenderArray(profile.interested_in) 
+        : [];
+      
       // Return the updated user data
       return {
         id: authData.user.id,
@@ -314,8 +367,8 @@ export const supabaseAuthService = {
         location: profile.location || '',
         interests: profile.interests || [],
         photos: profile.photos || [],
-        gender: (profile.gender || 'non-binary') as 'male' | 'female' | 'non-binary',
-        interestedIn: profile.interested_in || [],
+        gender: gender,
+        interestedIn: interestedIn,
         popularityPoints: profile.popularity_points || 0,
         premiumStatus: (profile.premium_status || 'basic') as 'basic' | 'premium' | 'vip',
         giftInventory: { rose: 0, heart: 0, teddy: 0 },

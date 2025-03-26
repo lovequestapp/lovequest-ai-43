@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
@@ -57,7 +56,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       const profile = profiles[index];
       // Only call onSwipe if we have a valid profile
       if (profile && profile.id) {
-        // Fix: Don't try to store the result of onSwipe
+        // Fix: Call onSwipe separately, not trying to capture its return value
         onSwipe(profile.id, dir > 0 ? 'right' : 'left');
       }
     }
@@ -115,6 +114,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     // Then call onSwipe separately, not inside the api.start callback
     // Make sure we have a valid profile before calling onSwipe
     if (profiles && index < profiles.length && profiles[index] && profiles[index].id) {
+      // Don't try to store the return value of onSwipe
       onSwipe(profiles[index].id, direction);
     }
     
