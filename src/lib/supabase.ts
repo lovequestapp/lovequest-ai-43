@@ -1,20 +1,23 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Get Supabase URL and key from environment variables or default to placeholders
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+// Use the values from the Supabase integration
+const supabaseUrl = 'https://lcacrngizbvjhabkhrkf.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxjYWNybmdpemJ2amhhYmtocmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI0MTk0MTAsImV4cCI6MjA1Nzk5NTQxMH0.IBMQTbAfF4ECtmoGWG6awNK-sQArtTdDTEdZlK-rSsE';
 
-// Initialize the Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Initialize the Supabase client with explicit auth options
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    storage: localStorage
+  }
+});
 
 // Check if Supabase is properly configured
-const isSupabaseConfigured = supabaseUrl !== 'YOUR_SUPABASE_URL' && supabaseAnonKey !== 'YOUR_SUPABASE_ANON_KEY';
-
-// Helper to check if Supabase is configured
 export const getSupabaseStatus = () => ({
-  isConfigured: isSupabaseConfigured,
-  url: isSupabaseConfigured ? 'Connected' : 'Not configured'
+  isConfigured: true,
+  url: 'Connected'
 });
 
 // Authenticate with email and password

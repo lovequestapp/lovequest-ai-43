@@ -1,5 +1,5 @@
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/context/UserContext';
 
 interface AuthCredentials {
@@ -7,21 +7,27 @@ interface AuthCredentials {
   password: string;
 }
 
-// This service will replace the mock authService once Supabase is fully integrated
 export const supabaseAuthService = {
   /**
    * Register a new user with Supabase
    */
   register: async (credentials: AuthCredentials, userData: Partial<User>): Promise<User | null> => {
     try {
-      // This is a placeholder - you'll implement the actual Supabase auth after connecting
-      console.log('Supabase register placeholder', credentials, userData);
-      
-      // The real implementation will look something like this:
-      /*
+      // Register with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email: credentials.email,
         password: credentials.password,
+        options: {
+          data: {
+            name: userData.name,
+            age: userData.age,
+            bio: userData.bio || '',
+            location: userData.location || '',
+            interests: userData.interests || [],
+            gender: userData.gender || 'non-binary',
+            interestedIn: userData.interestedIn || [],
+          }
+        }
       });
       
       if (error) throw error;
@@ -42,7 +48,10 @@ export const supabaseAuthService = {
               gender: userData.gender || 'non-binary',
               interested_in: userData.interestedIn || [],
               premium_status: 'basic',
-              // Add other fields as needed
+              photos: userData.photos || [],
+              popularity_points: 0,
+              personality_traits: userData.personalityTraits || [],
+              is_verified: userData.verificationId ? true : false,
             }
           ]);
           
@@ -53,10 +62,24 @@ export const supabaseAuthService = {
           id: data.user.id,
           name: userData.name || 'New User',
           email: credentials.email,
-          // Fill in other fields
+          age: userData.age || 25,
+          bio: userData.bio || '',
+          location: userData.location || '',
+          interests: userData.interests || [],
+          photos: userData.photos || [],
+          gender: userData.gender as 'male' | 'female' | 'non-binary' || 'non-binary',
+          interestedIn: userData.interestedIn || [],
+          popularityPoints: 0,
+          premiumStatus: 'basic',
+          giftInventory: { rose: 0, heart: 0, teddy: 0 },
+          receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+          compatibilityScore: 0,
+          personalityTraits: userData.personalityTraits || [],
+          role: 'subscriber',
+          isBanned: false,
+          verificationStatus: userData.verificationId ? 'verified' : 'unverified',
         };
       }
-      */
       
       return null;
     } catch (error) {
@@ -70,11 +93,6 @@ export const supabaseAuthService = {
    */
   login: async (credentials: AuthCredentials): Promise<User | null> => {
     try {
-      // This is a placeholder - you'll implement the actual Supabase auth after connecting
-      console.log('Supabase login placeholder', credentials);
-      
-      // The real implementation will look something like this:
-      /*
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
@@ -96,11 +114,25 @@ export const supabaseAuthService = {
         return {
           id: data.user.id,
           name: profileData.name,
-          email: data.user.email,
-          // Map other fields from profileData
+          email: data.user.email || '',
+          age: profileData.age,
+          bio: profileData.bio || '',
+          location: profileData.location || '',
+          interests: profileData.interests || [],
+          photos: profileData.photos || [],
+          gender: profileData.gender || 'non-binary',
+          interestedIn: profileData.interested_in || [],
+          popularityPoints: profileData.popularity_points || 0,
+          premiumStatus: profileData.premium_status || 'basic',
+          giftInventory: { rose: 0, heart: 0, teddy: 0 },
+          receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+          compatibilityScore: 0,
+          personalityTraits: profileData.personality_traits || [],
+          role: profileData.role || 'subscriber',
+          isBanned: profileData.is_banned || false,
+          verificationStatus: profileData.is_verified ? 'verified' : 'unverified',
         };
       }
-      */
       
       return null;
     } catch (error) {
@@ -114,11 +146,7 @@ export const supabaseAuthService = {
    */
   logout: async (): Promise<void> => {
     try {
-      // This is a placeholder - you'll implement the actual Supabase auth after connecting
-      console.log('Supabase logout placeholder');
-      
-      // The real implementation will look something like this:
-      // await supabase.auth.signOut();
+      await supabase.auth.signOut();
     } catch (error) {
       console.error('Supabase logout error:', error);
     }
@@ -129,16 +157,8 @@ export const supabaseAuthService = {
    */
   isAuthenticated: async (): Promise<boolean> => {
     try {
-      // This is a placeholder - you'll implement the actual Supabase auth after connecting
-      console.log('Supabase isAuthenticated placeholder');
-      
-      // The real implementation will look something like this:
-      /*
       const { data } = await supabase.auth.getSession();
       return data.session !== null;
-      */
-      
-      return false;
     } catch (error) {
       console.error('Error checking authentication status:', error);
       return false;
@@ -150,11 +170,6 @@ export const supabaseAuthService = {
    */
   getCurrentUser: async (): Promise<User | null> => {
     try {
-      // This is a placeholder - you'll implement the actual Supabase auth after connecting
-      console.log('Supabase getCurrentUser placeholder');
-      
-      // The real implementation will look something like this:
-      /*
       const { data } = await supabase.auth.getUser();
       
       if (data?.user) {
@@ -171,11 +186,25 @@ export const supabaseAuthService = {
         return {
           id: data.user.id,
           name: profileData.name,
-          email: data.user.email,
-          // Map other fields from profileData
+          email: data.user.email || '',
+          age: profileData.age,
+          bio: profileData.bio || '',
+          location: profileData.location || '',
+          interests: profileData.interests || [],
+          photos: profileData.photos || [],
+          gender: profileData.gender || 'non-binary',
+          interestedIn: profileData.interested_in || [],
+          popularityPoints: profileData.popularity_points || 0,
+          premiumStatus: profileData.premium_status || 'basic',
+          giftInventory: { rose: 0, heart: 0, teddy: 0 },
+          receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+          compatibilityScore: 0,
+          personalityTraits: profileData.personality_traits || [],
+          role: profileData.role || 'subscriber',
+          isBanned: profileData.is_banned || false,
+          verificationStatus: profileData.is_verified ? 'verified' : 'unverified',
         };
       }
-      */
       
       return null;
     } catch (error) {
@@ -189,11 +218,6 @@ export const supabaseAuthService = {
    */
   updateUserData: async (userData: Partial<User>): Promise<User | null> => {
     try {
-      // This is a placeholder - you'll implement the actual Supabase auth after connecting
-      console.log('Supabase updateUserData placeholder', userData);
-      
-      // The real implementation will look something like this:
-      /*
       const { data: authData } = await supabase.auth.getUser();
       
       if (!authData?.user) return null;
@@ -203,7 +227,12 @@ export const supabaseAuthService = {
         .update({
           name: userData.name,
           bio: userData.bio,
-          // Update other fields
+          location: userData.location,
+          interests: userData.interests,
+          gender: userData.gender,
+          interested_in: userData.interestedIn,
+          photos: userData.photos,
+          personality_traits: userData.personalityTraits,
         })
         .eq('id', authData.user.id);
         
@@ -222,12 +251,24 @@ export const supabaseAuthService = {
       return {
         id: authData.user.id,
         name: profileData.name,
-        email: authData.user.email,
-        // Map other fields from profileData
+        email: authData.user.email || '',
+        age: profileData.age,
+        bio: profileData.bio || '',
+        location: profileData.location || '',
+        interests: profileData.interests || [],
+        photos: profileData.photos || [],
+        gender: profileData.gender || 'non-binary',
+        interestedIn: profileData.interested_in || [],
+        popularityPoints: profileData.popularity_points || 0,
+        premiumStatus: profileData.premium_status || 'basic',
+        giftInventory: { rose: 0, heart: 0, teddy: 0 },
+        receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+        compatibilityScore: 0,
+        personalityTraits: profileData.personality_traits || [],
+        role: profileData.role || 'subscriber',
+        isBanned: profileData.is_banned || false,
+        verificationStatus: profileData.is_verified ? 'verified' : 'unverified',
       };
-      */
-      
-      return null;
     } catch (error) {
       console.error('Error updating user data:', error);
       return null;
@@ -239,17 +280,11 @@ export const supabaseAuthService = {
    */
   resetPassword: async (email: string): Promise<boolean> => {
     try {
-      // This is a placeholder - you'll implement the actual Supabase auth after connecting
-      console.log('Supabase resetPassword placeholder', email);
-      
-      // The real implementation will look something like this:
-      /*
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://yourdomain.com/reset-password',
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       
       if (error) throw error;
-      */
       
       return true;
     } catch (error) {

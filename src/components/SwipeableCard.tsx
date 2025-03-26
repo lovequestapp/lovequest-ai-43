@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
@@ -96,7 +95,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     const dir = direction === 'left' ? -1 : 1;
     gone.add(index);
     
-    // First update the UI animation without calling onSwipe inside
+    // First update the UI animation
     api.start(i => {
       if (index !== i) return;
       const x = (200 + window.innerWidth) * dir;
@@ -111,7 +110,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       };
     });
     
-    // Then call onSwipe separately, not trying to use its return value
+    // Then call onSwipe separately, not inside the api.start callback
     // Make sure we have a valid profile before calling onSwipe
     if (profiles && index < profiles.length && profiles[index] && profiles[index].id) {
       onSwipe(profiles[index].id, direction);
