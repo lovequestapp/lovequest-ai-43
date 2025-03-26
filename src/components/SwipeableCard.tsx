@@ -98,8 +98,10 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       const x = (200 + window.innerWidth) * dir;
       const rot = dir * 10;
       
-      // Call onSwipe separately, not as part of the return value
-      onSwipe(profiles[index].id, direction);
+      // Call onSwipe separately from the animation
+      if (profiles[index] && profiles[index].id) {
+        onSwipe(profiles[index].id, direction);
+      }
       
       return {
         x,
@@ -118,7 +120,6 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       }, 600);
     }
   };
-
   
   return (
     <div className="relative w-full h-[60vh] flex items-center justify-center">
