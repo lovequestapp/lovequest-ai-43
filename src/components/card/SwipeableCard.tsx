@@ -89,7 +89,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     });
     
     // Then call onSwipe separately
-    if (profiles && index < profiles.length && profiles[index] && profiles[index].id) {
+    if (profiles && profiles.length > 0 && profiles[index] && profiles[index].id) {
       onSwipe(profiles[index].id, direction);
     }
     

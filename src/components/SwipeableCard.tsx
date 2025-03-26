@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
-import CardContent from './CardContent';
-import ActionButtons from './ActionButtons';
-import SwipeHints from './SwipeHints';
-import { to, from, trans, getVelocityValue } from './CardAnimation';
+import CardContent from './card/CardContent';
+import ActionButtons from './card/ActionButtons';
+import SwipeHints from './card/SwipeHints';
+import { to, from, trans, getVelocityValue } from './card/CardAnimation';
 
 export interface SwipeableCardProps {
   profiles: any[];
@@ -88,7 +89,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     });
     
     // Then call onSwipe separately
-    if (profiles && index < profiles.length && profiles[index] && profiles[index].id) {
+    if (profiles && profiles.length > 0 && profiles[index] && profiles[index].id) {
       onSwipe(profiles[index].id, direction);
     }
     
