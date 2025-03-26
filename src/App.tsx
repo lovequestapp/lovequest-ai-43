@@ -1,13 +1,14 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Home from './pages/Home';
-import Register from './pages/Register';
+import Home from './pages/home';
+import Register from './pages/register';
 import Login from './pages/Login';
 import Profile from './pages/Profile';
 import Messages from './pages/Messages';
-import EditProfile from './pages/EditProfile';
+import EditProfile from './pages/edit-profile';
 import Discover from './pages/discover';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/protected-route';
 import { UserProvider } from './context/UserContext';
 import './index.css';
 

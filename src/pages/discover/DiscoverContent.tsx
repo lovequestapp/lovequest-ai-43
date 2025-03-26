@@ -25,7 +25,7 @@ const DiscoverContent = () => {
   } = useUser() || {};
   
   const [viewMode, setViewMode] = useState<'swipe' | 'grid'>('swipe');
-  const { showBoostPopup, forceShowPopup } = useBoostPopup();
+  const { showBoostPopup, closePopup, forceShowPopup } = useBoostPopup();
   
   const {
     isFiltering,
@@ -112,7 +112,7 @@ const DiscoverContent = () => {
         <NoMatchesCard />
       )}
       
-      {showBoostPopup && <ProfileBoostPopup />}
+      {showBoostPopup && <ProfileBoostPopup isOpen={showBoostPopup} onClose={closePopup} />}
     </main>
   );
 };

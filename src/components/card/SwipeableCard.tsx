@@ -68,7 +68,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     }
   });
 
-  const handleButtonSwipe = (direction: 'left' | 'right', index: number) => {
+  const handleButtonSwipe = (direction: 'left' | 'right') => {
+    const index = 0; // Always handle the top card
     const dir = direction === 'left' ? -1 : 1;
     gone.add(index);
     
@@ -133,8 +134,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       
       <ActionButtons 
         profilesLength={profiles.length} 
-        onSwipeLeft={() => handleButtonSwipe('left', 0)}
-        onSwipeRight={() => handleButtonSwipe('right', 0)}
+        onSwipeLeft={() => handleButtonSwipe('left')}
+        onSwipeRight={() => handleButtonSwipe('right')}
       />
     </div>
   );
