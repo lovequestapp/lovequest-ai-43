@@ -96,15 +96,14 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     const dir = direction === 'left' ? -1 : 1;
     gone.add(index);
     
-    // Fix: Make sure we correctly use the api.start method
     api.start(i => {
       if (index !== i) return;
       const x = (200 + window.innerWidth) * dir;
       const rot = dir * 10;
       
-      // Fixed: Don't store the result of onSwipe and don't try to call it
+      // Critical fix: Call onSwipe directly and don't try to use its return value
       if (profiles && profiles.length > index && profiles[index] && profiles[index].id) {
-        // Just call onSwipe, don't store or use its return value
+        // Just call onSwipe without storing or using its return value
         onSwipe(profiles[index].id, direction);
       }
       
