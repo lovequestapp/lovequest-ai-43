@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
@@ -54,7 +55,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     if (!active && trigger) {
       gone.add(index);
       const profile = profiles[index];
-      onSwipe(profile.id, dir > 0 ? 'right' : 'left');
+      if (profile && profile.id) {
+        onSwipe(profile.id, dir > 0 ? 'right' : 'left');
+      }
     }
     
     api.start(i => {
@@ -98,9 +101,12 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       const x = (200 + window.innerWidth) * dir;
       const rot = dir * 10;
       
-      // Call onSwipe separately from the animation
-      if (profiles[index] && profiles[index].id) {
-        onSwipe(profiles[index].id, direction);
+      // Call onSwipe separately from the animation, but only if the profile exists
+      if (profiles && profiles.length > index && profiles[index] && profiles[index].id) {
+        // Store the id before the animation to ensure it's available
+        const profileId = profiles[index].id;
+        // Call onSwipe with the stored id
+        onSwipe(profileId, direction);
       }
       
       return {
@@ -232,21 +238,19 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
         </animated.div>
       ))}
       
-      {/* Action buttons */}
+      {/* Action buttons - removing circular styles */}
       {profiles.length > 0 && (
         <div className="absolute bottom-[-70px] left-0 right-0 flex justify-center gap-6">
           <Button 
             variant="outline"
-            size="icon"
-            className="h-14 w-14 rounded-full bg-white border-gray-200 shadow-md hover:bg-gray-100"
+            className="h-12 w-12 sm:h-14 sm:w-16 bg-white border-gray-200 shadow-md hover:bg-gray-100"
             onClick={() => handleButtonSwipe('left', 0)}
           >
             <X size={24} className="text-gray-500" />
           </Button>
           
           <Button 
-            size="icon"
-            className="h-14 w-14 rounded-full bg-gradient-love hover:opacity-90 shadow-md"
+            className="h-12 w-12 sm:h-14 sm:w-16 bg-gradient-love hover:opacity-90 shadow-md"
             onClick={() => handleButtonSwipe('right', 0)}
           >
             <Heart size={24} />

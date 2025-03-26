@@ -155,15 +155,15 @@
   }
   
   .luxury-input {
-    @apply border border-love-200 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-love-300 focus:border-transparent transition-all duration-300;
+    @apply border border-love-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-love-300 focus:border-transparent transition-all duration-300;
   }
   
   .luxury-button {
-    @apply rounded-full shadow-sm hover:shadow-md transition-all duration-300;
+    @apply rounded-lg shadow-sm hover:shadow-md transition-all duration-300;
   }
   
   .premium-badge {
-    @apply bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-xs px-2 py-0.5 rounded-full shadow-sm;
+    @apply bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-xs px-2 py-0.5 rounded-md shadow-sm;
   }
   
   .glass-effect {
@@ -189,7 +189,7 @@
   }
   
   .message-date-badge {
-    @apply bg-love-50 text-love-700 px-3 py-1 rounded-full text-xs font-medium;
+    @apply bg-love-50 text-love-700 px-3 py-1 rounded-md text-xs font-medium;
   }
   
   /* Animations for message components */
@@ -386,105 +386,6 @@
   .admin-mobile-tabs::-webkit-scrollbar {
     display: none;
   }
-  
-  /* Admin mobile form styling */
-  .admin-form-container {
-    @apply flex flex-col gap-4 w-full max-w-md mx-auto;
-  }
-  
-  .admin-form-field {
-    @apply flex flex-col gap-2 w-full;
-  }
-  
-  .admin-form-label {
-    @apply text-sm font-medium;
-  }
-  
-  .admin-form-input {
-    @apply h-11 rounded-md border px-3 py-2 text-base w-full;
-  }
-  
-  .admin-form-actions {
-    @apply flex flex-col sm:flex-row gap-2 w-full mt-4;
-  }
-  
-  .admin-form-actions > button {
-    @apply flex-1 min-h-[44px];
-  }
-  
-  /* Admin user detail panel */
-  .admin-user-detail {
-    @apply fixed inset-0 z-50 bg-background/95 backdrop-blur-sm p-4 overflow-auto;
-    animation: slideInRight 0.3s ease-out;
-  }
-  
-  @keyframes slideInRight {
-    from {
-      transform: translateX(100%);
-    }
-    to {
-      transform: translateX(0);
-    }
-  }
-  
-  .admin-user-detail-header {
-    @apply flex justify-between items-center mb-4 sticky top-0 bg-background/90 backdrop-blur-sm py-2 z-10;
-  }
-  
-  .admin-user-detail-content {
-    @apply space-y-4;
-  }
-  
-  .admin-user-detail-section {
-    @apply bg-card p-4 rounded-lg border shadow-sm;
-  }
-  
-  .admin-user-detail-close {
-    @apply fixed top-4 right-4 z-50 bg-background/90 rounded-full p-2 shadow-sm border;
-  }
-
-  /* Enhanced admin charts for mobile */
-  .admin-mobile-chart {
-    @apply w-full max-w-full overflow-x-auto h-[250px] sm:h-[350px] md:h-[400px];
-  }
-  
-  /* Better scrolling for admin tables */
-  .admin-horizontal-scroll {
-    @apply overflow-x-auto pb-2 -mx-2 px-2 sm:mx-0 sm:px-0;
-    scrollbar-width: thin;
-  }
-  
-  .admin-horizontal-scroll::-webkit-scrollbar {
-    height: 6px;
-  }
-  
-  .admin-horizontal-scroll::-webkit-scrollbar-thumb {
-    @apply bg-muted rounded-full;
-  }
-  
-  /* Admin pagination for mobile */
-  .admin-mobile-pagination {
-    @apply flex flex-wrap justify-center gap-1 mt-4;
-  }
-  
-  .admin-mobile-pagination-item {
-    @apply min-w-[36px] h-9 flex items-center justify-center rounded;
-  }
-  
-  /* Admin responsive form controls */
-  .admin-mobile-form-control {
-    @apply min-h-[44px] w-full;
-  }
-  
-  /* Admin mobile tabs */
-  .admin-mobile-tabs {
-    @apply overflow-x-auto flex pb-2 -mx-2 px-2;
-    scrollbar-width: none;
-  }
-  
-  .admin-mobile-tabs::-webkit-scrollbar {
-    display: none;
-  }
 }
 
 @keyframes fadeIn {
@@ -522,22 +423,17 @@
 }
 
 @layer components {
-  /* Ensure circular UI elements */
-  .circular {
-    @apply rounded-full overflow-hidden;
-  }
-  
-  /* Fix for navigation dots */
+  /* Replace circular UI elements with more rectangular, industry-standard shapes */
   .navigation-dot {
-    @apply w-2 h-2 rounded-full bg-gray-300 transition-all duration-200;
+    @apply w-2 h-2 rounded-sm bg-gray-300 transition-all duration-200;
   }
   
   .navigation-dot.active {
     @apply bg-love-500 transform scale-110;
   }
   
-  /* Circular buttons */
+  /* Replace circular buttons with more standard buttons */
   .btn-circle {
-    @apply rounded-full flex items-center justify-center;
+    @apply rounded-lg flex items-center justify-center;
   }
 }

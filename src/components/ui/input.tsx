@@ -9,8 +9,6 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   isInvalid?: boolean;
   /* Adds an animated hover effect to the input */
   animated?: boolean;
-  /* Makes the input circular when true */
-  circular?: boolean;
   /* Makes the input larger for admin forms */
   large?: boolean;
 }
@@ -24,7 +22,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     isValid, 
     isInvalid, 
     animated = false,
-    circular = false,
     large = false,
     ...props 
   }, ref) => {
@@ -55,7 +52,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             isValid && "border-green-500 focus-visible:ring-green-500/20",
             isInvalid && "border-red-500 focus-visible:ring-red-500/20",
             animated && "input-highlight hover:border-love-200",
-            circular && "rounded-full aspect-square w-10 p-0 flex items-center justify-center text-center",
             large && "h-12 px-4 py-3 text-base md:text-base rounded-lg",
             large && iconPosition === 'left' && icon ? "pl-12" : "",
             large && iconPosition === 'right' && icon ? "pr-12" : "",
