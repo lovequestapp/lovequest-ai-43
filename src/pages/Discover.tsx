@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import ProfileCard from '@/components/ProfileCard';
+import SwipeableCard from '@/components/SwipeableCard';
 import { useUser } from '@/context/UserContext';
 import { 
   getAiEnhancedMatches, 
@@ -18,12 +18,12 @@ import {
   Sparkles, 
   Filter, 
   Flame, 
-  Crown, 
   MapPin, 
   Globe, 
   X,
   Rocket,
-  Info
+  Info,
+  UserSearch
 } from 'lucide-react';
 import { toast } from "sonner";
 import {
@@ -43,6 +43,7 @@ import { Slider } from "@/components/ui/slider";
 import ProfileBoostPopup from "@/components/ProfileBoostPopup";
 import { useBoostPopup } from "@/hooks/useBoostPopup";
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 const regions = [
   { value: "north-america", label: "North America" },
@@ -55,6 +56,7 @@ const regions = [
 
 const Discover = () => {
   console.log("Rendering Discover component");
+  const navigate = useNavigate();
   
   const { 
     currentUser = null, 
@@ -73,6 +75,7 @@ const Discover = () => {
   const [proximityRadius, setProximityRadius] = useState(50);
   const [userCoordinates, setUserCoordinates] = useState<{latitude: number, longitude: number} | null>(null);
   const [isNearbyFilterActive, setIsNearbyFilterActive] = useState(false);
+  const [viewMode, setViewMode] = useState<'swipe' | 'grid'>('swipe');
   const { forceShowPopup } = useBoostPopup();
   
   useEffect(() => {
@@ -295,6 +298,16 @@ const Discover = () => {
     }
   };
   
+  const handleSwipe = (id: string, direction: 'left' | 'right') => {
+    if (direction === 'right') {
+      likeUser(id);
+      toast.success(`You liked this profile!`);
+    } else {
+      passUser(id);
+      toast.message(`You passed on this profile`);
+    }
+  };
+  
   const handleRadiusChange = (value: number[]) => {
     setProximityRadius(value[0]);
   };
@@ -305,6 +318,10 @@ const Discover = () => {
         ? prevRegions.filter(r => r !== region)
         : [...prevRegions, region]
     );
+  };
+  
+  const handleViewProfile = (userId: string) => {
+    navigate(`/profile/${userId}`);
   };
   
   const filteredMatches = isFiltering
@@ -472,54 +489,121 @@ const Discover = () => {
               <Rocket size={16} className="mr-2" />
               Boost Profile
             </Button>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              className={cn(
+                "rounded-full",
+                viewMode === 'grid' && "bg-love-50 border-love-200"
+              )}
+              onClick={() => setViewMode(viewMode === 'swipe' ? 'grid' : 'swipe')}
+            >
+              <UserSearch size={16} />
+            </Button>
           </div>
         </div>
         
         {filteredMatches.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredMatches.map(match => (
-              <div key={match.id} className="relative">
-                {match.isBoosted && (
-                  <div className="absolute -top-3 -right-3 z-10">
-                    <Badge className={`py-1 px-3 flex items-center gap-1 ${
-                      match.boostLevel === 'super' 
-                        ? 'bg-amber-500 text-amber-950 border-amber-600' 
-                        : match.boostLevel === 'international'
-                          ? 'bg-purple-500 text-white'
-                          : match.boostLevel === 'local'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gradient-love text-white'
-                    }`}>
-                      {match.boostLevel === 'super' ? (
-                        <Crown size={14} className="mr-1" />
-                      ) : match.boostLevel === 'international' ? (
-                        <Globe size={14} className="mr-1" />
-                      ) : match.boostLevel === 'local' ? (
+          viewMode === 'swipe' ? (
+            <div className="flex justify-center px-4 py-6">
+              <SwipeableCard
+                profiles={filteredMatches}
+                onSwipe={handleSwipe}
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredMatches.map(match => (
+                <Card 
+                  key={match.id} 
+                  className="overflow-hidden hover:shadow-md transition-shadow"
+                  onClick={() => handleViewProfile(match.id)}
+                >
+                  <div className="aspect-[3/4] relative">
+                    <img 
+                      src={match.photos[0]} 
+                      alt={match.name} 
+                      className="w-full h-full object-cover"
+                    />
+                    
+                    {match.isBoosted && (
+                      <div className="absolute top-3 right-3 z-10">
+                        <Badge className={`py-1 px-3 flex items-center gap-1 ${
+                          match.boostLevel === 'super' 
+                            ? 'bg-amber-500 text-amber-950 border-amber-600' 
+                            : match.boostLevel === 'international'
+                              ? 'bg-purple-500 text-white'
+                              : match.boostLevel === 'local'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gradient-love text-white'
+                        }`}>
+                          {match.boostLevel === 'super' ? (
+                            <Sparkles size={14} className="mr-1" />
+                          ) : match.boostLevel === 'international' ? (
+                            <Globe size={14} className="mr-1" />
+                          ) : match.boostLevel === 'local' ? (
+                            <MapPin size={14} className="mr-1" />
+                          ) : (
+                            <Sparkles size={14} className="mr-1" />
+                          )}
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                      <h3 className="text-xl font-semibold text-white">
+                        {match.name}, {match.age}
+                      </h3>
+                      
+                      <div className="flex items-center text-white/80">
                         <MapPin size={14} className="mr-1" />
-                      ) : (
-                        <Sparkles size={14} className="mr-1" />
-                      )}
-                      {match.boostLevel === 'super' ? 'Super Popular' : 
-                        match.boostLevel === 'international' ? 'International Boost' :
-                        match.boostLevel === 'local' ? 'Local Boost' : 'Popular'}
-                    </Badge>
+                        <span className="text-sm">{match.location}</span>
+                      </div>
+                    </div>
                   </div>
-                )}
-                <ProfileCard
-                  id={match.id}
-                  name={match.name}
-                  age={match.age}
-                  bio={match.bio}
-                  location={match.location}
-                  interests={match.interests}
-                  photos={match.photos}
-                  compatibilityScore={match.compatibilityScore}
-                  onLike={likeUser}
-                  onPass={passUser}
-                />
-              </div>
-            ))}
-          </div>
+                  
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center gap-1 text-sm">
+                        <Sparkles size={14} className="text-love-500" />
+                        <span className="font-medium">Match: {match.compatibilityScore}%</span>
+                      </div>
+                      
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="rounded-full h-8 px-3"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/messages/${match.id}`);
+                        }}
+                      >
+                        Message
+                      </Button>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-1">
+                      {match.interests.slice(0, 3).map((interest: string, idx: number) => (
+                        <Badge 
+                          key={idx} 
+                          variant="secondary" 
+                          className="bg-love-50 text-love-700"
+                        >
+                          {interest}
+                        </Badge>
+                      ))}
+                      {match.interests.length > 3 && (
+                        <Badge variant="outline">
+                          +{match.interests.length - 3}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )
         ) : (
           <Card className="max-w-md mx-auto text-center p-8">
             <CardContent className="p-6 flex flex-col items-center">

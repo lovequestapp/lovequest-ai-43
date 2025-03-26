@@ -69,12 +69,9 @@ const Hero = () => {
           >
             <Button 
               onClick={handleTakeQuiz}
-              variant="love"
-              size="xl"
-              rounded="full"
-              className="group relative overflow-hidden shadow-md hover:shadow-xl w-full sm:w-auto"
+              size="lg"
+              className="group relative bg-gradient-love text-white overflow-hidden shadow-md hover:shadow-xl w-full sm:w-auto rounded-full"
             >
-              <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-love-500 to-passion-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"></span>
               <Sparkles size={20} className="mr-2 animate-sparkle" />
               <span>Take the Compatibility Quiz</span>
               <ArrowRight size={18} className="ml-1 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
@@ -82,10 +79,9 @@ const Hero = () => {
             
             <Button 
               onClick={handleSignUp}
-              variant="glossy"
-              size="xl"
-              rounded="full"
-              className="group w-full sm:w-auto hover:shadow-xl transition-all duration-300"
+              variant="outline"
+              size="lg"
+              className="group w-full sm:w-auto hover:shadow-xl transition-all duration-300 border-love-200 text-love-700 hover:bg-love-50 rounded-full"
             >
               <UserCheck size={20} className="mr-2" />
               <span>Sign Up Now</span>

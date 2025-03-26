@@ -1,20 +1,19 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Sun } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 
-// This component is no longer used as dark mode has been removed
 const ThemeToggle = () => {
+  // Since the app is using light mode only, this is purely decorative
   return (
     <Button
       variant="ghost"
       size="icon"
-      className="rounded-full"
+      className="rounded-full w-9 h-9 flex items-center justify-center"
       aria-label="Theme"
-      disabled
     >
-      <Sun className="h-5 w-5" />
-      <span className="sr-only">Theme</span>
+      <Sun className="h-5 w-5 text-love-500" />
+      <span className="sr-only">Light Mode</span>
     </Button>
   );
 };
