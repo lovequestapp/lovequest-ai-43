@@ -26,10 +26,6 @@ const Hero = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-love-50 to-passion-50 -z-10" />
       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_var(--love-100),transparent_70%)]" />
       
-      {/* Decorative elements */}
-      <div className="absolute top-20 right-10 w-64 h-64 bg-love-200 rounded-full blur-3xl opacity-20 animate-pulse-heart" />
-      <div className="absolute bottom-10 left-10 w-48 h-48 bg-passion-100 rounded-full blur-3xl opacity-30" />
-      
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
           {/* Icon badge */}
