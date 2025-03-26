@@ -56,6 +56,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       gone.add(index);
       const profile = profiles[index];
       if (profile && profile.id) {
+        // Call onSwipe directly, don't store the result
         onSwipe(profile.id, dir > 0 ? 'right' : 'left');
       }
     }
@@ -95,18 +96,16 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     const dir = direction === 'left' ? -1 : 1;
     gone.add(index);
     
-    // Fix #3: Make sure we correctly use the api.start method
+    // Fix: Make sure we correctly use the api.start method
     api.start(i => {
       if (index !== i) return;
       const x = (200 + window.innerWidth) * dir;
       const rot = dir * 10;
       
-      // Call onSwipe separately from the animation, but only if the profile exists
+      // Fixed: Don't store the result of onSwipe and don't try to call it
       if (profiles && profiles.length > index && profiles[index] && profiles[index].id) {
-        // Store the id before the animation to ensure it's available
-        const profileId = profiles[index].id;
-        // Call onSwipe with the stored id
-        onSwipe(profileId, direction);
+        // Just call onSwipe, don't store or use its return value
+        onSwipe(profiles[index].id, direction);
       }
       
       return {
@@ -238,7 +237,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
         </animated.div>
       ))}
       
-      {/* Action buttons - removing circular styles */}
+      {/* Action buttons - non-circular styles */}
       {profiles.length > 0 && (
         <div className="absolute bottom-[-70px] left-0 right-0 flex justify-center gap-6">
           <Button 
