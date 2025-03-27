@@ -7,7 +7,6 @@ import ActionButtons from './ActionButtons';
 import SwipeHints from './SwipeHints';
 import { to, from, trans, getVelocityValue } from './CardAnimation';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { toast } from 'sonner';
 
 export interface SwipeableCardProps {
   profiles: any[];
@@ -95,7 +94,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     });
     
     // Call onSwipe function with the profile ID and direction
-    // Only call onSwipe if it's a function and we have valid data
+    // Fix: Ensure onSwipe is a function before calling it
     if (profiles[index] && profiles[index].id && typeof onSwipe === 'function') {
       onSwipe(profiles[index].id, direction);
     }
