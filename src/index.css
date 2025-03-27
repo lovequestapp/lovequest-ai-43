@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,433 +6,131 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 340 10% 10%;
-
+    --foreground: 20 14.3% 4.1%;
     --card: 0 0% 100%;
-    --card-foreground: 340 10% 10%;
-
+    --card-foreground: 20 14.3% 4.1%;
     --popover: 0 0% 100%;
-    --popover-foreground: 340 10% 10%;
-
-    --primary: 346 77% 49%;
-    --primary-foreground: 355 100% 97%;
-
-    --secondary: 340 65% 94%;
-    --secondary-foreground: 340 50% 30%;
-
-    --muted: 340 10% 95%;
-    --muted-foreground: 340 10% 45%;
-
-    --accent: 328 73% 44%;
-    --accent-foreground: 0 0% 100%;
-
+    --popover-foreground: 20 14.3% 4.1%;
+    --primary: 24.6 95% 53.1%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 60 4.8% 95.9%;
+    --secondary-foreground: 24 9.8% 10%;
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+    --accent: 60 4.8% 95.9%;
+    --accent-foreground: 24 9.8% 10%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 340 10% 90%;
-    --input: 340 10% 90%;
-    --ring: 346 77% 49%;
-
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --ring: 24.6 95% 53.1%;
     --radius: 0.75rem;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --love-50: #fef2f2;
+    --love-100: #fee2e2;
+    --love-200: #fecaca;
+    --love-300: #fca5a5;
+    --love-400: #f87171;
+    --love-500: #ef4444;
+    --love-600: #dc2626;
+    --love-700: #b91c1c;
+    --love-800: #991b1b;
+    --love-900: #7f1d1d;
+    --passion-50: #fff1f2;
+    --passion-100: #ffe4e6;
+    --passion-200: #fecdd3;
+    --passion-300: #fda4af;
+    --passion-400: #fb7185;
+    --passion-500: #f43f5e;
+    --passion-600: #e11d48;
+    --passion-700: #be123c;
+    --passion-800: #9f1239;
+    --passion-900: #881337;
   }
 
   .dark {
-    --background: 340 20% 10%;
-    --foreground: 340 10% 95%;
-
-    --card: 340 20% 13%;
-    --card-foreground: 340 10% 95%;
-
-    --popover: 340 20% 13%;
-    --popover-foreground: 340 10% 95%;
-
-    --primary: 346 77% 49%;
-    --primary-foreground: 355 100% 97%;
-
-    --secondary: 340 40% 20%;
-    --secondary-foreground: 340 50% 90%;
-
-    --muted: 340 20% 20%;
-    --muted-foreground: 340 10% 70%;
-
-    --accent: 328 80% 50%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 340 20% 25%;
-    --input: 340 20% 25%;
-    --ring: 346 77% 49%;
-
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 20 14.3% 4.1%;
+    --foreground: 60 9.1% 97.8%;
+    --card: 20 14.3% 4.1%;
+    --card-foreground: 60 9.1% 97.8%;
+    --popover: 20 14.3% 4.1%;
+    --popover-foreground: 60 9.1% 97.8%;
+    --primary: 20.5 90.2% 48.2%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 12 6.5% 15.1%;
+    --secondary-foreground: 60 9.1% 97.8%;
+    --muted: 12 6.5% 15.1%;
+    --muted-foreground: 24 5.4% 63.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 60 9.1% 97.8%;
+    --destructive: 0 72.2% 50.6%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 12 6.5% 15.1%;
+    --input: 12 6.5% 15.1%;
+    --ring: 20.5 90.2% 48.2%;
   }
+}
 
+@layer base {
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-background text-foreground font-sans;
-    -webkit-tap-highlight-color: transparent;
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
-
-  html {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-  }
-
+  
+  /* Font settings */
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
   }
-  
-  /* Add padding to the bottom of the main content area on mobile */
-  @media (max-width: 768px) {
-    main, .main-content {
-      padding-bottom: 5rem;
-    }
-  }
-
-  /* Improve input usability on mobile */
-  input, select, textarea {
-    @apply text-base;
-    font-size: 16px; /* Prevents iOS zoom on focus */
-  }
-
-  /* Improve touch targets on mobile */
-  button, a, [role="button"] {
-    @apply outline-none;
-    touch-action: manipulation;
-    min-height: 44px; /* Better touch targets */
-  }
 }
 
-@layer components {
-  .love-gradient {
+/* Add gradient backgrounds */
+@layer utilities {
+  .bg-gradient-love {
     @apply bg-gradient-to-r from-love-500 to-passion-500;
   }
   
+  .bg-gradient-subtle {
+    @apply bg-gradient-to-br from-love-50 to-passion-50;
+  }
+  
+  /* Create animated glow effect */
+  @keyframes pulse-heart {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.05); }
+  }
+  
+  .animate-pulse-heart {
+    animation: pulse-heart 4s ease-in-out infinite;
+  }
+  
+  @keyframes sparkle {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+  
+  .animate-sparkle {
+    animation: sparkle 1.5s ease-in-out infinite;
+  }
+  
+  /* Card hover animation */
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
   
-  .btn-love {
-    @apply bg-love-500 text-white hover:bg-love-600 transition-colors;
+  .card-hover:hover {
+    transform: translateY(-5px);
   }
   
-  .btn-passion {
-    @apply bg-passion-500 text-white hover:bg-passion-600 transition-colors;
+  /* Glow animation */
+  @keyframes glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
   }
   
-  /* Enhanced luxury styles for the messaging interface */
-  .message-bubble-user {
-    @apply relative bg-gradient-to-r from-love-500 to-passion-500 text-white rounded-2xl rounded-br-none px-4 py-2 shadow-sm;
-  }
-  
-  .message-bubble-match {
-    @apply relative bg-gray-100 rounded-2xl rounded-bl-none px-4 py-2 shadow-sm;
-  }
-  
-  .luxury-card {
-    @apply bg-white border border-love-100 rounded-xl shadow-sm transition-all duration-300;
-  }
-  
-  .luxury-input {
-    @apply border border-love-200 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-love-300 focus:border-transparent transition-all duration-300;
-  }
-  
-  .luxury-button {
-    @apply rounded-lg shadow-sm hover:shadow-md transition-all duration-300;
-  }
-  
-  .premium-badge {
-    @apply bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-xs px-2 py-0.5 rounded-md shadow-sm;
-  }
-  
-  .glass-effect {
-    @apply bg-white/80 backdrop-blur-sm;
-  }
-  
-  .premium-gradient {
-    @apply bg-gradient-to-r from-amber-200 to-yellow-100;
-  }
-  
-  .hover-scale {
-    @apply transition-transform duration-200 hover:scale-105;
-  }
-  
-  .message-date-divider {
-    @apply flex items-center justify-center my-4;
-  }
-  
-  .message-date-divider::before,
-  .message-date-divider::after {
-    content: "";
-    @apply flex-grow h-px bg-love-100 mx-2;
-  }
-  
-  .message-date-badge {
-    @apply bg-love-50 text-love-700 px-3 py-1 rounded-md text-xs font-medium;
-  }
-  
-  /* Animations for message components */
-  .animate-fade-in {
-    animation: fadeIn 0.3s ease-out forwards;
-  }
-  
-  .animate-slide-up {
-    animation: slideUp 0.3s ease-out forwards;
-  }
-  
-  .animate-bounce-in {
-    animation: bounceIn 0.5s ease-out forwards;
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-  
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  @keyframes bounceIn {
-    0% {
-      opacity: 0;
-      transform: scale(0.8);
-    }
-    70% {
-      transform: scale(1.05);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
-  /* Mobile-friendly card styles */
-  .mobile-card {
-    @apply w-full p-3 sm:p-4;
-  }
-  
-  /* Mobile-friendly table */
-  .mobile-table {
-    @apply block sm:table w-full;
-  }
-  
-  .mobile-table-header {
-    @apply hidden sm:table-header-group;
-  }
-  
-  .mobile-table-row {
-    @apply block sm:table-row border-b sm:border-none mb-4 sm:mb-0;
-  }
-  
-  .mobile-table-cell {
-    @apply block sm:table-cell p-2 sm:p-4;
-  }
-  
-  .mobile-table-cell:before {
-    @apply font-medium sm:hidden mr-2 inline-block;
-    content: attr(data-label);
-  }
-  
-  /* Mobile-friendly form controls */
-  .mobile-form-control {
-    @apply min-h-[44px]; /* Minimum touch target size */
-  }
-  
-  /* Admin dashboard mobile styles */
-  .admin-card-mobile {
-    @apply flex-col sm:flex-row p-3 sm:p-4;
-  }
-  
-  .admin-stats-grid {
-    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4;
-  }
-  
-  .admin-action-buttons {
-    @apply flex flex-wrap gap-2 w-full justify-center sm:justify-start overflow-x-visible;
-  }
-  
-  .admin-action-buttons > button {
-    @apply flex-none min-h-[44px] min-w-[44px] sm:flex-initial;
-  }
-  
-  /* Enhanced mobile-friendly admin dashboard styles */
-  .admin-dashboard {
-    @apply w-full max-w-[100vw] overflow-x-hidden px-2 sm:px-4;
-  }
-  
-  .admin-panel {
-    @apply w-full overflow-hidden rounded-lg;
-  }
-  
-  .admin-card {
-    @apply w-full overflow-hidden break-words shadow-sm rounded-lg;
-  }
-  
-  .admin-table-container {
-    @apply w-full overflow-x-auto -mx-0 px-0 sm:mx-0 sm:px-0 rounded-lg;
-  }
-  
-  .admin-content-scroll {
-    @apply max-w-full overflow-y-auto overflow-x-hidden pb-2;
-  }
-  
-  /* Enhanced admin data visualization */
-  .admin-data-grid {
-    @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4;
-  }
-  
-  .admin-card-mobile {
-    @apply flex flex-col sm:flex-row p-3 sm:p-4 rounded-lg;
-  }
-  
-  .admin-stats-grid {
-    @apply grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4;
-  }
-  
-  /* Mobile-optimized tables for admin */
-  .admin-mobile-table {
-    @apply w-full text-sm;
-  }
-  
-  .admin-mobile-table th {
-    @apply hidden sm:table-cell px-4 py-2 text-left font-medium text-muted-foreground;
-  }
-  
-  .admin-mobile-table td {
-    @apply block sm:table-cell px-4 py-3 border-b sm:border-0;
-  }
-  
-  .admin-mobile-table tr {
-    @apply block sm:table-row border rounded-lg mb-3 sm:mb-0 sm:border-0 sm:rounded-none;
-  }
-  
-  .admin-mobile-table td:before {
-    @apply font-medium text-xs uppercase text-muted-foreground sm:hidden inline-block mb-1 w-full;
-    content: attr(data-label);
-  }
-  
-  /* Enhanced admin charts for mobile */
-  .admin-mobile-chart {
-    @apply w-full max-w-full overflow-x-auto h-[250px] sm:h-[350px] md:h-[400px];
-  }
-  
-  /* Better scrolling for admin tables */
-  .admin-horizontal-scroll {
-    @apply overflow-y-visible overflow-x-auto pb-2 -mx-0 px-0 sm:mx-0 sm:px-0 max-w-[100vw];
-    scrollbar-width: thin;
-  }
-  
-  .admin-horizontal-scroll::-webkit-scrollbar {
-    height: 6px;
-  }
-  
-  .admin-horizontal-scroll::-webkit-scrollbar-thumb {
-    @apply bg-muted rounded-full;
-  }
-  
-  /* Admin pagination for mobile */
-  .admin-mobile-pagination {
-    @apply flex flex-wrap justify-center gap-1 mt-4;
-  }
-  
-  .admin-mobile-pagination-item {
-    @apply min-w-[36px] h-9 flex items-center justify-center rounded;
-  }
-  
-  /* Admin responsive form controls */
-  .admin-mobile-form-control {
-    @apply min-h-[44px] w-full;
-  }
-  
-  /* Admin mobile tabs */
-  .admin-mobile-tabs {
-    @apply overflow-x-auto flex pb-2 -mx-2 px-2;
-    scrollbar-width: none;
-  }
-  
-  .admin-mobile-tabs::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes bounceIn {
-  0% {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  70% {
-    transform: scale(1.05);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@layer components {
-  /* Replace circular UI elements with more rectangular, industry-standard shapes */
-  .navigation-dot {
-    @apply w-2 h-2 rounded-sm bg-gray-300 transition-all duration-200;
-  }
-  
-  .navigation-dot.active {
-    @apply bg-love-500 transform scale-110;
-  }
-  
-  /* Replace circular buttons with more standard buttons */
-  .btn-circle {
-    @apply rounded-lg flex items-center justify-center;
+  .animate-glow {
+    animation: glow 4s ease-in-out infinite;
   }
 }
