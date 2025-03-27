@@ -94,11 +94,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     });
     
     // Check if there's a valid profile and call onSwipe
-    if (profiles[index] && profiles[index].id) {
-      // Ensure onSwipe is a function before calling it
-      if (typeof onSwipe === 'function') {
-        onSwipe(profiles[index].id, direction);
-      }
+    if (profiles[index] && profiles[index].id && typeof onSwipe === 'function') {
+      onSwipe(profiles[index].id, direction);
     }
     
     // If all cards are gone, reset
