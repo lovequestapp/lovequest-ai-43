@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
 import MobileToolbar from '@/components/MobileToolbar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Helmet } from 'react-helmet';
 
 // Import our components
 import Hero from '@/components/homepage/Hero';
@@ -45,6 +46,15 @@ const Index = () => {
   
   return (
     <div className="min-h-screen flex flex-col">
+      <Helmet>
+        <title>LoveQuest - Find your perfect match</title>
+        <meta name="description" content="LoveQuest is an AI-powered dating app that helps you find compatible partners based on personality traits and interests." />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="theme-color" content="#FF4B91" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      </Helmet>
+      
       <Header />
       
       <main className="flex-grow">

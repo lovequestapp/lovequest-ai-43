@@ -7,6 +7,7 @@ import ActionButtons from './ActionButtons';
 import SwipeHints from './SwipeHints';
 import { to, from, trans, getVelocityValue } from './CardAnimation';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
 
 export interface SwipeableCardProps {
   profiles: any[];
@@ -33,8 +34,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     if (!active && trigger) {
       gone.add(index);
       const profile = profiles[index];
-      // Only call onSwipe if we have a valid profile and onSwipe is a function
-      if (profile && profile.id && typeof onSwipe === 'function') {
+      // Only call onSwipe if we have a valid profile
+      if (profile && profile.id) {
         onSwipe(profile.id, dir > 0 ? 'right' : 'left');
       }
     }
@@ -93,8 +94,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       };
     });
     
-    // Check if there's a valid profile and call onSwipe
-    if (profiles[index] && profiles[index].id && typeof onSwipe === 'function') {
+    // Call onSwipe function with the profile ID and direction
+    if (profiles[index] && profiles[index].id) {
       onSwipe(profiles[index].id, direction);
     }
     
