@@ -34,8 +34,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     if (!active && trigger) {
       gone.add(index);
       const profile = profiles[index];
-      // Only call onSwipe if we have a valid profile
-      if (profile && profile.id) {
+      // Only call onSwipe if we have a valid profile and onSwipe is a function
+      if (profile && profile.id && typeof onSwipe === 'function') {
         onSwipe(profile.id, dir > 0 ? 'right' : 'left');
       }
     }
@@ -95,7 +95,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     });
     
     // Call onSwipe function with the profile ID and direction
-    if (profiles[index] && profiles[index].id) {
+    // Only call onSwipe if it's a function and we have valid data
+    if (profiles[index] && profiles[index].id && typeof onSwipe === 'function') {
       onSwipe(profiles[index].id, direction);
     }
     

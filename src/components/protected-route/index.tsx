@@ -1,37 +1,46 @@
 
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
+import { toast } from 'sonner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { currentUser } = useUser();
+  const { currentUser, isAuthenticated } = useUser();
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
   
   useEffect(() => {
-    // Simple loading effect - hide loading after a short delay
-    const timer = setTimeout(() => {
+    // Check if user is authenticated
+    const checkAuth = () => {
+      if (!isAuthenticated()) {
+        toast.error("Please log in to access this page");
+        navigate('/login', { replace: true });
+      }
       setIsLoading(false);
-    }, 500);
+    };
+
+    // Add a small delay to ensure UserContext is properly initialized
+    const timer = setTimeout(checkAuth, 500);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [isAuthenticated, navigate]);
   
   // Show loading state while checking authentication
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
   
-  // Redirect to login if not authenticated
-  if (!currentUser) {
-    return <Navigate to="/login" replace />;
+  // Render children if authenticated
+  if (currentUser) {
+    return <>{children}</>;
   }
   
-  // Render children if authenticated
-  return <>{children}</>;
+  // This is a fallback, the navigation should have happened in the useEffect
+  return <Navigate to="/login" replace />;
 };
 
 export default ProtectedRoute;

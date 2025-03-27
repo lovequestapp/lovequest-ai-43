@@ -52,6 +52,7 @@ const Login = () => {
         // Update UserContext with the logged in user
         setCurrentUser(user);
         toast.success('Logged in successfully!');
+        // Navigate to /profile (no userId) instead of /profile (with userId)
         navigate('/profile');
       } else {
         toast.error('Invalid email or password');
