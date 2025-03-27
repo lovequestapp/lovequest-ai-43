@@ -93,9 +93,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       };
     });
     
-    // Fixed: Instead of calling onSwipe inline, create a local variable to check conditions
+    // Properly check if onSwipe is a function before calling it
     const profileId = profiles[index]?.id;
-    if (typeof onSwipe === 'function' && profileId) {
+    if (profileId && typeof onSwipe === 'function') {
       onSwipe(profileId, direction);
     }
     
@@ -149,4 +149,3 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
 };
 
 export default SwipeableCard;
-

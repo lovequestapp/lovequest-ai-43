@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Messages from './pages/Messages';
 import EditProfile from './pages/edit-profile';
 import Discover from './pages/discover';
+import Admin from './pages/Admin';
 import ProtectedRoute from './components/protected-route';
 import './index.css';
 
@@ -62,6 +63,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Discover />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute>
+            <Admin />
           </ProtectedRoute>
         } 
       />
