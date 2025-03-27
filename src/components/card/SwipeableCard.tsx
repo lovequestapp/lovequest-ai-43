@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
@@ -93,9 +92,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       };
     });
     
-    // Call onSwipe function with the profile ID and direction
-    // Fix: Use optional chaining to safely call onSwipe function
-    if (profiles[index]?.id && typeof onSwipe === 'function') {
+    // Fixed: Correctly check if onSwipe is a function and safely access profile ID
+    if (typeof onSwipe === 'function' && profiles[index]?.id) {
       onSwipe(profiles[index].id, direction);
     }
     
