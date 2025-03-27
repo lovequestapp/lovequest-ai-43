@@ -94,8 +94,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     });
     
     // Call onSwipe function with the profile ID and direction
-    // Fix: Check if onSwipe is a function before calling it
-    if (profiles[index] && profiles[index].id && typeof onSwipe === 'function') {
+    // Fix: Use optional chaining to safely call onSwipe function
+    if (profiles[index]?.id && typeof onSwipe === 'function') {
       onSwipe(profiles[index].id, direction);
     }
     
