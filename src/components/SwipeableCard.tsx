@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
-import CardContent from './card/CardContent';
-import ActionButtons from './card/ActionButtons';
-import SwipeHints from './card/SwipeHints';
-import { to, from, trans, getVelocityValue } from './card/CardAnimation';
+import CardContent from './CardContent';
+import ActionButtons from './ActionButtons';
+import SwipeHints from './SwipeHints';
+import { to, from, trans, getVelocityValue } from './CardAnimation';
 
 export interface SwipeableCardProps {
   profiles: any[];
@@ -91,12 +90,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       };
     });
     
-    // Create a local variable to ensure onSwipe is a function before calling it
-    const handleSwipe = onSwipe;
-    
-    // Then call onSwipe separately (check if onSwipe is a function and if profile exists)
-    if (profiles && profiles.length > 0 && profiles[index] && profiles[index].id && typeof handleSwipe === 'function') {
-      handleSwipe(profiles[index].id, direction);
+    // Check if there's a valid profile and call onSwipe
+    if (typeof onSwipe === 'function' && profiles[index] && profiles[index].id) {
+      onSwipe(profiles[index].id, direction);
     }
     
     // If all cards are gone, reset
