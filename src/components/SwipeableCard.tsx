@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
@@ -92,9 +93,10 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       };
     });
     
-    // Fixed: Correctly check if onSwipe is a function and safely access profile ID
-    if (typeof onSwipe === 'function' && profiles[index]?.id) {
-      onSwipe(profiles[index].id, direction);
+    // Fixed: Instead of calling onSwipe inline, create a local variable to check conditions
+    const profileId = profiles[index]?.id;
+    if (typeof onSwipe === 'function' && profileId) {
+      onSwipe(profileId, direction);
     }
     
     // If all cards are gone, reset
@@ -147,3 +149,4 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
 };
 
 export default SwipeableCard;
+
