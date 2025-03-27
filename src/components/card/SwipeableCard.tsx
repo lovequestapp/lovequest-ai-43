@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useSprings, animated, to as interpolate } from '@react-spring/web';
 import { useDrag } from '@use-gesture/react';
@@ -5,6 +6,7 @@ import CardContent from './CardContent';
 import ActionButtons from './ActionButtons';
 import SwipeHints from './SwipeHints';
 import { to, from, trans, getVelocityValue } from './CardAnimation';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export interface SwipeableCardProps {
   profiles: any[];
@@ -13,6 +15,7 @@ export interface SwipeableCardProps {
 
 const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
   const [gone] = useState(() => new Set());
+  const isMobile = useIsMobile();
   
   // Create a spring for each card
   const [props, api] = useSprings(profiles.length, i => ({
@@ -91,8 +94,11 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
     });
     
     // Check if there's a valid profile and call onSwipe
-    if (typeof onSwipe === 'function' && profiles[index] && profiles[index].id) {
-      onSwipe(profiles[index].id, direction);
+    if (profiles[index] && profiles[index].id) {
+      // Ensure onSwipe is a function before calling it
+      if (typeof onSwipe === 'function') {
+        onSwipe(profiles[index].id, direction);
+      }
     }
     
     // If all cards are gone, reset
@@ -111,7 +117,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
       {props.map(({ x, y, rot, scale }, i) => (
         <animated.div
           key={i}
-          className="absolute w-[300px] md:w-[400px] h-[500px] will-change-transform touch-none"
+          className={`absolute will-change-transform touch-none ${isMobile ? 'w-[85vw] max-w-[300px]' : 'w-[300px] md:w-[400px]'} h-[500px]`}
           style={{ x, y }}
         >
           <animated.div
@@ -128,6 +134,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
               touchAction: 'none'
             }}
             className="relative cursor-grab active:cursor-grabbing"
+            aria-label={`Profile card for ${profiles[i]?.name || 'user'}`}
           >
             <CardContent profile={profiles[i]} index={i} />
           </animated.div>

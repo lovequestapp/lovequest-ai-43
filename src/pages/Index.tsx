@@ -6,6 +6,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
+import MobileToolbar from '@/components/MobileToolbar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Import our components
 import Hero from '@/components/homepage/Hero';
@@ -21,6 +23,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { currentUser } = useUser();
   const location = useLocation();
+  const isMobile = useIsMobile();
   
   // Check if we need to show the quiz from navigation state
   useEffect(() => {
@@ -63,6 +66,15 @@ const Index = () => {
       </main>
       
       <Footer />
+      
+      {isMobile && currentUser && (
+        <MobileToolbar />
+      )}
+
+      {/* Add extra bottom padding when mobile toolbar is visible */}
+      {isMobile && currentUser && (
+        <div className="h-16 w-full" aria-hidden="true"></div>
+      )}
     </div>
   );
 };
