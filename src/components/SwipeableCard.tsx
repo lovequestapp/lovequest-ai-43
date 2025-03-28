@@ -11,7 +11,7 @@ interface SwipeableCardProps {
   onSwipe: (profileId: string, direction: 'left' | 'right') => void;
 }
 
-// Define a helper function for transform interpolations
+// Define helper functions for transform interpolations
 const to = (x: number, y: number): string => `translate3d(${x}px,${y}px,0)`;
 const toRot = (rot: number, scale: number): string => `rotate(${rot}deg) scale(${scale})`;
 
@@ -58,8 +58,11 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
   
   const bind = useDrag(
     ({ args: [index], down, movement: [mx], direction: [xDir], velocity }) => {
-      // Fix TS2365: Handle velocity as a number or extract magnitude from Vector2
-      const velocityValue = typeof velocity === 'number' ? velocity : Math.sqrt(velocity[0] * velocity[0] + velocity[1] * velocity[1]);
+      // Handle velocity properly - extract magnitude if it's a Vector2
+      const velocityValue = typeof velocity === 'number' 
+        ? velocity 
+        : Math.sqrt(Math.pow(velocity[0], 2) + Math.pow(velocity[1], 2));
+      
       const trigger = velocityValue > 0.2;
       const dir = xDir < 0 ? -1 : 1;
       
@@ -72,7 +75,7 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
         
         const isGone = gone.has(index);
         const x = isGone ? (200 + window.innerWidth) * dir : down ? mx : 0;
-        // Fix TS2363: Handle velocity calculation properly
+        // Handle rotation calculation properly
         const rot = mx / 100 + (isGone ? dir * 10 * velocityValue : 0);
         const scale = down ? 1.05 : 1;
         
