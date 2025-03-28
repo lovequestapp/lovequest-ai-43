@@ -44,6 +44,12 @@ function App() {
             ? gender 
             : 'non-binary';
             
+          // Ensure interestedIn is properly typed
+          const interestedIn = profileData?.interested_in || [];
+          const validInterestedIn = interestedIn.filter((interest: string) => 
+            interest === 'male' || interest === 'female' || interest === 'non-binary'
+          ) as ('male' | 'female' | 'non-binary')[];
+          
           // Map Supabase profile data to our User type
           const mappedUser = {
             id: data.session.user.id,
@@ -55,7 +61,7 @@ function App() {
             interests: profileData?.interests || [],
             photos: profileData?.photos || [],
             gender: validGender as 'male' | 'female' | 'non-binary',
-            interestedIn: profileData?.interested_in || [],
+            interestedIn: validInterestedIn,
             popularityPoints: profileData?.popularity_points || 0,
             premiumStatus: (profileData?.premium_status || 'basic') as 'basic' | 'premium' | 'vip',
             giftInventory: { rose: 0, heart: 0, teddy: 0 },
@@ -98,6 +104,12 @@ function App() {
           const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary') 
             ? gender 
             : 'non-binary';
+            
+          // Ensure interestedIn is properly typed
+          const interestedIn = profileData?.interested_in || [];
+          const validInterestedIn = interestedIn.filter((interest: string) => 
+            interest === 'male' || interest === 'female' || interest === 'non-binary'
+          ) as ('male' | 'female' | 'non-binary')[];
           
           // Map Supabase profile data to our User type
           const mappedUser = {
@@ -110,7 +122,7 @@ function App() {
             interests: profileData?.interests || [],
             photos: profileData?.photos || [],
             gender: validGender as 'male' | 'female' | 'non-binary',
-            interestedIn: profileData?.interested_in || [],
+            interestedIn: validInterestedIn,
             popularityPoints: profileData?.popularity_points || 0,
             premiumStatus: (profileData?.premium_status || 'basic') as 'basic' | 'premium' | 'vip',
             giftInventory: { rose: 0, heart: 0, teddy: 0 },
