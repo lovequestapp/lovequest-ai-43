@@ -54,7 +54,9 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
   
   const bind = useDrag(
     ({ args: [index], down, movement: [mx], direction: [xDir], velocity }) => {
-      const trigger = velocity > 0.2;
+      // Fix TS2365: Handle velocity as a number or extract magnitude from Vector2
+      const velocityValue = typeof velocity === 'number' ? velocity : Math.sqrt(velocity[0] * velocity[0] + velocity[1] * velocity[1]);
+      const trigger = velocityValue > 0.2;
       const dir = xDir < 0 ? -1 : 1;
       
       if (!down && trigger) {
@@ -66,7 +68,8 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
         
         const isGone = gone.has(index);
         const x = isGone ? (200 + window.innerWidth) * dir : down ? mx : 0;
-        const rot = mx / 100 + (isGone ? dir * 10 * (velocity || 0) : 0);
+        // Fix TS2363: Handle velocity calculation properly
+        const rot = mx / 100 + (isGone ? dir * 10 * velocityValue : 0);
         const scale = down ? 1.05 : 1;
         
         return {

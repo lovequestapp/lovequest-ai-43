@@ -46,9 +46,11 @@ function App() {
             
           // Ensure interestedIn is properly typed
           const interestedIn = profileData?.interested_in || [];
-          const validInterestedIn = interestedIn.filter((interest: string) => 
-            interest === 'male' || interest === 'female' || interest === 'non-binary'
-          ) as ('male' | 'female' | 'non-binary')[];
+          const validInterestedIn = Array.isArray(interestedIn) ? 
+            interestedIn.filter((interest: string) => 
+              interest === 'male' || interest === 'female' || interest === 'non-binary'
+            ) as ('male' | 'female' | 'non-binary')[] :
+            [] as ('male' | 'female' | 'non-binary')[];
           
           // Map Supabase profile data to our User type
           const mappedUser = {
@@ -107,9 +109,11 @@ function App() {
             
           // Ensure interestedIn is properly typed
           const interestedIn = profileData?.interested_in || [];
-          const validInterestedIn = interestedIn.filter((interest: string) => 
-            interest === 'male' || interest === 'female' || interest === 'non-binary'
-          ) as ('male' | 'female' | 'non-binary')[];
+          const validInterestedIn = Array.isArray(interestedIn) ? 
+            interestedIn.filter((interest: string) => 
+              interest === 'male' || interest === 'female' || interest === 'non-binary'
+            ) as ('male' | 'female' | 'non-binary')[] :
+            [] as ('male' | 'female' | 'non-binary')[];
           
           // Map Supabase profile data to our User type
           const mappedUser = {
