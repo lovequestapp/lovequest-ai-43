@@ -8,7 +8,8 @@ import CardContent from './CardContent';
 import SwipeHints from './SwipeHints';
 
 // Define a helper function for transform interpolations
-const to = (args: any[], fn: Function) => args.length === 1 ? fn(args[0]) : fn(...args);
+const to = (x: number, y: number): string => `translate3d(${x}px,${y}px,0)`;
+const toRot = (rot: number, scale: number): string => `rotate(${rot}deg) scale(${scale})`;
 
 interface SwipeableCardProps {
   profiles: any[];
@@ -167,7 +168,7 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
               width: '100%',
               height: '100%',
               willChange: 'transform',
-              transform: to([x, y], (x, y) => `translate3d(${x}px,${y}px,0)`),
+              transform: to(x.get(), y.get()),
               zIndex: profiles.length - i,
             }}
           >
@@ -180,7 +181,7 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
                 willChange: 'transform',
                 borderRadius: '10px',
                 transformOrigin: 'center center',
-                transform: to([rot, scale], (rot, scale) => `rotate(${rot}deg) scale(${scale})`),
+                transform: toRot(rot.get(), scale.get()),
                 boxShadow: '0 12px 20px -10px rgba(0, 0, 0, 0.2)',
                 touchAction: 'none',
               }}

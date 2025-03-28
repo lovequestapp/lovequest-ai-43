@@ -11,6 +11,10 @@ interface SwipeableCardProps {
   onSwipe: (profileId: string, direction: 'left' | 'right') => void;
 }
 
+// Define a helper function for transform interpolations
+const to = (x: number, y: number): string => `translate3d(${x}px,${y}px,0)`;
+const toRot = (rot: number, scale: number): string => `rotate(${rot}deg) scale(${scale})`;
+
 export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [gone] = useState<Set<number>>(() => new Set());
@@ -134,7 +138,7 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
             <animated.div 
               key={profile.id} 
               style={{ 
-                transform: to([x, y], (x, y) => `translate3d(${x}px,${y}px,0)`),
+                transform: to(x.get(), y.get()),
                 position: 'absolute', 
                 width: '100%',
                 height: '100%',
@@ -145,7 +149,7 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
               <animated.div
                 {...bind(i)}
                 style={{
-                  transform: to([rot, scale], (rot, scale) => `rotate(${rot}deg) scale(${scale})`),
+                  transform: toRot(rot.get(), scale.get()),
                   backgroundImage: `url(${profile.photos?.[0] || '/placeholder.svg'})`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
@@ -190,10 +194,4 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
       </CardFooter>
     </div>
   );
-}
-
-function to(args: any[], fn: Function) {
-  return args.length === 1
-    ? fn(args[0])
-    : fn(...args);
 }
