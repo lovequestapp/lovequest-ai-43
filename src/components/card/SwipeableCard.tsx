@@ -1,151 +1,216 @@
 
 import React, { useState } from 'react';
-import { useSprings, animated, to as interpolate } from '@react-spring/web';
+import { useSprings, animated } from 'react-spring';
 import { useDrag } from '@use-gesture/react';
+import { Check, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import CardContent from './CardContent';
-import ActionButtons from './ActionButtons';
 import SwipeHints from './SwipeHints';
-import { to, from, trans, getVelocityValue } from './CardAnimation';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useSpring } from 'react-spring';
 
-export interface SwipeableCardProps {
-  profiles: any[];
-  onSwipe: (id: string, direction: 'left' | 'right') => void;
-}
+// Define a helper function for transform interpolations
+const to = (args, fn) => args.length === 1 ? fn(args[0]) : fn(...args);
 
-const SwipeableCard: React.FC<SwipeableCardProps> = ({ profiles, onSwipe }) => {
+export default function SwipeableCard({ profiles, onSwipe }) {
   const [gone] = useState(() => new Set());
-  const isMobile = useIsMobile();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showHints, setShowHints] = useState(false);
+  const [showNoMatches, setShowNoMatches] = useState(false);
   
-  // Create a spring for each card
-  const [props, api] = useSprings(profiles.length, i => ({
-    ...to(i),
-    from: from(i),
-  }));
+  const [hints] = useState({
+    swipeRight: "Swipe right if you're interested",
+    swipeLeft: "Swipe left to pass",
+  });
 
-  // Create a drag handler for the cards
-  const bind = useDrag(({ args: [index], active, movement: [mx], direction: [xDir], velocity }) => {
-    // Convert Vector2 velocity to number by checking its magnitude
-    const velocityValue = getVelocityValue(velocity);
-    const trigger = velocityValue > 0.2; // Minimum velocity to trigger swipe
-    const dir = xDir < 0 ? -1 : 1; // Direction is either left or right
+  const [props, api] = useSprings(profiles.length, i => ({
+    x: 0,
+    y: 0,
+    scale: 1,
+    rot: 0,
+    delay: i * 100,
+  }));
+  
+  const fadeInOut = useSpring({
+    opacity: showHints ? 1 : 0,
+    config: { duration: 200 },
+  });
+
+  // Check if we should show the tutorial (first card, first time)
+  React.useEffect(() => {
+    if (currentIndex === 0 && profiles.length > 0) {
+      const timer = setTimeout(() => {
+        setShowHints(true);
+        setTimeout(() => {
+          setShowHints(false);
+        }, 3000);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentIndex, profiles.length]);
+
+  // Check if we're out of profiles
+  React.useEffect(() => {
+    if (currentIndex >= profiles.length && profiles.length > 0) {
+      setShowNoMatches(true);
+    } else {
+      setShowNoMatches(false);
+    }
+  }, [currentIndex, profiles.length]);
+
+  const bind = useDrag(({ args: [index], down, movement: [mx], direction: [xDir], velocity }) => {
+    const trigger = velocity > 0.2;
+    const dir = xDir < 0 ? -1 : 1;
     
-    if (!active && trigger) {
+    if (!down && trigger) {
       gone.add(index);
-      const profile = profiles[index];
-      // Only call onSwipe if we have a valid profile and onSwipe is a function
-      if (profile && profile.id) {
-        onSwipe(profile.id, dir > 0 ? 'right' : 'left');
+      
+      // Store the profile ID locally first
+      const profileId = profiles[index]?.id;
+      
+      // Call onSwipe only if it's a function and we have a valid profile ID
+      if (typeof onSwipe === 'function' && profileId) {
+        onSwipe(profileId, dir > 0 ? 'right' : 'left');
       }
+      
+      setCurrentIndex(prev => prev + 1);
     }
     
     api.start(i => {
       if (index !== i) return;
       const isGone = gone.has(index);
-      
-      // When a card is gone, fly it out
-      const x = isGone ? (200 + window.innerWidth) * dir : active ? mx : 0;
-      
-      // Ensure numeric operation by explicitly converting mx to number
-      const rot = (typeof mx === 'number' ? mx : 0) / 100 + (isGone ? dir * 10 * velocityValue : 0);
-      
-      // Scale up slightly when active
-      const scale = active ? 1.05 : 1;
+      const x = isGone ? (200 + window.innerWidth) * dir : down ? mx : 0;
+      const rot = mx / 100 + (isGone ? dir * 10 * velocity : 0);
+      const scale = down ? 1.05 : 1;
       
       return {
         x,
         rot,
         scale,
         delay: undefined,
-        config: { friction: 50, tension: active ? 800 : isGone ? 200 : 500 },
+        config: { friction: 50, tension: down ? 800 : isGone ? 200 : 500 },
       };
     });
-    
-    // If all cards are gone, reset
-    if (!active && gone.size === profiles.length) {
-      setTimeout(() => {
-        gone.clear();
-        api.start(i => to(i));
-      }, 600);
-    }
   });
 
-  const handleButtonSwipe = (direction: 'left' | 'right') => {
-    // Only proceed if there are profiles to swipe
-    if (!profiles || profiles.length === 0) return;
-    
-    const index = 0; // Always handle the top card
-    const dir = direction === 'left' ? -1 : 1;
-    gone.add(index);
-    
-    // First update the UI animation
-    api.start(i => {
-      if (index !== i) return;
-      const x = (200 + window.innerWidth) * dir;
-      const rot = dir * 10;
+  const handleButtonSwipe = (direction) => {
+    if (currentIndex < profiles.length) {
+      // Store the profile ID locally first
+      const profileId = profiles[currentIndex]?.id;
       
-      return {
-        x,
-        rot,
-        scale: 1,
-        delay: undefined,
-        config: { friction: 50, tension: 200 },
-      };
-    });
-    
-    // Fixed: Get profile ID first, then check if it exists before trying to call onSwipe
-    const profileId = profiles[index]?.id;
-    if (profileId) {
-      onSwipe(profileId, direction);
-    }
-    
-    // If all cards are gone, reset
-    if (gone.size === profiles.length) {
-      setTimeout(() => {
-        gone.clear();
-        api.start(i => to(i));
-      }, 600);
+      // Update the card animation
+      api.start(i => {
+        if (i !== currentIndex) return;
+        
+        gone.add(currentIndex);
+        const x = direction === 'right' ? 500 : -500;
+        
+        return {
+          x,
+          rot: direction === 'right' ? 10 : -10,
+          delay: undefined,
+        };
+      });
+      
+      // Call onSwipe only if it's a function and we have a valid profile ID
+      if (typeof onSwipe === 'function' && profileId) {
+        onSwipe(profileId, direction);
+      }
+      
+      // Update the current index
+      setCurrentIndex(prev => prev + 1);
     }
   };
-  
+
+  // Show loading state if no profiles
+  if (!profiles || profiles.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <h3 className="text-xl font-medium mb-2">Loading profiles...</h3>
+          <p className="text-muted-foreground">Please wait while we find matches for you</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show no more matches state
+  if (showNoMatches) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center">
+          <h3 className="text-xl font-medium mb-2">You've seen all profiles</h3>
+          <p className="text-muted-foreground">Check back soon for new matches</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative w-full h-[60vh] flex items-center justify-center">
-      <SwipeHints />
-      
-      {props.map(({ x, y, rot, scale }, i) => (
-        <animated.div
-          key={i}
-          className={`absolute will-change-transform touch-none ${isMobile ? 'w-[85vw] max-w-[300px]' : 'w-[300px] md:w-[400px]'} h-[500px]`}
-          style={{ x, y }}
-        >
+    <div className="relative h-[70vh] w-full max-w-md mx-auto">
+      {props.map(({ x, y, rot, scale }, i) => {
+        // Only render cards that are current or next few
+        if (i < currentIndex || i >= currentIndex + 3) return null;
+        
+        return (
           <animated.div
-            {...bind(i)}
+            key={profiles[i].id}
             style={{
-              transform: interpolate([rot, scale], trans),
-              backgroundImage: `url(${profiles[i]?.photos[0]})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
+              position: 'absolute',
               width: '100%',
               height: '100%',
-              borderRadius: '16px',
-              boxShadow: '0 12px 25px -10px rgba(50, 50, 73, 0.4), 0 10px 10px -10px rgba(50, 50, 73, 0.3)',
-              touchAction: 'none'
+              willChange: 'transform',
+              transform: to([x, y], (x, y) => `translate3d(${x}px,${y}px,0)`),
+              zIndex: profiles.length - i,
             }}
-            className="relative cursor-grab active:cursor-grabbing"
-            aria-label={`Profile card for ${profiles[i]?.name || 'user'}`}
           >
-            <CardContent profile={profiles[i]} index={i} />
+            <animated.div
+              {...bind(i)}
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                willChange: 'transform',
+                borderRadius: '10px',
+                transformOrigin: 'center center',
+                transform: to([rot, scale], (rot, scale) => `rotate(${rot}deg) scale(${scale})`),
+                boxShadow: '0 12px 20px -10px rgba(0, 0, 0, 0.2)',
+                touchAction: 'none',
+              }}
+            >
+              <CardContent profile={profiles[i]} />
+              
+              {showHints && i === currentIndex && (
+                <animated.div style={fadeInOut}>
+                  <SwipeHints hints={hints} />
+                </animated.div>
+              )}
+            </animated.div>
           </animated.div>
-        </animated.div>
-      ))}
-      
-      <ActionButtons 
-        profilesLength={profiles.length} 
-        onSwipeLeft={() => handleButtonSwipe('left')}
-        onSwipeRight={() => handleButtonSwipe('right')}
-      />
+        );
+      })}
+
+      <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-6">
+        <Button 
+          variant="outline" 
+          size="lg" 
+          className="h-14 w-14 rounded-full border-2"
+          onClick={() => handleButtonSwipe('left')}
+          disabled={currentIndex >= profiles.length}
+        >
+          <X className="h-6 w-6 text-destructive" />
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          size="lg" 
+          className="h-14 w-14 rounded-full border-2"
+          onClick={() => handleButtonSwipe('right')}
+          disabled={currentIndex >= profiles.length}
+        >
+          <Check className="h-6 w-6 text-green-500" />
+        </Button>
+      </div>
     </div>
   );
-};
-
-export default SwipeableCard;
+}

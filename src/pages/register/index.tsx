@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { toast } from 'sonner';
-import { signUpWithEmail } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/context/UserContext';
 
 const Register = () => {
@@ -21,41 +21,97 @@ const Register = () => {
     e.preventDefault();
     
     if (!name || !email || !password) {
-      toast("Please fill out all fields");
+      toast.error("Please fill out all fields");
       return;
     }
     
     setIsLoading(true);
     
     try {
-      const result = await signUpWithEmail(email, password);
+      // Register with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            email
+          }
+        }
+      });
       
-      if (result.success) {
-        // Set user data in context
-        if (result.data?.user) {
-          const newUser = {
-            id: result.data.user.id,
+      if (error) {
+        throw error;
+      }
+      
+      // If successfully registered
+      if (data.user) {
+        // Insert into profiles table (though there should be a trigger handling this)
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
             name,
             email,
             age: 25, // Default value
-            photos: [],
             bio: '',
             location: '',
-            interests: []
-          };
+            interests: [],
+            photos: [],
+            gender: 'non-binary',
+            interested_in: [],
+            premium_status: 'basic',
+            role: 'subscriber',
+            is_verified: false,
+            is_banned: false,
+          });
           
-          // Set the current user (this would normally be done in the auth service)
-          setCurrentUser(newUser as any);
-          
-          toast("Account created successfully!");
-          navigate('/profile');
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          // Continue anyway since the auth trigger should handle it
         }
+          
+        // Create user object to store in context
+        const newUser = {
+          id: data.user.id,
+          name,
+          email,
+          age: 25, // Default value
+          photos: [],
+          bio: '',
+          location: '',
+          interests: [],
+          gender: 'non-binary' as const,
+          interestedIn: [],
+          popularityPoints: 0,
+          premiumStatus: 'basic' as const,
+          role: 'subscriber' as const,
+          isBanned: false,
+          verificationStatus: 'unverified' as const,
+          personalityTraits: [],
+          giftInventory: { rose: 0, heart: 0, teddy: 0 },
+          receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+          compatibilityScore: 0,
+        };
+        
+        // Set the current user
+        setCurrentUser(newUser);
+        
+        toast.success("Account created successfully!");
+        navigate('/profile');
       } else {
-        toast(result.error || "Failed to create account. Please try again.");
+        // If no session, they need to verify their email
+        toast.info("Please check your email to confirm your registration");
       }
     } catch (error: any) {
       console.error("Registration error:", error);
-      toast(error.message || "An error occurred during registration");
+      
+      // Provide user-friendly error messages
+      if (error.message?.includes("User already registered")) {
+        toast.error("This email is already registered. Please try logging in instead.");
+      } else {
+        toast.error(error.message || "An error occurred during registration");
+      }
     } finally {
       setIsLoading(false);
     }
