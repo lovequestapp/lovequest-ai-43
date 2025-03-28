@@ -1,17 +1,21 @@
 
 import React, { useState } from 'react';
-import { useSprings, animated } from 'react-spring';
+import { useSprings, animated, useSpring } from 'react-spring';
 import { useDrag } from '@use-gesture/react';
 import { Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import CardContent from './CardContent';
 import SwipeHints from './SwipeHints';
-import { useSpring } from 'react-spring';
 
 // Define a helper function for transform interpolations
-const to = (args, fn) => args.length === 1 ? fn(args[0]) : fn(...args);
+const to = (args: any[], fn: Function) => args.length === 1 ? fn(args[0]) : fn(...args);
 
-export default function SwipeableCard({ profiles, onSwipe }) {
+interface SwipeableCardProps {
+  profiles: any[];
+  onSwipe: (profileId: string, direction: 'left' | 'right') => void;
+}
+
+export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps) {
   const [gone] = useState(() => new Set());
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showHints, setShowHints] = useState(false);
@@ -80,7 +84,7 @@ export default function SwipeableCard({ profiles, onSwipe }) {
       if (index !== i) return;
       const isGone = gone.has(index);
       const x = isGone ? (200 + window.innerWidth) * dir : down ? mx : 0;
-      const rot = mx / 100 + (isGone ? dir * 10 * velocity : 0);
+      const rot = mx / 100 + (isGone ? dir * 10 * (velocity || 0) : 0);
       const scale = down ? 1.05 : 1;
       
       return {
@@ -93,7 +97,7 @@ export default function SwipeableCard({ profiles, onSwipe }) {
     });
   });
 
-  const handleButtonSwipe = (direction) => {
+  const handleButtonSwipe = (direction: 'left' | 'right') => {
     if (currentIndex < profiles.length) {
       // Store the profile ID locally first
       const profileId = profiles[currentIndex]?.id;
@@ -178,7 +182,7 @@ export default function SwipeableCard({ profiles, onSwipe }) {
                 touchAction: 'none',
               }}
             >
-              <CardContent profile={profiles[i]} />
+              <CardContent profile={profiles[i]} index={i} />
               
               {showHints && i === currentIndex && (
                 <animated.div style={fadeInOut}>

@@ -38,6 +38,12 @@ function App() {
             return;
           }
           
+          // Ensure gender is properly typed
+          const gender = profileData?.gender || 'non-binary';
+          const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary') 
+            ? gender 
+            : 'non-binary';
+            
           // Map Supabase profile data to our User type
           const mappedUser = {
             id: data.session.user.id,
@@ -48,7 +54,7 @@ function App() {
             location: profileData?.location || '',
             interests: profileData?.interests || [],
             photos: profileData?.photos || [],
-            gender: profileData?.gender || 'non-binary',
+            gender: validGender as 'male' | 'female' | 'non-binary',
             interestedIn: profileData?.interested_in || [],
             popularityPoints: profileData?.popularity_points || 0,
             premiumStatus: (profileData?.premium_status || 'basic') as 'basic' | 'premium' | 'vip',
@@ -87,6 +93,12 @@ function App() {
             console.error("Error fetching profile:", profileError);
           }
           
+          // Ensure gender is properly typed
+          const gender = profileData?.gender || 'non-binary';
+          const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary') 
+            ? gender 
+            : 'non-binary';
+          
           // Map Supabase profile data to our User type
           const mappedUser = {
             id: session.user.id,
@@ -97,7 +109,7 @@ function App() {
             location: profileData?.location || '',
             interests: profileData?.interests || [],
             photos: profileData?.photos || [],
-            gender: profileData?.gender || 'non-binary',
+            gender: validGender as 'male' | 'female' | 'non-binary',
             interestedIn: profileData?.interested_in || [],
             popularityPoints: profileData?.popularity_points || 0,
             premiumStatus: (profileData?.premium_status || 'basic') as 'basic' | 'premium' | 'vip',

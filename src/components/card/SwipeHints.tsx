@@ -2,7 +2,14 @@
 import React from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 
-const SwipeHints: React.FC = () => {
+interface SwipeHintsProps {
+  hints: {
+    swipeRight: string;
+    swipeLeft: string;
+  };
+}
+
+const SwipeHints: React.FC<SwipeHintsProps> = ({ hints }) => {
   return (
     <>
       {/* Swipe hint arrows */}

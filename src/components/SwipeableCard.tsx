@@ -66,7 +66,7 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
         
         const isGone = gone.has(index);
         const x = isGone ? (200 + window.innerWidth) * dir : down ? mx : 0;
-        const rot = mx / 100 + (isGone ? dir * 10 * velocity : 0);
+        const rot = mx / 100 + (isGone ? dir * 10 * (velocity || 0) : 0);
         const scale = down ? 1.05 : 1;
         
         return {
