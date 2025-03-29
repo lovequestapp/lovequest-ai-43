@@ -36,6 +36,32 @@ export const login = async (email: string, password: string): Promise<{ success:
       // Continue anyway, but log the error
     }
     
+    // Handle type-safe gender
+    const gender = profile?.gender || 'non-binary';
+    const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary') 
+      ? gender as 'male' | 'female' | 'non-binary'
+      : 'non-binary' as const;
+      
+    // Handle type-safe interestedIn
+    const interestedIn = profile?.interested_in || [];
+    const validInterestedIn = Array.isArray(interestedIn) ? 
+      interestedIn.filter((interest: string) => 
+        interest === 'male' || interest === 'female' || interest === 'non-binary'
+      ) as ('male' | 'female' | 'non-binary')[] :
+      [] as ('male' | 'female' | 'non-binary')[];
+      
+    // Handle type-safe premiumStatus
+    const premiumStatus = profile?.premium_status || 'basic';
+    const validPremiumStatus = (premiumStatus === 'basic' || premiumStatus === 'premium' || premiumStatus === 'vip')
+      ? premiumStatus as 'basic' | 'premium' | 'vip'
+      : 'basic' as const;
+      
+    // Handle type-safe role
+    const role = profile?.role || 'subscriber';
+    const validRole = (role === 'admin' || role === 'moderator' || role === 'subscriber' || role === 'vip' || role === 'trial')
+      ? role as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial'
+      : 'subscriber' as const;
+    
     // Map data to User type
     const user: User = {
       id: data.user.id,
@@ -46,17 +72,30 @@ export const login = async (email: string, password: string): Promise<{ success:
       location: profile?.location || '',
       interests: profile?.interests || [],
       photos: profile?.photos || [],
-      gender: profile?.gender || 'non-binary',
-      interestedIn: profile?.interested_in || [],
+      gender: validGender,
+      interestedIn: validInterestedIn,
       popularityPoints: profile?.popularity_points || 0,
-      premiumStatus: profile?.premium_status || 'basic',
+      premiumStatus: validPremiumStatus,
       giftInventory: { rose: 0, heart: 0, teddy: 0 },
       receivedGifts: { rose: 0, heart: 0, teddy: 0 },
       compatibilityScore: 0,
       personalityTraits: profile?.personality_traits || [],
-      role: profile?.role || 'subscriber',
+      role: validRole,
       isBanned: profile?.is_banned || false,
-      verificationStatus: profile?.verification_status || 'unverified'
+      verificationStatus: profile?.is_verified ? 'verified' : 'unverified',
+      // Additional properties
+      lastMessage: '',
+      lastMessageTime: new Date(),
+      status: 'offline',
+      favoriteMusic: [],
+      voiceIntro: '',
+      bankDetails: {
+        accountName: '',
+        accountNumber: '',
+        bankName: '',
+        routingNumber: '',
+        accountType: ''
+      }
     };
     
     toast.success("Login successful!");
@@ -142,7 +181,20 @@ export const register = async (email: string, password: string, name: string): P
       personalityTraits: [],
       role: 'subscriber',
       isBanned: false,
-      verificationStatus: 'unverified'
+      verificationStatus: 'unverified',
+      // Additional properties
+      lastMessage: '',
+      lastMessageTime: new Date(),
+      status: 'offline',
+      favoriteMusic: [],
+      voiceIntro: '',
+      bankDetails: {
+        accountName: '',
+        accountNumber: '',
+        bankName: '',
+        routingNumber: '',
+        accountType: ''
+      }
     };
     
     toast.success("Registration successful!");

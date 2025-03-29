@@ -20,9 +20,9 @@ export type User = {
   isBanned: boolean;
   verificationStatus: 'verified' | 'unverified' | 'pending' | 'rejected';
   // Additional properties needed by components
-  voiceIntro?: string;
-  favoriteMusic?: string[];
-  bankDetails?: {
+  voiceIntro: string;
+  favoriteMusic: string[];
+  bankDetails: {
     accountName: string;
     accountNumber: string;
     bankName: string;
@@ -30,9 +30,9 @@ export type User = {
     accountType: string;
   };
   // Properties for Messages component
-  lastMessage?: string;
-  lastMessageTime?: Date;
-  status?: 'online' | 'offline' | 'away';
+  lastMessage: string;
+  lastMessageTime: Date;
+  status: 'online' | 'offline' | 'away';
 };
 
 // Export types used by other components
