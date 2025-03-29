@@ -1,11 +1,9 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, X, RotateCw, Info } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useSpring, animated } from '@react-spring/web';
-// Fix import - useDrag is from @use-gesture/react, not react-spring
 import { useDrag } from '@use-gesture/react';
 
 interface SwipeableCardProps {
@@ -39,13 +37,24 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
     config: { friction: 50, tension: 600 }
   }));
 
-  // Fix useDrag implementation
-  const bind = useDrag(({ active, offset: [ox] }) => {
+  const bind = useDrag(({ active, movement: [mx], direction: [xDir], velocity: [vx] }) => {
+    const trigger = Math.abs(mx) > 100;
+
     api.start({
-      x: ox,
+      x: active ? mx : 0,
       scale: active ? 1.1 : 1,
-      rotateZ: ox / 30,
-      config: { friction: 50, tension: active ? 800 : 500 }
+      rotateZ: active ? mx / 30 : 0,
+      immediate: name => active && (name === 'x' || name === 'rotateZ'),
+      config: { tension: 500, friction: 50 },
+      onRest: () => {
+        if (!active && trigger) {
+          if (mx > 0) {
+            onSwipeRight();
+          } else if (mx < 0) {
+            onSwipeLeft();
+          }
+        }
+      }
     });
   });
 
@@ -65,7 +74,6 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
           scale: 1,
           rotateZ: 0
         });
-        // Call onSwipeRight without parameters since it doesn't accept any
         if (onSwipeRight) onSwipeRight();
       }
     });
@@ -87,7 +95,6 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
           scale: 1,
           rotateZ: 0
         });
-        // Call onSwipeLeft without parameters since it doesn't accept any
         if (onSwipeLeft) onSwipeLeft();
       }
     });
@@ -131,7 +138,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
       style={{
         ...springs,
         zIndex: 10,
-        touchAction: 'pan-y',
+        touchAction: 'none',
       }}
       className="relative w-full max-w-md h-[600px] rounded-xl shadow-lg overflow-hidden bg-white"
     >

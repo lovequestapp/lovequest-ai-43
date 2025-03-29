@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Animated, PanResponder, View, StyleSheet, Dimensions, Image } from 'react-native';
 
@@ -32,12 +31,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipe
     PanResponder.create({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        // Using safer approach that doesn't rely on internal properties
-        const currentOffset = { x: 0, y: 0 };
-        // We'll just use setOffset without accessing internal values
         pan.setOffset({
-          x: pan.x.__getAnimatedValue ? pan.x.__getAnimatedValue() : 0,
-          y: pan.y.__getAnimatedValue ? pan.y.__getAnimatedValue() : 0
+          x: 0,
+          y: 0
         });
         pan.setValue({ x: 0, y: 0 });
       },
