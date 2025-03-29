@@ -1,3 +1,4 @@
+
 import { User } from '@/types/user';
 import type { UserWithCoordinates, BoostLevelType } from '@/types/user';
 
@@ -138,5 +139,5 @@ export const calculateCompatibilityScore = (
   return Math.max(0, Math.min(100, finalScore + randomFactor));
 };
 
-// Export the types so they can be imported elsewhere
+// Export the types to be used elsewhere
 export type { User, UserWithCoordinates, BoostLevelType };

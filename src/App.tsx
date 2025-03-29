@@ -8,7 +8,7 @@ import Profile from './pages/Profile';
 import Messages from './pages/Messages';
 import EditProfile from './pages/edit-profile';
 import Discover from './pages/discover';
-import explore from './pages/explore';  // Changed from 'Explore' to 'explore' to match file casing
+import Explore from './pages/explore';  // Fixed casing
 import Admin from './pages/Admin';
 import ProtectedRoute from './components/protected-route';
 import { useUser } from './context/UserContext';
@@ -222,7 +222,7 @@ function App() {
         path="/explore" 
         element={
           <ProtectedRoute>
-            {explore}
+            <Explore />
           </ProtectedRoute>
         } 
       />

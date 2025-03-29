@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useSprings, animated } from 'react-spring';
 import { useDrag } from '@use-gesture/react';
@@ -16,8 +15,8 @@ const to = (x: number, y: number): string => `translate3d(${x}px,${y}px,0)`;
 const toRot = (rot: number, scale: number): string => `rotate(${rot}deg) scale(${scale})`;
 
 export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [gone] = useState<Set<number>>(() => new Set());
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [props, api] = useSprings(profiles.length, i => ({
     x: 0,
     y: 0,
@@ -120,9 +119,9 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
       }
       
       // Update current index
-      setCurrentIndex(prevIndex => {
-        const nextIndex = prevIndex + 1;
-        return nextIndex >= profiles.length ? prevIndex : nextIndex;
+      setCurrentIndex(prev => {
+        const nextIndex = prev + 1;
+        return nextIndex >= profiles.length ? prev : nextIndex;
       });
     }
   };

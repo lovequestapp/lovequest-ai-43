@@ -398,12 +398,12 @@ const Monetization = () => {
                     </div>
                     
                     <div>
-                      <Label htmlFor="swiftCode">SWIFT/BIC Code (optional)</Label>
+                      <Label htmlFor="routingNumber">Routing Number</Label>
                       <Input
-                        id="swiftCode"
-                        placeholder="For international transfers"
-                        value={bankDetails.swiftCode}
-                        onChange={(e) => setBankDetails({...bankDetails, swiftCode: e.target.value})}
+                        id="routingNumber"
+                        placeholder="For transfers"
+                        value={bankDetails.routingNumber}
+                        onChange={(e) => setBankDetails({...bankDetails, routingNumber: e.target.value})}
                       />
                     </div>
                     

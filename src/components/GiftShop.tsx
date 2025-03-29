@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -87,7 +88,7 @@ const GiftShop: React.FC = () => {
     setIsCheckingOut(true);
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!cardNumber || !cardName || !cardExpiry || !cardCvc) {
       toast({
         title: "Incomplete payment details",
@@ -97,7 +98,7 @@ const GiftShop: React.FC = () => {
       return;
     }
 
-    const itemsToPurchase = Object.entries(quantity)
+    const itemsToPurchase = Object.entries(quantities)
       .filter(([_, quantity]) => quantity > 0)
       .map(([type, quantity]) => ({
         type: type as 'rose' | 'heart' | 'teddy',

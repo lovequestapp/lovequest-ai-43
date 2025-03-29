@@ -114,7 +114,7 @@ const DiscoverContent = () => {
       
       {showBoostPopup && (
         <ProfileBoostPopup 
-          isOpen={showBoostPopup} 
+          open={showBoostPopup} 
           onClose={closePopup} 
         />
       )}

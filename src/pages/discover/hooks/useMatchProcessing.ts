@@ -129,7 +129,7 @@ const useMatchProcessing = ({
         if (popularityScore >= 100) {
           boostLevel = 'super';
         } else if (popularityScore >= 70) {
-          boostLevel = 'standard';
+          boostLevel = 'local';  // Changed from 'standard' to 'local'
         }
         
         // Paid boosts take precedence
