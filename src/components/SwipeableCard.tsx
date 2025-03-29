@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useSprings, animated } from 'react-spring';
 import { useDrag } from '@use-gesture/react';
@@ -113,8 +114,8 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
         return { x, rot: direction === 'right' ? 10 : -10, delay: undefined };
       });
       
-      // Call onSwipe only if it's a function and we have a valid profile ID
-      if (typeof onSwipe === 'function' && profileId) {
+      // Call onSwipe only if we have a valid profile ID
+      if (profileId) {
         onSwipe(profileId, direction);
       }
       

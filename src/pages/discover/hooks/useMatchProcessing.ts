@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import { 
@@ -9,6 +8,7 @@ import {
   getNearbyUsers,
   BOOST_PRIORITY
 } from '@/utils/matchingAlgorithm';
+import { UserWithCoordinates as UserWithCoordinatesType } from '@/types/user';
 
 interface UseMatchProcessingProps {
   currentUser: UserWithCoordinates | null;
@@ -36,7 +36,6 @@ const useMatchProcessing = ({
   const [enhancedMatches, setEnhancedMatches] = useState<UserWithCoordinates[]>([]);
   const [filteredMatches, setFilteredMatches] = useState<UserWithCoordinates[]>([]);
   
-  // Process matches when dependencies change
   useEffect(() => {
     console.log("Running match processing effect with:", {
       hasCurrentUser: !!currentUser,
@@ -61,7 +60,6 @@ const useMatchProcessing = ({
       
       let processedMatches = [...potentialMatches] as UserWithCoordinates[];
       
-      // Apply location-based filtering if enabled
       if (userCoordinates && isNearbyFilterActive) {
         console.log(`Filtering by proximity: ${proximityRadius}km radius`);
         const currentUserWithCoords: UserWithCoordinates = {
@@ -75,11 +73,9 @@ const useMatchProcessing = ({
           proximityRadius
         );
         
-        // Sort by distance after filtering
         processedMatches.sort((a, b) => (a.distance || 0) - (b.distance || 0));
       }
       
-      // Apply region filtering if enabled
       if (isLocationFiltering && selectedRegions.length > 0) {
         console.log(`Filtering by regions: ${selectedRegions.join(', ')}`);
         processedMatches = processedMatches.filter(match => {
@@ -102,7 +98,6 @@ const useMatchProcessing = ({
       console.log("Identifying boosted profiles");
       const safeBootedProfiles = boostedProfiles || [];
       
-      // Advanced algorithm: Apply multiple factors for match scoring
       const matchesWithBoostInfo = sortedMatches.map(match => {
         if (!match || !match.id) {
           console.warn("Invalid match object:", match);
@@ -120,32 +115,27 @@ const useMatchProcessing = ({
         );
         
         const popularityScore = match.popularityPoints || 0;
-        // Consider both paid boosts and organic popularity
         const isBoosted = shouldBoostProfile(popularityScore) || Boolean(isBoostedProfile);
         
         let boostLevel: BoostLevelType = 'none';
         
-        // Advanced boost level assignment
         if (popularityScore >= 100) {
           boostLevel = 'super';
         } else if (popularityScore >= 70) {
-          boostLevel = 'local';  // Changed from 'standard' to 'local'
+          boostLevel = 'local';
         }
         
-        // Paid boosts take precedence
         if (isBoostedProfile) {
           boostLevel = isInternationalBoosted ? 'international' : 'local';
         }
         
-        // Calculate activity score based on recent activity (mocked)
-        const activityScore = Math.random() * 100; // In a real app, this would be based on user activity
+        const activityScore = Math.random() * 100;
         
         return {
           ...match,
           isBoosted,
           boostLevel: isBoosted ? boostLevel : 'none' as BoostLevelType,
           activityScore: Math.round(activityScore),
-          // Combine compatibility with recency to get a final score
           finalScore: (match.compatibilityScore || 0) * 0.7 + activityScore * 0.3
         };
       });
@@ -153,19 +143,15 @@ const useMatchProcessing = ({
       const boostedMatches = matchesWithBoostInfo.filter(m => m.isBoosted);
       const normalMatches = matchesWithBoostInfo.filter(m => !m.isBoosted);
       
-      // Enhanced sorting algorithm for boosted profiles
       const sortedBoostedMatches = boostedMatches.sort((a, b) => {
-        // First sort by boost level priority
         const boostComparison = BOOST_PRIORITY[a.boostLevel as BoostLevelType] - 
                                 BOOST_PRIORITY[b.boostLevel as BoostLevelType];
         
         if (boostComparison !== 0) return boostComparison;
         
-        // Then by compatibility score within the same boost level
         return (b.compatibilityScore || 0) - (a.compatibilityScore || 0);
       });
       
-      // Sort normal matches by final score, which combines compatibility and activity
       const sortedNormalMatches = normalMatches.sort((a, b) => 
         (b.finalScore || 0) - (a.finalScore || 0)
       );
@@ -199,7 +185,6 @@ const useMatchProcessing = ({
     boostedProfiles
   ]);
   
-  // Apply filters to the enhanced matches
   useEffect(() => {
     setFilteredMatches(isFiltering
       ? enhancedMatches.filter(match => match.isBoosted)

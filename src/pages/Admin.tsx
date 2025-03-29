@@ -71,48 +71,64 @@ const Admin = () => {
         }
 
         if (data) {
-          const mappedUsers = data.map(profile => ({
-            id: profile.id,
-            name: profile.name || 'N/A',
-            email: profile.email || 'N/A',
-            age: profile.age || 0,
-            bio: profile.bio || '',
-            location: profile.location || '',
-            interests: profile.interests || [],
-            photos: profile.photos || [],
-            gender: profile.gender || 'non-binary',
-            interestedIn: profile.interested_in || [],
-            popularityPoints: profile.popularity_points || 0,
-            premiumStatus: profile.premium_status || 'basic',
-            role: profile.role || 'subscriber',
-            isBanned: profile.is_banned || false,
-            verificationStatus: profile.is_verified ? 'verified' : 'unverified',
-            personalityTraits: profile.personality_traits || [],
-            giftInventory: { rose: 0, heart: 0, teddy: 0 },
-            receivedGifts: { rose: 0, heart: 0, teddy: 0 },
-            compatibilityScore: 0,
-            lastMessage: '',
-            lastMessageTime: new Date(),
-            status: 'offline',
-            favoriteMusic: [],
-            voiceIntro: '',
-            bankDetails: {
-              accountName: '',
-              accountNumber: '',
-              bankName: '',
-              routingNumber: '',
-              accountType: ''
+          const mappedUsers = data.map(profile => {
+            let validGender: 'male' | 'female' | 'non-binary' = 'non-binary';
+            if (profile.gender === 'male' || profile.gender === 'female' || profile.gender === 'non-binary') {
+              validGender = profile.gender as 'male' | 'female' | 'non-binary';
             }
-          }));
+            
+            const validInterestedIn: ('male' | 'female' | 'non-binary')[] = [];
+            if (Array.isArray(profile.interested_in)) {
+              profile.interested_in.forEach(interest => {
+                if (interest === 'male' || interest === 'female' || interest === 'non-binary') {
+                  validInterestedIn.push(interest as 'male' | 'female' | 'non-binary');
+                }
+              });
+            }
+            
+            return {
+              id: profile.id,
+              name: profile.name || 'N/A',
+              email: profile.email || 'N/A',
+              age: profile.age || 0,
+              bio: profile.bio || '',
+              location: profile.location || '',
+              interests: profile.interests || [],
+              photos: profile.photos || [],
+              gender: validGender,
+              interestedIn: validInterestedIn,
+              popularityPoints: profile.popularity_points || 0,
+              premiumStatus: profile.premium_status || 'basic',
+              role: profile.role || 'subscriber',
+              isBanned: profile.is_banned || false,
+              verificationStatus: profile.is_verified ? 'verified' : 'unverified',
+              personalityTraits: profile.personality_traits || [],
+              giftInventory: { rose: 0, heart: 0, teddy: 0 },
+              receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+              compatibilityScore: 0,
+              lastMessage: '',
+              lastMessageTime: new Date(),
+              status: 'offline',
+              favoriteMusic: [],
+              voiceIntro: '',
+              bankDetails: {
+                accountName: '',
+                accountNumber: '',
+                bankName: '',
+                routingNumber: '',
+                accountType: ''
+              }
+            } as User;
+          });
+          
           setUsers(mappedUsers);
         } else {
           setUsers([]);
         }
       } catch (err: any) {
         setError(err.message);
-        toast({
-          title: "Error",
-          description: "Failed to load users. Please try again.",
+        toast("Failed to load users. Please try again.", {
+          description: err.message,
           variant: "destructive"
         });
       } finally {
@@ -125,8 +141,7 @@ const Admin = () => {
 
   const handleUserUpdate = (user: User) => {
     updateUserProfile(user.id, user);
-    toast({
-      title: "User Updated",
+    toast("User Updated", {
       description: `User ${user.name} has been updated.`
     });
   };
@@ -204,9 +219,8 @@ const Admin = () => {
       setUsers(users.filter(user => user.id !== userId));
       setIsDeleteDialogOpen(false);
       setConfirmed(false);
-      toast({
-        title: "User Deleted",
-        description: "User has been successfully deleted.",
+      toast("User Deleted", {
+        description: "User has been successfully deleted."
       });
     }
   };
@@ -254,7 +268,6 @@ const Admin = () => {
         </CardContent>
       </Card>
 
-      {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -381,7 +394,6 @@ const Admin = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

@@ -78,8 +78,8 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
       // Store the profile ID locally first
       const profileId = profiles[index]?.id;
       
-      // Call onSwipe only if it's a function and we have a valid profile ID
-      if (typeof onSwipe === 'function' && profileId) {
+      // Call onSwipe only if we have a valid profile ID
+      if (profileId) {
         onSwipe(profileId, dir > 0 ? 'right' : 'left');
       }
       
@@ -123,8 +123,8 @@ export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps)
         };
       });
       
-      // Call onSwipe only if it's a function and we have a valid profile ID
-      if (typeof onSwipe === 'function' && profileId) {
+      // Call onSwipe only if we have a valid profile ID
+      if (profileId) {
         onSwipe(profileId, direction);
       }
       

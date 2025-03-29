@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { useUser } from '@/context/UserContext';
-import { UserWithCoordinates, BoostLevelType } from '@/utils/matchingAlgorithm';
+import { UserWithCoordinates, BoostLevelType } from '@/types/user';
 
 import FilterBar from './FilterBar';
 import MatchGrid from './MatchGrid';

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useUser } from '@/context/UserContext';
-import { BoostType } from '@/types/user';
 
 interface ProfileBoostPopupProps {
   open: boolean;
