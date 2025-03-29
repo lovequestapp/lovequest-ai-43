@@ -1,227 +1,162 @@
-
-import React, { useState } from 'react';
-import { useSprings, animated, useSpring } from 'react-spring';
-import { useDrag } from '@use-gesture/react';
-import { Check, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import CardContent from './CardContent';
-import SwipeHints from './SwipeHints';
-
-// Define helper functions for transform interpolations
-const to = (x: number, y: number): string => `translate3d(${x}px,${y}px,0)`;
-const toRot = (rot: number, scale: number): string => `rotate(${rot}deg) scale(${scale})`;
+import React, { useState, useRef, useEffect } from 'react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Heart, X, RotateCw, Info } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import { useSpring, animated, useDrag } from '@react-spring/web';
 
 interface SwipeableCardProps {
-  profiles: any[];
-  onSwipe: (profileId: string, direction: 'left' | 'right') => void;
+  name: string;
+  age: number;
+  bio: string;
+  image: string;
+  onSwipeRight: () => void;
+  onSwipeLeft: () => void;
+  onUndo: () => void;
+  onShowDetails: () => void;
 }
 
-export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps) {
-  const [gone] = useState(() => new Set());
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showHints, setShowHints] = useState(false);
-  const [showNoMatches, setShowNoMatches] = useState(false);
-  
-  const [hints] = useState({
-    swipeRight: "Swipe right if you're interested",
-    swipeLeft: "Swipe left to pass",
-  });
+const SwipeableCard: React.FC<SwipeableCardProps> = ({
+  name,
+  age,
+  bio,
+  image,
+  onSwipeRight,
+  onSwipeLeft,
+  onUndo,
+  onShowDetails
+}) => {
+  const [isSwiped, setIsSwiped] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  const [props, api] = useSprings(profiles.length, i => ({
+  const [{ x, ...rest }, api] = useSpring(() => ({
     x: 0,
-    y: 0,
     scale: 1,
-    rot: 0,
-    delay: i * 100,
+    rotateZ: 0,
+    config: { friction: 50, tension: 600 }
   }));
-  
-  const fadeInOut = useSpring({
-    opacity: showHints ? 1 : 0,
-    config: { duration: 200 },
-  });
 
-  // Check if we should show the tutorial (first card, first time)
-  React.useEffect(() => {
-    if (currentIndex === 0 && profiles.length > 0) {
-      const timer = setTimeout(() => {
-        setShowHints(true);
-        setTimeout(() => {
-          setShowHints(false);
-        }, 3000);
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [currentIndex, profiles.length]);
-
-  // Check if we're out of profiles
-  React.useEffect(() => {
-    if (currentIndex >= profiles.length && profiles.length > 0) {
-      setShowNoMatches(true);
-    } else {
-      setShowNoMatches(false);
-    }
-  }, [currentIndex, profiles.length]);
-
-  const bind = useDrag(({ args: [index], down, movement: [mx], direction: [xDir], velocity }) => {
-    // Handle velocity properly - extract magnitude if it's a Vector2
-    const velocityValue = typeof velocity === 'number' 
-      ? velocity 
-      : Math.sqrt(Math.pow(velocity[0], 2) + Math.pow(velocity[1], 2));
-    
-    const trigger = velocityValue > 0.2;
-    const dir = xDir < 0 ? -1 : 1;
-    
-    if (!down && trigger) {
-      gone.add(index);
-      
-      // Store the profile ID locally first
-      const profileId = profiles[index]?.id;
-      
-      // Call onSwipe only if we have a valid profile ID
-      if (profileId) {
-        onSwipe(profileId, dir > 0 ? 'right' : 'left');
-      }
-      
-      setCurrentIndex(prev => prev + 1);
-    }
-    
-    api.start(i => {
-      if (index !== i) return;
-      const isGone = gone.has(index);
-      const x = isGone ? (200 + window.innerWidth) * dir : down ? mx : 0;
-      // Handle rotation calculation properly
-      const rot = mx / 100 + (isGone ? dir * 10 * velocityValue : 0);
-      const scale = down ? 1.05 : 1;
-      
-      return {
-        x,
-        rot,
-        scale,
-        delay: undefined,
-        config: { friction: 50, tension: down ? 800 : isGone ? 200 : 500 },
-      };
+  const bind = useDrag(({ active, offset: [ox] }) => {
+    api.start({
+      x: ox,
+      scale: active ? 1.1 : 1,
+      rotateZ: ox / 30,
+      config: { friction: 50, tension: active ? 800 : 500 }
     });
   });
 
-  const handleButtonSwipe = (direction: 'left' | 'right') => {
-    if (currentIndex < profiles.length) {
-      // Store the profile ID locally first
-      const profileId = profiles[currentIndex]?.id;
-      
-      // Update the card animation
-      api.start(i => {
-        if (i !== currentIndex) return;
-        
-        gone.add(currentIndex);
-        const x = direction === 'right' ? 500 : -500;
-        
-        return {
-          x,
-          rot: direction === 'right' ? 10 : -10,
-          delay: undefined,
-        };
-      });
-      
-      // Call onSwipe only if we have a valid profile ID
-      if (profileId) {
-        onSwipe(profileId, direction);
+  const swipeRight = () => {
+    if (isSwiped) return;
+    setIsSwiped(true);
+    api.start({
+      x: 1000,
+      rotateZ: 30,
+      opacity: 0,
+      scale: 0,
+      immediate: false,
+      config: { friction: 30, tension: 400 },
+      onRest: () => {
+        setIsSwiped(false);
+        api.reset();
+        onSwipeRight();
       }
-      
-      // Update the current index
-      setCurrentIndex(prev => prev + 1);
-    }
+    });
   };
 
-  // Show loading state if no profiles
-  if (!profiles || profiles.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="text-center">
-          <h3 className="text-xl font-medium mb-2">Loading profiles...</h3>
-          <p className="text-muted-foreground">Please wait while we find matches for you</p>
-        </div>
-      </div>
-    );
-  }
+  const swipeLeft = () => {
+    if (isSwiped) return;
+    setIsSwiped(true);
+    api.start({
+      x: -1000,
+      rotateZ: -30,
+      opacity: 0,
+      scale: 0,
+      immediate: false,
+      config: { friction: 30, tension: 400 },
+      onRest: () => {
+        setIsSwiped(false);
+        api.reset();
+        onSwipeLeft();
+      }
+    });
+  };
 
-  // Show no more matches state
-  if (showNoMatches) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="text-center">
-          <h3 className="text-xl font-medium mb-2">You've seen all profiles</h3>
-          <p className="text-muted-foreground">Check back soon for new matches</p>
-        </div>
-      </div>
-    );
-  }
+  const undoSwipe = () => {
+    api.start({
+      x: 0,
+      scale: 1,
+      rotateZ: 0,
+      opacity: 1,
+      immediate: false,
+      config: { friction: 50, tension: 500 },
+      onRest: () => {
+        onUndo();
+      }
+    });
+  };
+
+  useEffect(() => {
+    const keyPressHandler = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowRight') {
+        swipeRight();
+      } else if (event.key === 'ArrowLeft') {
+        swipeLeft();
+      } else if (event.key === 'z' && (event.ctrlKey || event.metaKey)) {
+        undoSwipe();
+      }
+    };
+
+    window.addEventListener('keydown', keyPressHandler);
+
+    return () => {
+      window.removeEventListener('keydown', keyPressHandler);
+    };
+  }, [onSwipeLeft, onSwipeRight, onUndo, swipeLeft, swipeRight, undoSwipe]);
 
   return (
-    <div className="relative h-[70vh] w-full max-w-md mx-auto">
-      {props.map(({ x, y, rot, scale }, i) => {
-        // Only render cards that are current or next few
-        if (i < currentIndex || i >= currentIndex + 3) return null;
-        
-        return (
-          <animated.div
-            key={profiles[i].id}
-            style={{
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              willChange: 'transform',
-              transform: to(x.get(), y.get()),
-              zIndex: profiles.length - i,
-            }}
-          >
-            <animated.div
-              {...bind(i)}
-              style={{
-                position: 'relative',
-                width: '100%',
-                height: '100%',
-                willChange: 'transform',
-                borderRadius: '10px',
-                transformOrigin: 'center center',
-                transform: toRot(rot.get(), scale.get()),
-                boxShadow: '0 12px 20px -10px rgba(0, 0, 0, 0.2)',
-                touchAction: 'none',
-              }}
-            >
-              <CardContent profile={profiles[i]} index={i} />
-              
-              {showHints && i === currentIndex && (
-                <animated.div style={fadeInOut}>
-                  <SwipeHints hints={hints} />
-                </animated.div>
-              )}
-            </animated.div>
-          </animated.div>
-        );
-      })}
-
-      <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-6">
-        <Button 
-          variant="outline" 
-          size="lg" 
-          className="h-14 w-14 rounded-full border-2"
-          onClick={() => handleButtonSwipe('left')}
-          disabled={currentIndex >= profiles.length}
-        >
-          <X className="h-6 w-6 text-destructive" />
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="lg" 
-          className="h-14 w-14 rounded-full border-2"
-          onClick={() => handleButtonSwipe('right')}
-          disabled={currentIndex >= profiles.length}
-        >
-          <Check className="h-6 w-6 text-green-500" />
-        </Button>
-      </div>
-    </div>
+    <animated.div
+      ref={cardRef}
+      {...bind()}
+      style={{
+        x,
+        rotateZ: rest.rotateZ,
+        scale: rest.scale,
+        zIndex: 10,
+        touchAction: 'pan-y',
+      }}
+      className="relative w-full max-w-md h-[600px] rounded-xl shadow-lg overflow-hidden bg-white"
+    >
+      <Card className="absolute inset-0">
+        <div className="relative h-3/4">
+          <img
+            src={image}
+            alt={`${name}'s profile`}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </div>
+        <CardContent className="flex flex-col justify-between h-1/4">
+          <div>
+            <h2 className="text-2xl font-semibold">{name}, {age}</h2>
+            <p className="text-gray-600">{bio}</p>
+          </div>
+          <div className="flex justify-around mt-4">
+            <Button variant="destructive" onClick={swipeLeft}>
+              <X className="h-5 w-5 mr-2" />
+              Decline
+            </Button>
+            <Button variant="secondary" onClick={onShowDetails}>
+              <Info className="h-5 w-5 mr-2" />
+              Details
+            </Button>
+            <Button variant="primary" onClick={swipeRight}>
+              <Heart className="h-5 w-5 mr-2" />
+              Accept
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </animated.div>
   );
-}
+};
+
+export default SwipeableCard;

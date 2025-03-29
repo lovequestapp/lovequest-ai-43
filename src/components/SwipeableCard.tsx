@@ -1,200 +1,139 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Animated, PanResponder, View, StyleSheet, Dimensions, Image } from 'react-native';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useSprings, animated } from 'react-spring';
-import { useDrag } from '@use-gesture/react';
-import { Card, CardContent, CardFooter } from './ui/card';
-import { Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from './ui/button';
+const { width: screenWidth } = Dimensions.get('window');
+const SWIPE_THRESHOLD = 0.25 * screenWidth;
+const SWIPE_OUT_DURATION = 250;
 
 interface SwipeableCardProps {
-  profiles: any[];
-  onSwipe: (profileId: string, direction: 'left' | 'right') => void;
+  data: any[];
+  renderCard: (item: any) => React.ReactNode;
+  onSwipeRight?: (item: any) => void;
+  onSwipeLeft?: (item: any) => void;
+  onCardRemoved?: () => void;
 }
 
-// Define helper functions for transform interpolations
-const to = (x: number, y: number): string => `translate3d(${x}px,${y}px,0)`;
-const toRot = (rot: number, scale: number): string => `rotate(${rot}deg) scale(${scale})`;
+const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipeRight, onSwipeLeft, onCardRemoved }) => {
+  const [cardIndex, setCardIndex] = useState(0);
+  const pan = useRef(new Animated.ValueXY()).current;
+  const rotate = pan.x.interpolate({
+    inputRange: [-screenWidth / 2, 0, screenWidth / 2],
+    outputRange: ['-10deg', '0deg', '10deg'],
+    extrapolate: 'clamp',
+  });
+  const opacity = pan.x.interpolate({
+    inputRange: [-screenWidth / 2, 0, screenWidth / 2],
+    outputRange: [0.5, 1, 0.5],
+    extrapolate: 'clamp',
+  });
 
-export default function SwipeableCard({ profiles, onSwipe }: SwipeableCardProps) {
-  const [gone] = useState<Set<number>>(() => new Set());
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [props, api] = useSprings(profiles.length, i => ({
-    x: 0,
-    y: 0,
-    scale: 1,
-    rot: 0,
-    delay: i * 100,
-  }));
-  
-  // Reset when profiles change
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: pan.x._value,
+          y: pan.y._value,
+        });
+      },
+      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
+        useNativeDriver: false,
+      }),
+      onPanResponderRelease: (e, gesture) => {
+        pan.flattenOffset();
+        if (gesture.dx > SWIPE_THRESHOLD) {
+          forceSwipe('right');
+        } else if (gesture.dx < -SWIPE_THRESHOLD) {
+          forceSwipe('left');
+        } else {
+          resetPosition();
+        }
+      },
+    })
+  ).current;
+
   useEffect(() => {
-    setCurrentIndex(0);
-    gone.clear();
-    api.start(i => ({
-      x: 0,
-      y: 0,
-      scale: 1,
-      rot: 0,
-      delay: i * 100,
-    }));
-  }, [profiles, api]);
-  
-  const handleSwipe = (index: number, direction: number) => {
-    // Mark as gone
-    gone.add(index);
-    
-    // Call the onSwipe callback with the profile ID and direction
-    if (typeof onSwipe === 'function' && profiles[index]) {
-      const profileId = profiles[index].id;
-      onSwipe(profileId, direction > 0 ? 'right' : 'left');
+    if (data.length === 0 && onCardRemoved) {
+      onCardRemoved();
     }
-    
-    // Update the current index
-    setCurrentIndex(prevIndex => {
-      const nextIndex = prevIndex + 1;
-      return nextIndex >= profiles.length ? prevIndex : nextIndex;
-    });
+  }, [data.length, onCardRemoved]);
+
+  const forceSwipe = (direction: 'right' | 'left') => {
+    const x = direction === 'right' ? screenWidth : -screenWidth;
+    Animated.timing(pan, {
+      toValue: { x: x * 2, y: 0 },
+      duration: SWIPE_OUT_DURATION,
+      useNativeDriver: false,
+    }).start(() => onSwipeComplete(direction));
   };
-  
-  const bind = useDrag(
-    ({ args: [index], down, movement: [mx], direction: [xDir], velocity }) => {
-      // Handle velocity properly - extract magnitude if it's a Vector2
-      const velocityValue = typeof velocity === 'number' 
-        ? velocity 
-        : Math.sqrt(Math.pow(velocity[0], 2) + Math.pow(velocity[1], 2));
-      
-      const trigger = velocityValue > 0.2;
-      const dir = xDir < 0 ? -1 : 1;
-      
-      if (!down && trigger) {
-        handleSwipe(index, dir);
-      }
-      
-      api.start(i => {
-        if (index !== i) return;
-        
-        const isGone = gone.has(index);
-        const x = isGone ? (200 + window.innerWidth) * dir : down ? mx : 0;
-        // Handle rotation calculation properly
-        const rot = mx / 100 + (isGone ? dir * 10 * velocityValue : 0);
-        const scale = down ? 1.05 : 1;
-        
-        return {
-          x,
-          rot,
-          scale,
-          delay: undefined,
-          config: { friction: 50, tension: down ? 800 : isGone ? 200 : 500 },
-        };
-      });
-    }
-  );
-  
-  if (profiles.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold mb-2">No more profiles</h3>
-          <p className="text-muted-foreground">Check back later for new matches</p>
-        </div>
-      </div>
-    );
-  }
-  
-  const handleButtonSwipe = (direction: 'left' | 'right') => {
-    if (currentIndex < profiles.length) {
-      // Store the profile ID locally first
-      const profileId = profiles[currentIndex]?.id;
-      
-      // Update UI
-      api.start(i => {
-        if (i !== currentIndex) return;
-        const x = direction === 'right' ? 500 : -500;
-        gone.add(currentIndex);
-        return { x, rot: direction === 'right' ? 10 : -10, delay: undefined };
-      });
-      
-      // Call onSwipe only if we have a valid profile ID
-      if (profileId) {
-        onSwipe(profileId, direction);
-      }
-      
-      // Update current index
-      setCurrentIndex(prev => {
-        const nextIndex = prev + 1;
-        return nextIndex >= profiles.length ? prev : nextIndex;
-      });
-    }
+
+  const onSwipeComplete = (direction: 'right' | 'left') => {
+    const item = data[cardIndex];
+    direction === 'right' ? onSwipeRight?.(item) : onSwipeLeft?.(item);
+    pan.setValue({ x: 0, y: 0 });
+    pan.setOffset({ x: 0, y: 0 });
+    setCardIndex(cardIndex + 1);
   };
-  
-  return (
-    <div className="flex flex-col items-center">
-      <div className="relative w-full max-w-md h-[60vh]">
-        {props.map(({ x, y, rot, scale }, i) => {
-          const profile = profiles[i];
-          if (!profile) return null;
-          
-          // Show only if it's one of the next 3 cards
-          if (i < currentIndex || i > currentIndex + 2) return null;
-          
+
+  const resetPosition = () => {
+    Animated.spring(pan, {
+      toValue: { x: 0, y: 0 },
+      useNativeDriver: false,
+      friction: 4,
+    }).start();
+  };
+
+  const renderCards = () => {
+    if (cardIndex >= data.length) {
+      return <View style={styles.noMoreCards}><Image source={{uri: 'https://i.imgur.com/t9pQqde.png'}} style={{width: 200, height: 200}} /></View>;
+    }
+
+    return data
+      .slice(cardIndex, cardIndex + 1)
+      .map((item, index) => {
+        if (index === 0) {
           return (
-            <animated.div 
-              key={profile.id} 
-              style={{ 
-                transform: to(x.get(), y.get()),
-                position: 'absolute', 
-                width: '100%',
-                height: '100%',
-                willChange: 'transform',
-                zIndex: profiles.length - i,
-              }}
+            <Animated.View
+              key={item.id}
+              style={[
+                styles.cardStyle,
+                {
+                  transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate }],
+                  opacity,
+                },
+              ]}
+              {...panResponder.panHandlers}
             >
-              <animated.div
-                {...bind(i)}
-                style={{
-                  transform: toRot(rot.get(), scale.get()),
-                  backgroundImage: `url(${profile.photos?.[0] || '/placeholder.svg'})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: '10px',
-                  willChange: 'transform',
-                  boxShadow: '0 12px 20px -10px rgba(0, 0, 0, 0.2)',
-                }}
-              >
-                <Card className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white rounded-b-lg rounded-t-none border-0 overflow-hidden">
-                  <CardContent className="p-4">
-                    <h3 className="text-xl font-semibold mb-1">{profile.name || 'Anonymous'}, {profile.age || '?'}</h3>
-                    <p className="text-sm opacity-90 line-clamp-1">{profile.bio || 'No bio yet'}</p>
-                  </CardContent>
-                </Card>
-              </animated.div>
-            </animated.div>
+              {renderCard(item)}
+            </Animated.View>
           );
-        })}
-      </div>
-      
-      <CardFooter className="flex justify-center space-x-4 w-full max-w-md pt-6">
-        <Button 
-          size="lg" 
-          variant="outline" 
-          className="h-14 w-14 rounded-full border-2 border-muted"
-          onClick={() => handleButtonSwipe('left')}
-          disabled={currentIndex >= profiles.length}
-        >
-          <X className="h-6 w-6 text-red-500" />
-        </Button>
-        <Button 
-          size="lg" 
-          variant="outline" 
-          className="h-14 w-14 rounded-full border-2 border-muted"
-          onClick={() => handleButtonSwipe('right')}
-          disabled={currentIndex >= profiles.length}
-        >
-          <Check className="h-6 w-6 text-green-500" />
-        </Button>
-      </CardFooter>
-    </div>
+        }
+
+        return null;
+      });
+  };
+
+  return (
+    <View>
+      {renderCards()}
+    </View>
   );
-}
+};
+
+const styles = StyleSheet.create({
+  cardStyle: {
+    position: 'absolute',
+    width: screenWidth - 20,
+    marginLeft: 10,
+    marginTop: 10,
+  },
+  noMoreCards: {
+    marginTop: 20,
+    textAlign: 'center',
+    fontSize: 22,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+});
+
+export default SwipeableCard;
