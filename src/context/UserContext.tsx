@@ -1,26 +1,36 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { authService } from '@/services/authService';
+import { useNavigate } from 'react-router-dom';
+import { toast } from "sonner";
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@/types/user';
 
-// Gift types
-export interface GiftInventory {
-  rose: number;
-  heart: number;
-  teddy: number;
+// Define the shape of our context
+interface UserContextType {
+  currentUser: User | null;
+  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (email: string, password: string, name: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  updateProfile: (data: Partial<User>) => Promise<boolean>;
+  uploadProfilePhoto: (file: File) => Promise<string | null>;
+  likeProfile: (profileId: string) => void;
+  passProfile: (profileId: string) => void;
+  getCompatibilityScore: (user1: User, user2: User) => number;
+  boostProfile: (boostType: 'local' | 'international') => boolean;
+  getProfileById: (id: string) => User | null;
+  sendGift: (recipientId: string, giftType: 'rose' | 'heart' | 'teddy') => boolean;
+  getMatches: () => User[];
+  getUserPosts: (userId: string) => BlogPostType[];
+  createBlogPost: (title: string, content: string, tags: string[]) => void;
+  updateBlogPost: (postId: string, updates: Partial<BlogPostType>) => void;
+  deleteBlogPost: (postId: string) => void;
+  likeBlogPost: (postId: string, userId: string) => void;
+  commentOnBlogPost: (postId: string, content: string) => void;
 }
 
-// Bank details type
-interface BankDetails {
-  accountName: string;
-  accountNumber: string;
-  bankName: string;
-  swiftCode?: string;
-  routingNumber?: string;
-}
-
-// Blog post type
-export interface BlogPost {
+// Blog post type for the context
+type BlogPostType = {
   id: string;
   userId: string;
   title: string;
@@ -36,713 +46,430 @@ export interface BlogPost {
     createdAt: Date;
   }[];
   tags: string[];
-}
+};
 
-// Message type
-export interface Message {
-  id: string;
-  senderId: string;
-  receiverId: string;
-  content: string;
-  timestamp: Date;
-  isRead: boolean;
-  hasGift?: boolean;
-  giftType?: keyof GiftInventory;
-}
-
-// Withdrawal type
-export interface Withdrawal {
-  id: string;
-  userId: string;
-  amount: number;
-  status: 'pending' | 'approved' | 'rejected' | 'completed';
-  requestDate: Date;
-  processedDate?: Date;
-  date?: Date; // For backward compatibility
-}
-
-// Boost type
-export type BoostType = 'local' | 'international' | 'standard' | 'super';
-
-// User interface
-export interface User {
-  id: string;
-  name: string;
-  email?: string;
-  age?: number;
-  bio?: string;
-  location?: string;
-  interests: string[];
-  photos: string[];
-  gender?: 'male' | 'female' | 'non-binary';
-  interestedIn: ('male' | 'female' | 'non-binary')[];
-  popularityPoints: number;
-  premiumStatus: 'basic' | 'premium' | 'vip';
-  giftInventory: GiftInventory;
-  receivedGifts: GiftInventory;
-  compatibilityScore?: number;
-  role?: 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial';
-  personalityTraits?: string[];
-  favoriteMusic?: string;
-  bankDetails?: BankDetails;
-  lastMessage?: string;
-  lastMessageTime?: Date;
-  status?: string;
-  isBanned?: boolean;
-  verificationStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
-  voiceIntro?: string; // URL to the voice intro recording
-}
-
-// Match type for messaging
-export interface Match extends User {
-  lastMessage?: string;
-  lastMessageTime?: Date;
-  status?: string;
-}
-
-// Gift benefit type
-interface GiftBenefits {
-  popularityPoints: number;
-  premiumLikes: number;
-  profileBoost: boolean;
-  boostTimeRemaining?: string;
-}
-
-// Monetization details type
-interface MonetizationDetails {
-  totalEarned: number;
-  availableBalance: number;
-  pendingBalance: number;
-  conversionRate: number;
-  giftsReceived: number;
-  withdrawalFee: number;
-  giftValues: {
-    rose: number;
-    heart: number;
-    teddy: number;
-  };
-  minimumWithdrawal: number;
-  currency: string;
-  exchangeRates: {
-    USD: number;
-    EUR: number;
-    GBP: number;
-    JPY: number;
-    CAD: number;
-    AUD: number;
-    CNY: number;
-    INR: number;
-  };
-}
-
-// Define the context structure
-interface UserContextType {
-  currentUser: User | null;
-  setCurrentUser: (user: User | null) => void;
-  isAuthenticated: () => boolean;
-  logout: () => void;
-  updateUserData: (userData: Partial<User>) => User | null;
-  purchaseGift: (giftType: keyof GiftInventory) => boolean;
-  sendGift: (toUserId: string, giftType: keyof GiftInventory) => boolean;
-  boostProfile: (boostType: string) => boolean;
-  allUsers: User[];
-  addUser: (user: User) => void;
-  deleteUser: (userId: string) => void;
-  
-  // Blog related methods
-  createBlogPost: (title: string, content: string, tags: string[]) => BlogPost;
-  updateBlogPost: (postId: string, updates: Partial<BlogPost>) => boolean;
-  deleteBlogPost: (postId: string) => boolean;
-  likeBlogPost: (postId: string, userId: string) => boolean;
-  commentOnBlogPost: (postId: string, comment: string) => boolean;
-  getUserPosts: (userId: string) => BlogPost[];
-  getAllPosts: () => BlogPost[];
-  getFilteredPosts: (tag?: string, searchTerm?: string) => BlogPost[];
-  
-  // User interaction methods
-  updateUserProfile: (profile: User) => void;
-  likeUser: (userId: string) => void;
-  passUser: (userId: string) => void;
-  potentialMatches: User[];
-  matches: User[];
-  boostedProfiles: {userId: string, boostType: string, startTime: Date, endTime: Date}[];
-  
-  // Messaging methods
-  messages: Message[];
-  sendMessage: (to: string, content: string, giftType?: keyof GiftInventory) => void;
-  markMessagesAsRead: (userId: string) => void;
-  
-  // Gift and monetization methods
-  getGiftBenefits: () => GiftBenefits;
-  getGiftInventory: () => GiftInventory;
-  purchaseGifts: (giftType: keyof GiftInventory, quantity: number) => boolean;
-  getGiftMonetizationDetails: () => MonetizationDetails;
-  initiateWithdrawal: (amount: number) => boolean;
-  updateBankDetails: (details: BankDetails) => boolean;
-  getWithdrawalHistory: () => Withdrawal[];
-  getPendingWithdrawal: () => Withdrawal | null;
-}
-
-// Create context with defaults
+// Create the context with a default value
 const UserContext = createContext<UserContextType>({
   currentUser: null,
   setCurrentUser: () => {},
-  isAuthenticated: () => false,
-  logout: () => {},
-  updateUserData: () => null,
-  purchaseGift: () => false,
-  sendGift: () => false,
+  login: async () => false,
+  register: async () => false,
+  logout: async () => {},
+  updateProfile: async () => false,
+  uploadProfilePhoto: async () => null,
+  likeProfile: () => {},
+  passProfile: () => {},
+  getCompatibilityScore: () => 0,
   boostProfile: () => false,
-  allUsers: [],
-  addUser: () => {},
-  deleteUser: () => {},
-  
-  // Blog defaults
-  createBlogPost: () => ({ id: '', userId: '', title: '', content: '', createdAt: new Date(), likes: 0, comments: [], tags: [] }),
-  updateBlogPost: () => false,
-  deleteBlogPost: () => false,
-  likeBlogPost: () => false,
-  commentOnBlogPost: () => false,
+  getProfileById: () => null,
+  sendGift: () => false,
+  getMatches: () => [],
   getUserPosts: () => [],
-  getAllPosts: () => [],
-  getFilteredPosts: () => [],
-  
-  // User interaction defaults
-  updateUserProfile: () => {},
-  likeUser: () => {},
-  passUser: () => {},
-  potentialMatches: [],
-  matches: [],
-  boostedProfiles: [],
-  
-  // Messaging defaults
-  messages: [],
-  sendMessage: () => {},
-  markMessagesAsRead: () => {},
-  
-  // Gift and monetization defaults
-  getGiftBenefits: () => ({ popularityPoints: 0, premiumLikes: 0, profileBoost: false }),
-  getGiftInventory: () => ({ rose: 0, heart: 0, teddy: 0 }),
-  purchaseGifts: () => false,
-  getGiftMonetizationDetails: () => ({ 
-    totalEarned: 0, 
-    availableBalance: 0, 
-    pendingBalance: 0, 
-    conversionRate: 0,
-    giftsReceived: 0,
-    withdrawalFee: 0,
-    giftValues: {
-      rose: 0.25,
-      heart: 0.75,
-      teddy: 1.5
-    },
-    minimumWithdrawal: 10,
-    currency: 'USD',
-    exchangeRates: {
-      USD: 1,
-      EUR: 0.85,
-      GBP: 0.73,
-      JPY: 110.25,
-      CAD: 1.25,
-      AUD: 1.35,
-      CNY: 6.5,
-      INR: 73.5
-    }
-  }),
-  initiateWithdrawal: () => false,
-  updateBankDetails: () => false,
-  getWithdrawalHistory: () => [],
-  getPendingWithdrawal: () => null
+  createBlogPost: () => {},
+  updateBlogPost: () => {},
+  deleteBlogPost: () => {},
+  likeBlogPost: () => {},
+  commentOnBlogPost: () => {},
 });
 
-// Mock user data for demo purposes
-const sampleUsers: User[] = [
-  {
-    id: 'user1',
-    name: 'Jessica Parker',
-    email: 'jessica@example.com',
-    age: 28,
-    bio: 'Adventure enthusiast and coffee lover. Looking for someone who enjoys hiking and travel.',
-    location: 'New York, NY',
-    interests: ['hiking', 'travel', 'photography', 'cooking'],
-    photos: ['/placeholder.svg'],
-    gender: 'female',
-    interestedIn: ['male'],
-    popularityPoints: 85,
-    premiumStatus: 'basic',
-    giftInventory: { rose: 3, heart: 1, teddy: 0 },
-    receivedGifts: { rose: 5, heart: 2, teddy: 1 },
-    compatibilityScore: 89,
-    role: 'subscriber',
-    isBanned: false,
-    verificationStatus: 'verified'
-  },
-  {
-    id: 'user2',
-    name: 'Michael Ross',
-    email: 'michael@example.com',
-    age: 32,
-    bio: 'Tech entrepreneur with a passion for music and fitness. Looking for someone genuine and adventurous.',
-    location: 'San Francisco, CA',
-    interests: ['music', 'fitness', 'technology', 'startups'],
-    photos: ['/placeholder.svg'],
-    gender: 'male',
-    interestedIn: ['female'],
-    popularityPoints: 92,
-    premiumStatus: 'premium',
-    giftInventory: { rose: 10, heart: 5, teddy: 2 },
-    receivedGifts: { rose: 3, heart: 1, teddy: 0 },
-    compatibilityScore: 75,
-    role: 'subscriber',
-    isBanned: false,
-    verificationStatus: 'verified'
-  },
-  {
-    id: 'user3',
-    name: 'Admin User',
-    email: 'admin@example.com',
-    age: 35,
-    bio: 'System administrator and platform manager.',
-    location: 'San Jose, CA',
-    interests: ['technology', 'management', 'security'],
-    photos: ['/placeholder.svg'],
-    gender: 'non-binary',
-    interestedIn: ['male', 'female', 'non-binary'],
-    popularityPoints: 50,
-    premiumStatus: 'vip',
-    giftInventory: { rose: 50, heart: 50, teddy: 50 },
-    receivedGifts: { rose: 0, heart: 0, teddy: 0 },
-    compatibilityScore: 50,
-    role: 'admin',
-    isBanned: false,
-    verificationStatus: 'verified'
-  },
-  {
-    id: 'user4',
-    name: 'Emily Johnson',
-    email: 'emily@example.com',
-    age: 26,
-    bio: 'Art teacher and painter. Love outdoor activities and quiet evenings with good books.',
-    location: 'Portland, OR',
-    interests: ['art', 'reading', 'hiking', 'teaching'],
-    photos: ['/placeholder.svg'],
-    gender: 'female',
-    interestedIn: ['male'],
-    popularityPoints: 78,
-    premiumStatus: 'basic',
-    giftInventory: { rose: 1, heart: 0, teddy: 0 },
-    receivedGifts: { rose: 8, heart: 3, teddy: 1 },
-    compatibilityScore: 82,
-    role: 'subscriber',
-    isBanned: false,
-    verificationStatus: 'pending'
-  },
-  {
-    id: 'user5',
-    name: 'David Chen',
-    email: 'david@example.com',
-    age: 30,
-    bio: 'Software engineer by day, amateur chef by night. Looking for someone to share culinary adventures.',
-    location: 'Seattle, WA',
-    interests: ['coding', 'cooking', 'food', 'hiking'],
-    photos: ['/placeholder.svg'],
-    gender: 'male',
-    interestedIn: ['female'],
-    popularityPoints: 65,
-    premiumStatus: 'premium',
-    giftInventory: { rose: 5, heart: 2, teddy: 1 },
-    receivedGifts: { rose: 1, heart: 0, teddy: 0 },
-    compatibilityScore: 71,
-    role: 'subscriber',
-    isBanned: false,
-    verificationStatus: 'verified'
-  }
-];
-
-// Mock blog posts
-const sampleBlogPosts: BlogPost[] = [
-  {
-    id: 'post1',
-    userId: 'user1',
-    title: 'My Dating Journey',
-    content: 'Dating has been an incredible journey of self-discovery. Through meeting new people, I\'ve learned so much about myself and what I truly value in relationships.',
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    likes: 24,
-    comments: [
-      {
-        id: 'comment1',
-        postId: 'post1',
-        userId: 'user2',
-        userName: 'Michael Ross',
-        content: 'Thanks for sharing your journey! I can relate to a lot of what you\'ve experienced.',
-        createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      }
-    ],
-    tags: ['dating', 'relationships', 'personal-growth']
-  },
-  {
-    id: 'post2',
-    userId: 'user2',
-    title: '5 First Date Tips That Actually Work',
-    content: 'First dates can be nerve-wracking, but with these tips, you\'ll be sure to make a great impression and possibly find your perfect match!\n\n1. Be authentic\n2. Ask open-ended questions\n3. Listen actively\n4. Choose a comfortable setting\n5. End on a positive note',
-    createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
-    likes: 56,
-    comments: [],
-    tags: ['dating-advice', 'first-date', 'tips']
-  }
-];
-
-// Mock messages
-const sampleMessages: Message[] = [
-  {
-    id: 'msg1',
-    senderId: 'user1',
-    receiverId: 'user2',
-    content: 'Hi there! I really enjoyed looking at your profile. Would you like to chat?',
-    timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    isRead: true
-  },
-  {
-    id: 'msg2',
-    senderId: 'user2',
-    receiverId: 'user1',
-    content: 'Hello! Thanks for reaching out. I\'d love to get to know you better. What are your interests?',
-    timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    isRead: false
-  }
-];
-
-// Boosted profiles
-interface BoostedProfile {
-  userId: string;
-  boostType: string;
-  startTime: Date;
-  endTime: Date;
-}
-
-// User Provider Component
-export const UserProvider = ({ children }: { children: React.ReactNode }) => {
-  console.info('Initializing UserProvider');
-  
+// Create a provider component
+export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [boostedProfiles, setBoostedProfiles] = useState<BoostedProfile[]>([]);
-  const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [matches, setMatches] = useState<User[]>([]);
-  const [potentialMatches, setPotentialMatches] = useState<User[]>([]);
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
+  const [passedProfiles, setPassedProfiles] = useState<Set<string>>(new Set());
+  const [blogPosts, setBlogPosts] = useState<BlogPostType[]>([]);
+  const navigate = useNavigate();
   
-  useEffect(() => {
-    // Initialize from auth service or localStorage
-    const loadUser = async () => {
-      const user = authService.getCurrentUser();
-      if (user) {
-        setCurrentUser(user);
+  // Login with email and password
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        toast.error("Login failed", {
+          description: error.message
+        });
+        return false;
       }
-    };
-    
-    loadUser();
-    
-    // Load mock data for demo
-    console.info('Loading mock data in UserProvider');
-    const savedUsers = localStorage.getItem('allUsers');
-    if (savedUsers) {
-      setAllUsers(JSON.parse(savedUsers));
-    } else {
-      setAllUsers(sampleUsers);
-      localStorage.setItem('allUsers', JSON.stringify(sampleUsers));
-    }
-    
-    // Initialize blog posts
-    setBlogPosts(sampleBlogPosts);
-    
-    // Initialize messages
-    setMessages(sampleMessages);
-    
-    // Set up potential matches (all users except current user)
-    setPotentialMatches(sampleUsers.filter(user => user.id !== currentUser?.id));
-    
-    // Set up matches (sample for demo)
-    setMatches([sampleUsers[0], sampleUsers[2]]);
-    
-    // Set up some demo boosted profiles
-    const boostedUsers: BoostedProfile[] = [
-      {
-        userId: 'user2',
-        boostType: 'local',
-        startTime: new Date(),
-        endTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day from now
-      },
-      {
-        userId: 'user4',
-        boostType: 'international',
-        startTime: new Date(),
-        endTime: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+      
+      if (data.user) {
+        toast.success("Login successful!");
+        return true;
       }
-    ];
-    console.info('Setting boosted profiles:', boostedUsers);
-    setBoostedProfiles(boostedUsers);
-  }, []);
-  
-  // Save users when they change
-  useEffect(() => {
-    if (allUsers.length > 0) {
-      localStorage.setItem('allUsers', JSON.stringify(allUsers));
+      
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error("Login failed", {
+        description: "An unexpected error occurred"
+      });
+      return false;
     }
-  }, [allUsers]);
-  
-  // Check if user is authenticated
-  const isAuthenticated = () => {
-    return currentUser !== null;
   };
   
-  // Handle logout
-  const logout = () => {
-    authService.logout();
-    setCurrentUser(null);
-    toast.success('You have been logged out successfully');
+  // Register a new user
+  const register = async (email: string, password: string, name: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          }
+        }
+      });
+      
+      if (error) {
+        toast.error("Registration failed", {
+          description: error.message
+        });
+        return false;
+      }
+      
+      if (data.user) {
+        // Create a profile record
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            { 
+              id: data.user.id,
+              name,
+              email,
+              created_at: new Date().toISOString(),
+            }
+          ]);
+          
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          toast.error("Failed to create profile", {
+            description: profileError.message
+          });
+          return false;
+        }
+        
+        toast.success("Registration successful!");
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast.error("Registration failed", {
+        description: "An unexpected error occurred"
+      });
+      return false;
+    }
   };
   
-  // Update user data
-  const updateUserData = (userData: Partial<User>) => {
-    if (!currentUser) return null;
-    
-    const updatedUser = { ...currentUser, ...userData };
-    setCurrentUser(updatedUser);
-    
-    // Also update in allUsers
-    setAllUsers(prevUsers => 
-      prevUsers.map(user => 
-        user.id === updatedUser.id ? updatedUser : user
-      )
-    );
-    
-    return updatedUser;
+  // Logout the user
+  const logout = async (): Promise<void> => {
+    try {
+      await supabase.auth.signOut();
+      setCurrentUser(null);
+      toast.success("Logged out successfully");
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error("Logout failed", {
+        description: "An unexpected error occurred"
+      });
+    }
   };
   
   // Update user profile
-  const updateUserProfile = (profile: User) => {
-    setCurrentUser(profile);
-    
-    // Also update in allUsers
-    setAllUsers(prevUsers => 
-      prevUsers.map(user => 
-        user.id === profile.id ? profile : user
-      )
-    );
-    
-    toast.success('Profile updated successfully');
+  const updateProfile = async (data: Partial<User>): Promise<boolean> => {
+    try {
+      if (!currentUser) {
+        toast.error("You must be logged in to update your profile");
+        return false;
+      }
+      
+      // Update the profile in Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: data.name,
+          bio: data.bio,
+          age: data.age,
+          location: data.location,
+          interests: data.interests,
+          gender: data.gender,
+          interested_in: data.interestedIn,
+          // Add other fields as needed
+        })
+        .eq('id', currentUser.id);
+        
+      if (error) {
+        console.error("Error updating profile:", error);
+        toast.error("Failed to update profile", {
+          description: error.message
+        });
+        return false;
+      }
+      
+      // Update the local user state
+      setCurrentUser(prev => {
+        if (prev) {
+          return { ...prev, ...data };
+        }
+        return prev;
+      });
+      
+      toast.success("Profile updated successfully!");
+      return true;
+    } catch (error) {
+      console.error('Update profile error:', error);
+      toast.error("Failed to update profile", {
+        description: "An unexpected error occurred"
+      });
+      return false;
+    }
   };
   
-  // Purchase a gift
-  const purchaseGift = (giftType: keyof GiftInventory): boolean => {
-    if (!currentUser) return false;
+  // Upload profile photo
+  const uploadProfilePhoto = async (file: File): Promise<string | null> => {
+    try {
+      if (!currentUser) {
+        toast.error("You must be logged in to upload a photo");
+        return null;
+      }
+      
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser.id}-${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `profiles/${fileName}`;
+      
+      // Upload the file to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+        
+      if (error) {
+        console.error("Error uploading photo:", error);
+        toast.error("Failed to upload photo", {
+          description: error.message
+        });
+        return null;
+      }
+      
+      // Get the public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(data.path);
+        
+      // Update the user's photos array
+      const newPhotos = [...(currentUser.photos || []), publicUrl];
+      
+      // Update the profile in Supabase
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ photos: newPhotos })
+        .eq('id', currentUser.id);
+        
+      if (updateError) {
+        console.error("Error updating profile photos:", updateError);
+        toast.error("Failed to update profile photos", {
+          description: updateError.message
+        });
+        return null;
+      }
+      
+      // Update the local user state
+      setCurrentUser(prev => {
+        if (prev) {
+          return { ...prev, photos: newPhotos };
+        }
+        return prev;
+      });
+      
+      toast.success("Photo uploaded successfully!");
+      return publicUrl;
+    } catch (error) {
+      console.error('Upload photo error:', error);
+      toast.error("Failed to upload photo", {
+        description: "An unexpected error occurred"
+      });
+      return null;
+    }
+  };
+  
+  // Like a profile
+  const likeProfile = (profileId: string) => {
+    setLikedProfiles(prev => new Set(prev).add(profileId));
     
-    // In a real app, this would be a payment flow
-    // For demo, just add it to inventory
-    const updatedInventory = { 
-      ...currentUser.giftInventory,
-      [giftType]: currentUser.giftInventory[giftType] + 1 
+    // In a real app, you would also update this on the server
+    // Here we're just updating local state for demo purposes
+    
+    // Example Supabase code for a real implementation:
+    /*
+    const createLike = async () => {
+      if (!currentUser) return;
+      
+      const { error } = await supabase
+        .from('likes')
+        .insert([
+          {
+            user_id: currentUser.id,
+            liked_user_id: profileId,
+            created_at: new Date().toISOString()
+          }
+        ]);
+        
+      if (error) {
+        console.error("Error creating like:", error);
+        toast.error("Failed to like profile");
+      }
     };
     
-    setCurrentUser({
-      ...currentUser,
-      giftInventory: updatedInventory
+    createLike();
+    */
+  };
+  
+  // Pass on a profile
+  const passProfile = (profileId: string) => {
+    setPassedProfiles(prev => new Set(prev).add(profileId));
+    
+    // In a real app, you would also update this on the server
+    // Here we're just updating local state for demo purposes
+  };
+  
+  // Calculate compatibility score between two users
+  const getCompatibilityScore = (user1: User, user2: User): number => {
+    if (!user1 || !user2) return 0;
+    
+    let score = 0;
+    let totalFactors = 0;
+    
+    // Check mutual interest in gender
+    if (user1.interestedIn.includes(user2.gender) && user2.interestedIn.includes(user1.gender)) {
+      score += 25;
+    } else {
+      // If there's no mutual gender interest, compatibility is very low
+      return Math.floor(Math.random() * 20) + 5;
+    }
+    totalFactors += 25;
+    
+    // Compare interests (each shared interest adds points)
+    const sharedInterests = user1.interests.filter(interest => 
+      user2.interests.includes(interest)
+    ).length;
+    
+    const interestScore = Math.min(25, (sharedInterests / Math.max(1, Math.min(user1.interests.length, user2.interests.length))) * 25);
+    score += interestScore;
+    totalFactors += 25;
+    
+    // Compare personality traits
+    const sharedTraits = user1.personalityTraits.filter(trait => 
+      user2.personalityTraits.includes(trait)
+    ).length;
+    
+    const traitScore = Math.min(25, (sharedTraits / Math.max(1, Math.min(user1.personalityTraits.length, user2.personalityTraits.length))) * 25);
+    score += traitScore;
+    totalFactors += 25;
+    
+    // Age compatibility (closer in age = higher score)
+    const ageDifference = Math.abs(user1.age - user2.age);
+    const ageScore = Math.max(0, 25 - (ageDifference * 2)); // Lose 2 points per year difference
+    score += ageScore;
+    totalFactors += 25;
+    
+    // Calculate final percentage
+    const finalScore = Math.round((score / totalFactors) * 100);
+    
+    // Add a small random factor for variability
+    const randomFactor = Math.floor(Math.random() * 10) - 5; // -5 to +5
+    
+    return Math.max(0, Math.min(100, finalScore + randomFactor));
+  };
+  
+  // Boost profile visibility
+  const boostProfile = (boostType: 'local' | 'international'): boolean => {
+    // In a real app, this would integrate with a payment system and update server-side
+    // For demo purposes, we'll just show a success message
+    
+    toast.success(`Profile boosted! Your profile will appear at the top for the next 24 hours`, {
+      description: boostType === 'local' ? 'Local boost activated' : 'International boost activated'
     });
     
-    toast.success(`You purchased a ${giftType}!`);
     return true;
   };
   
-  // Purchase multiple gifts
-  const purchaseGifts = (giftType: keyof GiftInventory, quantity: number): boolean => {
-    if (!currentUser) return false;
+  // Get a profile by ID
+  const getProfileById = (id: string): User | null => {
+    // In a real app, this would fetch from the database
+    // For demo purposes, we'll return null or the current user if IDs match
     
-    const updatedInventory = { 
-      ...currentUser.giftInventory,
-      [giftType]: currentUser.giftInventory[giftType] + quantity 
-    };
+    if (currentUser && currentUser.id === id) {
+      return currentUser;
+    }
     
-    setCurrentUser({
-      ...currentUser,
-      giftInventory: updatedInventory
-    });
+    // Later, this could be enhanced to return profiles from the explore page
+    // that have been loaded into memory
     
-    toast.success(`You purchased ${quantity} ${giftType}s!`);
-    return true;
-  };
-  
-  // Get gift inventory
-  const getGiftInventory = (): GiftInventory => {
-    return currentUser?.giftInventory || { rose: 0, heart: 0, teddy: 0 };
+    return null;
   };
   
   // Send a gift to another user
-  const sendGift = (toUserId: string, giftType: keyof GiftInventory): boolean => {
-    if (!currentUser) return false;
-    if (currentUser.giftInventory[giftType] <= 0) {
-      toast.error(`You don't have any ${giftType}s to send!`);
+  const sendGift = (recipientId: string, giftType: 'rose' | 'heart' | 'teddy'): boolean => {
+    if (!currentUser) {
+      toast.error("You must be logged in to send gifts");
       return false;
     }
     
-    // Update sender's inventory
-    const updatedSender = {
-      ...currentUser,
-      giftInventory: {
-        ...currentUser.giftInventory,
-        [giftType]: currentUser.giftInventory[giftType] - 1
-      }
-    };
-    setCurrentUser(updatedSender);
+    // Check if user has the gift
+    if (currentUser.giftInventory[giftType] <= 0) {
+      toast.error(`You don't have any ${giftType}s to send`);
+      return false;
+    }
     
-    // Update recipient's received gifts
-    setAllUsers(prevUsers => 
-      prevUsers.map(user => {
-        if (user.id === toUserId) {
-          return {
-            ...user,
-            receivedGifts: {
-              ...user.receivedGifts,
-              [giftType]: user.receivedGifts[giftType] + 1
-            },
-            popularityPoints: user.popularityPoints + 5 // Gift increases popularity
-          };
-        }
-        return user;
-      })
-    );
+    // In a real app, this would update the database
+    // For demo purposes, just update the local state
+    
+    setCurrentUser(prev => {
+      if (prev) {
+        const updatedInventory = { ...prev.giftInventory };
+        updatedInventory[giftType] -= 1;
+        
+        return {
+          ...prev,
+          giftInventory: updatedInventory
+        };
+      }
+      return prev;
+    });
     
     toast.success(`Gift sent successfully!`);
     return true;
   };
   
-  // Calculate based on gifts received
-  const getGiftBenefits = (): GiftBenefits => {
+  // Get user's matches
+  const getMatches = (): User[] => {
+    // In a real app, this would fetch from the database
+    // For demo purposes, return an empty array
+    return [];
+  };
+  
+  // Get posts by user ID
+  const getUserPosts = (userId: string): BlogPostType[] => {
+    return blogPosts.filter(post => post.userId === userId);
+  };
+  
+  // Create a new blog post
+  const createBlogPost = (title: string, content: string, tags: string[]) => {
     if (!currentUser) {
-      return {
-        popularityPoints: 0,
-        premiumLikes: 0,
-        profileBoost: false
-      };
+      toast.error("You must be logged in to create a post");
+      return;
     }
     
-    const totalGifts = currentUser.receivedGifts.rose + 
-                      currentUser.receivedGifts.heart * 2 + 
-                      currentUser.receivedGifts.teddy * 3;
-    
-    const isProfileBoosted = boostedProfiles.some(profile => profile.userId === currentUser.id);
-    const boostProfile = boostedProfiles.find(profile => profile.userId === currentUser.id);
-    const timeRemaining = boostProfile ? 
-      Math.max(0, Math.floor((boostProfile.endTime.getTime() - Date.now()) / (1000 * 60 * 60))) + " hours" 
-      : undefined;
-    
-    return {
-      popularityPoints: totalGifts * 5,
-      premiumLikes: Math.floor(totalGifts / 3),
-      profileBoost: isProfileBoosted,
-      boostTimeRemaining: timeRemaining
-    };
-  };
-  
-  // Boost user profile
-  const boostProfile = (boostType: string): boolean => {
-    if (!currentUser) return false;
-    
-    // In a real app, this would involve payment processing
-    // For demo, just add the boost
-    const boost: BoostedProfile = {
-      userId: currentUser.id,
-      boostType,
-      startTime: new Date(),
-      endTime: new Date(Date.now() + (boostType === 'international' ? 2 : 1) * 24 * 60 * 60 * 1000)
-    };
-    
-    setBoostedProfiles([...boostedProfiles, boost]);
-    toast.success(`Your profile has been boosted!`);
-    return true;
-  };
-  
-  // Like user
-  const likeUser = (userId: string) => {
-    // In a real app, we would create a like in the database
-    // For demo, just show a toast
-    toast.success(`You liked this user!`);
-    
-    // Simulate a match (50% chance)
-    if (Math.random() > 0.5) {
-      const matchedUser = allUsers.find(user => user.id === userId);
-      if (matchedUser && !matches.some(match => match.id === userId)) {
-        setMatches([...matches, matchedUser]);
-        toast.success(`It's a match! You and ${matchedUser.name} have liked each other.`);
-      }
-    }
-  };
-  
-  // Pass on user
-  const passUser = (userId: string) => {
-    // In a real app, we would record this pass in the database
-    // For demo, just show a toast
-    toast.success(`You passed on this user.`);
-  };
-  
-  // Send message
-  const sendMessage = (to: string, content: string, giftType?: keyof GiftInventory) => {
-    if (!currentUser) return;
-    
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`,
-      senderId: currentUser.id,
-      receiverId: to,
-      content,
-      timestamp: new Date(),
-      isRead: false,
-      hasGift: !!giftType,
-      giftType
-    };
-    
-    setMessages([...messages, newMessage]);
-    
-    // If sending a gift, deduct from inventory
-    if (giftType && currentUser.giftInventory[giftType] > 0) {
-      sendGift(to, giftType);
-    }
-    
-    toast.success(`Message sent!`);
-  };
-  
-  // Mark messages as read
-  const markMessagesAsRead = (userId: string) => {
-    if (!currentUser) return;
-    
-    setMessages(prevMessages => 
-      prevMessages.map(message => {
-        if (message.senderId === userId && message.receiverId === currentUser.id && !message.isRead) {
-          return { ...message, isRead: true };
-        }
-        return message;
-      })
-    );
-  };
-  
-  // Blog functions
-  const createBlogPost = (title: string, content: string, tags: string[]): BlogPost => {
-    if (!currentUser) {
-      toast.error('You must be logged in to create a post');
-      return {
-        id: '',
-        userId: '',
-        title: '',
-        content: '',
-        createdAt: new Date(),
-        likes: 0,
-        comments: [],
-        tags: []
-      };
-    }
-    
-    const newPost: BlogPost = {
-      id: `post-${Date.now()}`,
+    const newPost: BlogPostType = {
+      id: `post-${Date.now()}-${Math.random().toString(36).substring(2)}`,
       userId: currentUser.id,
       title,
       content,
@@ -752,285 +479,83 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       tags
     };
     
-    setBlogPosts([newPost, ...blogPosts]);
-    return newPost;
+    setBlogPosts(prev => [newPost, ...prev]);
   };
   
-  const updateBlogPost = (postId: string, updates: Partial<BlogPost>): boolean => {
-    if (!currentUser) return false;
-    
-    const postIndex = blogPosts.findIndex(post => post.id === postId);
-    if (postIndex === -1) return false;
-    
-    const post = blogPosts[postIndex];
-    if (post.userId !== currentUser.id) {
-      toast.error('You can only edit your own posts');
-      return false;
-    }
-    
-    const updatedPost = { ...post, ...updates };
-    const updatedPosts = [...blogPosts];
-    updatedPosts[postIndex] = updatedPost;
-    
-    setBlogPosts(updatedPosts);
-    return true;
-  };
-  
-  const deleteBlogPost = (postId: string): boolean => {
-    if (!currentUser) return false;
-    
-    const post = blogPosts.find(post => post.id === postId);
-    if (!post) return false;
-    
-    if (post.userId !== currentUser.id && currentUser.role !== 'admin') {
-      toast.error('You can only delete your own posts');
-      return false;
-    }
-    
-    setBlogPosts(blogPosts.filter(post => post.id !== postId));
-    return true;
-  };
-  
-  const likeBlogPost = (postId: string, userId: string): boolean => {
-    const postIndex = blogPosts.findIndex(post => post.id === postId);
-    if (postIndex === -1) return false;
-    
-    const post = blogPosts[postIndex];
-    const updatedPost = { ...post, likes: post.likes + 1 };
-    
-    const updatedPosts = [...blogPosts];
-    updatedPosts[postIndex] = updatedPost;
-    
-    setBlogPosts(updatedPosts);
-    return true;
-  };
-  
-  const commentOnBlogPost = (postId: string, comment: string): boolean => {
-    if (!currentUser) return false;
-    
-    const postIndex = blogPosts.findIndex(post => post.id === postId);
-    if (postIndex === -1) return false;
-    
-    const post = blogPosts[postIndex];
-    const newComment = {
-      id: `comment-${Date.now()}`,
-      postId,
-      userId: currentUser.id,
-      userName: currentUser.name,
-      content: comment,
-      createdAt: new Date()
-    };
-    
-    const updatedPost = {
-      ...post,
-      comments: [...post.comments, newComment]
-    };
-    
-    const updatedPosts = [...blogPosts];
-    updatedPosts[postIndex] = updatedPost;
-    
-    setBlogPosts(updatedPosts);
-    return true;
-  };
-  
-  const getUserPosts = (userId: string): BlogPost[] => {
-    return blogPosts.filter(post => post.userId === userId);
-  };
-  
-  const getAllPosts = (): BlogPost[] => {
-    return blogPosts;
-  };
-  
-  const getFilteredPosts = (tag?: string, searchTerm?: string): BlogPost[] => {
-    let filtered = blogPosts;
-    
-    if (tag) {
-      filtered = filtered.filter(post => post.tags.includes(tag));
-    }
-    
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        post => post.title.toLowerCase().includes(term) || 
-                post.content.toLowerCase().includes(term)
-      );
-    }
-    
-    return filtered;
-  };
-  
-  const getGiftMonetizationDetails = (): MonetizationDetails => {
-    if (!currentUser) {
-      return { 
-        totalEarned: 0, 
-        availableBalance: 0, 
-        pendingBalance: 0, 
-        conversionRate: 0,
-        giftsReceived: 0,
-        withdrawalFee: 0,
-        giftValues: {
-          rose: 0.25,
-          heart: 0.75,
-          teddy: 1.5
-        },
-        minimumWithdrawal: 10,
-        currency: 'USD',
-        exchangeRates: {
-          USD: 1,
-          EUR: 0.85,
-          GBP: 0.73,
-          JPY: 110.25,
-          CAD: 1.25,
-          AUD: 1.35,
-          CNY: 6.5,
-          INR: 73.5
-        }
-      };
-    }
-    
-    // Calculate based on gifts received
-    const roses = currentUser.receivedGifts.rose;
-    const hearts = currentUser.receivedGifts.heart;
-    const teddies = currentUser.receivedGifts.teddy;
-    
-    const totalGifts = roses + hearts + teddies;
-    const conversionRate = 0.5; // $0.50 per gift
-    
-    const totalEarned = roses * 0.25 + hearts * 0.75 + teddies * 1.5;
-    const pendingBalance = totalEarned * 0.2; // 20% pending
-    const availableBalance = totalEarned - pendingBalance;
-    
-    return {
-      totalEarned,
-      availableBalance,
-      pendingBalance,
-      conversionRate,
-      giftsReceived: totalGifts,
-      withdrawalFee: 1.0, // $1.00 fee
-      giftValues: {
-        rose: 0.25,
-        heart: 0.75,
-        teddy: 1.5
-      },
-      minimumWithdrawal: 10,
-      currency: 'USD',
-      exchangeRates: {
-        USD: 1,
-        EUR: 0.85,
-        GBP: 0.73,
-        JPY: 110.25,
-        CAD: 1.25,
-        AUD: 1.35,
-        CNY: 6.5,
-        INR: 73.5
+  // Update a blog post
+  const updateBlogPost = (postId: string, updates: Partial<BlogPostType>) => {
+    setBlogPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        return { ...post, ...updates };
       }
-    };
+      return post;
+    }));
   };
   
-  const initiateWithdrawal = (amount: number): boolean => {
-    if (!currentUser) return false;
-    
-    const monetizationDetails = getGiftMonetizationDetails();
-    if (amount > monetizationDetails.availableBalance) {
-      toast.error('Insufficient balance');
-      return false;
+  // Delete a blog post
+  const deleteBlogPost = (postId: string) => {
+    setBlogPosts(prev => prev.filter(post => post.id !== postId));
+  };
+  
+  // Like a blog post
+  const likeBlogPost = (postId: string, userId: string) => {
+    setBlogPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        return { ...post, likes: post.likes + 1 };
+      }
+      return post;
+    }));
+  };
+  
+  // Comment on a blog post
+  const commentOnBlogPost = (postId: string, content: string) => {
+    if (!currentUser) {
+      toast.error("You must be logged in to comment");
+      return;
     }
     
-    const newWithdrawal: Withdrawal = {
-      id: `withdrawal-${Date.now()}`,
-      userId: currentUser.id,
-      amount,
-      status: 'pending',
-      requestDate: new Date()
-    };
-    
-    setWithdrawals([...withdrawals, newWithdrawal]);
-    toast.success(`Withdrawal request for $${amount.toFixed(2)} initiated`);
-    return true;
+    setBlogPosts(prev => prev.map(post => {
+      if (post.id === postId) {
+        const newComment = {
+          id: `comment-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+          postId,
+          userId: currentUser.id,
+          userName: currentUser.name,
+          content,
+          createdAt: new Date()
+        };
+        
+        return {
+          ...post,
+          comments: [...post.comments, newComment]
+        };
+      }
+      return post;
+    }));
   };
   
-  const updateBankDetails = (details: BankDetails): boolean => {
-    if (!currentUser) return false;
-    
-    setCurrentUser({
-      ...currentUser,
-      bankDetails: details
-    });
-    
-    toast.success('Bank details updated successfully');
-    return true;
-  };
-  
-  const getWithdrawalHistory = (): Withdrawal[] => {
-    if (!currentUser) return [];
-    
-    return withdrawals.filter(withdrawal => withdrawal.userId === currentUser.id);
-  };
-  
-  const getPendingWithdrawal = (): Withdrawal | null => {
-    if (!currentUser) return null;
-    
-    return withdrawals.find(
-      withdrawal => withdrawal.userId === currentUser.id && withdrawal.status === 'pending'
-    );
-  };
-  
-  // Add a user to the system (for admin purposes)
-  const addUser = (user: User) => {
-    setAllUsers([...allUsers, user]);
-  };
-  
-  // Delete a user from the system (for admin purposes)
-  const deleteUser = (userId: string) => {
-    setAllUsers(allUsers.filter(user => user.id !== userId));
-  };
-  
-  // Create context value object with all the functions and state
-  const contextValue: UserContextType = {
+  // Export all functions and state
+  const contextValue = {
     currentUser,
     setCurrentUser,
-    isAuthenticated,
+    login,
+    register,
     logout,
-    updateUserData,
-    purchaseGift,
-    sendGift,
+    updateProfile,
+    uploadProfilePhoto,
+    likeProfile,
+    passProfile,
+    getCompatibilityScore,
     boostProfile,
-    allUsers,
-    addUser,
-    deleteUser,
-    
-    // Blog related methods
+    getProfileById,
+    sendGift,
+    getMatches,
+    getUserPosts,
     createBlogPost,
     updateBlogPost,
     deleteBlogPost,
     likeBlogPost,
     commentOnBlogPost,
-    getUserPosts,
-    getAllPosts,
-    getFilteredPosts,
-    
-    // User interaction methods
-    updateUserProfile,
-    likeUser,
-    passUser,
-    potentialMatches,
-    matches,
-    boostedProfiles,
-    
-    // Messaging methods
-    messages,
-    sendMessage,
-    markMessagesAsRead,
-    
-    // Gift and monetization methods
-    getGiftBenefits,
-    getGiftInventory,
-    purchaseGifts,
-    getGiftMonetizationDetails,
-    initiateWithdrawal,
-    updateBankDetails,
-    getWithdrawalHistory,
-    getPendingWithdrawal
   };
   
   return (
@@ -1040,11 +565,5 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Custom hook for using the user context
-export const useUser = () => {
-  const context = useContext(UserContext);
-  if (context === undefined) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
-};
+// Custom hook to use the context
+export const useUser = () => useContext(UserContext);

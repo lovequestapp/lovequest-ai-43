@@ -1,210 +1,178 @@
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, X, MessageCircle, MapPin, Sparkles, Star, Mic } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import ScreenReaderOnly from './ScreenReaderOnly';
-import { useNavigate } from 'react-router-dom';
-import VoicePlayer from './VoicePlayer';
+import { User } from '@/types/user';
+import { Heart, X, MessageCircle, MapPin, Shield, Sparkles } from 'lucide-react';
 
 interface ProfileCardProps {
-  id: string;
-  name: string;
-  age: number;
-  bio: string;
-  location: string;
-  interests: string[];
-  photos: string[];
-  compatibilityScore?: number;
-  personalityTraits?: string[];
-  voiceIntro?: string;
-  onLike?: (id: string) => void;
-  onPass?: (id: string) => void;
-  onMessage?: (id: string) => void;
-  detailed?: boolean;
+  profile: User;
+  showActions?: boolean;
+  onLike?: () => void;
+  onPass?: () => void;
+  currentUser?: User | null;
+  isMatch?: boolean;
+  alreadyLiked?: boolean;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
-  id,
-  name,
-  age,
-  bio,
-  location,
-  interests,
-  photos,
-  compatibilityScore,
-  personalityTraits,
-  voiceIntro,
+  profile,
+  showActions = false,
   onLike,
   onPass,
-  onMessage,
-  detailed = false,
+  currentUser,
+  isMatch = false,
+  alreadyLiked = false
 }) => {
   const navigate = useNavigate();
-
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Only navigate if the click is on the card itself, not on buttons
-    if (!(e.target as HTMLElement).closest('button')) {
-      navigate(`/profiles/${id}`);
-    }
+  
+  // Calculate compatibility score
+  const compatibilityScore = currentUser ? profile.compatibilityScore : Math.floor(Math.random() * 50) + 50;
+  
+  // Determine color based on compatibility level
+  const getCompatibilityColor = (score: number) => {
+    if (score >= 90) return 'bg-green-100 text-green-800';
+    if (score >= 75) return 'bg-emerald-100 text-emerald-800';
+    if (score >= 60) return 'bg-lime-100 text-lime-800';
+    if (score >= 50) return 'bg-amber-100 text-amber-800';
+    return 'bg-orange-100 text-orange-800';
   };
-
+  
+  const profileImage = profile.photos && profile.photos.length > 0 
+    ? profile.photos[0] 
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(profile.name)}&background=random`;
+  
+  const handleViewProfile = () => {
+    navigate(`/profile/${profile.id}`);
+  };
+  
   return (
-    <Card 
-      className={cn(
-        "overflow-hidden transition-all duration-300 animate-fade-in",
-        detailed ? "max-w-2xl mx-auto shadow-card" : "max-w-sm w-full card-hover cursor-pointer"
+    <Card className="overflow-hidden hover:shadow-md transition-shadow relative">
+      {isMatch && (
+        <div className="absolute top-2 right-2 z-10">
+          <Badge className="bg-gradient-to-r from-love-500 to-purple-500 text-white flex items-center gap-1 shadow-md">
+            <Sparkles size={14} />
+            <span>Match!</span>
+          </Badge>
+        </div>
       )}
-      onClick={!detailed ? handleCardClick : undefined}
-    >
-      <div className="relative">
+      
+      {/* Message button for matches */}
+      {isMatch && (
+        <Button 
+          size="sm" 
+          className="absolute top-2 left-2 z-10 bg-white text-love-600 hover:bg-love-50"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/messages/${profile.id}`);
+          }}
+        >
+          <MessageCircle size={16} />
+        </Button>
+      )}
+      
+      <div 
+        className="aspect-[3/4] w-full bg-muted cursor-pointer"
+        onClick={handleViewProfile}
+      >
         <img 
-          src={photos[0]} 
-          alt={`${name}'s profile`} 
-          className={cn(
-            "w-full object-cover", 
-            detailed ? "h-96" : "h-72"
-          )}
+          src={profileImage} 
+          alt={`${profile.name}'s profile`}
+          className="w-full h-full object-cover"
         />
         
-        {compatibilityScore && (
-          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 px-3 rounded-full flex items-center gap-1.5 shadow-soft">
-            <Sparkles size={16} className="text-love-500" />
-            <span className="font-semibold text-love-700">{compatibilityScore}% Match</span>
+        {/* Compatibility badge */}
+        <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent">
+          <div className="flex justify-between items-end">
+            <div>
+              <h3 className="text-xl font-medium text-white truncate">{profile.name}, {profile.age}</h3>
+              <div className="flex items-center text-white/80 text-sm">
+                <MapPin size={14} className="mr-1" />
+                <span className="truncate">{profile.location}</span>
+              </div>
+            </div>
+            
+            <Badge className={`${getCompatibilityColor(compatibilityScore)} font-medium`}>
+              {compatibilityScore}% Match
+            </Badge>
           </div>
-        )}
-
-        {voiceIntro && (
-          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm p-1 px-2 rounded-full flex items-center gap-1 shadow-soft">
-            <Mic size={14} className="text-love-500" />
-            <span className="text-xs font-medium text-love-700">Voice Intro</span>
-          </div>
-        )}
-
-        {detailed && (
-          <div className="absolute bottom-4 right-4 flex space-x-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star 
-                key={star} 
-                size={24} 
-                className={cn(
-                  "drop-shadow-md transition-all duration-300",
-                  star <= Math.ceil(compatibilityScore ? compatibilityScore / 20 : 0) 
-                    ? "fill-amber-400 text-amber-400" 
-                    : "text-white/40"
-                )}
-              />
-            ))}
+        </div>
+        
+        {/* Verification badge if verified */}
+        {profile.verificationStatus === 'verified' && (
+          <div className="absolute top-2 left-2">
+            <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1">
+              <Shield size={12} />
+              <span>Verified</span>
+            </Badge>
           </div>
         )}
       </div>
       
-      <CardContent className={cn(
-        "p-5", 
-        detailed ? "space-y-6" : "space-y-4"
-      )}>
-        <div>
-          <div className="flex justify-between items-start">
-            <h3 className="text-2xl font-display font-bold group">
-              <span className="bg-clip-text bg-gradient-love text-transparent inline-block">{name}</span>, {age}
-            </h3>
-            
-            {detailed && compatibilityScore && (
-              <Badge variant="outline" className="bg-love-50 text-love-700 border-love-200 px-3 py-1">
-                <Sparkles size={14} className="mr-1 text-love-500" />
-                {compatibilityScore}% Match
-              </Badge>
-            )}
-          </div>
+      <CardContent className="p-3">
+        <div className="space-y-2">
+          <p className="text-sm line-clamp-2">{profile.bio}</p>
           
-          <div className="flex items-center text-muted-foreground mt-1">
-            <MapPin size={16} className="mr-1 text-love-400" />
-            <span>{location}</span>
-          </div>
-        </div>
-        
-        {voiceIntro && (
-          <VoicePlayer audioUrl={voiceIntro} compact={true} />
-        )}
-        
-        <p className={cn(
-          "text-gray-700",
-          detailed ? "" : "line-clamp-3"
-        )}>
-          {bio}
-        </p>
-        
-        {personalityTraits && personalityTraits.length > 0 && detailed && (
-          <div className="flex flex-wrap gap-2">
-            {personalityTraits.map((trait, index) => (
-              <Badge 
-                key={`trait-${index}`} 
-                className="bg-love-500 shadow-sm transition-all duration-300 hover:bg-love-600"
-                data-index={index}
-              >
-                {trait}
+          <div className="flex flex-wrap gap-1">
+            {profile.interests.slice(0, 4).map((interest, i) => (
+              <Badge key={i} variant="secondary" className="text-xs">
+                {interest}
               </Badge>
             ))}
+            {profile.interests.length > 4 && (
+              <Badge variant="outline" className="text-xs">
+                +{profile.interests.length - 4} more
+              </Badge>
+            )}
           </div>
-        )}
-        
-        <div className="flex flex-wrap gap-2">
-          {interests.map((interest, index) => (
-            <Badge 
-              key={`interest-${index}`} 
-              variant="secondary" 
-              className="bg-love-50 text-love-700 hover:bg-love-100 transition-all duration-300 shadow-sm"
-              data-index={index}
-            >
-              {interest}
-            </Badge>
-          ))}
         </div>
-        
-        {!detailed && (onLike || onPass) && (
-          <div className="flex justify-between items-center pt-2">
-            {onPass && (
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="rounded-full h-12 w-12 border-gray-300 hover:border-gray-400 btn-press-effect focus-ring"
-                onClick={() => {
-                  onPass(id);
-                }}
-              >
-                <X size={24} className="text-gray-500" />
-                <ScreenReaderOnly>Pass on {name}'s profile</ScreenReaderOnly>
-              </Button>
-            )}
-            
-            {onLike && (
-              <Button 
-                className="rounded-full h-12 w-12 bg-gradient-love hover:opacity-90 btn-press-effect focus-ring btn-love-effect"
-                size="icon"
-                onClick={() => {
-                  onLike(id);
-                }}
-              >
-                <Heart size={24} className="text-white" />
-                <ScreenReaderOnly>Like {name}'s profile</ScreenReaderOnly>
-              </Button>
-            )}
-          </div>
-        )}
-        
-        {detailed && onMessage && (
-          <Button 
-            className="w-full bg-gradient-love hover:opacity-90 shadow-love transition-all duration-300 focus-ring btn-love-effect"
-            onClick={() => onMessage(id)}
-          >
-            <MessageCircle size={18} className="mr-2" />
-            Send Message
-            <ScreenReaderOnly>Send a message to {name}</ScreenReaderOnly>
-          </Button>
-        )}
       </CardContent>
+      
+      {showActions && (
+        <CardFooter className="flex justify-center gap-2 p-3 pt-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPass?.();
+            }}
+            className="rounded-full h-10 w-10 p-0"
+          >
+            <X size={20} className="text-gray-500" />
+          </Button>
+          
+          <Button
+            onClick={handleViewProfile}
+            variant="outline"
+            size="sm"
+            className="text-xs px-3"
+          >
+            View Profile
+          </Button>
+          
+          <Button
+            variant={alreadyLiked ? "outline" : "default"}
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onLike?.();
+            }}
+            className={`rounded-full h-10 w-10 p-0 ${
+              alreadyLiked 
+                ? 'bg-love-50 text-love-500 border-love-200' 
+                : 'bg-love-500 hover:bg-love-600'
+            }`}
+          >
+            <Heart 
+              size={20} 
+              className={alreadyLiked ? "fill-love-500" : "text-white"} 
+            />
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 };

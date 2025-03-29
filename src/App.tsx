@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Messages from './pages/Messages';
 import EditProfile from './pages/edit-profile';
 import Discover from './pages/discover';
+import Explore from './pages/explore';
 import Admin from './pages/Admin';
 import ProtectedRoute from './components/protected-route';
 import { useUser } from './context/UserContext';
@@ -200,6 +201,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Discover />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/explore" 
+        element={
+          <ProtectedRoute>
+            <Explore />
           </ProtectedRoute>
         } 
       />

@@ -1,0 +1,30 @@
+
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  age: number;
+  bio: string;
+  location: string;
+  interests: string[];
+  photos: string[];
+  gender: 'male' | 'female' | 'non-binary';
+  interestedIn: ('male' | 'female' | 'non-binary')[];
+  popularityPoints: number;
+  premiumStatus: 'basic' | 'premium' | 'vip';
+  giftInventory: {
+    rose: number;
+    heart: number;
+    teddy: number;
+  };
+  receivedGifts: {
+    rose: number;
+    heart: number;
+    teddy: number;
+  };
+  compatibilityScore: number;
+  personalityTraits: string[];
+  role: 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial';
+  isBanned: boolean;
+  verificationStatus: 'verified' | 'unverified' | 'pending' | 'rejected';
+};
