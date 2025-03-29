@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -43,7 +44,7 @@ const AdminMobileContainer = ({
   const [userFormData, setUserFormData] = useState({});
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, logout } = useUser();
+  const { currentUser, logout, updateUserData } = useUser();
   
   // Hide export/import buttons and fix overflow
   useEffect(() => {
@@ -254,6 +255,30 @@ const AdminMobileContainer = ({
         box-shadow: 0 6px 16px rgba(236, 72, 153, 0.25);
         transform: translateY(-1px);
       }
+      
+      /* Exit Admin Button */
+      .exit-admin {
+        position: fixed;
+        bottom: 80px;
+        right: 16px;
+        z-index: 999;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #ec4899, #8b5cf6);
+        color: white;
+        box-shadow: 0 4px 12px rgba(236, 72, 153, 0.3);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      
+      .exit-admin:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(236, 72, 153, 0.4);
+      }
     `;
     document.head.appendChild(style);
     return () => {
@@ -278,21 +303,29 @@ const AdminMobileContainer = ({
   }, [editingUser]);
   
   const handleSaveUser = useCallback((userId: number) => {
-    // Here you would typically save to API
-    // For now, we'll just simulate success
+    // Apply the actual update to the user data using the context function
+    if (userFormData) {
+      // Convert the userId to string since our User type uses string IDs
+      updateUserData(String(userId), userFormData);
+    }
     
+    setEditingUser(null);
+    setUserFormData({});
+    toast.success("User updated successfully", {
+      description: "The user's information has been saved"
+    });
+    
+    // Remove animation class
+    const row = document.querySelector(`[data-user-id="${userId}"]`);
+    if (row) {
+      row.classList.remove('edit-transition');
+    }
+    
+    // Allow click events after a short delay
     setTimeout(() => {
-      setEditingUser(null);
-      setUserFormData({});
-      toast.success("User updated successfully");
-      
-      // Remove animation class
-      const row = document.querySelector(`[data-user-id="${userId}"]`);
-      if (row) {
-        row.classList.remove('edit-transition');
-      }
+      document.body.style.pointerEvents = 'auto';
     }, 300);
-  }, []);
+  }, [userFormData, updateUserData]);
   
   const handleCancelEdit = useCallback(() => {
     const row = document.querySelector(`[data-user-id="${editingUser}"]`);
@@ -302,6 +335,9 @@ const AdminMobileContainer = ({
     
     setEditingUser(null);
     setUserFormData({});
+    
+    // Allow click events again
+    document.body.style.pointerEvents = 'auto';
   }, [editingUser]);
   
   const handleLogout = async () => {
@@ -313,6 +349,11 @@ const AdminMobileContainer = ({
     } catch (error) {
       toast.error("Failed to log out");
     }
+  };
+  
+  const handleExitAdmin = () => {
+    navigate('/discover');
+    toast.success("Exited admin mode");
   };
   
   // Side drawer menu for mobile
@@ -414,7 +455,18 @@ const AdminMobileContainer = ({
               }}
             />
             
-            <div className="border-t border-love-100 mt-4 pt-4">
+            <div className="px-2 mt-2 pt-2">
+              <NavItem 
+                icon={<Home />} 
+                label="Exit to App" 
+                onClick={() => {
+                  handleExitAdmin();
+                  setMenuOpen(false);
+                }}
+              />
+            </div>
+            
+            <div className="border-t border-love-100 mt-2 pt-2">
               <NavItem 
                 icon={<LogOut />} 
                 label="Logout" 
@@ -546,50 +598,6 @@ const AdminMobileContainer = ({
           fullWidth ? "w-full" : "max-w-full mx-auto",
           padding ? "px-3 py-3 sm:px-4 sm:py-4" : ""
         )}>
-          {/* Stat Cards - Improved luxury design */}
-          <div className="admin-stats-grid mb-6">
-            <StatCard 
-              icon={<Users className="h-8 w-8 text-love-500" />} 
-              title="Active Users" 
-              value="1,245" 
-              trend="+5.2%"
-              trendUp={true}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'users' }));
-              }}
-            />
-            <StatCard 
-              icon={<Heart className="h-8 w-8 text-love-500" />} 
-              title="Matches" 
-              value="843"
-              trend="+12.8%"
-              trendUp={true}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'analytics' }));
-              }}
-            />
-            <StatCard 
-              icon={<MessageSquare className="h-8 w-8 text-love-500" />} 
-              title="Messages" 
-              value="15.3k"
-              trend="+8.7%"
-              trendUp={true}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'moderation' }));
-              }}
-            />
-            <StatCard 
-              icon={<User className="h-8 w-8 text-love-500" />} 
-              title="New Signups" 
-              value="127"
-              trend="+3.2%"
-              trendUp={true}
-              onClick={() => {
-                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'users' }));
-              }}
-            />
-          </div>
-          
           {/* Pass the enhanced children with edit functionality */}
           {enhancedChildren}
         </div>
@@ -597,7 +605,7 @@ const AdminMobileContainer = ({
       
       {/* Bottom navigation for mobile */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-love-100 z-40">
+        <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md shadow-lg border-t border-love-100 z-40">
           <div className="flex justify-around items-center">
             <BottomNavItem 
               icon={<Home className="h-5 w-5" />} 
@@ -608,7 +616,7 @@ const AdminMobileContainer = ({
             <BottomNavItem 
               icon={<Users className="h-5 w-5" />} 
               label="Users" 
-              active={false}
+              active={activeTab === 'users'}
               onClick={() => {
                 window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'users' }));
               }}
@@ -616,7 +624,7 @@ const AdminMobileContainer = ({
             <BottomNavItem 
               icon={<BarChart2 className="h-5 w-5" />} 
               label="Stats" 
-              active={false}
+              active={activeTab === 'analytics'}
               onClick={() => {
                 window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'analytics' }));
               }}
@@ -624,7 +632,7 @@ const AdminMobileContainer = ({
             <BottomNavItem 
               icon={<Settings className="h-5 w-5" />} 
               label="Settings" 
-              active={false}
+              active={activeTab === 'settings'}
               onClick={() => {
                 window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'settings' }));
               }}
@@ -632,6 +640,15 @@ const AdminMobileContainer = ({
           </div>
         </div>
       )}
+      
+      {/* Exit to App Button (visible on all devices) */}
+      <div 
+        className="exit-admin" 
+        title="Exit to App"
+        onClick={handleExitAdmin}
+      >
+        <Home className="h-5 w-5" />
+      </div>
       
       {/* Edit mode indicators */}
       {editingUser !== null && (
@@ -655,29 +672,6 @@ const AdminMobileContainer = ({
 };
 
 // Helper components
-const StatCard = ({ icon, title, value, trend, trendUp = true, onClick }) => (
-  <div 
-    className="luxury-card p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:translate-y-[-3px] transition-all duration-300"
-    onClick={onClick}
-  >
-    <div className="mb-2 p-3 rounded-full bg-love-50 text-love-700">{icon}</div>
-    <h3 className="text-sm font-medium text-love-700 truncate-text mt-1">{title}</h3>
-    <p className="text-2xl font-bold text-love-900 truncate-text">{value}</p>
-    {trend && (
-      <div className={cn(
-        "text-xs mt-1 flex items-center font-medium",
-        trendUp ? "text-green-600" : "text-red-600"
-      )}>
-        <span>{trend}</span>
-        <span className={cn(
-          "ml-1", 
-          trendUp ? "rotate-0" : "rotate-180"
-        )}>↑</span>
-      </div>
-    )}
-  </div>
-);
-
 const BottomNavItem = ({ icon, label, active = false, onClick }) => (
   <button 
     className={cn(

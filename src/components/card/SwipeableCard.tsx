@@ -1,179 +1,77 @@
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Heart, X, RotateCw, Info } from 'lucide-react';
-import { cn } from "@/lib/utils";
-import { useSpring, animated } from '@react-spring/web';
+import React, { useState } from 'react';
+import { motion, useAnimation } from 'framer-motion';
 import { useDrag } from '@use-gesture/react';
+import { Card } from '../ui/card';
 
 interface SwipeableCardProps {
-  name: string;
-  age: number;
-  bio: string;
-  image: string;
-  onSwipeRight: () => void;
-  onSwipeLeft: () => void;
-  onUndo: () => void;
-  onShowDetails: () => void;
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
+  children: React.ReactNode;
+  cardClassName?: string;
 }
 
-const SwipeableCard: React.FC<SwipeableCardProps> = ({
-  name,
-  age,
-  bio,
-  image,
-  onSwipeRight,
-  onSwipeLeft,
-  onUndo,
-  onShowDetails
+const SwipeableCard: React.FC<SwipeableCardProps> = ({ 
+  onSwipeLeft, 
+  onSwipeRight, 
+  children,
+  cardClassName = ""
 }) => {
-  const [isSwiped, setIsSwiped] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
+  const [exitX, setExitX] = useState<number | null>(null);
+  const controls = useAnimation();
+  const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+  const threshold = windowWidth * 0.3;
 
-  const [springs, api] = useSpring(() => ({
-    x: 0,
-    scale: 1,
-    rotateZ: 0,
-    config: { friction: 50, tension: 600 }
-  }));
-
-  const bind = useDrag(({ active, movement: [mx], direction: [xDir], velocity: [vx] }) => {
-    const trigger = Math.abs(mx) > 100;
-
-    api.start({
-      x: active ? mx : 0,
-      scale: active ? 1.1 : 1,
-      rotateZ: active ? mx / 30 : 0,
-      immediate: name => active && (name === 'x' || name === 'rotateZ'),
-      config: { tension: 500, friction: 50 }
-    });
-
-    // Only perform swipe actions when not active (released) and when triggered
-    if (!active && trigger) {
-      if (mx > 0) {
-        handleSwipeRight();
-      } else if (mx < 0) {
-        handleSwipeLeft();
+  // Fixed useDrag implementation to properly handle swipes
+  const bindDrag = useDrag(({ down, movement: [mx], direction: [xDir], velocity }) => {
+    const trigger = velocity > 0.2; // Velocity threshold for quick swipes
+    
+    if (!down) {
+      // If released beyond threshold or with sufficient velocity
+      if (mx > threshold || (trigger && xDir > 0)) {
+        setExitX(windowWidth * 1.5);
+        controls.start({ x: windowWidth * 1.5 });
+        onSwipeRight && onSwipeRight();
+      } else if (mx < -threshold || (trigger && xDir < 0)) {
+        setExitX(-windowWidth * 1.5);
+        controls.start({ x: -windowWidth * 1.5 });
+        onSwipeLeft && onSwipeLeft();
+      } else {
+        controls.start({ x: 0, rotation: 0 });
       }
+    } else {
+      // While dragging
+      controls.start({ 
+        x: mx, 
+        rotation: mx / 20,
+        transition: { duration: 0 } 
+      });
     }
+  }, {
+    filterTaps: true,
+    axis: 'x',
+    initial: () => [0, 0]
   });
 
-  // Fix the binding issue by wrapping the functions with useCallback
-  const handleSwipeRight = useCallback(() => {
-    if (isSwiped) return;
-    setIsSwiped(true);
-    api.start({
-      x: 1000,
-      rotateZ: 30,
-      scale: 0,
-      immediate: false,
-      config: { friction: 30, tension: 400 },
-      onRest: () => {
-        setIsSwiped(false);
-        api.start({
-          x: 0,
-          scale: 1,
-          rotateZ: 0
-        });
-        if (onSwipeRight) onSwipeRight();
-      }
-    });
-  }, [api, isSwiped, onSwipeRight]);
-
-  const handleSwipeLeft = useCallback(() => {
-    if (isSwiped) return;
-    setIsSwiped(true);
-    api.start({
-      x: -1000,
-      rotateZ: -30,
-      scale: 0,
-      immediate: false,
-      config: { friction: 30, tension: 400 },
-      onRest: () => {
-        setIsSwiped(false);
-        api.start({
-          x: 0,
-          scale: 1,
-          rotateZ: 0
-        });
-        if (onSwipeLeft) onSwipeLeft();
-      }
-    });
-  }, [api, isSwiped, onSwipeLeft]);
-
-  const handleUndoSwipe = useCallback(() => {
-    if (onUndo) {
-      api.start({
-        x: 0,
-        scale: 1,
-        rotateZ: 0,
-        immediate: false,
-        config: { friction: 50, tension: 500 }
-      });
-      onUndo();
-    }
-  }, [api, onUndo]);
-
-  useEffect(() => {
-    const keyPressHandler = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowRight') {
-        handleSwipeRight();
-      } else if (event.key === 'ArrowLeft') {
-        handleSwipeLeft();
-      } else if (event.key === 'z' && (event.ctrlKey || event.metaKey)) {
-        handleUndoSwipe();
-      }
-    };
-
-    window.addEventListener('keydown', keyPressHandler);
-
-    return () => {
-      window.removeEventListener('keydown', keyPressHandler);
-    };
-  }, [handleSwipeRight, handleSwipeLeft, handleUndoSwipe]);
-
   return (
-    <animated.div
-      ref={cardRef}
-      {...bind()}
+    <motion.div
+      animate={controls}
+      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+      dragElastic={0.9}
+      whileTap={{ scale: 0.97 }}
+      exit={{ x: exitX, opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      {...bindDrag()}
       style={{
-        ...springs,
-        zIndex: 10,
-        touchAction: 'none',
+        position: 'relative',
+        height: '100%',
+        touchAction: 'none'
       }}
-      className="relative w-full max-w-md h-[600px] rounded-xl shadow-lg overflow-hidden bg-white"
     >
-      <Card className="absolute inset-0">
-        <div className="relative h-3/4">
-          <img
-            src={image}
-            alt={`${name}'s profile`}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        </div>
-        <CardContent className="flex flex-col justify-between h-1/4">
-          <div>
-            <h2 className="text-2xl font-semibold">{name}, {age}</h2>
-            <p className="text-gray-600">{bio}</p>
-          </div>
-          <div className="flex justify-around mt-4">
-            <Button variant="destructive" onClick={handleSwipeLeft}>
-              <X className="h-5 w-5 mr-2" />
-              Decline
-            </Button>
-            <Button variant="secondary" onClick={onShowDetails}>
-              <Info className="h-5 w-5 mr-2" />
-              Details
-            </Button>
-            <Button onClick={handleSwipeRight}>
-              <Heart className="h-5 w-5 mr-2" />
-              Accept
-            </Button>
-          </div>
-        </CardContent>
+      <Card className={`h-full ${cardClassName}`}>
+        {children}
       </Card>
-    </animated.div>
+    </motion.div>
   );
 };
 

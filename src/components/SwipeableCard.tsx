@@ -35,10 +35,13 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipe
     PanResponder.create({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        // Fixed: Don't directly access _value property
+        // Fixed: Use proper API for accessing Animated values
+        const currentX = position.x._offset || 0;
+        const currentY = position.y._offset || 0;
+        
         position.setOffset({
-          x: position.x.__getValue(),
-          y: position.y.__getValue()
+          x: currentX,
+          y: currentY
         });
         position.setValue({ x: 0, y: 0 });
       },
