@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, X, RotateCw, Info } from 'lucide-react';
 import { cn } from "@/lib/utils";
 import { useSpring, animated } from '@react-spring/web';
+// Fix import - useDrag is from @use-gesture/react, not react-spring
 import { useDrag } from '@use-gesture/react';
 
 interface SwipeableCardProps {
@@ -118,7 +119,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
     return () => {
       window.removeEventListener('keydown', keyPressHandler);
     };
-  }, [onSwipeLeft, onSwipeRight, onUndo, swipeLeft, swipeRight, undoSwipe]);
+  }, [onSwipeLeft, onSwipeRight, onUndo]);
 
   return (
     <animated.div

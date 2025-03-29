@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { SwipeableCard } from '@/components';
 import { UserWithCoordinates } from '@/types/user'; // Fix import source
 import NoMatchesCard from './NoMatchesCard';
@@ -45,6 +45,7 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
     );
   };
 
+  // Fix: Define functions that take a profile parameter to match SwipeableCard expectations
   const handleSwipeRight = (profile: any) => {
     onSwipe(profile.id, 'right');
   };
