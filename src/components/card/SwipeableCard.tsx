@@ -23,7 +23,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
   const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
   const threshold = windowWidth * 0.3;
 
-  // Fixed useDrag implementation to properly handle swipes
+  // Properly typed useDrag implementation
   const bindDrag = useDrag(({ down, movement: [mx], direction: [xDir], velocity }) => {
     // Convert velocity to a numeric value if it's a Vector2
     const velocityValue = getVelocityValue(velocity);
@@ -59,8 +59,6 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
   return (
     <motion.div
       animate={controls}
-      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-      dragElastic={0.9}
       whileTap={{ scale: 0.97 }}
       exit={{ x: exitX, opacity: 0 }}
       transition={{ duration: 0.5 }}

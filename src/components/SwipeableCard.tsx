@@ -35,10 +35,11 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipe
     PanResponder.create({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        // Fixed: Use getValue() instead of accessing _value directly
+        // Fixed: Use getLayout() to get current position instead of __getValue
+        const { x, y } = position.getLayout();
         position.setOffset({
-          x: position.x.__getValue(),
-          y: position.y.__getValue()
+          x: x || 0,
+          y: y || 0
         });
         position.setValue({ x: 0, y: 0 });
       },
