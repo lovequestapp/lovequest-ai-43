@@ -2,7 +2,14 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
-import { User, Message, BlogPostType, GiftInventory, BoostType } from '@/types/user';
+import { 
+  User, 
+  Message, 
+  BlogPostType, 
+  GiftInventory, 
+  BoostType,
+  UserWithCoordinates
+} from '@/types/user';
 
 interface UserContextType {
   currentUser: User | null;
@@ -27,29 +34,29 @@ interface UserContextType {
   commentOnBlogPost: (postId: string, content: string) => void;
   
   isAuthenticated: boolean;
-  potentialMatches?: User[];
-  matches?: User[];
-  messages?: Message[];
-  sendMessage?: (recipientId: string, content: string) => void;
-  markMessagesAsRead?: (messageIds: string[]) => void;
-  updateUserProfile?: (userId: string, data: Partial<User>) => Promise<boolean>;
-  getGiftBenefits?: () => any;
-  allUsers?: User[];
-  addUser?: (user: User) => void;
-  deleteUser?: (userId: string) => void;
-  updateUserData?: (userId: string, data: Partial<User>) => void;
-  getAllPosts?: () => BlogPostType[];
-  getFilteredPosts?: () => BlogPostType[];
-  likeUser?: (userId: string) => void;
-  passUser?: (userId: string) => void;
-  boostedProfiles?: User[];
-  getGiftInventory?: () => GiftInventory;
-  purchaseGifts?: (gifts: { type: 'rose' | 'heart' | 'teddy', quantity: number }[]) => Promise<boolean>;
-  getGiftMonetizationDetails?: () => any;
-  initiateWithdrawal?: (amount: number) => Promise<boolean>;
-  updateBankDetails?: (details: User['bankDetails']) => Promise<boolean>;
-  getWithdrawalHistory?: () => any[];
-  getPendingWithdrawal?: () => any;
+  potentialMatches: User[];
+  matches: User[];
+  messages: Message[];
+  sendMessage: (recipientId: string, content: string) => void;
+  markMessagesAsRead: (messageIds: string[]) => void;
+  updateUserProfile: (userId: string, data: Partial<User>) => Promise<boolean>;
+  getGiftBenefits: () => any;
+  allUsers: User[];
+  addUser: (user: User) => void;
+  deleteUser: (userId: string) => void;
+  updateUserData: (userId: string, data: Partial<User>) => void;
+  getAllPosts: () => BlogPostType[];
+  getFilteredPosts: () => BlogPostType[];
+  likeUser: (userId: string) => void;
+  passUser: (userId: string) => void;
+  boostedProfiles: User[];
+  getGiftInventory: () => GiftInventory;
+  purchaseGifts: (gifts: { type: 'rose' | 'heart' | 'teddy', quantity: number }[]) => Promise<boolean>;
+  getGiftMonetizationDetails: () => any;
+  initiateWithdrawal: (amount: number) => Promise<boolean>;
+  updateBankDetails: (details: User['bankDetails']) => Promise<boolean>;
+  getWithdrawalHistory: () => any[];
+  getPendingWithdrawal: () => any;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -74,6 +81,29 @@ const UserContext = createContext<UserContextType>({
   likeBlogPost: () => {},
   commentOnBlogPost: () => {},
   isAuthenticated: false,
+  potentialMatches: [],
+  matches: [],
+  messages: [],
+  sendMessage: () => {},
+  markMessagesAsRead: () => {},
+  updateUserProfile: async () => false,
+  getGiftBenefits: () => ({}),
+  allUsers: [],
+  addUser: () => {},
+  deleteUser: () => {},
+  updateUserData: () => {},
+  getAllPosts: () => [],
+  getFilteredPosts: () => [],
+  likeUser: () => {},
+  passUser: () => {},
+  boostedProfiles: [],
+  getGiftInventory: () => ({ rose: 0, heart: 0, teddy: 0 }),
+  purchaseGifts: async () => false,
+  getGiftMonetizationDetails: () => ({}),
+  initiateWithdrawal: async () => false,
+  updateBankDetails: async () => false,
+  getWithdrawalHistory: () => [],
+  getPendingWithdrawal: () => null,
 });
 
 export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
@@ -459,10 +489,89 @@ export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }));
   };
   
+  const updateUserProfile = async (userId: string, data: Partial<User>): Promise<boolean> => {
+    try {
+      if (!currentUser) {
+        toast.error("You must be logged in to update a profile");
+        return false;
+      }
+      
+      // Check if the user is updating their own profile or has admin rights
+      if (currentUser.id !== userId && currentUser.role !== 'admin') {
+        toast.error("You don't have permission to update this profile");
+        return false;
+      }
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: data.name,
+          bio: data.bio,
+          age: data.age,
+          location: data.location,
+          interests: data.interests,
+          gender: data.gender,
+          interested_in: data.interestedIn,
+        })
+        .eq('id', userId);
+        
+      if (error) {
+        console.error("Error updating profile:", error);
+        toast.error("Failed to update profile", {
+          description: error.message
+        });
+        return false;
+      }
+      
+      // If updating own profile, update the current user state
+      if (userId === currentUser.id) {
+        setCurrentUser(prev => {
+          if (prev) {
+            return { ...prev, ...data };
+          }
+          return prev;
+        });
+      }
+      
+      toast.success("Profile updated successfully!");
+      return true;
+    } catch (error) {
+      console.error('Update profile error:', error);
+      toast.error("Failed to update profile", {
+        description: "An unexpected error occurred"
+      });
+      return false;
+    }
+  };
+  
+  // Mock data for potentialMatches
+  const potentialMatches: User[] = [];
+  
+  // Mock data for matches
+  const matches: User[] = [];
+  
+  // Mock data for messages
+  const messages: Message[] = [];
+  
+  // Mock implementation for likeUser
+  const likeUser = (userId: string) => {
+    likeProfile(userId);
+  };
+  
+  // Mock implementation for passUser
+  const passUser = (userId: string) => {
+    passProfile(userId);
+  };
+  
+  // Mock data for boostedProfiles
+  const boostedProfiles: User[] = [];
+  
+  // Mock implementation for getAllPosts
   const getAllPosts = () => {
     return blogPosts;
   };
   
+  // Mock implementation for getFilteredPosts
   const getFilteredPosts = () => {
     if (!currentUser) return [];
     return blogPosts.filter(post => {
@@ -470,87 +579,25 @@ export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }
     });
   };
   
-  const potentialMatches = currentUser ? [] : [];
-  
-  const matches = currentUser ? [] : [];
-  
-  const messages: Message[] = [];
-  
-  const sendMessage = (recipientId: string, content: string) => {
-    toast.success("Message sent!");
-  };
-  
-  const markMessagesAsRead = (messageIds: string[]) => {
-    console.log("Marking messages as read:", messageIds);
-  };
-  
-  const likeUser = (userId: string) => {
-    likeProfile(userId);
-  };
-  
-  const passUser = (userId: string) => {
-    passProfile(userId);
-  };
-  
-  const boostedProfiles: User[] = [];
-  
-  const getGiftInventory = (): GiftInventory => {
-    return currentUser?.giftInventory || { rose: 0, heart: 0, teddy: 0 };
-  };
-  
-  const purchaseGifts = async (gifts: { type: 'rose' | 'heart' | 'teddy', quantity: number }[]): Promise<boolean> => {
-    toast.success("Gifts purchased successfully!");
-    return true;
-  };
-  
-  const getGiftMonetizationDetails = () => {
-    return {
-      totalEarnings: 0,
-      pendingWithdrawal: 0,
-      availableBalance: 0
-    };
-  };
-  
-  const initiateWithdrawal = async (amount: number): Promise<boolean> => {
-    toast.success(`Withdrawal of $${amount} initiated!`);
-    return true;
-  };
-  
-  const updateBankDetails = async (details: User['bankDetails']): Promise<boolean> => {
-    if (!currentUser) return false;
-    setCurrentUser(prev => {
-      if (prev) {
-        return { ...prev, bankDetails: details };
-      }
-      return prev;
-    });
-    toast.success("Bank details updated successfully!");
-    return true;
-  };
-  
-  const getWithdrawalHistory = () => {
-    return [];
-  };
-  
-  const getPendingWithdrawal = () => {
-    return null;
-  };
-  
+  // Mock implementation for allUsers
   const allUsers: User[] = [];
   
+  // Mock implementation for addUser
   const addUser = (user: User) => {
     toast.success("User added successfully!");
   };
   
+  // Mock implementation for deleteUser
   const deleteUser = (userId: string) => {
     toast.success("User deleted successfully!");
   };
   
+  // Mock implementation for updateUserData
   const updateUserData = (userId: string, data: Partial<User>) => {
     toast.success("User updated successfully!");
   };
   
-  const contextValue = {
+  const contextValue: UserContextType = {
     currentUser,
     setCurrentUser,
     login,
@@ -575,10 +622,14 @@ export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }
     potentialMatches,
     matches,
     messages,
-    sendMessage,
-    markMessagesAsRead,
-    updateUserProfile: updateProfile,
-    getGiftBenefits: () => ({ /* mock implementation */ }),
+    sendMessage: (recipientId: string, content: string) => {
+      toast.success("Message sent!");
+    },
+    markMessagesAsRead: (messageIds: string[]) => {
+      console.log("Marking messages as read:", messageIds);
+    },
+    updateUserProfile,
+    getGiftBenefits: () => ({}),
     allUsers,
     addUser,
     deleteUser,
@@ -588,13 +639,33 @@ export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }
     likeUser,
     passUser,
     boostedProfiles,
-    getGiftInventory,
-    purchaseGifts,
-    getGiftMonetizationDetails,
-    initiateWithdrawal,
-    updateBankDetails,
-    getWithdrawalHistory,
-    getPendingWithdrawal,
+    getGiftInventory: () => currentUser?.giftInventory || { rose: 0, heart: 0, teddy: 0 },
+    purchaseGifts: async (gifts) => {
+      toast.success("Gifts purchased successfully!");
+      return true;
+    },
+    getGiftMonetizationDetails: () => ({
+      totalEarnings: 0,
+      pendingWithdrawal: 0,
+      availableBalance: 0
+    }),
+    initiateWithdrawal: async (amount) => {
+      toast.success(`Withdrawal of $${amount} initiated!`);
+      return true;
+    },
+    updateBankDetails: async (details) => {
+      if (!currentUser) return false;
+      setCurrentUser(prev => {
+        if (prev) {
+          return { ...prev, bankDetails: details };
+        }
+        return prev;
+      });
+      toast.success("Bank details updated successfully!");
+      return true;
+    },
+    getWithdrawalHistory: () => [],
+    getPendingWithdrawal: () => null,
   };
   
   return (

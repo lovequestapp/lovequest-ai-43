@@ -1,133 +1,139 @@
 
-// Utility function to calculate distance between two coordinates
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
-  const R = 6371; // Radius of the earth in km
-  const dLat = deg2rad(lat2 - lat1);
-  const dLon = deg2rad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
-    ;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c; // Distance in km
-  return distance;
-};
+import { User, UserWithCoordinates, BoostLevelType } from '@/types/user';
 
-const deg2rad = (deg: number): number => {
-  return deg * (Math.PI/180)
-};
-
-// Utility function to calculate compatibility score
-const calculateCompatibilityScore = (user1: User, user2: User): number => {
-  let score = 0;
-
-  // Check for common interests
-  const commonInterests = user1.interests.filter(interest => user2.interests.includes(interest));
-  score += commonInterests.length * 10;
-
-  // Check for similar age
-  const ageDifference = Math.abs(user1.age - user2.age);
-  if (ageDifference <= 5) {
-    score += 15;
-  }
-
-  // Check for same location (simplified)
-  if (user1.location === user2.location) {
-    score += 20;
-  }
-
-  // Check for similar personality traits
-  if (user1.personalityTraits && user2.personalityTraits) {
-    const commonTraits = user1.personalityTraits.filter(trait => user2.personalityTraits?.includes(trait));
-    score += commonTraits.length * 8;
-  }
-
-  // Normalize the score
-  const maxPossibleScore = 100;
-  const normalizedScore = Math.min(score, maxPossibleScore);
-
-  return normalizedScore;
-};
-
-// Define the specific boost level type
-export type BoostLevelType = 'local' | 'international' | 'none' | 'standard' | 'super';
-
-// Update interface to include all needed properties with correctly typed boostLevel
-export interface UserWithCoordinates extends User {
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
-  distance?: number;
-  isBoosted?: boolean;
-  boostLevel?: BoostLevelType;
-  compatibilityScore?: number;
-}
-
-import { User } from '@/context/UserContext';
-
-// Function to get nearby users - fixed signature
-export const getNearbyUsers = (
-  currentUser: UserWithCoordinates,
-  users: UserWithCoordinates[],
-  maxDistance: number
-): UserWithCoordinates[] => {
-  if (!currentUser.coordinates) return users;
-  
-  return users.filter(user => {
-    if (!user.coordinates) return false;
-    
-    const distance = calculateDistance(
-      currentUser.coordinates.latitude,
-      currentUser.coordinates.longitude,
-      user.coordinates.latitude,
-      user.coordinates.longitude
-    );
-    
-    // Add distance to user object for use in UI
-    user.distance = distance;
-    
-    return distance <= maxDistance;
-  });
+// BOOST_PRIORITY mapping for sorting boosted profiles
+export const BOOST_PRIORITY: Record<BoostLevelType, number> = {
+  'super': 1,
+  'international': 2,
+  'local': 3,
+  'none': 4
 };
 
 // Function to determine if a profile should be boosted based on popularity
-export const shouldBoostProfile = (popularityPoints: number): boolean => {
-  // Logic to determine if a profile should be boosted based on popularity points
-  return popularityPoints > 90;
+export const shouldBoostProfile = (popularityScore: number): boolean => {
+  // Boost profiles with popularity over 70
+  return popularityScore > 70;
 };
 
-// Function to enhance matches with AI scoring
+// Calculate distance between two points in km using the Haversine formula
+export const calculateDistance = (
+  lat1: number, 
+  lon1: number, 
+  lat2: number, 
+  lon2: number
+): number => {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c; // Distance in km
+  return Math.round(distance * 10) / 10;
+};
+
+// Filter users by proximity (within specified radius)
+export const getNearbyUsers = (
+  currentUser: UserWithCoordinates,
+  users: UserWithCoordinates[],
+  radius: number
+): UserWithCoordinates[] => {
+  if (!currentUser.coordinates) return users;
+  
+  const { latitude, longitude } = currentUser.coordinates;
+  
+  return users
+    .map(user => {
+      if (user.coordinates) {
+        const distance = calculateDistance(
+          latitude,
+          longitude,
+          user.coordinates.latitude,
+          user.coordinates.longitude
+        );
+        
+        return {
+          ...user,
+          distance
+        };
+      }
+      
+      // If no coordinates, assume a random distance
+      return {
+        ...user,
+        distance: Math.floor(Math.random() * radius * 1.5)
+      };
+    })
+    .filter(user => (user.distance || 0) <= radius);
+};
+
+// Enhanced matching algorithm using simulated AI features
 export const getAiEnhancedMatches = (
   currentUser: UserWithCoordinates,
-  users: UserWithCoordinates[]
+  potentialMatches: UserWithCoordinates[]
 ): UserWithCoordinates[] => {
   // Apply compatibility scoring
-  return users.map(user => ({
-    ...user,
-    compatibilityScore: calculateCompatibilityScore(currentUser, user)
-  })).sort((a, b) => (b.compatibilityScore || 0) - (a.compatibilityScore || 0));
+  const scoredMatches = potentialMatches.map(match => {
+    // Calculate compatibility and other factors
+    const compatibilityScore = calculateCompatibilityScore(currentUser, match);
+    
+    return {
+      ...match,
+      compatibilityScore
+    };
+  });
+  
+  // Apply more advanced sorting by multiple factors
+  return scoredMatches.sort((a, b) => {
+    // Sort primarily by compatibility score
+    return (b.compatibilityScore || 0) - (a.compatibilityScore || 0);
+  });
 };
 
-// Function to map string values to BoostLevelType
-export const asBoostLevelType = (level: string): BoostLevelType => {
-  switch (level) {
-    case 'local':
-    case 'international':
-    case 'standard':
-    case 'super':
-      return level as BoostLevelType;
-    default:
-      return 'none';
+// Calculate compatibility score between two users
+export const calculateCompatibilityScore = (
+  user1: UserWithCoordinates,
+  user2: UserWithCoordinates
+): number => {
+  // Implement using the same logic as in UserContext's getCompatibilityScore
+  if (!user1 || !user2) return 0;
+  
+  let score = 0;
+  let totalFactors = 0;
+  
+  if (user1.interestedIn.includes(user2.gender) && user2.interestedIn.includes(user1.gender)) {
+    score += 25;
+  } else {
+    return Math.floor(Math.random() * 20) + 5;
   }
-};
-
-// Create a lookup object for boost level priorities
-export const BOOST_PRIORITY: Record<BoostLevelType, number> = {
-  'international': 0,
-  'local': 1,
-  'super': 2,
-  'standard': 3,
-  'none': 4
+  totalFactors += 25;
+  
+  const sharedInterests = user1.interests.filter(interest => 
+    user2.interests.includes(interest)
+  ).length;
+  
+  const interestScore = Math.min(25, (sharedInterests / Math.max(1, Math.min(user1.interests.length, user2.interests.length))) * 25);
+  score += interestScore;
+  totalFactors += 25;
+  
+  const sharedTraits = user1.personalityTraits.filter(trait => 
+    user2.personalityTraits.includes(trait)
+  ).length;
+  
+  const traitScore = Math.min(25, (sharedTraits / Math.max(1, Math.min(user1.personalityTraits.length, user2.personalityTraits.length))) * 25);
+  score += traitScore;
+  totalFactors += 25;
+  
+  const ageDifference = Math.abs(user1.age - user2.age);
+  const ageScore = Math.max(0, 25 - (ageDifference * 2));
+  score += ageScore;
+  totalFactors += 25;
+  
+  const finalScore = Math.round((score / totalFactors) * 100);
+  
+  const randomFactor = Math.floor(Math.random() * 10) - 5;
+  
+  return Math.max(0, Math.min(100, finalScore + randomFactor));
 };

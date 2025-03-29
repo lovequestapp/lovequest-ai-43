@@ -12,16 +12,8 @@ export type User = {
   interestedIn: ('male' | 'female' | 'non-binary')[];
   popularityPoints: number;
   premiumStatus: 'basic' | 'premium' | 'vip';
-  giftInventory: {
-    rose: number;
-    heart: number;
-    teddy: number;
-  };
-  receivedGifts: {
-    rose: number;
-    heart: number;
-    teddy: number;
-  };
+  giftInventory: GiftInventory;
+  receivedGifts: GiftInventory;
   compatibilityScore: number;
   personalityTraits: string[];
   role: 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial';
@@ -37,6 +29,10 @@ export type User = {
     routingNumber: string;
     accountType: string;
   };
+  // Properties for Messages component
+  lastMessage?: string;
+  lastMessageTime?: Date;
+  status?: 'online' | 'offline' | 'away';
 };
 
 // Export types used by other components
@@ -75,4 +71,17 @@ export type BlogPostType = {
     createdAt: Date;
   }[];
   tags: string[];
+};
+
+// Add UserWithCoordinates type for matchmaking features
+export type UserWithCoordinates = User & {
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  distance?: number;
+  isBoosted?: boolean;
+  boostLevel?: BoostLevelType;
+  activityScore?: number;
+  finalScore?: number;
 };
