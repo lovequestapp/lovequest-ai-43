@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
-import { useDrag } from '@use-gesture/react';
 import { Card } from '../ui/card';
 import { getVelocityValue } from './CardAnimation';
 
@@ -23,42 +22,6 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
   const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
   const threshold = windowWidth * 0.3;
 
-  // Properly typed useDrag implementation
-  const bindDrag = useDrag(({ down, movement: [mx], direction: [xDir], velocity }) => {
-    // Convert velocity to a numeric value if it's a Vector2
-    const velocityValue = getVelocityValue(velocity);
-    const trigger = velocityValue > 0.2; // Velocity threshold for quick swipes
-    
-    if (!down) {
-      // If released beyond threshold or with sufficient velocity
-      if (mx > threshold || (trigger && xDir > 0)) {
-        setExitX(windowWidth * 1.5);
-        controls.start({ x: windowWidth * 1.5 });
-        onSwipeRight && onSwipeRight();
-      } else if (mx < -threshold || (trigger && xDir < 0)) {
-        setExitX(-windowWidth * 1.5);
-        controls.start({ x: -windowWidth * 1.5 });
-        onSwipeLeft && onSwipeLeft();
-      } else {
-        controls.start({ x: 0, rotate: 0 });
-      }
-    } else {
-      // While dragging - use rotate instead of rotation
-      controls.start({ 
-        x: mx, 
-        rotate: mx / 20,
-        transition: { duration: 0 } 
-      });
-    }
-  }, {
-    filterTaps: true,
-    axis: 'x',
-    initial: () => [0, 0]
-  });
-
-  // Extract the gesture handler props from the bind result
-  const gestureProps = bindDrag();
-  
   return (
     <motion.div
       animate={controls}
@@ -70,17 +33,32 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
         height: '100%',
         touchAction: 'none'
       }}
-      // Apply only the specific gesture props needed for motion.div
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.7}
       onDragEnd={(e, info) => {
         const { offset, velocity } = info;
+        
+        // If dragged beyond threshold or with enough velocity
         if (offset.x > threshold || velocity.x > 0.2) {
+          setExitX(windowWidth * 1.5);
+          controls.start({ x: windowWidth * 1.5, rotate: 10 });
           onSwipeRight && onSwipeRight();
         } else if (offset.x < -threshold || velocity.x < -0.2) {
+          setExitX(-windowWidth * 1.5);
+          controls.start({ x: -windowWidth * 1.5, rotate: -10 });
           onSwipeLeft && onSwipeLeft();
+        } else {
+          // Return to center if not dragged enough
+          controls.start({ x: 0, rotate: 0 });
         }
+      }}
+      // Add drag tracking for visual feedback during drag
+      onDrag={(e, info) => {
+        controls.set({ 
+          x: info.offset.x, 
+          rotate: info.offset.x / 20 
+        });
       }}
     >
       <Card className={`h-full ${cardClassName}`}>
