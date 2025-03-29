@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SwipeableCard } from '@/components';
-import { UserWithCoordinates } from './hooks/useDiscoverFilters';
+import { UserWithCoordinates } from '@/types/user'; // Fix import source
 import NoMatchesCard from './NoMatchesCard';
 
 interface DiscoverContentProps {

@@ -33,8 +33,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipe
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
         pan.setOffset({
-          x: pan.x._value,
-          y: pan.y._value,
+          // Fix _value access
+          x: pan.x.__getValue(),
+          y: pan.y.__getValue(),
         });
       },
       onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {

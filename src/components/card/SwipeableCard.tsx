@@ -90,16 +90,16 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
   };
 
   const undoSwipe = () => {
-    api.start({
-      x: 0,
-      scale: 1,
-      rotateZ: 0,
-      immediate: false,
-      config: { friction: 50, tension: 500 },
-      onRest: () => {
-        onUndo();
-      }
-    });
+    if (onUndo) {
+      api.start({
+        x: 0,
+        scale: 1,
+        rotateZ: 0,
+        immediate: false,
+        config: { friction: 50, tension: 500 }
+      });
+      onUndo();
+    }
   };
 
   useEffect(() => {
