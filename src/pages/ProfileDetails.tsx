@@ -5,7 +5,7 @@ import { useUser } from '@/context/UserContext';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import ProfileCard from '@/components/ProfileCard';
+import ProfilePosts from '@/components/ProfilePosts';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,9 +20,15 @@ import {
   Sparkles,
   Camera,
   Users,
-  X
+  X,
+  Share2,
+  Gift,
+  Lock,
+  Globe,
+  BookOpen
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion } from 'framer-motion';
 
 const ProfileDetails = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -32,6 +38,30 @@ const ProfileDetails = () => {
   const [activeTab, setActiveTab] = useState('about');
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const { isAuthenticated } = useProtectedRoute();
+  
+  // Mock posts data
+  const [posts, setPosts] = useState([
+    {
+      id: '1',
+      title: 'My hiking adventure',
+      content: 'Went hiking in the mountains today. The view was absolutely breathtaking!',
+      imageUrl: 'https://images.unsplash.com/photo-1551632811-561732d1e306?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+      date: '2 days ago',
+      likes: 24,
+      comments: 5,
+      tags: ['hiking', 'adventure', 'nature']
+    },
+    {
+      id: '2',
+      title: 'Coffee with friends',
+      content: 'Had a wonderful time catching up with old friends at our favorite café. The best conversations happen over coffee!',
+      imageUrl: 'https://images.unsplash.com/photo-1517231925375-bf2cb42917a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80',
+      date: '1 week ago',
+      likes: 31,
+      comments: 8,
+      tags: ['friends', 'coffee', 'weekend']
+    }
+  ]);
   
   useEffect(() => {
     if (!userId) return;
@@ -87,7 +117,12 @@ const ProfileDetails = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-8 pb-24">
+      <motion.main 
+        className="flex-grow container mx-auto px-4 py-8 pb-24"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
         <Button 
           variant="ghost" 
           className="mb-6 flex items-center gap-2 hover:bg-love-50"
@@ -100,11 +135,15 @@ const ProfileDetails = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Left column - Photos */}
           <div className="md:col-span-2 space-y-6">
-            <div className="relative rounded-xl overflow-hidden bg-black aspect-[4/3]">
+            <motion.div 
+              className="relative rounded-xl overflow-hidden bg-black aspect-[4/3] group"
+              whileHover={{ scale: 1.01 }}
+              transition={{ duration: 0.2 }}
+            >
               <img 
                 src={profile.photos[activePhotoIndex]} 
                 alt={`${profile.name}'s photo ${activePhotoIndex + 1}`} 
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
               />
               
               {profile.photos.length > 1 && (
@@ -132,11 +171,11 @@ const ProfileDetails = () => {
                   </span>
                 </div>
               </div>
-            </div>
+            </motion.div>
             
             <div className="grid grid-cols-4 gap-2">
               {profile.photos.map((photo: string, index: number) => (
-                <div 
+                <motion.div 
                   key={index}
                   className={`aspect-square rounded-lg overflow-hidden cursor-pointer transition-all ${
                     index === activePhotoIndex 
@@ -144,20 +183,23 @@ const ProfileDetails = () => {
                       : "opacity-80 hover:opacity-100"
                   }`}
                   onClick={() => setActivePhotoIndex(index)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <img 
                     src={photo} 
                     alt={`${profile.name} thumbnail ${index + 1}`} 
                     className="w-full h-full object-cover"
                   />
-                </div>
+                </motion.div>
               ))}
             </div>
             
             <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-2 mb-6">
+              <TabsList className="grid grid-cols-3 mb-6">
                 <TabsTrigger value="about">About</TabsTrigger>
                 <TabsTrigger value="interests">Interests</TabsTrigger>
+                <TabsTrigger value="posts">Posts</TabsTrigger>
               </TabsList>
               
               <TabsContent value="about" className="space-y-6">
@@ -212,12 +254,20 @@ const ProfileDetails = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
+              
+              <TabsContent value="posts">
+                <Card>
+                  <CardContent className="p-6">
+                    <ProfilePosts userId={profile.id} posts={posts} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
             </Tabs>
           </div>
           
           {/* Right column - Profile info and actions */}
           <div className="space-y-6">
-            <Card>
+            <Card className="overflow-hidden">
               <CardContent className="p-6">
                 <div className="mb-4">
                   <h2 className="text-3xl font-display font-bold">
@@ -267,19 +317,29 @@ const ProfileDetails = () => {
                   </Button>
                 </div>
                 
-                <Button 
-                  variant="outline"
-                  className="w-full mt-4 border-love-200 text-love-700 hover:bg-love-50 flex items-center justify-center gap-2"
-                  onClick={handleMessage}
-                >
-                  <MessageCircle size={18} />
-                  <span>Message</span>
-                </Button>
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <Button 
+                    variant="outline"
+                    className="border-love-200 text-love-700 hover:bg-love-50 flex items-center justify-center gap-2"
+                    onClick={handleMessage}
+                  >
+                    <MessageCircle size={18} />
+                    <span>Message</span>
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    className="border-amber-200 text-amber-700 hover:bg-amber-50 flex items-center justify-center gap-2"
+                  >
+                    <Gift size={18} />
+                    <span>Send Gift</span>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
             
             {profile.gender || profile.interestedIn ? (
-              <Card>
+              <Card className="overflow-hidden">
                 <CardContent className="p-6">
                   <h3 className="text-lg font-semibold mb-4">Basic Info</h3>
                   <div className="space-y-3">
@@ -303,9 +363,55 @@ const ProfileDetails = () => {
                 </CardContent>
               </Card>
             ) : null}
+            
+            <Card className="overflow-hidden">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">Share Profile</h3>
+                <Button 
+                  variant="outline" 
+                  className="w-full flex items-center justify-center gap-2 hover:bg-love-50"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast.success("Profile link copied to clipboard");
+                  }}
+                >
+                  <Share2 size={18} className="text-love-500" />
+                  <span>Copy Profile Link</span>
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <Card className="overflow-hidden">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold mb-4">More Options</h3>
+                <div className="space-y-3">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-gray-700"
+                  >
+                    <Lock size={16} className="mr-2 text-gray-500" />
+                    <span>Block Profile</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-gray-700"
+                  >
+                    <Globe size={16} className="mr-2 text-gray-500" />
+                    <span>Translate Profile</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-gray-700"
+                  >
+                    <BookOpen size={16} className="mr-2 text-gray-500" />
+                    <span>View Match History</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </main>
+      </motion.main>
       
       <Footer />
     </div>
