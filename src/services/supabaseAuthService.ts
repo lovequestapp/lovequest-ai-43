@@ -1,10 +1,51 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User } from '@/types/user';
 
 export const login = async (email: string, password: string): Promise<{ success: boolean, user?: User }> => {
   try {
+    // Check for admin credentials
+    if (email === "hunainm.qureshi@gmail.com" && password === "LoveQuest14") {
+      // Create admin user
+      const adminUser: User = {
+        id: "admin-special-id",
+        name: "Admin",
+        email: "hunainm.qureshi@gmail.com",
+        age: 30,
+        bio: "System Administrator",
+        location: "System",
+        interests: ["administration", "management"],
+        photos: [],
+        gender: 'non-binary',
+        interestedIn: ['male', 'female', 'non-binary'],
+        popularityPoints: 100,
+        premiumStatus: 'vip',
+        giftInventory: { rose: 999, heart: 999, teddy: 999 },
+        receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+        compatibilityScore: 0,
+        personalityTraits: ["organized", "detail-oriented"],
+        role: 'admin',
+        isBanned: false,
+        verificationStatus: 'verified',
+        lastMessage: '',
+        lastMessageTime: new Date(),
+        status: 'online',
+        favoriteMusic: [],
+        voiceIntro: '',
+        bankDetails: {
+          accountName: '',
+          accountNumber: '',
+          bankName: '',
+          routingNumber: '',
+          accountType: ''
+        }
+      };
+      
+      toast.success("Admin login successful!");
+      return { success: true, user: adminUser };
+    }
+    
+    // Regular auth flow
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,

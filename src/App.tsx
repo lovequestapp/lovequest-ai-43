@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import Home from './pages/home';
@@ -8,7 +7,7 @@ import Profile from './pages/Profile';
 import Messages from './pages/Messages';
 import EditProfile from './pages/edit-profile';
 import Discover from './pages/discover';
-import Explore from './pages/Explore'; // Make sure we're consistently using the capital E version
+import Explore from './pages/Explore';
 import Admin from './pages/Admin';
 import ProtectedRoute from './components/protected-route';
 import { useUser } from './context/UserContext';
@@ -20,14 +19,12 @@ function App() {
   const { currentUser, setCurrentUser } = useUser();
   const navigate = useNavigate();
 
-  // Check for existing session on app load
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const { data } = await supabase.auth.getSession();
         
         if (data.session) {
-          // Get the user profile from profiles table
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
@@ -39,13 +36,11 @@ function App() {
             return;
           }
           
-          // Ensure gender is properly typed
           const gender = profileData?.gender || 'non-binary';
           const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary') 
             ? gender 
             : 'non-binary';
             
-          // Ensure interestedIn is properly typed
           const interestedIn = profileData?.interested_in || [];
           const validInterestedIn = Array.isArray(interestedIn) ? 
             interestedIn.filter((interest: string) => 
@@ -53,7 +48,6 @@ function App() {
             ) as ('male' | 'female' | 'non-binary')[] :
             [] as ('male' | 'female' | 'non-binary')[];
           
-          // Map Supabase profile data to our User type
           const mappedUser = {
             id: data.session.user.id,
             name: profileData?.name || data.session.user.email?.split('@')[0] || 'User',
@@ -74,6 +68,18 @@ function App() {
             role: (profileData?.role || 'subscriber') as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial',
             isBanned: profileData?.is_banned || false,
             verificationStatus: profileData?.is_verified ? 'verified' : 'unverified' as 'verified' | 'unverified' | 'pending' | 'rejected',
+            lastMessage: '',
+            lastMessageTime: new Date(),
+            status: 'online',
+            favoriteMusic: [],
+            voiceIntro: '',
+            bankDetails: {
+              accountName: '',
+              accountNumber: '',
+              bankName: '',
+              routingNumber: '',
+              accountType: ''
+            }
           };
           
           setCurrentUser(mappedUser);
@@ -85,13 +91,11 @@ function App() {
 
     checkAuth();
     
-    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event);
         
         if (event === 'SIGNED_IN' && session) {
-          // Get the user profile from profiles table
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('*')
@@ -102,13 +106,11 @@ function App() {
             console.error("Error fetching profile:", profileError);
           }
           
-          // Ensure gender is properly typed
           const gender = profileData?.gender || 'non-binary';
           const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary') 
             ? gender 
             : 'non-binary';
             
-          // Ensure interestedIn is properly typed
           const interestedIn = profileData?.interested_in || [];
           const validInterestedIn = Array.isArray(interestedIn) ? 
             interestedIn.filter((interest: string) => 
@@ -116,7 +118,6 @@ function App() {
             ) as ('male' | 'female' | 'non-binary')[] :
             [] as ('male' | 'female' | 'non-binary')[];
           
-          // Map Supabase profile data to our User type
           const mappedUser = {
             id: session.user.id,
             name: profileData?.name || session.user.email?.split('@')[0] || 'User',
@@ -137,6 +138,18 @@ function App() {
             role: (profileData?.role || 'subscriber') as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial',
             isBanned: profileData?.is_banned || false,
             verificationStatus: profileData?.is_verified ? 'verified' : 'unverified' as 'verified' | 'unverified' | 'pending' | 'rejected',
+            lastMessage: '',
+            lastMessageTime: new Date(),
+            status: 'online',
+            favoriteMusic: [],
+            voiceIntro: '',
+            bankDetails: {
+              accountName: '',
+              accountNumber: '',
+              bankName: '',
+              routingNumber: '',
+              accountType: ''
+            }
           };
           
           setCurrentUser(mappedUser);

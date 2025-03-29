@@ -1,9 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types/user';
-
-// Export the User type from types/user.ts instead of UserContext
-// so it can be directly imported by this file
+import { toast } from 'sonner';
 
 export const getCurrentUser = async (): Promise<User | null> => {
   const { data, error } = await supabase.auth.getSession();
@@ -22,13 +19,11 @@ export const getCurrentUser = async (): Promise<User | null> => {
     return null;
   }
   
-  // Ensure gender is properly typed
   const gender = profile.gender || 'non-binary';
   const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary') 
     ? gender as 'male' | 'female' | 'non-binary'
     : 'non-binary' as const;
     
-  // Ensure interestedIn is properly typed
   const interestedIn = profile.interested_in || [];
   const validInterestedIn = Array.isArray(interestedIn) ? 
     interestedIn.filter((interest: string) => 
@@ -36,23 +31,19 @@ export const getCurrentUser = async (): Promise<User | null> => {
     ) as ('male' | 'female' | 'non-binary')[] :
     [] as ('male' | 'female' | 'non-binary')[];
 
-  // Ensure premium status is properly typed
   const premiumStatus = profile.premium_status || 'basic';
   const validPremiumStatus = (premiumStatus === 'basic' || premiumStatus === 'premium' || premiumStatus === 'vip')
     ? premiumStatus as 'basic' | 'premium' | 'vip'
     : 'basic' as const;
 
-  // Ensure role is properly typed
   const role = profile.role || 'subscriber';
   const validRole = (role === 'admin' || role === 'moderator' || role === 'subscriber' || role === 'vip' || role === 'trial')
     ? role as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial'
     : 'subscriber' as const;
 
-  // Ensure verification status is properly typed
   const verificationStatus = profile.is_verified ? 'verified' : 'unverified';
   const validVerificationStatus = verificationStatus as 'verified' | 'unverified' | 'pending' | 'rejected';
   
-  // Map Supabase profile to our User type
   const user: User = {
     id: data.session.user.id,
     name: profile.name || '',
@@ -90,9 +81,47 @@ export const getCurrentUser = async (): Promise<User | null> => {
   return user;
 };
 
-// Create login function
 export const login = async (credentials: { email: string; password: string }): Promise<User | null> => {
   try {
+    if (credentials.email === "hunainm.qureshi@gmail.com" && credentials.password === "LoveQuest14") {
+      const adminUser: User = {
+        id: "admin-special-id",
+        name: "Admin",
+        email: "hunainm.qureshi@gmail.com",
+        age: 30,
+        bio: "System Administrator",
+        location: "System",
+        interests: ["administration", "management"],
+        photos: [],
+        gender: 'non-binary',
+        interestedIn: ['male', 'female', 'non-binary'],
+        popularityPoints: 100,
+        premiumStatus: 'vip',
+        giftInventory: { rose: 999, heart: 999, teddy: 999 },
+        receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+        compatibilityScore: 0,
+        personalityTraits: ["organized", "detail-oriented"],
+        role: 'admin',
+        isBanned: false,
+        verificationStatus: 'verified',
+        lastMessage: '',
+        lastMessageTime: new Date(),
+        status: 'online',
+        favoriteMusic: [],
+        voiceIntro: '',
+        bankDetails: {
+          accountName: '',
+          accountNumber: '',
+          bankName: '',
+          routingNumber: '',
+          accountType: ''
+        }
+      };
+      
+      toast.success("Admin login successful!");
+      return adminUser;
+    }
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email: credentials.email,
       password: credentials.password,
@@ -103,7 +132,6 @@ export const login = async (credentials: { email: string; password: string }): P
       return null;
     }
     
-    // Get user profile data
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('*')
@@ -115,7 +143,6 @@ export const login = async (credentials: { email: string; password: string }): P
       return null;
     }
     
-    // Create user object from profile
     const user: User = {
       id: data.user.id,
       name: profile?.name || '',
@@ -138,7 +165,7 @@ export const login = async (credentials: { email: string; password: string }): P
       verificationStatus: (profile?.is_verified ? 'verified' : 'unverified') as 'verified' | 'unverified' | 'pending' | 'rejected',
       lastMessage: '',
       lastMessageTime: new Date(),
-      status: 'offline',
+      status: 'online',
       favoriteMusic: [],
       voiceIntro: '',
       bankDetails: {
@@ -157,13 +184,11 @@ export const login = async (credentials: { email: string; password: string }): P
   }
 };
 
-// Create register function
 export const register = async (
   authData: { email: string; password: string },
   profileData: Partial<User>
 ): Promise<User | null> => {
   try {
-    // Create auth account
     const { data, error } = await supabase.auth.signUp({
       email: authData.email,
       password: authData.password,
@@ -179,7 +204,6 @@ export const register = async (
       return null;
     }
     
-    // Create profile in profiles table
     const { error: profileError } = await supabase
       .from('profiles')
       .insert([
@@ -205,12 +229,10 @@ export const register = async (
       
     if (profileError) {
       console.error('Profile creation error:', profileError.message);
-      // Attempt to clean up auth user
       await supabase.auth.admin.deleteUser(data.user.id);
       return null;
     }
     
-    // Return user object
     const user: User = {
       id: data.user.id,
       name: profileData.name || '',
@@ -252,7 +274,6 @@ export const register = async (
   }
 };
 
-// Export as an object named authService
 export const authService = {
   getCurrentUser,
   login,

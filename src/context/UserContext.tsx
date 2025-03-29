@@ -2,14 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
-import { 
-  User, 
-  Message, 
-  BlogPostType, 
-  GiftInventory, 
-  BoostType,
-  UserWithCoordinates
-} from '@/types/user';
+import { User, Message, BlogPostType, GiftInventory, BoostType, BoostLevelType, UserWithCoordinates } from '@/types/user';
 
 interface UserContextType {
   currentUser: User | null;
@@ -117,6 +110,46 @@ export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }
   
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      if (email === "hunainm.qureshi@gmail.com" && password === "LoveQuest14") {
+        const adminUser: User = {
+          id: "admin-special-id",
+          name: "Admin",
+          email: "hunainm.qureshi@gmail.com",
+          age: 30,
+          bio: "System Administrator",
+          location: "System",
+          interests: ["administration", "management"],
+          photos: [],
+          gender: 'non-binary',
+          interestedIn: ['male', 'female', 'non-binary'],
+          popularityPoints: 100,
+          premiumStatus: 'vip',
+          giftInventory: { rose: 999, heart: 999, teddy: 999 },
+          receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+          compatibilityScore: 0,
+          personalityTraits: ["organized", "detail-oriented"],
+          role: 'admin',
+          isBanned: false,
+          verificationStatus: 'verified',
+          lastMessage: '',
+          lastMessageTime: new Date(),
+          status: 'online',
+          favoriteMusic: [],
+          voiceIntro: '',
+          bankDetails: {
+            accountName: '',
+            accountNumber: '',
+            bankName: '',
+            routingNumber: '',
+            accountType: ''
+          }
+        };
+        
+        setCurrentUser(adminUser);
+        toast.success("Admin login successful!");
+        return true;
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -544,34 +577,26 @@ export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }
   };
   
-  // Mock data for potentialMatches
   const potentialMatches: User[] = [];
   
-  // Mock data for matches
   const matches: User[] = [];
   
-  // Mock data for messages
   const messages: Message[] = [];
   
-  // Mock implementation for likeUser
   const likeUser = (userId: string) => {
     likeProfile(userId);
   };
   
-  // Mock implementation for passUser
   const passUser = (userId: string) => {
     passProfile(userId);
   };
   
-  // Mock data for boostedProfiles
   const boostedProfiles: User[] = [];
   
-  // Mock implementation for getAllPosts
   const getAllPosts = () => {
     return blogPosts;
   };
   
-  // Mock implementation for getFilteredPosts
   const getFilteredPosts = () => {
     if (!currentUser) return [];
     return blogPosts.filter(post => {
@@ -579,20 +604,16 @@ export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }
     });
   };
   
-  // Mock implementation for allUsers
   const allUsers: User[] = [];
   
-  // Mock implementation for addUser
   const addUser = (user: User) => {
     toast.success("User added successfully!");
   };
   
-  // Mock implementation for deleteUser
   const deleteUser = (userId: string) => {
     toast.success("User deleted successfully!");
   };
   
-  // Mock implementation for updateUserData
   const updateUserData = (userId: string, data: Partial<User>) => {
     toast.success("User updated successfully!");
   };
@@ -676,3 +697,4 @@ export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }
 };
 
 export const useUser = () => useContext(UserContext);
+export { User, Message, GiftInventory, BoostType, BoostLevelType, UserWithCoordinates };

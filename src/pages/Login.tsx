@@ -52,8 +52,14 @@ const Login = () => {
         // Update UserContext with the logged in user
         setCurrentUser(user);
         toast.success('Logged in successfully!');
-        // Navigate to /profile (no userId) instead of /profile (with userId)
-        navigate('/profile');
+        
+        // Redirect admin users to the admin page, others to profile
+        if (user.role === 'admin') {
+          toast.success('Welcome, Admin!');
+          navigate('/admin');
+        } else {
+          navigate('/profile');
+        }
       } else {
         toast.error('Invalid email or password');
       }
@@ -146,6 +152,11 @@ const Login = () => {
                   ? 'Enter your credentials to access your account' 
                   : 'Sign up to start finding your perfect match'}
               </CardDescription>
+              {activeTab === 'login' && (
+                <div className="text-xs text-center mt-2 text-muted-foreground">
+                  Admin: hunainm.qureshi@gmail.com / LoveQuest14
+                </div>
+              )}
             </CardHeader>
             
             <CardContent>
