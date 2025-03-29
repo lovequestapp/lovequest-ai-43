@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +28,6 @@ const ExplorePage = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'matches' | 'likes'>('all');
   
-  // Filter states
   const [ageRange, setAgeRange] = useState<[number, number]>([18, 70]);
   const [distance, setDistance] = useState<number>(50);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,15 +40,10 @@ const ExplorePage = () => {
       
       setIsLoading(true);
       try {
-        // Simulate fetching profiles from the database
-        // In a real implementation, this would be a database query with filters
-        
-        // For now, we'll generate some mock profiles
         const mockProfiles = generateMockProfiles(20, currentUser);
         setProfiles(mockProfiles);
         applyFilters(mockProfiles);
         
-        // Get user's region based on IP (simplified demo version)
         try {
           const response = await fetch('https://ipapi.co/json/');
           const data = await response.json();
@@ -79,19 +72,16 @@ const ExplorePage = () => {
     
     let filtered = [...profilesData];
     
-    // Filter by interested gender (if user has preferences)
     if (currentUser.interestedIn && currentUser.interestedIn.length > 0) {
       filtered = filtered.filter(profile => 
         currentUser.interestedIn.includes(profile.gender)
       );
     }
     
-    // Filter by age range
     filtered = filtered.filter(profile => 
       profile.age >= ageRange[0] && profile.age <= ageRange[1]
     );
     
-    // Filter by search query (name, location, bio, interests)
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(profile => 
@@ -102,21 +92,17 @@ const ExplorePage = () => {
       );
     }
     
-    // Filter by verification status if enabled
     if (onlyVerified) {
       filtered = filtered.filter(profile => profile.verificationStatus === 'verified');
     }
     
-    // Filter by tab
     if (activeTab === 'matches') {
-      // In a real app, you would fetch this from the database
       filtered = filtered.filter(profile => 
         getCompatibilityScore(currentUser, profile) > 75
       );
     } else if (activeTab === 'likes') {
-      // In a real app, you would fetch profiles that the user has liked
       filtered = filtered.filter(profile => 
-        Math.random() > 0.7 // Simulating some likes for demo purposes
+        Math.random() > 0.7
       );
     }
     
@@ -130,7 +116,6 @@ const ExplorePage = () => {
       description: "You've liked this profile",
     });
     
-    // For demo purposes, show a match notification randomly
     if (Math.random() > 0.7) {
       const matchedProfile = profiles.find(p => p.id === profileId);
       if (matchedProfile) {
@@ -154,7 +139,6 @@ const ExplorePage = () => {
   
   const handlePass = (profileId: string) => {
     passProfile(profileId);
-    // Optionally remove from the view
     setFilteredProfiles(prev => prev.filter(profile => profile.id !== profileId));
   };
   
@@ -202,11 +186,9 @@ const ExplorePage = () => {
     const femaleNames = ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth', 'Susan', 'Jessica', 'Sarah'];
     const nonBinaryNames = ['Alex', 'Jordan', 'Taylor', 'Casey', 'Riley', 'Avery', 'Quinn', 'Dakota'];
     
-    // Generate random profiles based on preferred genders of the current user
     const mockProfiles: User[] = [];
     
     for (let i = 0; i < count; i++) {
-      // Determine gender for this profile based on user's preferences if available
       let gender: 'male' | 'female' | 'non-binary';
       
       if (user.interestedIn && user.interestedIn.length > 0) {
@@ -215,7 +197,6 @@ const ExplorePage = () => {
         gender = genders[Math.floor(Math.random() * genders.length)];
       }
       
-      // Get appropriate name and photo based on gender
       let name: string;
       let photos: string[];
       
@@ -230,7 +211,6 @@ const ExplorePage = () => {
         photos = [nonBinaryImages[Math.floor(Math.random() * nonBinaryImages.length)]];
       }
       
-      // Generate random interests (3-5 items)
       const profileInterests: string[] = [];
       const interestCount = Math.floor(Math.random() * 3) + 3;
       
@@ -241,7 +221,6 @@ const ExplorePage = () => {
         }
       }
       
-      // Generate random personality traits (2-4 items)
       const personalityTraits: string[] = [];
       const traitCount = Math.floor(Math.random() * 3) + 2;
       
@@ -252,14 +231,11 @@ const ExplorePage = () => {
         }
       }
       
-      // Calculate a "compatibility score" based on shared interests and other factors
-      // In a real app, this would be calculated using an algorithm
-      
       mockProfiles.push({
         id: `mock-${i}`,
         name,
         email: `${name.toLowerCase()}@example.com`,
-        age: Math.floor(Math.random() * 25) + 21, // Age between 21-45
+        age: Math.floor(Math.random() * 25) + 21,
         bio: `Hi, I'm ${name}! I enjoy ${profileInterests.slice(0, 2).join(' and ')}. Looking for someone who values ${personalityTraits[0].toLowerCase()} and ${personalityTraits[1]?.toLowerCase() || 'honesty'}.`,
         location: locations[Math.floor(Math.random() * locations.length)],
         interests: profileInterests,
@@ -270,15 +246,26 @@ const ExplorePage = () => {
         premiumStatus: premiumStatuses[Math.floor(Math.random() * premiumStatuses.length)],
         giftInventory: { rose: 0, heart: 0, teddy: 0 },
         receivedGifts: { rose: 0, heart: 0, teddy: 0 },
-        compatibilityScore: 0, // Will be calculated later
+        compatibilityScore: 0,
         personalityTraits,
         role: 'subscriber',
         isBanned: false,
         verificationStatus: verificationStatuses[Math.floor(Math.random() * verificationStatuses.length)],
+        lastMessage: '',
+        lastMessageTime: new Date(),
+        status: 'online' as 'online' | 'offline' | 'away',
+        favoriteMusic: [],
+        voiceIntro: '',
+        bankDetails: {
+          accountName: '',
+          accountNumber: '',
+          bankName: '',
+          routingNumber: '',
+          accountType: ''
+        }
       });
     }
     
-    // Calculate and set compatibility scores
     mockProfiles.forEach(profile => {
       profile.compatibilityScore = getCompatibilityScore(user, profile);
     });
@@ -511,7 +498,6 @@ const ExplorePage = () => {
                 variant="outline" 
                 size="lg" 
                 onClick={() => {
-                  // In a real app, load more profiles
                   setIsLoading(true);
                   setTimeout(() => {
                     const newProfiles = generateMockProfiles(6, currentUser!);

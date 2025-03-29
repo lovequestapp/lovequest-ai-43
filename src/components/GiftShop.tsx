@@ -75,7 +75,6 @@ const GiftShop: React.FC = () => {
   };
 
   const handleCheckout = () => {
-    // In a real app, this would connect to a payment processor
     if (getTotal() <= 0) {
       toast({
         title: "No items selected",
@@ -89,7 +88,6 @@ const GiftShop: React.FC = () => {
   };
 
   const handlePayment = () => {
-    // Validate card details
     if (!cardNumber || !cardName || !cardExpiry || !cardCvc) {
       toast({
         title: "Incomplete payment details",
@@ -99,27 +97,28 @@ const GiftShop: React.FC = () => {
       return;
     }
 
-    // Process each purchase
-    Object.keys(quantities).forEach(key => {
-      if (quantities[key] > 0) {
-        // Call the purchaseGifts function for each gift type with quantity
-        purchaseGifts(key as 'rose' | 'heart' | 'teddy', quantities[key]);
-      }
-    });
+    const itemsToPurchase = Object.entries(quantity)
+      .filter(([_, quantity]) => quantity > 0)
+      .map(([type, quantity]) => ({
+        type: type as 'rose' | 'heart' | 'teddy',
+        quantity
+      }));
+      
+    const success = await purchaseGifts(itemsToPurchase);
+    
+    if (success) {
+      toast({
+        title: "Purchase successful!",
+        description: `You purchased virtual gifts for $${getTotal()}`,
+      });
 
-    // Show success message
-    toast({
-      title: "Purchase successful!",
-      description: `You purchased virtual gifts for $${getTotal()}`,
-    });
-
-    // Reset form
-    setQuantities({ 'rose': 0, 'heart': 0, 'teddy': 0 });
-    setIsCheckingOut(false);
-    setCardNumber('');
-    setCardName('');
-    setCardExpiry('');
-    setCardCvc('');
+      setQuantities({ 'rose': 0, 'heart': 0, 'teddy': 0 });
+      setIsCheckingOut(false);
+      setCardNumber('');
+      setCardName('');
+      setCardExpiry('');
+      setCardCvc('');
+    }
   };
 
   return (

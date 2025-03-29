@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import Home from './pages/home';
@@ -7,7 +8,7 @@ import Profile from './pages/Profile';
 import Messages from './pages/Messages';
 import EditProfile from './pages/edit-profile';
 import Discover from './pages/discover';
-import Explore from './pages/Explore';
+import explore from './pages/explore';  // Changed from 'Explore' to 'explore' to match file casing
 import Admin from './pages/Admin';
 import ProtectedRoute from './components/protected-route';
 import { useUser } from './context/UserContext';
@@ -70,7 +71,7 @@ function App() {
             verificationStatus: profileData?.is_verified ? 'verified' : 'unverified' as 'verified' | 'unverified' | 'pending' | 'rejected',
             lastMessage: '',
             lastMessageTime: new Date(),
-            status: 'online',
+            status: 'online' as 'online' | 'offline' | 'away',
             favoriteMusic: [],
             voiceIntro: '',
             bankDetails: {
@@ -140,7 +141,7 @@ function App() {
             verificationStatus: profileData?.is_verified ? 'verified' : 'unverified' as 'verified' | 'unverified' | 'pending' | 'rejected',
             lastMessage: '',
             lastMessageTime: new Date(),
-            status: 'online',
+            status: 'online' as 'online' | 'offline' | 'away',
             favoriteMusic: [],
             voiceIntro: '',
             bankDetails: {
@@ -221,14 +222,14 @@ function App() {
         path="/explore" 
         element={
           <ProtectedRoute>
-            <Explore />
+            {explore}
           </ProtectedRoute>
         } 
       />
       <Route 
         path="/admin" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute adminOnly>
             <Admin />
           </ProtectedRoute>
         } 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,6 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      // Register with Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -44,9 +42,7 @@ const Register = () => {
         throw error;
       }
       
-      // If successfully registered
       if (data.user) {
-        // Insert into profiles table (though there should be a trigger handling this)
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
@@ -68,10 +64,8 @@ const Register = () => {
           
         if (profileError) {
           console.error("Error creating profile:", profileError);
-          // Continue anyway since the auth trigger should handle it
         }
           
-        // Create user object to store in context
         const newUser = {
           id: data.user.id,
           name,
@@ -92,21 +86,30 @@ const Register = () => {
           giftInventory: { rose: 0, heart: 0, teddy: 0 },
           receivedGifts: { rose: 0, heart: 0, teddy: 0 },
           compatibilityScore: 0,
+          lastMessage: '',
+          lastMessageTime: new Date(),
+          status: 'online' as 'online' | 'offline' | 'away',
+          favoriteMusic: [],
+          voiceIntro: '',
+          bankDetails: {
+            accountName: '',
+            accountNumber: '',
+            bankName: '',
+            routingNumber: '',
+            accountType: ''
+          }
         };
         
-        // Set the current user
         setCurrentUser(newUser);
         
         toast.success("Account created successfully!");
         navigate('/profile');
       } else {
-        // If no session, they need to verify their email
         toast.info("Please check your email to confirm your registration");
       }
     } catch (error: any) {
       console.error("Registration error:", error);
       
-      // Provide user-friendly error messages
       if (error.message?.includes("User already registered")) {
         toast.error("This email is already registered. Please try logging in instead.");
       } else {

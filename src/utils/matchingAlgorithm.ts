@@ -1,5 +1,5 @@
-
-import { User, UserWithCoordinates, BoostLevelType } from '@/types/user';
+import { User } from '@/types/user';
+import type { UserWithCoordinates, BoostLevelType } from '@/types/user';
 
 // BOOST_PRIORITY mapping for sorting boosted profiles
 export const BOOST_PRIORITY: Record<BoostLevelType, number> = {
@@ -137,3 +137,6 @@ export const calculateCompatibilityScore = (
   
   return Math.max(0, Math.min(100, finalScore + randomFactor));
 };
+
+// Export the types so they can be imported elsewhere
+export type { User, UserWithCoordinates, BoostLevelType };

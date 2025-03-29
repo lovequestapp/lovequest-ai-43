@@ -38,8 +38,8 @@ const Monetization = () => {
     accountName: currentUser?.bankDetails?.accountName || '',
     accountNumber: currentUser?.bankDetails?.accountNumber || '',
     bankName: currentUser?.bankDetails?.bankName || '',
-    swiftCode: currentUser?.bankDetails?.swiftCode || '',
-    routingNumber: currentUser?.bankDetails?.routingNumber || ''
+    routingNumber: currentUser?.bankDetails?.routingNumber || '',
+    accountType: currentUser?.bankDetails?.accountType || ''
   });
   
   const pendingWithdrawal = getPendingWithdrawal();
@@ -58,14 +58,16 @@ const Monetization = () => {
     }
   };
   
-  const handleSaveBankDetails = () => {
-    // Validate bank details
-    if (!bankDetails.accountName || !bankDetails.accountNumber || !bankDetails.bankName) {
-      toast("Missing Information - Please fill in all required fields");
-      return;
-    }
+  const handleSubmitBankDetails = (e: React.FormEvent) => {
+    e.preventDefault();
     
-    updateBankDetails(bankDetails);
+    updateBankDetails({
+      accountName: bankDetails.accountName,
+      accountNumber: bankDetails.accountNumber,
+      bankName: bankDetails.bankName,
+      routingNumber: bankDetails.routingNumber,
+      accountType: bankDetails.accountType || 'checking'
+    });
   };
   
   const handleCurrencyChange = (newCurrency: string) => {
@@ -73,12 +75,10 @@ const Monetization = () => {
     setShowCurrencySelector(false);
   };
   
-  // Convert USD to selected currency
   const convertCurrency = (amountUSD: number): number => {
     return amountUSD * (exchangeRates[selectedCurrency as keyof typeof exchangeRates] || 1);
   };
   
-  // Format currency based on locale
   const formatCurrency = (amount: number): string => {
     let locale = 'en-US';
     switch(selectedCurrency) {
@@ -111,7 +111,6 @@ const Monetization = () => {
       default: return currencyCode;
     }
   };
-  
   
   return (
     <div className="space-y-6">
@@ -408,7 +407,7 @@ const Monetization = () => {
                       />
                     </div>
                     
-                    <Button onClick={handleSaveBankDetails}>
+                    <Button onClick={handleSubmitBankDetails}>
                       <CheckIcon className="mr-2 h-4 w-4" />
                       Save Bank Details
                     </Button>

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -697,4 +698,6 @@ export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }
 };
 
 export const useUser = () => useContext(UserContext);
-export { User, Message, GiftInventory, BoostType, BoostLevelType, UserWithCoordinates };
+
+// Export types with "export type" syntax to fix isolatedModules error
+export type { User, Message, GiftInventory, BoostType, BoostLevelType, UserWithCoordinates };

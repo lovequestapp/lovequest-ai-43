@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -55,7 +54,7 @@ const Profile = () => {
   
   const handleSave = () => {
     if (profile) {
-      updateUserProfile(profile);
+      updateUserProfile(currentUser.id, profile);
       setEditing(false);
       toast.success('Profile updated successfully');
     }
@@ -90,12 +89,9 @@ const Profile = () => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && profile) {
-      // In a real app, you would upload the file to a server
-      // Here we're just creating a URL to simulate the upload
       const photoUrl = URL.createObjectURL(file);
       const newPhotos = [...profile.photos];
-      newPhotos[0] = photoUrl; // Replace first photo for this demo
-      
+      newPhotos[0] = photoUrl;
       setProfile({
         ...profile,
         photos: newPhotos
@@ -115,11 +111,9 @@ const Profile = () => {
     const traits = [...(profile.personalityTraits || [])];
     
     if (traits.includes(trait)) {
-      // Remove trait if already selected
       const index = traits.indexOf(trait);
       traits.splice(index, 1);
     } else {
-      // Add trait if not already selected (limit to 5)
       if (traits.length < 5) {
         traits.push(trait);
       }
@@ -141,8 +135,17 @@ const Profile = () => {
   const handleDeleteVoiceIntro = () => {
     setProfile({
       ...profile,
-      voiceIntro: undefined
+      voiceIntro: ''
     });
+  };
+
+  const handleAddFavoriteMusic = (music: string) => {
+    if (music && profile) {
+      setProfile({
+        ...profile,
+        favoriteMusic: [...profile.favoriteMusic, music]
+      });
+    }
   };
 
   const giftInventory = currentUser.giftInventory || { 'rose': 0, 'heart': 0, 'teddy': 0 };
@@ -163,7 +166,6 @@ const Profile = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      {/* Added significant bottom padding (pb-36) to ensure content doesn't get hidden by footer */}
       <main className="flex-grow container mx-auto px-4 py-8 pb-36">
         <div className="mb-6 flex justify-between items-center">
           <h1 className="text-3xl font-display font-bold">My Profile</h1>
@@ -469,7 +471,7 @@ const Profile = () => {
                           <Input
                             id="favoriteMusic"
                             value={profile.favoriteMusic || ''}
-                            onChange={(e) => setProfile({...profile, favoriteMusic: e.target.value})}
+                            onChange={(e) => handleAddFavoriteMusic(e.target.value)}
                             placeholder="Enter your favorite song or artist"
                           />
                         </div>
