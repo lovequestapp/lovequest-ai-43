@@ -45,7 +45,7 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
     );
   };
 
-  // Fix: Define functions that take a profile parameter to match SwipeableCard expectations
+  // Define functions that take a profile parameter to match SwipeableCard expectations
   const handleSwipeRight = (profile: any) => {
     onSwipe(profile.id, 'right');
   };
