@@ -8,7 +8,7 @@ import Profile from './pages/Profile';
 import Messages from './pages/Messages';
 import EditProfile from './pages/edit-profile';
 import Discover from './pages/discover';
-import Explore from './pages/Explore';  // Fixed casing to match actual file name
+import Explore from './pages/explore';  // Fixed casing to match actual file name
 import Admin from './pages/Admin';
 import ProtectedRoute from './components/protected-route';
 import { useUser } from './context/UserContext';

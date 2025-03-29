@@ -129,7 +129,6 @@ const Admin = () => {
         setError(err.message);
         toast("Failed to load users. Please try again.", {
           description: err.message,
-          variant: "destructive"
         });
       } finally {
         setLoading(false);
