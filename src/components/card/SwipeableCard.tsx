@@ -39,6 +39,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
     config: { friction: 50, tension: 600 }
   }));
 
+  // Fix useDrag implementation
   const bind = useDrag(({ active, offset: [ox] }) => {
     api.start({
       x: ox,
@@ -64,7 +65,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
           scale: 1,
           rotateZ: 0
         });
-        onSwipeRight();
+        // Call onSwipeRight without parameters since it doesn't accept any
+        if (onSwipeRight) onSwipeRight();
       }
     });
   };
@@ -85,7 +87,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
           scale: 1,
           rotateZ: 0
         });
-        onSwipeLeft();
+        // Call onSwipeLeft without parameters since it doesn't accept any
+        if (onSwipeLeft) onSwipeLeft();
       }
     });
   };
@@ -119,7 +122,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
     return () => {
       window.removeEventListener('keydown', keyPressHandler);
     };
-  }, [onSwipeLeft, onSwipeRight, onUndo]);
+  }, []);
 
   return (
     <animated.div

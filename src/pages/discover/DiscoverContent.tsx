@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { SwipeableCard } from '@/components';
-import { UserWithCoordinates } from '@/types/user'; // Fix import source
+import { UserWithCoordinates } from '@/types/user'; // Import from types/user
 import NoMatchesCard from './NoMatchesCard';
 
 interface DiscoverContentProps {
@@ -45,13 +45,23 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
     );
   };
 
-  // Define functions that take a profile parameter to match SwipeableCard expectations
-  const handleSwipeRight = (profile: any) => {
-    onSwipe(profile.id, 'right');
+  // Modify the functions to match the SwipeableCard component's expectations
+  const handleSwipeRight = () => {
+    // Since we're only displaying one profile at a time,
+    // we can safely get the current (first) profile from formattedProfiles
+    if (formattedProfiles && formattedProfiles.length > 0) {
+      const currentProfile = formattedProfiles[0];
+      onSwipe(currentProfile.id, 'right');
+    }
   };
 
-  const handleSwipeLeft = (profile: any) => {
-    onSwipe(profile.id, 'left');
+  const handleSwipeLeft = () => {
+    // Since we're only displaying one profile at a time,
+    // we can safely get the current (first) profile from formattedProfiles
+    if (formattedProfiles && formattedProfiles.length > 0) {
+      const currentProfile = formattedProfiles[0];
+      onSwipe(currentProfile.id, 'left');
+    }
   };
 
   // Show placeholder when no profiles are available

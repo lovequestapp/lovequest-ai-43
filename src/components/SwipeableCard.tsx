@@ -32,11 +32,18 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipe
     PanResponder.create({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        pan.setOffset({
-          // Fixed: directly access the value using toJSON() method
-          x: pan.x.toJSON ? pan.x.toJSON() : 0,
-          y: pan.y.toJSON ? pan.y.toJSON() : 0,
-        });
+        // Use simpler approach with setValue and getLayout
+        const currentOffset = { x: 0, y: 0 };
+        try {
+          // Try to get the current value safely
+          if (pan.x._value !== undefined) currentOffset.x = pan.x._value;
+          if (pan.y._value !== undefined) currentOffset.y = pan.y._value;
+        } catch (e) {
+          console.log('Error accessing animated value:', e);
+        }
+        
+        pan.setOffset(currentOffset);
+        pan.setValue({ x: 0, y: 0 });
       },
       onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
         useNativeDriver: false,
