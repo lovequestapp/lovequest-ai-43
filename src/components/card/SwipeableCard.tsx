@@ -56,17 +56,31 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
     initial: () => [0, 0]
   });
 
+  // Extract the gesture handler props from the bind result
+  const gestureProps = bindDrag();
+  
   return (
     <motion.div
       animate={controls}
       whileTap={{ scale: 0.97 }}
       exit={{ x: exitX, opacity: 0 }}
       transition={{ duration: 0.5 }}
-      {...bindDrag()}
       style={{
         position: 'relative',
         height: '100%',
         touchAction: 'none'
+      }}
+      // Apply only the specific gesture props needed for motion.div
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.7}
+      onDragEnd={(e, info) => {
+        const { offset, velocity } = info;
+        if (offset.x > threshold || velocity.x > 0.2) {
+          onSwipeRight && onSwipeRight();
+        } else if (offset.x < -threshold || velocity.x < -0.2) {
+          onSwipeLeft && onSwipeLeft();
+        }
       }}
     >
       <Card className={`h-full ${cardClassName}`}>
