@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, X, RotateCw, Info } from 'lucide-react';
@@ -49,7 +49,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
     });
   });
 
-  const swipeRight = () => {
+  const swipeRight = useCallback(() => {
     if (isSwiped) return;
     setIsSwiped(true);
     api.start({
@@ -69,9 +69,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
         if (onSwipeRight) onSwipeRight();
       }
     });
-  };
+  }, [isSwiped, api, onSwipeRight]);
 
-  const swipeLeft = () => {
+  const swipeLeft = useCallback(() => {
     if (isSwiped) return;
     setIsSwiped(true);
     api.start({
@@ -91,9 +91,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
         if (onSwipeLeft) onSwipeLeft();
       }
     });
-  };
+  }, [isSwiped, api, onSwipeLeft]);
 
-  const undoSwipe = () => {
+  const undoSwipe = useCallback(() => {
     if (onUndo) {
       api.start({
         x: 0,
@@ -104,7 +104,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
       });
       onUndo();
     }
-  };
+  }, [api, onUndo]);
 
   useEffect(() => {
     const keyPressHandler = (event: KeyboardEvent) => {
@@ -122,7 +122,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
     return () => {
       window.removeEventListener('keydown', keyPressHandler);
     };
-  }, []);
+  }, [swipeRight, swipeLeft, undoSwipe]);
 
   return (
     <animated.div

@@ -1,8 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { SwipeableCard } from '@/components';
 import { UserWithCoordinates } from '@/types/user'; // Import from types/user
 import NoMatchesCard from './NoMatchesCard';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Heart, X, Info } from 'lucide-react';
 
 interface DiscoverContentProps {
   profiles: UserWithCoordinates[];
@@ -69,14 +72,23 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
     return <NoMatchesCard />;
   }
 
+  // Use the current profile for the card
+  const currentProfile = formattedProfiles[0];
+
   return (
     <div className="relative h-[600px] w-full flex justify-center items-center">
-      <SwipeableCard
-        data={formattedProfiles}
-        renderCard={renderCard}
-        onSwipeRight={handleSwipeRight}
-        onSwipeLeft={handleSwipeLeft}
-      />
+      {currentProfile && (
+        <SwipeableCard
+          name={currentProfile.name}
+          age={currentProfile.age}
+          bio={currentProfile.bio}
+          image={currentProfile.image}
+          onSwipeRight={handleSwipeRight}
+          onSwipeLeft={handleSwipeLeft}
+          onUndo={() => {}} // Empty function, we don't have undo functionality yet
+          onShowDetails={() => {}} // Empty function, we don't have details view yet
+        />
+      )}
     </div>
   );
 };
