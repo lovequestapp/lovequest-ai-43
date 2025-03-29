@@ -1,124 +1,72 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from "sonner";
-import { useUser } from '@/context/UserContext';
-import { UserWithCoordinates, BoostLevelType } from '@/types/user';
-
-import FilterBar from './FilterBar';
-import MatchGrid from './MatchGrid';
+import { SwipeableCard } from '@/components';
+import { UserWithCoordinates } from './hooks/useDiscoverFilters';
 import NoMatchesCard from './NoMatchesCard';
-import SwipeableCard from '@/components/card/SwipeableCard';
-import useDiscoverFilters from './hooks/useDiscoverFilters';
-import useMatchProcessing from './hooks/useMatchProcessing';
-import ProfileBoostPopup from '@/components/ProfileBoostPopup';
-import { useBoostPopup } from '@/hooks/useBoostPopup';
 
-const DiscoverContent = () => {
-  const navigate = useNavigate();
-  const { 
-    currentUser = null, 
-    potentialMatches = [], 
-    likeUser = () => {}, 
-    passUser = () => {}, 
-    boostedProfiles = [] 
-  } = useUser() || {};
-  
-  const [viewMode, setViewMode] = useState<'swipe' | 'grid'>('swipe');
-  const { showBoostPopup, closePopup, forceShowPopup } = useBoostPopup();
-  
-  const {
-    isFiltering,
-    isLocationFiltering,
-    isNearbyFilterActive,
-    selectedRegions,
-    proximityRadius,
-    userCoordinates,
-    
-    togglePopularFilter,
-    toggleLocationFilter,
-    toggleNearbyFilter,
-    handleRadiusChange,
-    toggleRegion
-  } = useDiscoverFilters();
-  
-  const { enhancedMatches, filteredMatches } = useMatchProcessing({
-    currentUser,
-    potentialMatches,
-    boostedProfiles,
-    userCoordinates,
-    isNearbyFilterActive,
-    proximityRadius,
-    isLocationFiltering,
-    selectedRegions,
-    isFiltering
-  });
-  
-  const handleSwipe = (id: string, direction: 'left' | 'right') => {
-    if (direction === 'right') {
-      likeUser(id);
-      toast.success(`You liked this profile!`);
-    } else {
-      passUser(id);
-      toast.message(`You passed on this profile`);
-    }
-  };
-  
-  const handleViewProfile = (userId: string) => {
-    navigate(`/profile/${userId}`);
-  };
-  
-  return (
-    <main className="flex-grow container mx-auto px-4 py-8 pb-36">
-      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-display font-bold">Discover</h1>
-          <p className="text-muted-foreground">Find your perfect match based on compatibility</p>
-        </div>
-        
-        <FilterBar 
-          isFiltering={isFiltering}
-          isNearbyFilterActive={isNearbyFilterActive}
-          isLocationFiltering={isLocationFiltering}
-          selectedRegions={selectedRegions}
-          proximityRadius={proximityRadius}
-          userCoordinates={userCoordinates}
-          togglePopularFilter={togglePopularFilter}
-          toggleNearbyFilter={toggleNearbyFilter}
-          toggleLocationFilter={toggleLocationFilter}
-          toggleRegion={toggleRegion}
-          handleRadiusChange={handleRadiusChange}
-          viewMode={viewMode}
-          setViewMode={setViewMode}
-          forceShowPopup={forceShowPopup}
-        />
-      </div>
-      
-      {filteredMatches.length > 0 ? (
-        viewMode === 'swipe' ? (
-          <div className="flex justify-center px-4 py-6">
-            <SwipeableCard
-              profiles={filteredMatches}
-              onSwipe={handleSwipe}
-            />
+interface DiscoverContentProps {
+  profiles: UserWithCoordinates[];
+  onSwipe: (id: string, direction: 'left' | 'right') => void;
+}
+
+const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) => {
+  // Format profiles to be compatible with SwipeableCard
+  const formattedProfiles = profiles.map(profile => ({
+    id: profile.id,
+    name: profile.name,
+    age: profile.age,
+    bio: profile.bio,
+    image: profile.photos?.[0] || 'https://via.placeholder.com/400x600?text=No+Photo',
+    location: profile.location,
+    distance: profile.distance
+  }));
+
+  const renderCard = (profile: any) => {
+    return (
+      <div className="h-full w-full flex flex-col">
+        <div 
+          className="h-3/4 bg-cover bg-center" 
+          style={{ backgroundImage: `url(${profile.image})` }}
+        >
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+            <h3 className="text-white text-xl font-semibold">{profile.name}, {profile.age}</h3>
+            <p className="text-white/80 text-sm">{profile.location}</p>
+            {profile.distance && (
+              <span className="text-white/60 text-xs">
+                {Math.round(profile.distance)} miles away
+              </span>
+            )}
           </div>
-        ) : (
-          <MatchGrid 
-            matches={filteredMatches} 
-            onViewProfile={handleViewProfile} 
-          />
-        )
-      ) : (
-        <NoMatchesCard />
-      )}
-      
-      {showBoostPopup && (
-        <ProfileBoostPopup 
-          open={showBoostPopup} 
-          onClose={closePopup} 
-        />
-      )}
-    </main>
+        </div>
+        <div className="p-4 h-1/4 overflow-auto">
+          <p className="text-gray-700 text-sm">{profile.bio}</p>
+        </div>
+      </div>
+    );
+  };
+
+  const handleSwipeRight = (profile: any) => {
+    onSwipe(profile.id, 'right');
+  };
+
+  const handleSwipeLeft = (profile: any) => {
+    onSwipe(profile.id, 'left');
+  };
+
+  // Show placeholder when no profiles are available
+  if (!profiles || profiles.length === 0) {
+    return <NoMatchesCard />;
+  }
+
+  return (
+    <div className="relative h-[600px] w-full flex justify-center items-center">
+      <SwipeableCard
+        data={formattedProfiles}
+        renderCard={renderCard}
+        onSwipeRight={handleSwipeRight}
+        onSwipeLeft={handleSwipeLeft}
+      />
+    </div>
   );
 };
 

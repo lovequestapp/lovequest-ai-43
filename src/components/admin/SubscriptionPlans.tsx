@@ -1,40 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Edit, Trash2, Tag, Calendar, BarChart4, CheckCircle2 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Edit, Trash2, PlusCircle, DollarSign, Users, Activity } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
+// Define interfaces for our subscription plans and coupons
 interface SubscriptionPlan {
   id: string;
   name: string;
@@ -42,10 +22,9 @@ interface SubscriptionPlan {
   price_monthly: number;
   price_yearly: number;
   features: string[];
+  is_popular: boolean;
   is_active: boolean;
-  user_count: number;
-  created_at: string;
-  priority: number;
+  trial_days: number;
 }
 
 interface Coupon {
@@ -56,815 +35,712 @@ interface Coupon {
   max_uses: number;
   times_used: number;
   is_active: boolean;
-  subscription_plan_id: string | null;
+  plan_id?: string | null;
 }
+
+// Mock subscription plans data
+const mockPlans: SubscriptionPlan[] = [
+  {
+    id: '1',
+    name: 'Basic',
+    description: 'Essential features for casual users',
+    price_monthly: 9.99,
+    price_yearly: 99.99,
+    features: [
+      'Up to 50 swipes per day',
+      'Basic matching algorithm',
+      'Message up to 10 matches',
+      'View who liked you'
+    ],
+    is_popular: false,
+    is_active: true,
+    trial_days: 7
+  },
+  {
+    id: '2',
+    name: 'Premium',
+    description: 'Enhanced features for serious daters',
+    price_monthly: 19.99,
+    price_yearly: 199.99,
+    features: [
+      'Unlimited swipes',
+      'Advanced matching algorithm',
+      'Unlimited messages',
+      'See who liked you',
+      'Priority in search results',
+      'Read receipts'
+    ],
+    is_popular: true,
+    is_active: true,
+    trial_days: 14
+  },
+  {
+    id: '3',
+    name: 'VIP',
+    description: 'Ultimate experience for finding love',
+    price_monthly: 29.99,
+    price_yearly: 299.99,
+    features: [
+      'All Premium features',
+      'Profile boosting once a week',
+      'See who viewed your profile',
+      'VIP badge on profile',
+      'Access to exclusive events',
+      'Personal matchmaking assistance'
+    ],
+    is_popular: false,
+    is_active: true,
+    trial_days: 30
+  }
+];
+
+// Mock coupons data
+const mockCoupons: Coupon[] = [
+  {
+    id: '1',
+    code: 'WELCOME25',
+    discount_percent: 25,
+    valid_until: '2023-12-31',
+    max_uses: 100,
+    times_used: 57,
+    is_active: true
+  },
+  {
+    id: '2',
+    code: 'SUMMER50',
+    discount_percent: 50,
+    valid_until: '2023-09-30',
+    max_uses: 50,
+    times_used: 23,
+    is_active: true,
+    plan_id: '2'
+  },
+  {
+    id: '3',
+    code: 'HOLIDAYS20',
+    discount_percent: 20,
+    valid_until: '2023-12-25',
+    max_uses: 200,
+    times_used: 0,
+    is_active: false
+  }
+];
 
 const SubscriptionPlans = () => {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
-  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan | null>(null);
+  const [currentCoupon, setCurrentCoupon] = useState<Coupon | null>(null);
   const [isPlanDialogOpen, setIsPlanDialogOpen] = useState(false);
   const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null);
-  const [deletingCouponId, setDeletingCouponId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("plans");
-  const [subscriptionStats, setSubscriptionStats] = useState({
-    totalRevenue: 0,
-    activeSubscribers: 0,
-    conversionRate: 0,
-    averageSubscriptionLength: 0
-  });
 
   useEffect(() => {
-    fetchPlans();
-    fetchCoupons();
-    fetchSubscriptionStats();
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // In a real app, we'd fetch from Supabase
+        // const { data: plansData, error: plansError } = await supabase.from('subscription_plans').select('*');
+        // if (plansError) throw plansError;
+        
+        // const { data: couponsData, error: couponsError } = await supabase.from('coupons').select('*');
+        // if (couponsError) throw couponsError;
+        
+        // Using mock data for now
+        setPlans(mockPlans);
+        setCoupons(mockCoupons);
+      } catch (error) {
+        console.error('Error fetching subscription data:', error);
+        toast('Error fetching data', {
+          description: 'Could not load subscription plans. Please try again.'
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
   }, []);
 
-  const fetchPlans = async () => {
+  const handleSavePlan = async (plan: SubscriptionPlan) => {
     try {
-      // Check if subscription_plans table exists
-      const { error: tableCheckError } = await supabase
-        .from('subscription_plans')
-        .select('id')
-        .limit(1);
+      // In a real app, we'd save to Supabase
+      // const { error } = await supabase
+      //   .from('subscription_plans')
+      //   .upsert(plan);
+      // if (error) throw error;
       
-      // If the table doesn't exist, create it and seed initial data
-      if (tableCheckError) {
-        await createSubscriptionTable();
+      // For now, update the local state
+      if (plan.id) {
+        setPlans(prev => prev.map(p => p.id === plan.id ? plan : p));
       } else {
-        // Fetch existing plans
-        const { data, error } = await supabase
-          .from('subscription_plans')
-          .select('*')
-          .order('priority', { ascending: true });
-          
-        if (error) throw error;
-        setPlans(data || []);
+        const newPlan = { ...plan, id: Date.now().toString() };
+        setPlans(prev => [...prev, newPlan]);
       }
-    } catch (error: any) {
-      toast("Failed to load subscription plans", {
-        description: error.message
+      
+      setIsPlanDialogOpen(false);
+      toast('Plan Saved', {
+        description: `Subscription plan "${plan.name}" has been saved successfully.`
       });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const createSubscriptionTable = async () => {
-    // In a real app, this would be handled by migrations
-    // For this demo, we'll simulate it with some demo data
-    const demoPlans = [
-      {
-        id: "plan_basic",
-        name: "Basic",
-        description: "Free tier with limited features",
-        price_monthly: 0,
-        price_yearly: 0,
-        features: ["5 matches per day", "Basic messaging", "Limited profile visibility"],
-        is_active: true,
-        user_count: 1250,
-        created_at: new Date().toISOString(),
-        priority: 1
-      },
-      {
-        id: "plan_premium",
-        name: "Premium",
-        description: "Enhanced features for serious daters",
-        price_monthly: 9.99,
-        price_yearly: 99.99,
-        features: ["Unlimited matches", "Advanced messaging", "See who likes you", "Profile boost once monthly"],
-        is_active: true,
-        user_count: 785,
-        created_at: new Date().toISOString(),
-        priority: 2
-      },
-      {
-        id: "plan_vip",
-        name: "VIP",
-        description: "Ultimate dating experience",
-        price_monthly: 19.99,
-        price_yearly: 199.99,
-        features: ["All Premium features", "Weekly profile boost", "Priority support", "Exclusive events", "Advanced analytics"],
-        is_active: true,
-        user_count: 310,
-        created_at: new Date().toISOString(),
-        priority: 3
-      }
-    ];
-    
-    setPlans(demoPlans);
-    toast("Demo subscription plans loaded", {
-      description: "This is simulated data for demonstration purposes"
-    });
-  };
-
-  const fetchCoupons = async () => {
-    try {
-      // Check if coupons table exists
-      const { error: tableCheckError } = await supabase
-        .from('coupons')
-        .select('id')
-        .limit(1);
-      
-      // If the table doesn't exist, create demo data
-      if (tableCheckError) {
-        await createCouponsTable();
-      } else {
-        // Fetch existing coupons
-        const { data, error } = await supabase
-          .from('coupons')
-          .select('*')
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
-        setCoupons(data || []);
-      }
-    } catch (error: any) {
-      toast("Failed to load coupons", {
-        description: error.message
+    } catch (error) {
+      console.error('Error saving plan:', error);
+      toast('Error Saving Plan', {
+        description: 'There was an issue saving the subscription plan.'
       });
     }
   };
 
-  const createCouponsTable = async () => {
-    // For demo purposes only
-    const demoCoupons = [
-      {
-        id: "coupon_welcome",
-        code: "WELCOME25",
-        discount_percent: 25,
-        valid_until: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString(),
-        max_uses: 1000,
-        times_used: 342,
-        is_active: true,
-        subscription_plan_id: null
-      },
-      {
-        id: "coupon_summer",
-        code: "SUMMER2025",
-        discount_percent: 30,
-        valid_until: new Date(new Date().setMonth(new Date().getMonth() + 2)).toISOString(),
-        max_uses: 500,
-        times_used: 89,
-        is_active: true,
-        subscription_plan_id: "plan_premium"
-      }
-    ];
-    
-    setCoupons(demoCoupons);
-    toast("Demo coupons loaded", {
-      description: "This is simulated data for demonstration purposes"
-    });
-  };
-
-  const fetchSubscriptionStats = async () => {
-    // For demo purposes, let's populate with fake stats
-    setSubscriptionStats({
-      totalRevenue: 28650,
-      activeSubscribers: 1095,
-      conversionRate: 12.8,
-      averageSubscriptionLength: 4.5
-    });
-  };
-
-  const handleSavePlan = () => {
-    if (!editingPlan) return;
-    
-    const updatedPlans = editingPlan.id 
-      ? plans.map(plan => plan.id === editingPlan.id ? editingPlan : plan)
-      : [...plans, { ...editingPlan, id: `plan_${Date.now()}`, created_at: new Date().toISOString() }];
-    
-    setPlans(updatedPlans);
-    setIsPlanDialogOpen(false);
-    setEditingPlan(null);
-    
-    toast(`Subscription plan ${editingPlan.id ? 'updated' : 'created'} successfully`);
-  };
-
-  const handleSaveCoupon = () => {
-    if (!editingCoupon) return;
-    
-    const updatedCoupons = editingCoupon.id 
-      ? coupons.map(coupon => coupon.id === editingCoupon.id ? editingCoupon : coupon)
-      : [...coupons, { ...editingCoupon, id: `coupon_${Date.now()}` }];
-    
-    setCoupons(updatedCoupons);
-    setIsCouponDialogOpen(false);
-    setEditingCoupon(null);
-    
-    toast(`Coupon ${editingCoupon.id ? 'updated' : 'created'} successfully`);
-  };
-
-  const handleDeletePlan = () => {
-    if (!deletingPlanId) return;
-    
-    setPlans(plans.filter(plan => plan.id !== deletingPlanId));
-    setIsDeleteDialogOpen(false);
-    setDeletingPlanId(null);
-    
-    toast("Subscription plan deleted successfully");
-  };
-
-  const handleDeleteCoupon = () => {
-    if (!deletingCouponId) return;
-    
-    setCoupons(coupons.filter(coupon => coupon.id !== deletingCouponId));
-    setIsDeleteDialogOpen(false);
-    setDeletingCouponId(null);
-    
-    toast("Coupon deleted successfully");
-  };
-
-  const handlePlanFeatureChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (!editingPlan) return;
-    
-    const features = e.target.value
-      .split('\n')
-      .map(feature => feature.trim())
-      .filter(feature => feature.length > 0);
+  const handleSaveCoupon = async (coupon: Coupon) => {
+    try {
+      // In a real app, we'd save to Supabase
+      // const { error } = await supabase
+      //   .from('coupons')
+      //   .upsert(coupon);
+      // if (error) throw error;
       
-    setEditingPlan({ ...editingPlan, features });
+      // For now, update the local state
+      if (coupon.id) {
+        setCoupons(prev => prev.map(c => c.id === coupon.id ? coupon : c));
+      } else {
+        const newCoupon = { ...coupon, id: Date.now().toString() };
+        setCoupons(prev => [...prev, newCoupon]);
+      }
+      
+      setIsCouponDialogOpen(false);
+      toast('Coupon Saved', {
+        description: `Coupon code "${coupon.code}" has been saved successfully.`
+      });
+    } catch (error) {
+      console.error('Error saving coupon:', error);
+      toast('Error Saving Coupon', {
+        description: 'There was an issue saving the coupon code.'
+      });
+    }
+  };
+
+  const handleDeletePlan = async (id: string) => {
+    try {
+      // In a real app, we'd delete from Supabase
+      // const { error } = await supabase
+      //   .from('subscription_plans')
+      //   .delete()
+      //   .eq('id', id);
+      // if (error) throw error;
+      
+      // For now, update the local state
+      setPlans(prev => prev.filter(plan => plan.id !== id));
+      
+      toast('Plan Deleted', {
+        description: 'Subscription plan has been deleted successfully.'
+      });
+    } catch (error) {
+      console.error('Error deleting plan:', error);
+      toast('Error Deleting Plan', {
+        description: 'There was an issue deleting the subscription plan.'
+      });
+    }
+  };
+
+  const handleDeleteCoupon = async (id: string) => {
+    try {
+      // In a real app, we'd delete from Supabase
+      // const { error } = await supabase
+      //   .from('coupons')
+      //   .delete()
+      //   .eq('id', id);
+      // if (error) throw error;
+      
+      // For now, update the local state
+      setCoupons(prev => prev.filter(coupon => coupon.id !== id));
+      
+      toast('Coupon Deleted', {
+        description: 'Coupon code has been deleted successfully.'
+      });
+    } catch (error) {
+      console.error('Error deleting coupon:', error);
+      toast('Error Deleting Coupon', {
+        description: 'There was an issue deleting the coupon code.'
+      });
+    }
+  };
+
+  const defaultPlan: SubscriptionPlan = {
+    id: '',
+    name: '',
+    description: '',
+    price_monthly: 0,
+    price_yearly: 0,
+    features: [''],
+    is_popular: false,
+    is_active: true,
+    trial_days: 7
+  };
+
+  const defaultCoupon: Coupon = {
+    id: '',
+    code: '',
+    discount_percent: 10,
+    valid_until: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+    max_uses: 100,
+    times_used: 0,
+    is_active: true,
+    plan_id: null
   };
 
   return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-1 md:grid-cols-3 w-full">
-          <TabsTrigger value="plans">Subscription Plans</TabsTrigger>
-          <TabsTrigger value="coupons">Coupon Codes</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="plans" className="space-y-6 pt-6">
-          {/* Stats Cards */}
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Active Subscribers
-                </CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{subscriptionStats.activeSubscribers.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  +{Math.floor(Math.random() * 20) + 5}% from last month
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Revenue
-                </CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${subscriptionStats.totalRevenue.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  +{Math.floor(Math.random() * 15) + 8}% from last month
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Conversion Rate
-                </CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{subscriptionStats.conversionRate}%</div>
-                <p className="text-xs text-muted-foreground">
-                  +{Math.floor(Math.random() * 5) + 1}% from last month
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Subscription Plans</CardTitle>
-                <CardDescription>
-                  Manage your subscription plans and pricing
-                </CardDescription>
-              </div>
-              <Button onClick={() => {
-                setEditingPlan({
-                  id: '',
-                  name: '',
-                  description: '',
-                  price_monthly: 0,
-                  price_yearly: 0,
-                  features: [],
-                  is_active: true,
-                  user_count: 0,
-                  created_at: '',
-                  priority: plans.length + 1
-                });
+    <div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl">Subscription Plans</CardTitle>
+              <CardDescription>Manage your subscription tiers and pricing</CardDescription>
+            </div>
+            <Button 
+              onClick={() => {
+                setCurrentPlan(defaultPlan);
                 setIsPlanDialogOpen(true);
-              }}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Add Plan
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center my-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Monthly Price</TableHead>
-                      <TableHead>Yearly Price</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                      <TableHead className="text-center">Users</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {plans.map((plan) => (
-                      <TableRow key={plan.id}>
-                        <TableCell className="font-medium">
-                          {plan.name}
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {plan.description}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          ${plan.price_monthly.toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          ${plan.price_yearly.toFixed(2)}
-                          {plan.price_yearly > 0 && plan.price_monthly > 0 && (
-                            <div className="text-xs text-green-600 mt-1">
-                              Save ${(plan.price_monthly * 12 - plan.price_yearly).toFixed(2)}
-                            </div>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant={plan.is_active ? "outline" : "secondary"}>
-                            {plan.is_active ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {plan.user_count.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setEditingPlan(plan);
-                                setIsPlanDialogOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setDeletingPlanId(plan.id);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                              disabled={plan.user_count > 0}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="coupons" className="space-y-6 pt-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Plan
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : plans.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {plans.map((plan) => (
+                <Card key={plan.id} className={plan.is_popular ? 'border-primary' : ''}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>{plan.name}</CardTitle>
+                        {plan.is_popular && (
+                          <Badge className="mt-1">Most Popular</Badge>
+                        )}
+                        {!plan.is_active && (
+                          <Badge variant="outline" className="mt-1 ml-2">Inactive</Badge>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">${plan.price_monthly}</div>
+                        <div className="text-muted-foreground text-sm">per month</div>
+                      </div>
+                    </div>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {plan.features.map((feature, idx) => (
+                        <li key={idx} className="flex items-start">
+                          <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <div className="text-sm text-muted-foreground">
+                      {plan.trial_days > 0 ? `${plan.trial_days}-day free trial` : 'No free trial'}
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => {
+                          setCurrentPlan(plan);
+                          setIsPlanDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleDeletePlan(plan.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center p-8">
+              <h3 className="text-lg font-medium">No plans found</h3>
+              <p className="text-muted-foreground mt-1">Create your first subscription plan to get started</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="mt-8">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Coupon Codes</CardTitle>
-                <CardDescription>
-                  Manage promotional discounts and offers
-                </CardDescription>
+                <CardTitle className="text-xl">Promotional Coupons</CardTitle>
+                <CardDescription>Create and manage discount coupons</CardDescription>
               </div>
-              <Button onClick={() => {
-                setEditingCoupon({
-                  id: '',
-                  code: '',
-                  discount_percent: 10,
-                  valid_until: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
-                  max_uses: 100,
-                  times_used: 0,
-                  is_active: true,
-                  subscription_plan_id: null
-                });
-                setIsCouponDialogOpen(true);
-              }}>
-                <PlusCircle className="mr-2 h-4 w-4" />
+              <Button 
+                onClick={() => {
+                  setCurrentCoupon(defaultCoupon);
+                  setIsCouponDialogOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
                 Add Coupon
               </Button>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center my-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Discount</TableHead>
-                      <TableHead>Valid Until</TableHead>
-                      <TableHead>Usage</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center p-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              </div>
+            ) : coupons.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-4 font-medium">Code</th>
+                      <th className="text-left py-3 px-4 font-medium">Discount</th>
+                      <th className="text-left py-3 px-4 font-medium">Valid Until</th>
+                      <th className="text-left py-3 px-4 font-medium">Usage</th>
+                      <th className="text-left py-3 px-4 font-medium">Status</th>
+                      <th className="text-left py-3 px-4 font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {coupons.map((coupon) => (
-                      <TableRow key={coupon.id}>
-                        <TableCell className="font-medium">
-                          {coupon.code}
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {coupon.subscription_plan_id ? `Limited to ${plans.find(p => p.id === coupon.subscription_plan_id)?.name || 'a specific'} plan` : 'Applicable to all plans'}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {coupon.discount_percent}% off
-                        </TableCell>
-                        <TableCell>
-                          {new Date(coupon.valid_until).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          {coupon.times_used} / {coupon.max_uses === 0 ? '∞' : coupon.max_uses}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant={coupon.is_active ? "outline" : "secondary"}>
-                            {coupon.is_active ? "Active" : "Inactive"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                      <tr key={coupon.id} className="border-b">
+                        <td className="py-4 px-4 font-medium">{coupon.code}</td>
+                        <td className="py-4 px-4">{coupon.discount_percent}% off</td>
+                        <td className="py-4 px-4">{new Date(coupon.valid_until).toLocaleDateString()}</td>
+                        <td className="py-4 px-4">
+                          {coupon.times_used} / {coupon.max_uses}
+                        </td>
+                        <td className="py-4 px-4">
+                          {coupon.is_active ? (
+                            <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">
+                              Active
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-gray-100 text-gray-800 hover:bg-gray-100">
+                              Inactive
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
                               onClick={() => {
-                                setEditingCoupon(coupon);
+                                setCurrentCoupon(coupon);
                                 setIsCouponDialogOpen(true);
                               }}
                             >
                               <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setDeletingCouponId(coupon.id);
-                                setIsDeleteDialogOpen(true);
-                              }}
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleDeleteCoupon(coupon.id)}
                             >
                               <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete</span>
                             </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
+                        </td>
+                      </tr>
                     ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="analytics" className="space-y-6 pt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Subscription Analytics</CardTitle>
-              <CardDescription>
-                View detailed statistics about your subscriptions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Monthly Recurring Revenue</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold">
-                      ${(subscriptionStats.totalRevenue / 12).toFixed(2)}
-                    </div>
-                    <div className="h-36 mt-4 bg-gray-100 flex items-center justify-center rounded">
-                      <p className="text-muted-foreground">Monthly revenue chart would go here</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Subscription Distribution</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[180px] mt-4 bg-gray-100 flex items-center justify-center rounded">
-                      <p className="text-muted-foreground">Subscription distribution chart would go here</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Key Metrics</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <dl className="space-y-2">
-                      <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Average Revenue Per User:</dt>
-                        <dd className="font-medium">${(subscriptionStats.totalRevenue / subscriptionStats.activeSubscribers).toFixed(2)}</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Churn Rate:</dt>
-                        <dd className="font-medium">{(Math.random() * 5).toFixed(2)}%</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Avg. Subscription Length:</dt>
-                        <dd className="font-medium">{subscriptionStats.averageSubscriptionLength} months</dd>
-                      </div>
-                      <div className="flex justify-between">
-                        <dt className="text-muted-foreground">Free-to-Paid Conversion:</dt>
-                        <dd className="font-medium">{subscriptionStats.conversionRate}%</dd>
-                      </div>
-                    </dl>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Subscription Growth</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[158px] mt-4 bg-gray-100 flex items-center justify-center rounded">
-                      <p className="text-muted-foreground">Subscription growth chart would go here</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </tbody>
+                </table>
               </div>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full">
-                Export Analytics Report
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
-      {/* Edit Plan Dialog */}
+            ) : (
+              <div className="text-center p-8">
+                <h3 className="text-lg font-medium">No coupons found</h3>
+                <p className="text-muted-foreground mt-1">Create promotional coupons to attract new users</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Dialog for editing plans */}
       <Dialog open={isPlanDialogOpen} onOpenChange={setIsPlanDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
-            <DialogTitle>{editingPlan?.id ? 'Edit' : 'Add'} Subscription Plan</DialogTitle>
+            <DialogTitle>
+              {currentPlan?.id ? 'Edit Subscription Plan' : 'Create New Subscription Plan'}
+            </DialogTitle>
             <DialogDescription>
-              Configure the subscription details and features
+              Configure the details and pricing for this subscription plan.
             </DialogDescription>
           </DialogHeader>
-          
-          {editingPlan && (
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            
+            const updatedPlan: SubscriptionPlan = {
+              ...currentPlan!,
+              name: formData.get('name') as string,
+              description: formData.get('description') as string,
+              price_monthly: parseFloat(formData.get('price_monthly') as string),
+              price_yearly: parseFloat(formData.get('price_yearly') as string),
+              trial_days: parseInt(formData.get('trial_days') as string),
+              is_popular: formData.get('is_popular') === 'on',
+              is_active: formData.get('is_active') === 'on',
+              features: (formData.get('features') as string).split('\n').filter(f => f.trim() !== '')
+            };
+            
+            handleSavePlan(updatedPlan);
+          }}>
             <div className="grid gap-4 py-4">
-              <div className="grid items-center gap-4">
-                <Label htmlFor="plan-name">Plan Name</Label>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
                 <Input
-                  id="plan-name"
-                  value={editingPlan.name}
-                  onChange={(e) => setEditingPlan({...editingPlan, name: e.target.value})}
+                  id="name"
+                  name="name"
+                  defaultValue={currentPlan?.name}
+                  className="col-span-3"
+                  required
                 />
               </div>
-              
-              <div className="grid items-center gap-4">
-                <Label htmlFor="plan-description">Description</Label>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
                 <Input
-                  id="plan-description"
-                  value={editingPlan.description}
-                  onChange={(e) => setEditingPlan({...editingPlan, description: e.target.value})}
+                  id="description"
+                  name="description"
+                  defaultValue={currentPlan?.description}
+                  className="col-span-3"
                 />
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="plan-monthly-price">Monthly Price ($)</Label>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="price_monthly" className="text-right">
+                  Monthly Price
+                </Label>
+                <div className="col-span-3 flex items-center">
+                  <span className="mr-2">$</span>
                   <Input
-                    id="plan-monthly-price"
+                    id="price_monthly"
+                    name="price_monthly"
                     type="number"
                     step="0.01"
-                    value={editingPlan.price_monthly}
-                    onChange={(e) => setEditingPlan({...editingPlan, price_monthly: parseFloat(e.target.value)})}
+                    min="0"
+                    defaultValue={currentPlan?.price_monthly}
+                    required
                   />
                 </div>
-                
-                <div>
-                  <Label htmlFor="plan-yearly-price">Yearly Price ($)</Label>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="price_yearly" className="text-right">
+                  Yearly Price
+                </Label>
+                <div className="col-span-3 flex items-center">
+                  <span className="mr-2">$</span>
                   <Input
-                    id="plan-yearly-price"
+                    id="price_yearly"
+                    name="price_yearly"
                     type="number"
                     step="0.01"
-                    value={editingPlan.price_yearly}
-                    onChange={(e) => setEditingPlan({...editingPlan, price_yearly: parseFloat(e.target.value)})}
+                    min="0"
+                    defaultValue={currentPlan?.price_yearly}
+                    required
                   />
                 </div>
               </div>
-              
-              <div className="grid items-center gap-4">
-                <Label htmlFor="plan-features">Features (one per line)</Label>
-                <Textarea
-                  id="plan-features"
-                  rows={5}
-                  value={editingPlan.features.join('\n')}
-                  onChange={handlePlanFeatureChange}
-                  placeholder="Add each feature on a new line"
-                />
-              </div>
-              
-              <div className="grid items-center gap-4">
-                <Label htmlFor="plan-priority">Display Priority</Label>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="trial_days" className="text-right">
+                  Trial Days
+                </Label>
                 <Input
-                  id="plan-priority"
-                  type="number"
-                  value={editingPlan.priority}
-                  onChange={(e) => setEditingPlan({...editingPlan, priority: parseInt(e.target.value)})}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Lower numbers appear first
-                </p>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="plan-active"
-                  checked={editingPlan.is_active}
-                  onCheckedChange={(checked) => setEditingPlan({...editingPlan, is_active: checked})}
-                />
-                <Label htmlFor="plan-active">Active</Label>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsPlanDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSavePlan}>
-              Save
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Edit Coupon Dialog */}
-      <Dialog open={isCouponDialogOpen} onOpenChange={setIsCouponDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{editingCoupon?.id ? 'Edit' : 'Add'} Coupon</DialogTitle>
-            <DialogDescription>
-              Configure the coupon code and discount
-            </DialogDescription>
-          </DialogHeader>
-          
-          {editingCoupon && (
-            <div className="grid gap-4 py-4">
-              <div className="grid items-center gap-4">
-                <Label htmlFor="coupon-code">Coupon Code</Label>
-                <Input
-                  id="coupon-code"
-                  value={editingCoupon.code}
-                  onChange={(e) => setEditingCoupon({...editingCoupon, code: e.target.value.toUpperCase()})}
-                />
-              </div>
-              
-              <div className="grid items-center gap-4">
-                <Label htmlFor="coupon-discount">Discount (%)</Label>
-                <Input
-                  id="coupon-discount"
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={editingCoupon.discount_percent}
-                  onChange={(e) => setEditingCoupon({
-                    ...editingCoupon, 
-                    discount_percent: Math.min(100, Math.max(1, parseInt(e.target.value)))
-                  })}
-                />
-              </div>
-              
-              <div className="grid items-center gap-4">
-                <Label htmlFor="coupon-valid-until">Valid Until</Label>
-                <Input
-                  id="coupon-valid-until"
-                  type="date"
-                  value={new Date(editingCoupon.valid_until).toISOString().substring(0, 10)}
-                  onChange={(e) => setEditingCoupon({
-                    ...editingCoupon, 
-                    valid_until: new Date(e.target.value).toISOString()
-                  })}
-                />
-              </div>
-              
-              <div className="grid items-center gap-4">
-                <Label htmlFor="coupon-max-uses">Maximum Uses (0 for unlimited)</Label>
-                <Input
-                  id="coupon-max-uses"
+                  id="trial_days"
+                  name="trial_days"
                   type="number"
                   min="0"
-                  value={editingCoupon.max_uses}
-                  onChange={(e) => setEditingCoupon({
-                    ...editingCoupon, 
-                    max_uses: parseInt(e.target.value)
-                  })}
+                  defaultValue={currentPlan?.trial_days}
+                  className="col-span-3"
                 />
               </div>
-              
-              <div className="grid items-center gap-4">
-                <Label htmlFor="coupon-plan">Limit to Plan (optional)</Label>
-                <select
-                  id="coupon-plan"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={editingCoupon.subscription_plan_id || ''}
-                  onChange={(e) => setEditingCoupon({
-                    ...editingCoupon, 
-                    subscription_plan_id: e.target.value || null
-                  })}
-                >
-                  <option value="">All Plans</option>
-                  {plans.map(plan => (
-                    <option key={plan.id} value={plan.id}>{plan.name}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="coupon-active"
-                  checked={editingCoupon.is_active}
-                  onCheckedChange={(checked) => setEditingCoupon({...editingCoupon, is_active: checked})}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="features" className="text-right">
+                  Features
+                </Label>
+                <textarea
+                  id="features"
+                  name="features"
+                  className="col-span-3 min-h-24 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="One feature per line"
+                  defaultValue={currentPlan?.features.join('\n')}
                 />
-                <Label htmlFor="coupon-active">Active</Label>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="text-right">Options</div>
+                <div className="col-span-3 space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="is_popular" 
+                      name="is_popular" 
+                      defaultChecked={currentPlan?.is_popular} 
+                    />
+                    <Label htmlFor="is_popular">Mark as most popular plan</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="is_active" 
+                      name="is_active" 
+                      defaultChecked={currentPlan?.is_active} 
+                    />
+                    <Label htmlFor="is_active">Plan is active</Label>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCouponDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveCoupon}>
-              Save
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsPlanDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
-      
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+
+      {/* Dialog for editing coupons */}
+      <Dialog open={isCouponDialogOpen} onOpenChange={setIsCouponDialogOpen}>
+        <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogTitle>
+              {currentCoupon?.id ? 'Edit Coupon' : 'Create New Coupon'}
+            </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this {deletingPlanId ? 'subscription plan' : 'coupon'}? This action cannot be undone.
+              Set up a promotional coupon code for your subscription plans.
             </DialogDescription>
           </DialogHeader>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsDeleteDialogOpen(false);
-              setDeletingPlanId(null);
-              setDeletingCouponId(null);
-            }}>
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={deletingPlanId ? handleDeletePlan : handleDeleteCoupon}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            
+            const updatedCoupon: Coupon = {
+              ...currentCoupon!,
+              code: formData.get('code') as string,
+              discount_percent: parseInt(formData.get('discount_percent') as string),
+              valid_until: formData.get('valid_until') as string,
+              max_uses: parseInt(formData.get('max_uses') as string),
+              is_active: formData.get('is_active') === 'on',
+              plan_id: formData.get('plan_id') as string || null
+            };
+            
+            handleSaveCoupon(updatedCoupon);
+          }}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="code" className="text-right">
+                  Coupon Code
+                </Label>
+                <Input
+                  id="code"
+                  name="code"
+                  defaultValue={currentCoupon?.code}
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="discount_percent" className="text-right">
+                  Discount %
+                </Label>
+                <div className="col-span-3 flex items-center">
+                  <Input
+                    id="discount_percent"
+                    name="discount_percent"
+                    type="number"
+                    min="1"
+                    max="100"
+                    defaultValue={currentCoupon?.discount_percent}
+                    required
+                  />
+                  <span className="ml-2">%</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="valid_until" className="text-right">
+                  Valid Until
+                </Label>
+                <Input
+                  id="valid_until"
+                  name="valid_until"
+                  type="date"
+                  defaultValue={currentCoupon?.valid_until}
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="max_uses" className="text-right">
+                  Max Uses
+                </Label>
+                <Input
+                  id="max_uses"
+                  name="max_uses"
+                  type="number"
+                  min="1"
+                  defaultValue={currentCoupon?.max_uses}
+                  className="col-span-3"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="plan_id" className="text-right">
+                  Plan Specific
+                </Label>
+                <Select 
+                  name="plan_id"
+                  defaultValue={currentCoupon?.plan_id || ''}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Apply to any plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Apply to any plan</SelectItem>
+                    {plans.map(plan => (
+                      <SelectItem key={plan.id} value={plan.id}>{plan.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="text-right">Status</div>
+                <div className="col-span-3">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="is_active" 
+                      name="is_active" 
+                      defaultChecked={currentCoupon?.is_active} 
+                    />
+                    <Label htmlFor="is_active">Coupon is active</Label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsCouponDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Coupon</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Animated, PanResponder, View, StyleSheet, Dimensions, Image } from 'react-native';
 
@@ -69,7 +70,11 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipe
 
   const onSwipeComplete = (direction: 'right' | 'left') => {
     const item = data[cardIndex];
-    direction === 'right' ? onSwipeRight?.(item) : onSwipeLeft?.(item);
+    if (direction === 'right' && onSwipeRight) {
+      onSwipeRight(item);
+    } else if (direction === 'left' && onSwipeLeft) {
+      onSwipeLeft(item);
+    }
     pan.setValue({ x: 0, y: 0 });
     pan.setOffset({ x: 0, y: 0 });
     setCardIndex(cardIndex + 1);

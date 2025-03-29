@@ -1,9 +1,11 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Heart, X, RotateCw, Info } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { useSpring, animated, useDrag } from '@react-spring/web';
+import { useSpring, animated } from '@react-spring/web';
+import { useDrag } from '@use-gesture/react';
 
 interface SwipeableCardProps {
   name: string;
@@ -29,7 +31,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
   const [isSwiped, setIsSwiped] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const [{ x, ...rest }, api] = useSpring(() => ({
+  const [springs, api] = useSpring(() => ({
     x: 0,
     scale: 1,
     rotateZ: 0,
@@ -51,13 +53,16 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
     api.start({
       x: 1000,
       rotateZ: 30,
-      opacity: 0,
       scale: 0,
       immediate: false,
       config: { friction: 30, tension: 400 },
       onRest: () => {
         setIsSwiped(false);
-        api.reset();
+        api.start({
+          x: 0,
+          scale: 1,
+          rotateZ: 0
+        });
         onSwipeRight();
       }
     });
@@ -69,13 +74,16 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
     api.start({
       x: -1000,
       rotateZ: -30,
-      opacity: 0,
       scale: 0,
       immediate: false,
       config: { friction: 30, tension: 400 },
       onRest: () => {
         setIsSwiped(false);
-        api.reset();
+        api.start({
+          x: 0,
+          scale: 1,
+          rotateZ: 0
+        });
         onSwipeLeft();
       }
     });
@@ -86,7 +94,6 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
       x: 0,
       scale: 1,
       rotateZ: 0,
-      opacity: 1,
       immediate: false,
       config: { friction: 50, tension: 500 },
       onRest: () => {
@@ -118,9 +125,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
       ref={cardRef}
       {...bind()}
       style={{
-        x,
-        rotateZ: rest.rotateZ,
-        scale: rest.scale,
+        ...springs,
         zIndex: 10,
         touchAction: 'pan-y',
       }}
@@ -148,7 +153,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
               <Info className="h-5 w-5 mr-2" />
               Details
             </Button>
-            <Button variant="primary" onClick={swipeRight}>
+            <Button onClick={swipeRight}>
               <Heart className="h-5 w-5 mr-2" />
               Accept
             </Button>
