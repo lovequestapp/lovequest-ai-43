@@ -9,7 +9,6 @@ import SubscriptionPlans from '@/components/admin/SubscriptionPlans';
 import Analytics from '@/components/admin/Analytics';
 import AppSettings from '@/components/admin/AppSettings';
 import ContentModeration from '@/components/admin/ContentModeration';
-import { supabase } from '@/integrations/supabase/client';
 import { Activity, Crown, Shield } from 'lucide-react';
 
 const Admin = () => {
@@ -26,7 +25,23 @@ const Admin = () => {
       });
       // We could redirect here, but we'll let the ProtectedRoute handle it
     }
+    
+    setLoading(false);
   }, [currentUser]);
+
+  useEffect(() => {
+    // Listen for tab change events from the AdminMobileContainer
+    const handleTabChange = (event: any) => {
+      if (event.detail) {
+        setActiveTab(event.detail);
+      }
+    };
+    
+    window.addEventListener('setAdminTab', handleTabChange);
+    return () => {
+      window.removeEventListener('setAdminTab', handleTabChange);
+    };
+  }, []);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -105,25 +120,33 @@ const Admin = () => {
           </div>
           
           <div className="animate-fade-in">
-            <TabsContent value="users" className="focus-visible:outline-none focus-visible:ring-0">
-              <UserManagement />
-            </TabsContent>
-            
-            <TabsContent value="subscriptions" className="focus-visible:outline-none focus-visible:ring-0">
-              <SubscriptionPlans />
-            </TabsContent>
-            
-            <TabsContent value="analytics" className="focus-visible:outline-none focus-visible:ring-0">
-              <Analytics />
-            </TabsContent>
-            
-            <TabsContent value="moderation" className="focus-visible:outline-none focus-visible:ring-0">
-              <ContentModeration />
-            </TabsContent>
-            
-            <TabsContent value="settings" className="focus-visible:outline-none focus-visible:ring-0">
-              <AppSettings />
-            </TabsContent>
+            {loading ? (
+              <div className="flex justify-center items-center min-h-[400px]">
+                <div className="h-12 w-12 rounded-full border-4 border-love-200 border-t-love-500 animate-spin"></div>
+              </div>
+            ) : (
+              <>
+                <TabsContent value="users" className="focus-visible:outline-none focus-visible:ring-0">
+                  <UserManagement />
+                </TabsContent>
+                
+                <TabsContent value="subscriptions" className="focus-visible:outline-none focus-visible:ring-0">
+                  <SubscriptionPlans />
+                </TabsContent>
+                
+                <TabsContent value="analytics" className="focus-visible:outline-none focus-visible:ring-0">
+                  <Analytics />
+                </TabsContent>
+                
+                <TabsContent value="moderation" className="focus-visible:outline-none focus-visible:ring-0">
+                  <ContentModeration />
+                </TabsContent>
+                
+                <TabsContent value="settings" className="focus-visible:outline-none focus-visible:ring-0">
+                  <AppSettings />
+                </TabsContent>
+              </>
+            )}
           </div>
         </Tabs>
       </div>

@@ -1,11 +1,13 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useIsMobile, useBreakpoint } from '@/hooks/use-mobile';
 import { Menu, Users, BarChart2, Settings, LogOut, FileText, Bell, Home, X, ChevronRight, Edit, Save, Heart, Calendar, Search, MessageSquare, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useUser } from '@/context/UserContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminMobileContainerProps {
   children: React.ReactNode;
@@ -39,6 +41,9 @@ const AdminMobileContainer = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<number | null>(null);
   const [userFormData, setUserFormData] = useState({});
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser, logout } = useUser();
   
   // Hide export/import buttons and fix overflow
   useEffect(() => {
@@ -299,6 +304,17 @@ const AdminMobileContainer = ({
     setUserFormData({});
   }, [editingUser]);
   
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      logout();
+      toast.success("Logged out successfully");
+      navigate('/login');
+    } catch (error) {
+      toast.error("Failed to log out");
+    }
+  };
+  
   // Side drawer menu for mobile
   const MobileMenu = () => {
     if (!menuOpen) return null;
@@ -323,24 +339,88 @@ const AdminMobileContainer = ({
               <div className="flex items-center gap-3 p-3 bg-love-50 rounded-lg">
                 <Avatar>
                   <AvatarImage src="https://i.pravatar.cc/150?u=admin" />
-                  <AvatarFallback className="bg-love-200 text-love-700">AD</AvatarFallback>
+                  <AvatarFallback className="bg-love-200 text-love-700">
+                    {currentUser?.name?.substring(0, 2).toUpperCase() || 'AD'}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
-                  <div className="font-medium text-love-900">Admin User</div>
-                  <div className="text-xs text-love-600">admin@example.com</div>
+                  <div className="font-medium text-love-900">{currentUser?.name || 'Admin User'}</div>
+                  <div className="text-xs text-love-600">{currentUser?.email || 'admin@example.com'}</div>
                 </div>
               </div>
             </div>
-            <NavItem icon={<Home />} label="Dashboard" active />
-            <NavItem icon={<Users />} label="User Management" />
-            <NavItem icon={<Calendar />} label="Appointments" />
-            <NavItem icon={<MessageSquare />} label="Messages" />
-            <NavItem icon={<BarChart2 />} label="Analytics" />
-            <NavItem icon={<Bell />} label="Notifications" />
-            <NavItem icon={<Settings />} label="Settings" />
+            <NavItem 
+              icon={<Home />} 
+              label="Dashboard" 
+              active={location.pathname === '/admin'} 
+              onClick={() => {
+                navigate('/admin');
+                setMenuOpen(false);
+              }}
+            />
+            <NavItem 
+              icon={<Users />} 
+              label="User Management" 
+              active={location.pathname === '/admin/users'} 
+              onClick={() => {
+                navigate('/admin');
+                setMenuOpen(false);
+                // Set active tab to users
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'users' }));
+              }}
+            />
+            <NavItem 
+              icon={<Calendar />} 
+              label="Subscriptions" 
+              active={location.pathname === '/admin/subscriptions'} 
+              onClick={() => {
+                navigate('/admin');
+                setMenuOpen(false);
+                // Set active tab to subscriptions
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'subscriptions' }));
+              }}
+            />
+            <NavItem 
+              icon={<MessageSquare />} 
+              label="Content Moderation" 
+              active={location.pathname === '/admin/moderation'} 
+              onClick={() => {
+                navigate('/admin');
+                setMenuOpen(false);
+                // Set active tab to moderation
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'moderation' }));
+              }}
+            />
+            <NavItem 
+              icon={<BarChart2 />} 
+              label="Analytics" 
+              active={location.pathname === '/admin/analytics'} 
+              onClick={() => {
+                navigate('/admin');
+                setMenuOpen(false);
+                // Set active tab to analytics
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'analytics' }));
+              }}
+            />
+            <NavItem 
+              icon={<Settings />} 
+              label="Settings" 
+              active={location.pathname === '/admin/settings'} 
+              onClick={() => {
+                navigate('/admin');
+                setMenuOpen(false);
+                // Set active tab to settings
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'settings' }));
+              }}
+            />
             
             <div className="border-t border-love-100 mt-4 pt-4">
-              <NavItem icon={<LogOut />} label="Logout" danger />
+              <NavItem 
+                icon={<LogOut />} 
+                label="Logout" 
+                danger 
+                onClick={handleLogout}
+              />
             </div>
           </div>
         </div>
@@ -348,13 +428,16 @@ const AdminMobileContainer = ({
     );
   };
   
-  const NavItem = ({ icon, label, active = false, danger = false }) => (
-    <div className={cn(
-      "flex items-center p-3 rounded-lg mb-1.5 cursor-pointer transition-all duration-200",
-      active ? "bg-gradient-to-r from-love-500 to-passion-500 text-white shadow-md shadow-love-200" : 
-      danger ? "text-red-600 hover:bg-red-50" :
-      "hover:bg-love-50 text-love-800"
-    )}>
+  const NavItem = ({ icon, label, active = false, danger = false, onClick }) => (
+    <div 
+      className={cn(
+        "flex items-center p-3 rounded-lg mb-1.5 cursor-pointer transition-all duration-200",
+        active ? "bg-gradient-to-r from-love-500 to-passion-500 text-white shadow-md shadow-love-200" : 
+        danger ? "text-red-600 hover:bg-red-50" :
+        "hover:bg-love-50 text-love-800"
+      )}
+      onClick={onClick}
+    >
       <div className={cn("mr-3", active ? "text-white" : danger ? "text-red-500" : "text-love-600")}>{icon}</div>
       <span className={cn(active ? "font-medium" : "")}>{label}</span>
       <ChevronRight className={cn("h-4 w-4 ml-auto", active ? "text-white" : danger ? "text-red-400" : "text-love-400")} />
@@ -471,6 +554,9 @@ const AdminMobileContainer = ({
               value="1,245" 
               trend="+5.2%"
               trendUp={true}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'users' }));
+              }}
             />
             <StatCard 
               icon={<Heart className="h-8 w-8 text-love-500" />} 
@@ -478,6 +564,9 @@ const AdminMobileContainer = ({
               value="843"
               trend="+12.8%"
               trendUp={true}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'analytics' }));
+              }}
             />
             <StatCard 
               icon={<MessageSquare className="h-8 w-8 text-love-500" />} 
@@ -485,6 +574,9 @@ const AdminMobileContainer = ({
               value="15.3k"
               trend="+8.7%"
               trendUp={true}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'moderation' }));
+              }}
             />
             <StatCard 
               icon={<User className="h-8 w-8 text-love-500" />} 
@@ -492,6 +584,9 @@ const AdminMobileContainer = ({
               value="127"
               trend="+3.2%"
               trendUp={true}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'users' }));
+              }}
             />
           </div>
           
@@ -504,10 +599,36 @@ const AdminMobileContainer = ({
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-love-100 z-40">
           <div className="flex justify-around items-center">
-            <BottomNavItem icon={<Home className="h-5 w-5" />} label="Home" active />
-            <BottomNavItem icon={<Users className="h-5 w-5" />} label="Users" />
-            <BottomNavItem icon={<BarChart2 className="h-5 w-5" />} label="Stats" />
-            <BottomNavItem icon={<Settings className="h-5 w-5" />} label="Settings" />
+            <BottomNavItem 
+              icon={<Home className="h-5 w-5" />} 
+              label="Home" 
+              active={location.pathname === '/admin'} 
+              onClick={() => navigate('/admin')}
+            />
+            <BottomNavItem 
+              icon={<Users className="h-5 w-5" />} 
+              label="Users" 
+              active={false}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'users' }));
+              }}
+            />
+            <BottomNavItem 
+              icon={<BarChart2 className="h-5 w-5" />} 
+              label="Stats" 
+              active={false}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'analytics' }));
+              }}
+            />
+            <BottomNavItem 
+              icon={<Settings className="h-5 w-5" />} 
+              label="Settings" 
+              active={false}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'settings' }));
+              }}
+            />
           </div>
         </div>
       )}
@@ -534,8 +655,11 @@ const AdminMobileContainer = ({
 };
 
 // Helper components
-const StatCard = ({ icon, title, value, trend, trendUp = true }) => (
-  <div className="luxury-card p-4 flex flex-col items-center justify-center text-center">
+const StatCard = ({ icon, title, value, trend, trendUp = true, onClick }) => (
+  <div 
+    className="luxury-card p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:translate-y-[-3px] transition-all duration-300"
+    onClick={onClick}
+  >
     <div className="mb-2 p-3 rounded-full bg-love-50 text-love-700">{icon}</div>
     <h3 className="text-sm font-medium text-love-700 truncate-text mt-1">{title}</h3>
     <p className="text-2xl font-bold text-love-900 truncate-text">{value}</p>
@@ -554,11 +678,14 @@ const StatCard = ({ icon, title, value, trend, trendUp = true }) => (
   </div>
 );
 
-const BottomNavItem = ({ icon, label, active = false }) => (
-  <button className={cn(
-    "flex flex-col items-center justify-center py-3 px-2 w-full transition-colors duration-200",
-    active ? "text-love-600" : "text-gray-500 hover:text-love-400"
-  )}>
+const BottomNavItem = ({ icon, label, active = false, onClick }) => (
+  <button 
+    className={cn(
+      "flex flex-col items-center justify-center py-3 px-2 w-full transition-colors duration-200",
+      active ? "text-love-600" : "text-gray-500 hover:text-love-400"
+    )}
+    onClick={onClick}
+  >
     {icon}
     <span className="text-xs mt-1 truncate-text">{label}</span>
   </button>

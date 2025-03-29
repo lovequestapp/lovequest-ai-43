@@ -46,17 +46,17 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
       scale: active ? 1.1 : 1,
       rotateZ: active ? mx / 30 : 0,
       immediate: name => active && (name === 'x' || name === 'rotateZ'),
-      config: { tension: 500, friction: 50 },
-      onRest: () => {
-        if (!active && trigger) {
-          if (mx > 0) {
-            handleSwipeRight();
-          } else if (mx < 0) {
-            handleSwipeLeft();
-          }
-        }
-      }
+      config: { tension: 500, friction: 50 }
     });
+
+    // Only perform swipe actions when not active (released) and when triggered
+    if (!active && trigger) {
+      if (mx > 0) {
+        handleSwipeRight();
+      } else if (mx < 0) {
+        handleSwipeLeft();
+      }
+    }
   });
 
   // Fix the binding issue by wrapping the functions with useCallback

@@ -16,15 +16,16 @@ interface SwipeableCardProps {
 
 const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipeRight, onSwipeLeft, onCardRemoved }) => {
   const [cardIndex, setCardIndex] = useState(0);
-  const pan = useRef(new Animated.ValueXY()).current;
+  const position = useRef(new Animated.ValueXY()).current;
   
   // Use interpolation instead of directly accessing animated values
-  const rotate = pan.x.interpolate({
+  const rotate = position.x.interpolate({
     inputRange: [-screenWidth / 2, 0, screenWidth / 2],
     outputRange: ['-10deg', '0deg', '10deg'],
     extrapolate: 'clamp',
   });
-  const opacity = pan.x.interpolate({
+  
+  const opacity = position.x.interpolate({
     inputRange: [-screenWidth / 2, 0, screenWidth / 2],
     outputRange: [0.5, 1, 0.5],
     extrapolate: 'clamp',
@@ -34,17 +35,18 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipe
     PanResponder.create({
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
-        pan.setOffset({
-          x: 0,
-          y: 0
+        position.setOffset({
+          x: position.x._value,
+          y: position.y._value
         });
-        pan.setValue({ x: 0, y: 0 });
+        position.setValue({ x: 0, y: 0 });
       },
-      onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], {
-        useNativeDriver: false,
-      }),
+      onPanResponderMove: Animated.event(
+        [null, { dx: position.x, dy: position.y }],
+        { useNativeDriver: false }
+      ),
       onPanResponderRelease: (e, gesture) => {
-        pan.flattenOffset();
+        position.flattenOffset();
         if (gesture.dx > SWIPE_THRESHOLD) {
           forceSwipe('right');
         } else if (gesture.dx < -SWIPE_THRESHOLD) {
@@ -64,7 +66,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipe
 
   const forceSwipe = (direction: 'right' | 'left') => {
     const x = direction === 'right' ? screenWidth : -screenWidth;
-    Animated.timing(pan, {
+    Animated.timing(position, {
       toValue: { x: x * 2, y: 0 },
       duration: SWIPE_OUT_DURATION,
       useNativeDriver: false,
@@ -78,13 +80,12 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipe
     } else if (direction === 'left' && onSwipeLeft) {
       onSwipeLeft(item);
     }
-    pan.setValue({ x: 0, y: 0 });
-    pan.setOffset({ x: 0, y: 0 });
+    position.setValue({ x: 0, y: 0 });
     setCardIndex(cardIndex + 1);
   };
 
   const resetPosition = () => {
-    Animated.spring(pan, {
+    Animated.spring(position, {
       toValue: { x: 0, y: 0 },
       useNativeDriver: false,
       friction: 4,
@@ -106,7 +107,11 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipe
               style={[
                 styles.cardStyle,
                 {
-                  transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate }],
+                  transform: [
+                    { translateX: position.x },
+                    { translateY: position.y },
+                    { rotate }
+                  ],
                   opacity,
                 },
               ]}
