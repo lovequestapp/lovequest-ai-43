@@ -11,8 +11,9 @@ const Table = React.forwardRef<
     glassMorphism?: boolean;
     bordered?: boolean;
     elevated?: boolean;
+    luxury?: boolean;
   }
->(({ className, adminResponsive = false, fullWidth = false, glassMorphism = false, bordered = false, elevated = false, ...props }, ref) => {
+>(({ className, adminResponsive = false, fullWidth = false, glassMorphism = false, bordered = false, elevated = false, luxury = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -22,6 +23,7 @@ const Table = React.forwardRef<
       glassMorphism && "backdrop-blur-sm bg-white/80 shadow-sm",
       bordered && "border-love-200",
       elevated && "shadow-md hover:shadow-lg transition-shadow duration-300",
+      luxury && "luxury-table",
       adminResponsive && isMobile ? "admin-horizontal-scroll shadow-sm max-w-full" : "",
       fullWidth && "w-full"
     )}>
@@ -44,13 +46,15 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement> & {
     highlighted?: boolean;
+    luxury?: boolean;
   }
->(({ className, highlighted = false, ...props }, ref) => (
+>(({ className, highlighted = false, luxury = false, ...props }, ref) => (
   <thead 
     ref={ref} 
     className={cn(
       "[&_tr]:border-b bg-muted/50",
       highlighted && "bg-love-50/70",
+      luxury && "text-love-800 [&_tr]:border-love-100",
       className
     )} 
     {...props} 
@@ -63,14 +67,16 @@ const TableBody = React.forwardRef<
   React.HTMLAttributes<HTMLTableSectionElement> & {
     fullWidth?: boolean;
     animated?: boolean;
+    luxury?: boolean;
   }
->(({ className, fullWidth = false, animated = false, ...props }, ref) => (
+>(({ className, fullWidth = false, animated = false, luxury = false, ...props }, ref) => (
   <tbody
     ref={ref}
     className={cn(
       "[&_tr:last-child]:border-0", 
       fullWidth && "w-full",
       animated && "[&_tr]:animate-fade-in [&_tr]:duration-300",
+      luxury && "[&_tr]:border-love-100/50 [&_tr]:hover:bg-love-50/30",
       className
     )}
     {...props}
@@ -82,13 +88,15 @@ const TableFooter = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement> & {
     highlighted?: boolean;
+    luxury?: boolean;
   }
->(({ className, highlighted = false, ...props }, ref) => (
+>(({ className, highlighted = false, luxury = false, ...props }, ref) => (
   <tfoot
     ref={ref}
     className={cn(
       "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
       highlighted && "bg-love-50/70",
+      luxury && "border-love-100 text-love-700",
       className
     )}
     {...props}
@@ -103,8 +111,9 @@ const TableRow = React.forwardRef<
     clickable?: boolean;
     fullWidth?: boolean;
     highlighted?: boolean;
+    luxury?: boolean;
   }
->(({ className, adminResponsive = false, clickable = false, fullWidth = false, highlighted = false, ...props }, ref) => {
+>(({ className, adminResponsive = false, clickable = false, fullWidth = false, highlighted = false, luxury = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -117,6 +126,7 @@ const TableRow = React.forwardRef<
           : "border-b hover:bg-muted/50",
         clickable ? "cursor-pointer active:bg-muted" : "",
         highlighted && "bg-love-50/50 hover:bg-love-50/80",
+        luxury && "border-love-100/50 hover:bg-love-50/30 transition-colors duration-300",
         fullWidth && "w-full",
         className
       )}
@@ -133,8 +143,9 @@ const TableHead = React.forwardRef<
     hideOnMobile?: boolean;
     fullWidth?: boolean;
     gradient?: boolean;
+    luxury?: boolean;
   }
->(({ className, adminResponsive = false, hideOnMobile = false, fullWidth = false, gradient = false, ...props }, ref) => {
+>(({ className, adminResponsive = false, hideOnMobile = false, fullWidth = false, gradient = false, luxury = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -145,6 +156,7 @@ const TableHead = React.forwardRef<
         (isMobile && adminResponsive) ? "hidden sm:table-cell" : "",
         (isMobile && hideOnMobile) ? "hidden sm:table-cell" : "",
         gradient && "bg-gradient-love text-transparent bg-clip-text font-semibold",
+        luxury && "uppercase text-xs tracking-wider font-semibold text-love-700 px-4 py-3",
         fullWidth && "w-full",
         className
       )}
@@ -163,8 +175,9 @@ const TableCell = React.forwardRef<
     highlightInMobile?: boolean;
     fullWidth?: boolean;
     emphasized?: boolean;
+    luxury?: boolean;
   }
->(({ className, mobileLabel, adminResponsive = false, hideOnMobile = false, highlightInMobile = false, fullWidth = false, emphasized = false, ...props }, ref) => {
+>(({ className, mobileLabel, adminResponsive = false, hideOnMobile = false, highlightInMobile = false, fullWidth = false, emphasized = false, luxury = false, ...props }, ref) => {
   const isMobile = useIsMobile()
   
   return (
@@ -178,6 +191,7 @@ const TableCell = React.forwardRef<
         (isMobile && hideOnMobile) ? "hidden sm:table-cell" : "",
         (isMobile && highlightInMobile) ? "font-medium text-foreground" : "",
         emphasized && "font-medium text-love-700",
+        luxury && "px-4 py-3 text-love-800",
         fullWidth && "w-full",
         className
       )}
@@ -192,13 +206,15 @@ const TableCaption = React.forwardRef<
   HTMLTableCaptionElement,
   React.HTMLAttributes<HTMLTableCaptionElement> & {
     elegant?: boolean;
+    luxury?: boolean;
   }
->(({ className, elegant = false, ...props }, ref) => (
+>(({ className, elegant = false, luxury = false, ...props }, ref) => (
   <caption
     ref={ref}
     className={cn(
       "mt-4 text-sm text-muted-foreground",
       elegant && "font-display italic text-love-600/70",
+      luxury && "font-medium text-love-600 text-xs tracking-wide",
       className
     )}
     {...props}

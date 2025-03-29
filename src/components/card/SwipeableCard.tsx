@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,16 +50,17 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
       onRest: () => {
         if (!active && trigger) {
           if (mx > 0) {
-            onSwipeRight();
+            handleSwipeRight();
           } else if (mx < 0) {
-            onSwipeLeft();
+            handleSwipeLeft();
           }
         }
       }
     });
   });
 
-  const swipeRight = useCallback(() => {
+  // Fix the binding issue by wrapping the functions with useCallback
+  const handleSwipeRight = useCallback(() => {
     if (isSwiped) return;
     setIsSwiped(true);
     api.start({
@@ -77,9 +79,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
         if (onSwipeRight) onSwipeRight();
       }
     });
-  }, [isSwiped, api, onSwipeRight]);
+  }, [api, isSwiped, onSwipeRight]);
 
-  const swipeLeft = useCallback(() => {
+  const handleSwipeLeft = useCallback(() => {
     if (isSwiped) return;
     setIsSwiped(true);
     api.start({
@@ -98,9 +100,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
         if (onSwipeLeft) onSwipeLeft();
       }
     });
-  }, [isSwiped, api, onSwipeLeft]);
+  }, [api, isSwiped, onSwipeLeft]);
 
-  const undoSwipe = useCallback(() => {
+  const handleUndoSwipe = useCallback(() => {
     if (onUndo) {
       api.start({
         x: 0,
@@ -116,11 +118,11 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
   useEffect(() => {
     const keyPressHandler = (event: KeyboardEvent) => {
       if (event.key === 'ArrowRight') {
-        swipeRight();
+        handleSwipeRight();
       } else if (event.key === 'ArrowLeft') {
-        swipeLeft();
+        handleSwipeLeft();
       } else if (event.key === 'z' && (event.ctrlKey || event.metaKey)) {
-        undoSwipe();
+        handleUndoSwipe();
       }
     };
 
@@ -129,7 +131,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
     return () => {
       window.removeEventListener('keydown', keyPressHandler);
     };
-  }, [swipeRight, swipeLeft, undoSwipe]);
+  }, [handleSwipeRight, handleSwipeLeft, handleUndoSwipe]);
 
   return (
     <animated.div
@@ -156,7 +158,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
             <p className="text-gray-600">{bio}</p>
           </div>
           <div className="flex justify-around mt-4">
-            <Button variant="destructive" onClick={swipeLeft}>
+            <Button variant="destructive" onClick={handleSwipeLeft}>
               <X className="h-5 w-5 mr-2" />
               Decline
             </Button>
@@ -164,7 +166,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
               <Info className="h-5 w-5 mr-2" />
               Details
             </Button>
-            <Button onClick={swipeRight}>
+            <Button onClick={handleSwipeRight}>
               <Heart className="h-5 w-5 mr-2" />
               Accept
             </Button>

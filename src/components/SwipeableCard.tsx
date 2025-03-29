@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Animated, PanResponder, View, StyleSheet, Dimensions, Image } from 'react-native';
 
@@ -16,6 +17,8 @@ interface SwipeableCardProps {
 const SwipeableCard: React.FC<SwipeableCardProps> = ({ data, renderCard, onSwipeRight, onSwipeLeft, onCardRemoved }) => {
   const [cardIndex, setCardIndex] = useState(0);
   const pan = useRef(new Animated.ValueXY()).current;
+  
+  // Use interpolation instead of directly accessing animated values
   const rotate = pan.x.interpolate({
     inputRange: [-screenWidth / 2, 0, screenWidth / 2],
     outputRange: ['-10deg', '0deg', '10deg'],

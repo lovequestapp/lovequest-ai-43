@@ -2,9 +2,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { useIsMobile, useBreakpoint } from '@/hooks/use-mobile';
-import { Menu, Users, BarChart2, Settings, LogOut, FileText, Bell, Home, X, ChevronRight, Edit, Save } from 'lucide-react';
+import { Menu, Users, BarChart2, Settings, LogOut, FileText, Bell, Home, X, ChevronRight, Edit, Save, Heart, Calendar, Search, MessageSquare, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface AdminMobileContainerProps {
   children: React.ReactNode;
@@ -79,7 +80,7 @@ const AdminMobileContainer = ({
       .admin-stats-grid {
         width: 100%;
         grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-        gap: 8px;
+        gap: 12px;
       }
       
       /* Fix overflowing content */
@@ -94,6 +95,24 @@ const AdminMobileContainer = ({
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+      
+      /* Luxury styling */
+      .luxury-card {
+        background: linear-gradient(145deg, rgba(255,255,255,1) 0%, rgba(249,246,251,1) 100%);
+        border: 1px solid rgba(237, 233, 254, 0.5);
+        box-shadow: 0 10px 25px -5px rgba(215, 187, 247, 0.1), 0 8px 10px -6px rgba(166, 108, 212, 0.05);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+      }
+      
+      .luxury-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px -8px rgba(215, 187, 247, 0.2), 0 10px 15px -3px rgba(166, 108, 212, 0.1);
+      }
+      
+      .luxury-gradient {
+        background: linear-gradient(135deg, var(--love-200), var(--passion-200));
       }
       
       /* Smooth transitions for edit mode */
@@ -113,28 +132,41 @@ const AdminMobileContainer = ({
         height: 42px !important;
         padding: 0.75rem 1rem !important;
         font-size: 1rem !important;
-        border-radius: 0.5rem !important;
+        border-radius: 0.75rem !important;
         width: 100% !important;
+        border-color: rgba(226, 213, 250, 0.5) !important;
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        transition: all 0.2s ease !important;
+      }
+      
+      .admin-form input:focus,
+      .admin-form select:focus,
+      .admin-form textarea:focus {
+        border-color: rgba(226, 213, 250, 0.8) !important;
+        box-shadow: 0 0 0 2px rgba(226, 213, 250, 0.25) !important;
+        background-color: white !important;
       }
       
       .admin-form .form-group,
       .admin-form .form-field {
-        margin-bottom: 1rem !important;
+        margin-bottom: 1.25rem !important;
       }
       
       .admin-form label {
         display: block;
         margin-bottom: 0.5rem;
         font-weight: 500;
-        color: #374151;
+        color: var(--love-800);
       }
       
       /* Add user form styling */
       .add-user-form {
-        background: white;
+        background: rgba(255,255,255,0.9);
+        backdrop-filter: blur(10px);
         padding: 1.5rem;
-        border-radius: 0.75rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-radius: 1rem;
+        box-shadow: 0 10px 25px -5px rgba(215, 187, 247, 0.1), 0 8px 10px -6px rgba(166, 108, 212, 0.05);
+        border: 1px solid rgba(237, 233, 254, 0.5);
         margin-bottom: 2rem;
       }
       
@@ -143,7 +175,9 @@ const AdminMobileContainer = ({
         margin-bottom: 1.5rem;
         font-size: 1.25rem;
         font-weight: 600;
-        color: #111827;
+        background: linear-gradient(to right, var(--love-600), var(--passion-600));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
       }
       
       /* Form grid for better layout */
@@ -163,6 +197,57 @@ const AdminMobileContainer = ({
         .form-grid {
           grid-template-columns: 1fr 1fr 1fr;
         }
+      }
+      
+      /* Table styling */
+      .luxury-table {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid rgba(243, 232, 255, 0.6);
+      }
+      
+      .luxury-table thead tr {
+        background: linear-gradient(to right, var(--love-50), var(--passion-50));
+      }
+      
+      .luxury-table th {
+        font-weight: 600;
+        color: var(--love-800);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        padding: 12px 16px;
+      }
+      
+      .luxury-table tr {
+        border-bottom: 1px solid rgba(243, 232, 255, 0.4);
+        transition: background-color 0.2s ease;
+      }
+      
+      .luxury-table tr:hover {
+        background-color: rgba(254, 242, 254, 0.5);
+      }
+      
+      .luxury-table td {
+        padding: 12px 16px;
+      }
+      
+      /* Button enhancements */
+      .btn-luxury {
+        background: linear-gradient(to right, var(--love-500), var(--passion-500));
+        border: none;
+        color: white;
+        font-weight: 500;
+        padding: 10px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(236, 72, 153, 0.15);
+      }
+      
+      .btn-luxury:hover {
+        box-shadow: 0 6px 16px rgba(236, 72, 153, 0.25);
+        transform: translateY(-1px);
       }
     `;
     document.head.appendChild(style);
@@ -219,36 +304,60 @@ const AdminMobileContainer = ({
     if (!menuOpen) return null;
     
     return (
-      <div className="fixed inset-0 bg-black/50 z-50 animate-fadeIn" onClick={() => setMenuOpen(false)}>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 animate-fadeIn" onClick={() => setMenuOpen(false)}>
         <div className="absolute top-0 left-0 h-full w-3/4 max-w-xs bg-white shadow-xl animate-slideInLeft" onClick={e => e.stopPropagation()}>
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h2 className="font-bold text-lg">Admin Menu</h2>
-            <button onClick={() => setMenuOpen(false)} className="p-2 rounded-full hover:bg-gray-100">
-              <X className="h-5 w-5" />
+          <div className="flex items-center justify-between p-4 border-b border-love-100 bg-gradient-to-r from-love-50 to-passion-50">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-gradient-love flex items-center justify-center">
+                <Heart className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="font-bold text-lg text-love-800">Admin Panel</h2>
+            </div>
+            <button onClick={() => setMenuOpen(false)} className="p-2 rounded-full hover:bg-white/30">
+              <X className="h-5 w-5 text-love-700" />
             </button>
           </div>
           
-          <div className="p-2">
+          <div className="p-2 mt-2">
+            <div className="mb-4 px-2">
+              <div className="flex items-center gap-3 p-3 bg-love-50 rounded-lg">
+                <Avatar>
+                  <AvatarImage src="https://i.pravatar.cc/150?u=admin" />
+                  <AvatarFallback className="bg-love-200 text-love-700">AD</AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-medium text-love-900">Admin User</div>
+                  <div className="text-xs text-love-600">admin@example.com</div>
+                </div>
+              </div>
+            </div>
             <NavItem icon={<Home />} label="Dashboard" active />
-            <NavItem icon={<Users />} label="Users" />
+            <NavItem icon={<Users />} label="User Management" />
+            <NavItem icon={<Calendar />} label="Appointments" />
+            <NavItem icon={<MessageSquare />} label="Messages" />
             <NavItem icon={<BarChart2 />} label="Analytics" />
             <NavItem icon={<Bell />} label="Notifications" />
             <NavItem icon={<Settings />} label="Settings" />
-            <NavItem icon={<LogOut />} label="Logout" />
+            
+            <div className="border-t border-love-100 mt-4 pt-4">
+              <NavItem icon={<LogOut />} label="Logout" danger />
+            </div>
           </div>
         </div>
       </div>
     );
   };
   
-  const NavItem = ({ icon, label, active = false }) => (
+  const NavItem = ({ icon, label, active = false, danger = false }) => (
     <div className={cn(
-      "flex items-center p-3 rounded-lg mb-1 cursor-pointer",
-      active ? "bg-blue-500 text-white" : "hover:bg-gray-100"
+      "flex items-center p-3 rounded-lg mb-1.5 cursor-pointer transition-all duration-200",
+      active ? "bg-gradient-to-r from-love-500 to-passion-500 text-white shadow-md shadow-love-200" : 
+      danger ? "text-red-600 hover:bg-red-50" :
+      "hover:bg-love-50 text-love-800"
     )}>
-      <div className="mr-3">{icon}</div>
-      <span>{label}</span>
-      <ChevronRight className="h-4 w-4 ml-auto" />
+      <div className={cn("mr-3", active ? "text-white" : danger ? "text-red-500" : "text-love-600")}>{icon}</div>
+      <span className={cn(active ? "font-medium" : "")}>{label}</span>
+      <ChevronRight className={cn("h-4 w-4 ml-auto", active ? "text-white" : danger ? "text-red-400" : "text-love-400")} />
     </div>
   );
   
@@ -314,7 +423,7 @@ const AdminMobileContainer = ({
   });
   
   return (
-    <div className="min-h-screen flex w-full overflow-hidden bg-gray-50">
+    <div className="min-h-screen flex w-full overflow-hidden bg-gradient-to-br from-white to-love-50">
       {/* Mobile Menu Overlay */}
       <MobileMenu />
       
@@ -330,14 +439,19 @@ const AdminMobileContainer = ({
       >
         {/* Header for mobile */}
         {isMobile && (
-          <div className="sticky top-0 z-10 w-full bg-white shadow-md border-b p-3">
+          <div className="sticky top-0 z-10 w-full bg-white/80 backdrop-blur-md shadow-md border-b border-love-100 p-3">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-bold text-gray-800 truncate-text">Admin Dashboard</h1>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-gradient-love flex items-center justify-center shadow-md">
+                  <Heart className="h-4 w-4 text-white" />
+                </div>
+                <h1 className="text-xl font-bold text-love-800 truncate-text">Admin Dashboard</h1>
+              </div>
               <button 
                 onClick={() => setMenuOpen(true)}
-                className="p-2 rounded-full hover:bg-gray-100"
+                className="p-2 rounded-full hover:bg-love-50/50 text-love-700"
               >
-                <Menu className="h-6 w-6 text-gray-600" />
+                <Menu className="h-6 w-6" />
               </button>
             </div>
           </div>
@@ -349,12 +463,36 @@ const AdminMobileContainer = ({
           fullWidth ? "w-full" : "max-w-full mx-auto",
           padding ? "px-3 py-3 sm:px-4 sm:py-4" : ""
         )}>
-          {/* Stat Cards - Fix grid for small screens */}
-          <div className="admin-stats-grid mb-4">
-            <StatCard icon={<Users className="h-8 w-8 text-blue-500" />} title="Users" value="1,245" />
-            <StatCard icon={<Bell className="h-8 w-8 text-blue-500" />} title="Alerts" value="18" />
-            <StatCard icon={<BarChart2 className="h-8 w-8 text-blue-500" />} title="Matches" value="843" />
-            <StatCard icon={<FileText className="h-8 w-8 text-blue-500" />} title="Reports" value="24" />
+          {/* Stat Cards - Improved luxury design */}
+          <div className="admin-stats-grid mb-6">
+            <StatCard 
+              icon={<Users className="h-8 w-8 text-love-500" />} 
+              title="Active Users" 
+              value="1,245" 
+              trend="+5.2%"
+              trendUp={true}
+            />
+            <StatCard 
+              icon={<Heart className="h-8 w-8 text-love-500" />} 
+              title="Matches" 
+              value="843"
+              trend="+12.8%"
+              trendUp={true}
+            />
+            <StatCard 
+              icon={<MessageSquare className="h-8 w-8 text-love-500" />} 
+              title="Messages" 
+              value="15.3k"
+              trend="+8.7%"
+              trendUp={true}
+            />
+            <StatCard 
+              icon={<User className="h-8 w-8 text-love-500" />} 
+              title="New Signups" 
+              value="127"
+              trend="+3.2%"
+              trendUp={true}
+            />
           </div>
           
           {/* Pass the enhanced children with edit functionality */}
@@ -364,7 +502,7 @@ const AdminMobileContainer = ({
       
       {/* Bottom navigation for mobile */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t z-40">
+        <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-love-100 z-40">
           <div className="flex justify-around items-center">
             <BottomNavItem icon={<Home className="h-5 w-5" />} label="Home" active />
             <BottomNavItem icon={<Users className="h-5 w-5" />} label="Users" />
@@ -376,16 +514,16 @@ const AdminMobileContainer = ({
       
       {/* Edit mode indicators */}
       {editingUser !== null && (
-        <div className="fixed bottom-16 right-4 p-4 bg-white shadow-lg rounded-lg z-50 flex space-x-3">
+        <div className="fixed bottom-16 right-4 p-4 bg-white shadow-lg rounded-lg z-50 flex space-x-3 border border-love-100">
           <button 
             onClick={() => handleSaveUser(editingUser)}
-            className="flex items-center justify-center p-2 bg-green-500 text-white rounded-full hover:bg-green-600"
+            className="flex items-center justify-center p-2 bg-gradient-to-r from-love-500 to-passion-500 text-white rounded-full hover:shadow-md transition-all duration-200"
           >
             <Save className="h-5 w-5" />
           </button>
           <button 
             onClick={handleCancelEdit}
-            className="flex items-center justify-center p-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300"
+            className="flex items-center justify-center p-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-all duration-200"
           >
             <X className="h-5 w-5" />
           </button>
@@ -396,18 +534,30 @@ const AdminMobileContainer = ({
 };
 
 // Helper components
-const StatCard = ({ icon, title, value }) => (
-  <div className="bg-white rounded-lg shadow-sm p-3 border flex flex-col items-center justify-center text-center">
-    <div className="mb-1">{icon}</div>
-    <h3 className="text-sm font-medium text-gray-600 truncate-text">{title}</h3>
-    <p className="text-2xl font-bold truncate-text">{value}</p>
+const StatCard = ({ icon, title, value, trend, trendUp = true }) => (
+  <div className="luxury-card p-4 flex flex-col items-center justify-center text-center">
+    <div className="mb-2 p-3 rounded-full bg-love-50 text-love-700">{icon}</div>
+    <h3 className="text-sm font-medium text-love-700 truncate-text mt-1">{title}</h3>
+    <p className="text-2xl font-bold text-love-900 truncate-text">{value}</p>
+    {trend && (
+      <div className={cn(
+        "text-xs mt-1 flex items-center font-medium",
+        trendUp ? "text-green-600" : "text-red-600"
+      )}>
+        <span>{trend}</span>
+        <span className={cn(
+          "ml-1", 
+          trendUp ? "rotate-0" : "rotate-180"
+        )}>↑</span>
+      </div>
+    )}
   </div>
 );
 
 const BottomNavItem = ({ icon, label, active = false }) => (
   <button className={cn(
-    "flex flex-col items-center justify-center py-3 px-2 w-full",
-    active ? "text-blue-500" : "text-gray-500 hover:text-blue-400"
+    "flex flex-col items-center justify-center py-3 px-2 w-full transition-colors duration-200",
+    active ? "text-love-600" : "text-gray-500 hover:text-love-400"
   )}>
     {icon}
     <span className="text-xs mt-1 truncate-text">{label}</span>
