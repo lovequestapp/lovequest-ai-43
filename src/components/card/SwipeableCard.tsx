@@ -26,6 +26,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
   const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
   const threshold = windowWidth * 0.3;
   const navigate = useNavigate();
+  
+  // State variables to track current drag position for indicator visibility
+  const [dragX, setDragX] = useState(0);
 
   const handleSwipeRight = () => {
     setExitX(windowWidth * 1.5);
@@ -89,6 +92,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
         } else {
           controls.start({ x: 0, rotate: 0 });
         }
+        
+        // Reset drag position
+        setDragX(0);
       }}
       onDrag={(e, info) => {
         controls.set({ 
@@ -96,6 +102,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
           rotate: info.offset.x / 20,
           filter: `brightness(${1 - Math.abs(info.offset.x) / (windowWidth * 1.5) * 0.2})`
         });
+        
+        // Update drag position for indicators
+        setDragX(info.offset.x);
       }}
       onClick={handleCardClick}
       className="will-change-transform will-change-opacity"
@@ -126,13 +135,13 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
         <div className="h-full w-full relative overflow-hidden rounded-lg">
           {children}
           
-          {/* Swipe indicators */}
+          {/* Swipe indicators - Fixed version */}
           <motion.div 
             className="absolute top-1/2 left-6 transform -translate-y-1/2 bg-red-500 text-white font-bold text-xl p-3 rounded-lg"
             animate={{ 
-              opacity: info => info.point.x < -50 ? 1 : 0,
+              opacity: dragX < -50 ? 1 : 0,
               rotate: -30,
-              scale: info => info.point.x < -100 ? 1.2 : 1
+              scale: dragX < -100 ? 1.2 : 1
             }}
           >
             NOPE
@@ -141,9 +150,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
           <motion.div 
             className="absolute top-1/2 right-6 transform -translate-y-1/2 bg-green-500 text-white font-bold text-xl p-3 rounded-lg"
             animate={{ 
-              opacity: info => info.point.x > 50 ? 1 : 0,
+              opacity: dragX > 50 ? 1 : 0,
               rotate: 30,
-              scale: info => info.point.x > 100 ? 1.2 : 1
+              scale: dragX > 100 ? 1.2 : 1
             }}
           >
             LIKE
