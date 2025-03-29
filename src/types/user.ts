@@ -27,4 +27,52 @@ export type User = {
   role: 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial';
   isBanned: boolean;
   verificationStatus: 'verified' | 'unverified' | 'pending' | 'rejected';
+  // Additional properties needed by components
+  voiceIntro?: string;
+  favoriteMusic?: string[];
+  bankDetails?: {
+    accountName: string;
+    accountNumber: string;
+    bankName: string;
+    routingNumber: string;
+    accountType: string;
+  };
+};
+
+// Export types used by other components
+export type GiftInventory = {
+  rose: number;
+  heart: number;
+  teddy: number;
+};
+
+export type Message = {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  timestamp: Date;
+  isRead: boolean;
+  attachments?: string[];
+};
+
+export type BoostType = 'local' | 'international' | 'super';
+export type BoostLevelType = BoostType | 'none';
+
+export type BlogPostType = {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+  likes: number;
+  comments: {
+    id: string;
+    postId: string;
+    userId: string;
+    userName: string;
+    content: string;
+    createdAt: Date;
+  }[];
+  tags: string[];
 };
