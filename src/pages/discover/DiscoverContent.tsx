@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { SwipeableCard } from '@/components';
-import { UserWithCoordinates } from '@/types/user'; // Import from types/user
+import SwipeableCard from '@/components/card/SwipeableCard';
+import { UserWithCoordinates } from '@/types/user'; 
 import NoMatchesCard from './NoMatchesCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,15 +79,12 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
     <div className="relative h-[600px] w-full flex justify-center items-center">
       {currentProfile && (
         <SwipeableCard
-          name={currentProfile.name}
-          age={currentProfile.age}
-          bio={currentProfile.bio}
-          image={currentProfile.image}
           onSwipeRight={handleSwipeRight}
           onSwipeLeft={handleSwipeLeft}
-          onUndo={() => {}} // Empty function, we don't have undo functionality yet
-          onShowDetails={() => {}} // Empty function, we don't have details view yet
-        />
+          cardClassName="w-full max-w-sm overflow-hidden"
+        >
+          {renderCard(currentProfile)}
+        </SwipeableCard>
       )}
     </div>
   );

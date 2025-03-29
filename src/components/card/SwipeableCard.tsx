@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { useDrag } from '@use-gesture/react';
 import { Card } from '../ui/card';
+import { getVelocityValue } from './CardAnimation';
 
 interface SwipeableCardProps {
   onSwipeLeft?: () => void;
@@ -24,7 +25,9 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
 
   // Fixed useDrag implementation to properly handle swipes
   const bindDrag = useDrag(({ down, movement: [mx], direction: [xDir], velocity }) => {
-    const trigger = velocity > 0.2; // Velocity threshold for quick swipes
+    // Convert velocity to a numeric value if it's a Vector2
+    const velocityValue = getVelocityValue(velocity);
+    const trigger = velocityValue > 0.2; // Velocity threshold for quick swipes
     
     if (!down) {
       // If released beyond threshold or with sufficient velocity
@@ -37,13 +40,13 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
         controls.start({ x: -windowWidth * 1.5 });
         onSwipeLeft && onSwipeLeft();
       } else {
-        controls.start({ x: 0, rotation: 0 });
+        controls.start({ x: 0, rotate: 0 });
       }
     } else {
-      // While dragging
+      // While dragging - use rotate instead of rotation
       controls.start({ 
         x: mx, 
-        rotation: mx / 20,
+        rotate: mx / 20,
         transition: { duration: 0 } 
       });
     }

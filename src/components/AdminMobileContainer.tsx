@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -42,13 +41,13 @@ const AdminMobileContainer = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<number | null>(null);
   const [userFormData, setUserFormData] = useState({});
+  const [activeTab, setActiveTab] = useState("users");
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, logout, updateUserData } = useUser();
   
   // Hide export/import buttons and fix overflow
   useEffect(() => {
-    // Create a style element
     const style = document.createElement('style');
     style.textContent = `
       /* Hide export/import buttons */
@@ -286,16 +285,13 @@ const AdminMobileContainer = ({
     };
   }, []);
   
-  // Enhanced edit mode handlers
   const handleEditUser = useCallback((userId: number, userData: any) => {
-    // Prevent multiple edit sessions
     if (editingUser !== null) {
       handleCancelEdit();
     }
     
     setEditingUser(userId);
     setUserFormData(userData);
-    // Add smooth animation class to the edited row
     const row = document.querySelector(`[data-user-id="${userId}"]`);
     if (row) {
       row.classList.add('edit-transition');
@@ -303,9 +299,7 @@ const AdminMobileContainer = ({
   }, [editingUser]);
   
   const handleSaveUser = useCallback((userId: number) => {
-    // Apply the actual update to the user data using the context function
     if (userFormData) {
-      // Convert the userId to string since our User type uses string IDs
       updateUserData(String(userId), userFormData);
     }
     
@@ -315,13 +309,11 @@ const AdminMobileContainer = ({
       description: "The user's information has been saved"
     });
     
-    // Remove animation class
     const row = document.querySelector(`[data-user-id="${userId}"]`);
     if (row) {
       row.classList.remove('edit-transition');
     }
     
-    // Allow click events after a short delay
     setTimeout(() => {
       document.body.style.pointerEvents = 'auto';
     }, 300);
@@ -336,7 +328,6 @@ const AdminMobileContainer = ({
     setEditingUser(null);
     setUserFormData({});
     
-    // Allow click events again
     document.body.style.pointerEvents = 'auto';
   }, [editingUser]);
   
@@ -356,7 +347,19 @@ const AdminMobileContainer = ({
     toast.success("Exited admin mode");
   };
   
-  // Side drawer menu for mobile
+  useEffect(() => {
+    const handleTabChange = (event: any) => {
+      if (event.detail) {
+        setActiveTab(event.detail);
+      }
+    };
+    
+    window.addEventListener('setAdminTab', handleTabChange);
+    return () => {
+      window.removeEventListener('setAdminTab', handleTabChange);
+    };
+  }, []);
+  
   const MobileMenu = () => {
     if (!menuOpen) return null;
     
@@ -406,7 +409,6 @@ const AdminMobileContainer = ({
               onClick={() => {
                 navigate('/admin');
                 setMenuOpen(false);
-                // Set active tab to users
                 window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'users' }));
               }}
             />
@@ -417,7 +419,6 @@ const AdminMobileContainer = ({
               onClick={() => {
                 navigate('/admin');
                 setMenuOpen(false);
-                // Set active tab to subscriptions
                 window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'subscriptions' }));
               }}
             />
@@ -428,7 +429,6 @@ const AdminMobileContainer = ({
               onClick={() => {
                 navigate('/admin');
                 setMenuOpen(false);
-                // Set active tab to moderation
                 window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'moderation' }));
               }}
             />
@@ -439,7 +439,6 @@ const AdminMobileContainer = ({
               onClick={() => {
                 navigate('/admin');
                 setMenuOpen(false);
-                // Set active tab to analytics
                 window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'analytics' }));
               }}
             />
@@ -450,7 +449,6 @@ const AdminMobileContainer = ({
               onClick={() => {
                 navigate('/admin');
                 setMenuOpen(false);
-                // Set active tab to settings
                 window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'settings' }));
               }}
             />
@@ -496,22 +494,18 @@ const AdminMobileContainer = ({
     </div>
   );
   
-  // Enhance input fields in any forms within AdminMobileContainer
   const enhanceInputs = (node: React.ReactNode): React.ReactNode => {
     if (!React.isValidElement(node)) {
       return node;
     }
     
-    // If it's an Input component, add the large prop
     if (node.type === Input) {
-      // Fixed TypeScript error by using proper typing for the props
       return React.cloneElement(node as React.ReactElement<any>, { 
         ...node.props,
         large: true 
       });
     }
     
-    // If it has children, recursively enhance them
     if (node.props.children) {
       const children = React.Children.map(node.props.children, enhanceInputs);
       return React.cloneElement(node, {}, children);
@@ -520,7 +514,6 @@ const AdminMobileContainer = ({
     return node;
   };
   
-  // Create modified children with edit functionality and enhanced inputs
   const enhancedChildren = React.Children.map(children, child => {
     if (!React.isValidElement(child)) {
       return child;
@@ -528,9 +521,7 @@ const AdminMobileContainer = ({
     
     let enhancedChild = child;
     
-    // Check if it's an admin table that needs edit functionality
     if (child.props?.className?.includes('admin-table')) {
-      // Fixed TypeScript error using proper typing
       enhancedChild = React.cloneElement(child as React.ReactElement<any>, {
         ...child.props,
         editingUser,
@@ -541,11 +532,9 @@ const AdminMobileContainer = ({
       });
     }
     
-    // Add admin-form class to forms within the container
     if (child.props?.className?.includes('form') || 
         child.type === 'form' || 
         (typeof child.type === 'string' && child.type.toLowerCase() === 'form')) {
-      // Fixed TypeScript error using proper typing
       const newClassName = `${child.props.className || ''} admin-form`;
       enhancedChild = React.cloneElement(enhancedChild as React.ReactElement<any>, { 
         ...enhancedChild.props,
@@ -553,16 +542,13 @@ const AdminMobileContainer = ({
       });
     }
     
-    // Enhance inputs recursively
     return enhanceInputs(enhancedChild);
   });
   
   return (
     <div className="min-h-screen flex w-full overflow-hidden bg-gradient-to-br from-white to-love-50">
-      {/* Mobile Menu Overlay */}
       <MobileMenu />
       
-      {/* Main Content */}
       <div 
         className={cn(
           "admin-dashboard relative flex-1",
@@ -572,7 +558,6 @@ const AdminMobileContainer = ({
           className
         )}
       >
-        {/* Header for mobile */}
         {isMobile && (
           <div className="sticky top-0 z-10 w-full bg-white/80 backdrop-blur-md shadow-md border-b border-love-100 p-3">
             <div className="flex items-center justify-between">
@@ -592,18 +577,15 @@ const AdminMobileContainer = ({
           </div>
         )}
         
-        {/* Main content area */}
         <div className={cn(
           "w-full",
           fullWidth ? "w-full" : "max-w-full mx-auto",
           padding ? "px-3 py-3 sm:px-4 sm:py-4" : ""
         )}>
-          {/* Pass the enhanced children with edit functionality */}
           {enhancedChildren}
         </div>
       </div>
       
-      {/* Bottom navigation for mobile */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md shadow-lg border-t border-love-100 z-40">
           <div className="flex justify-around items-center">
@@ -641,7 +623,6 @@ const AdminMobileContainer = ({
         </div>
       )}
       
-      {/* Exit to App Button (visible on all devices) */}
       <div 
         className="exit-admin" 
         title="Exit to App"
@@ -650,7 +631,6 @@ const AdminMobileContainer = ({
         <Home className="h-5 w-5" />
       </div>
       
-      {/* Edit mode indicators */}
       {editingUser !== null && (
         <div className="fixed bottom-16 right-4 p-4 bg-white shadow-lg rounded-lg z-50 flex space-x-3 border border-love-100">
           <button 
@@ -671,7 +651,6 @@ const AdminMobileContainer = ({
   );
 };
 
-// Helper components
 const BottomNavItem = ({ icon, label, active = false, onClick }) => (
   <button 
     className={cn(
