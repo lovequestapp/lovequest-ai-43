@@ -11,7 +11,7 @@ export type User = {
   gender: 'male' | 'female' | 'non-binary';
   interestedIn: ('male' | 'female' | 'non-binary')[];
   popularityPoints: number;
-  premiumStatus: 'basic' | 'premium' | 'vip';
+  premiumStatus: 'basic' | 'premium' | 'vip' | 'trial';
   giftInventory: GiftInventory;
   receivedGifts: GiftInventory;
   compatibilityScore: number;

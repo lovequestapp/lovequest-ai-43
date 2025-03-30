@@ -1,26 +1,27 @@
 
+"use client"
+
 import * as React from "react"
 
 const MOBILE_BREAKPOINT = 768
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean>(
-    typeof window !== 'undefined' ? window.innerWidth < MOBILE_BREAKPOINT : false
-  )
+  const [isMobile, setIsMobile] = React.useState<boolean>(false)
 
   React.useEffect(() => {
+    // Set initial value based on window width
+    const checkMobile = () => window.innerWidth < MOBILE_BREAKPOINT
+    setIsMobile(checkMobile())
+    
     // Debounced resize handler to prevent excessive re-renders
     let resizeTimer: ReturnType<typeof setTimeout>;
     
     const handleResize = () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
-        setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+        setIsMobile(checkMobile());
       }, 100);
     }
-    
-    // Set initial value
-    handleResize();
     
     // Add event listener
     window.addEventListener("resize", handleResize);
@@ -81,8 +82,7 @@ export function useBreakpoint() {
 // Admin layout management hook
 export function useAdminLayout() {
   const isMobile = useIsMobile()
-  const breakpoint = useBreakpoint()
-  const [sidebarOpen, setSidebarOpen] = React.useState(!isMobile)
+  const [sidebarOpen, setSidebarOpen] = React.useState(false)
   
   React.useEffect(() => {
     // Close sidebar by default on mobile
@@ -99,7 +99,6 @@ export function useAdminLayout() {
   
   return {
     isMobile,
-    breakpoint,
     sidebarOpen,
     toggleSidebar
   }
