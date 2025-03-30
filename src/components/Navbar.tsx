@@ -35,11 +35,11 @@ export const Navbar = () => {
                 Discover
               </Button>
               <Button 
-                variant={isActive("/explore") ? "default" : "ghost"}
-                className={isActive("/explore") ? "bg-love-500 hover:bg-love-600" : ""}
-                onClick={() => navigate("/explore")}
+                variant={isActive("/matches") ? "default" : "ghost"}
+                className={isActive("/matches") ? "bg-love-500 hover:bg-love-600" : ""}
+                onClick={() => navigate("/matches")}
               >
-                Explore
+                Matches
               </Button>
               <Button 
                 variant={isActive("/messages") ? "default" : "ghost"}
@@ -55,8 +55,8 @@ export const Navbar = () => {
                 <Button 
                   variant="ghost" 
                   size="icon"
-                  onClick={() => navigate("/explore")}
-                  className={isActive("/explore") ? "bg-love-100 text-love-700" : ""}
+                  onClick={() => navigate("/matches")}
+                  className={isActive("/matches") ? "bg-love-100 text-love-700" : ""}
                 >
                   <Search className="h-5 w-5" />
                 </Button>

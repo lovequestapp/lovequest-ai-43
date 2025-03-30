@@ -8,7 +8,7 @@ import Profile from './pages/Profile';
 import Messages from './pages/Messages';
 import EditProfile from './pages/edit-profile';
 import Discover from './pages/discover';
-import Explore from './pages/Explore';  // Using correct casing
+import Matches from './pages/Matches';  // Updated import path
 import Admin from './pages/Admin';
 import ProtectedRoute from './components/protected-route';
 import { useUser } from './context/UserContext';
@@ -219,10 +219,10 @@ function App() {
         } 
       />
       <Route 
-        path="/explore" 
+        path="/matches" 
         element={
           <ProtectedRoute>
-            <Explore />
+            <Matches />
           </ProtectedRoute>
         } 
       />
