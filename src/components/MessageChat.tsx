@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,6 +34,10 @@ import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { toast } from "sonner";
 import { useUser } from '@/context/UserContext';
+import ScheduleDateAction from './message-actions/ScheduleDateAction';
+import ShareLocationAction from './message-actions/ShareLocationAction';
+import SetReminderAction from './message-actions/SetReminderAction';
+import { QuickActionType } from '@/utils/messageActions';
 
 interface Message {
   id: string;
@@ -77,6 +80,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const [showQuickActions, setShowQuickActions] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [activeQuickAction, setActiveQuickAction] = useState<QuickActionType | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -92,7 +96,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const chatFooterRef = useRef<HTMLDivElement>(null);
 
-  // Enhanced gifts array with premium options
   const gifts = [
     { 
       id: 'rose', 
@@ -127,11 +130,9 @@ const MessageChat: React.FC<MessageChatProps> = ({
       isPremium: true
     },
   ];
-  
-  // Emoji shortcuts for quick access
+
   const quickEmojis = ['❤️', '😊', '😍', '🥰', '👋', '🔥', '😘', '👀'];
-  
-  // Quick message suggestions
+
   const quickActions = [
     { icon: <Calendar size={16} />, label: "Schedule Date", action: () => handleQuickAction("schedule") },
     { icon: <MapPin size={16} />, label: "Share Location", action: () => handleQuickAction("location") },
@@ -139,30 +140,34 @@ const MessageChat: React.FC<MessageChatProps> = ({
     { icon: <Clock size={16} />, label: "Set Reminder", action: () => handleQuickAction("reminder") },
   ];
 
-  const handleQuickAction = (type: string) => {
+  const handleQuickAction = (type: QuickActionType) => {
     setShowQuickActions(false);
-    
-    switch(type) {
-      case "schedule":
-        toast.info("Schedule a Date", {
-          description: "This feature will be available when we launch!",
-        });
-        setMessageText("Would you like to meet up sometime this week?");
-        setTimeout(() => inputRef.current?.focus(), 100);
-        break;
-      case "location":
-        toast.info("Share Location", {
-          description: "This feature will be available when we launch!",
-        });
-        setMessageText("I'm at a great cafe near downtown. Would you like to join me?");
-        setTimeout(() => inputRef.current?.focus(), 100);
-        break;
-      case "reminder":
-        toast.info("Set Reminder", {
-          description: "This feature will be available when we launch!",
-        });
-        break;
-    }
+    setActiveQuickAction(type);
+  };
+
+  const handleActionClose = () => {
+    setActiveQuickAction(null);
+  };
+  
+  const handleSchedule = (message: string) => {
+    setMessageText(message);
+    setTimeout(() => {
+      handleSendMessage();
+    }, 100);
+  };
+  
+  const handleShareLocation = (message: string) => {
+    setMessageText(message);
+    setTimeout(() => {
+      handleSendMessage();
+    }, 100);
+  };
+  
+  const handleSetReminder = (message: string) => {
+    setMessageText(message);
+    setTimeout(() => {
+      handleSendMessage();
+    }, 100);
   };
 
   const handleSendMessage = () => {
@@ -181,13 +186,13 @@ const MessageChat: React.FC<MessageChatProps> = ({
   };
   
   const handleSelectImage = () => {
+    setShowQuickActions(false);
     fileInputRef.current?.click();
   };
   
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file type and size
       if (!file.type.startsWith('image/')) {
         toast.error("Invalid file type", {
           description: "Please select an image file"
@@ -195,7 +200,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
         return;
       }
       
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         toast.error("File too large", {
           description: "Maximum file size is 5MB"
         });
@@ -222,8 +227,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
   
   const handleSendImage = () => {
     if (selectedImage && imagePreview) {
-      // In a real app, you would upload the image to a server first
-      // and then send the URL in the message
       onSendMessage(imagePreview, 'text');
       toast.success("Image sent!");
       handleCancelImage();
@@ -303,8 +306,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
         description: `Waiting for ${matchName} to accept your call...`,
       });
       
-      // In a real app, this would trigger a WebRTC connection
-      // For now, simulate the match accepting the call after a delay
       setTimeout(() => {
         setIncomingVideoCall(true);
       }, 5000);
@@ -489,7 +490,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
     }
   };
   
-  // Group messages by date for better display
   const groupMessagesByDate = () => {
     const groups: { date: string; messages: Message[] }[] = [];
     
@@ -522,7 +522,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
 
   const messageGroups = groupMessagesByDate();
 
-  // Scroll to bottom on component mount and when messages change
   useEffect(() => {
     const timer = setTimeout(() => {
       scrollToBottom();
@@ -531,7 +530,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
     return () => clearTimeout(timer);
   }, [messages]);
   
-  // Initial setup
   useEffect(() => {
     focusInput();
     
@@ -555,7 +553,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
     };
   }, []);
   
-  // Focus input when matchName changes (conversation switch)
   useEffect(() => {
     focusInput();
   }, [matchName]);
@@ -932,8 +929,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
               onClick={handleSendImage}
               className="bg-love-500 hover:bg-love-600 z-10"
             >
-              <Send size={16} className="mr-2" />
-              Send Image
+              <Send size={16} className="text-white" />
             </Button>
           </div>
         </div>
@@ -1027,6 +1023,24 @@ const MessageChat: React.FC<MessageChatProps> = ({
           )}
         </CardFooter>
       )}
+      
+      <ScheduleDateAction 
+        isOpen={activeQuickAction === 'schedule'} 
+        onClose={handleActionClose}
+        onSchedule={handleSchedule}
+      />
+      
+      <ShareLocationAction 
+        isOpen={activeQuickAction === 'location'} 
+        onClose={handleActionClose}
+        onShare={handleShareLocation}
+      />
+      
+      <SetReminderAction
+        isOpen={activeQuickAction === 'reminder'} 
+        onClose={handleActionClose}
+        onSetReminder={handleSetReminder}
+      />
     </Card>
   );
 };
