@@ -1,602 +1,479 @@
-import React, { useState, useRef } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import GiftShop from '@/components/GiftShop';
-import Monetization from '@/components/Monetization';
-import Blog from '@/components/Blog';
-import PersonalityTraitSelector from '@/components/PersonalityTraitSelector';
-import VoiceRecorder from '@/components/VoiceRecorder';
-import VoicePlayer from '@/components/VoicePlayer';
-import { useUser } from '@/context/UserContext';
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { useUser } from '@/context/UserContext';
+import { supabase } from '@/integrations/supabase/client';
+import MobileContainer from '@/components/MobileContainer';
+import Blog from '@/components/Blog';
+import MonetizationPanel from '@/components/MonetizationPanel';
 import { 
-  User, 
-  MapPin, 
-  Edit2, 
-  Plus, 
-  X, 
-  Heart, 
-  Gift, 
-  ShoppingCart, 
-  Sparkles, 
-  Timer, 
-  Star, 
-  Coins, 
-  FileText,
-  Music,
-  Upload,
-  Camera,
-  Mic
+  Edit, User, MapPin, Heart, Gift, Star, Shield, Calendar, Clock, 
+  Mail, ChevronRight, Music, Users, ArrowLeft, Package
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { toast } from 'sonner';
 
 const Profile = () => {
-  const { currentUser, updateUserProfile, getGiftBenefits } = useUser();
-  const [editing, setEditing] = useState(false);
-  const [profile, setProfile] = useState(currentUser);
-  const [newInterest, setNewInterest] = useState('');
-  const [activeTab, setActiveTab] = useState('profile');
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const isMobile = useIsMobile();
-  
-  if (!currentUser || !profile) {
-    return null;
-  }
-  
-  const handleSave = () => {
-    if (profile) {
-      updateUserProfile(currentUser.id, profile);
-      setEditing(false);
-      toast.success('Profile updated successfully');
-    }
-  };
-  
-  const handleCancel = () => {
-    setProfile(currentUser);
-    setEditing(false);
-  };
-  
-  const handleAddInterest = () => {
-    if (newInterest.trim() && profile) {
-      setProfile({
-        ...profile,
-        interests: [...profile.interests, newInterest.trim()]
-      });
-      setNewInterest('');
-    }
-  };
-  
-  const handleRemoveInterest = (index: number) => {
-    if (profile) {
-      const newInterests = [...profile.interests];
-      newInterests.splice(index, 1);
-      setProfile({
-        ...profile,
-        interests: newInterests
-      });
-    }
-  };
+  const { userId } = useParams();
+  const { currentUser, getUserById, sendGift } = useUser();
+  const [profileUser, setProfileUser] = useState(currentUser);
+  const [isOwnProfile, setIsOwnProfile] = useState(true);
+  const [activeTab, setActiveTab] = useState("profile");
+  const navigate = useNavigate();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && profile) {
-      const photoUrl = URL.createObjectURL(file);
-      const newPhotos = [...profile.photos];
-      newPhotos[0] = photoUrl;
-      setProfile({
-        ...profile,
-        photos: newPhotos
-      });
-    }
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleTraitSelect = (trait: string) => {
-    if (!profile.personalityTraits) {
-      profile.personalityTraits = [];
-    }
-    
-    const traits = [...(profile.personalityTraits || [])];
-    
-    if (traits.includes(trait)) {
-      const index = traits.indexOf(trait);
-      traits.splice(index, 1);
-    } else {
-      if (traits.length < 5) {
-        traits.push(trait);
+  useEffect(() => {
+    // If userId is provided and it's not the current user's ID, fetch that user's profile
+    if (userId && currentUser && userId !== currentUser.id) {
+      const otherUser = getUserById(userId);
+      if (otherUser) {
+        setProfileUser(otherUser);
+        setIsOwnProfile(false);
+      } else {
+        // Handle case where user is not found
+        toast.error("User not found");
+        navigate("/discover");
       }
+    } else {
+      setProfileUser(currentUser);
+      setIsOwnProfile(true);
     }
+  }, [userId, currentUser, getUserById, navigate]);
+
+  const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
+    if (!profileUser || !currentUser) return;
     
-    setProfile({
-      ...profile,
-      personalityTraits: traits
-    });
-  };
-  
-  const handleVoiceRecordingComplete = (audioBlob: string) => {
-    setProfile({
-      ...profile,
-      voiceIntro: audioBlob
-    });
-  };
-  
-  const handleDeleteVoiceIntro = () => {
-    setProfile({
-      ...profile,
-      voiceIntro: ''
-    });
+    sendGift(profileUser.id, giftType);
+    toast.success(`Sent a ${giftType} to ${profileUser.name}!`);
   };
 
-  const handleAddFavoriteMusic = (music: string) => {
-    if (music && profile) {
-      setProfile({
-        ...profile,
-        favoriteMusic: [...profile.favoriteMusic, music]
-      });
-    }
-  };
+  if (!profileUser || !currentUser) {
+    return (
+      <MobileContainer>
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-pulse">Loading profile...</div>
+        </div>
+      </MobileContainer>
+    );
+  }
 
-  const giftInventory = currentUser.giftInventory || { 'rose': 0, 'heart': 0, 'teddy': 0 };
-  const receivedGifts = currentUser.receivedGifts || { rose: 0, heart: 0, teddy: 0 };
-  const benefits = getGiftBenefits();
-  
-  React.useEffect(() => {
-    if (window.location.hash === '#shop') {
-      setActiveTab('shop');
-    } else if (window.location.hash === '#monetize') {
-      setActiveTab('monetize');
-    } else if (window.location.hash === '#blog') {
-      setActiveTab('blog');
-    }
-  }, []);
-  
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
+    <MobileContainer scrollable padding>
+      <div className="flex items-center justify-between mb-4">
+        {!isOwnProfile && (
+          <Button 
+            variant="ghost" 
+            className="p-2" 
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
+        
+        <h1 className="text-2xl font-bold text-center flex-grow">
+          {isOwnProfile ? "My Profile" : `${profileUser.name}'s Profile`}
+        </h1>
+        
+        {isOwnProfile && (
+          <Button 
+            variant="ghost" 
+            className="p-2" 
+            onClick={() => navigate('/edit-profile')}
+          >
+            <Edit className="h-5 w-5" />
+          </Button>
+        )}
+      </div>
       
-      <main className="flex-grow container mx-auto px-4 py-8 pb-36">
-        <div className="mb-6 flex justify-between items-center">
-          <h1 className="text-3xl font-display font-bold">My Profile</h1>
-          
-          {activeTab === 'profile' && !editing ? (
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-2"
-              onClick={() => setEditing(true)}
-            >
-              <Edit2 size={16} />
-              <span>Edit Profile</span>
-            </Button>
-          ) : activeTab === 'profile' ? (
-            <div className="space-x-2">
-              <Button 
-                variant="outline" 
-                onClick={handleCancel}
-              >
-                Cancel
-              </Button>
-              <Button 
-                className="bg-gradient-love hover:opacity-90"
-                onClick={handleSave}
-              >
-                Save Changes
-              </Button>
-            </div>
-          ) : null}
+      <div className="flex flex-col items-center mb-6">
+        <Avatar className="w-24 h-24 mb-4 border-4 border-white shadow-lg">
+          <AvatarImage src={profileUser.photos && profileUser.photos.length > 0 ? profileUser.photos[0] : ""} />
+          <AvatarFallback className="bg-gradient-love text-white text-xl">
+            {profileUser.name.substring(0, 2).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        
+        <h2 className="text-xl font-bold mb-1">{profileUser.name}, {profileUser.age}</h2>
+        
+        <div className="flex items-center mb-2">
+          <MapPin className="h-4 w-4 text-gray-500 mr-1" />
+          <span className="text-gray-700">{profileUser.location || "No location set"}</span>
         </div>
         
-        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-4 mb-6">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="blog" className="flex items-center gap-1">
-              <FileText size={16} />
-              <span>Blog</span>
+        <div className="flex flex-wrap gap-2 mb-4 justify-center">
+          <Badge variant="outline" className="bg-love-50 text-love-700 border-love-200">
+            {profileUser.gender.charAt(0).toUpperCase() + profileUser.gender.slice(1)}
+          </Badge>
+          {profileUser.verificationStatus === 'verified' && (
+            <Badge className="bg-blue-100 text-blue-700 border-none flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              <span>Verified</span>
+            </Badge>
+          )}
+          {profileUser.premiumStatus !== 'basic' && (
+            <Badge className="bg-gradient-to-r from-amber-300 to-yellow-600 text-white border-none">
+              {profileUser.premiumStatus === 'vip' ? 'VIP' : 'Premium'}
+            </Badge>
+          )}
+        </div>
+        
+        {/* Gift buttons only shown on other user's profiles */}
+        {!isOwnProfile && (
+          <div className="flex gap-3 mb-6">
+            <Button 
+              variant="outline" 
+              className="flex flex-col items-center py-2 border-love-200 hover:bg-love-50"
+              onClick={() => handleSendGift('rose')}
+            >
+              <span className="text-lg mb-1">🌹</span>
+              <span className="text-xs">Rose</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center py-2 border-love-200 hover:bg-love-50"
+              onClick={() => handleSendGift('heart')}
+            >
+              <span className="text-lg mb-1">❤️</span>
+              <span className="text-xs">Heart</span>
+            </Button>
+            <Button
+              variant="outline"
+              className="flex flex-col items-center py-2 border-love-200 hover:bg-love-50"
+              onClick={() => handleSendGift('teddy')}
+            >
+              <span className="text-lg mb-1">🧸</span>
+              <span className="text-xs">Teddy</span>
+            </Button>
+          </div>
+        )}
+      </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-3 w-full">
+          <TabsTrigger value="profile" className="data-[state=active]:bg-love-100">
+            Profile
+          </TabsTrigger>
+          {isOwnProfile && (
+            <TabsTrigger value="blog" className="data-[state=active]:bg-love-100">
+              Blog
             </TabsTrigger>
-            <TabsTrigger value="shop">Gift Shop</TabsTrigger>
-            <TabsTrigger value="monetize" className="flex items-center gap-1">
-              <Coins size={16} />
-              <span>Monetize</span>
+          )}
+          {isOwnProfile && (
+            <TabsTrigger value="monetize" className="data-[state=active]:bg-love-100">
+              Monetize
             </TabsTrigger>
-          </TabsList>
+          )}
+          {!isOwnProfile && (
+            <TabsTrigger value="compatibility" className="data-[state=active]:bg-love-100">
+              Compatibility
+            </TabsTrigger>
+          )}
+          {!isOwnProfile && (
+            <TabsTrigger value="gifts" className="data-[state=active]:bg-love-100">
+              Gifts
+            </TabsTrigger>
+          )}
+        </TabsList>
+        
+        <TabsContent value="profile" className="space-y-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <User className="h-5 w-5 text-love-500" />
+                <span>About Me</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-700 whitespace-pre-line">
+                {profileUser.bio || "No bio available."}
+              </p>
+            </CardContent>
+          </Card>
           
-          <TabsContent value="profile">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-1">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex flex-col items-center">
-                      <div className="relative">
-                        <div className="w-32 h-32 rounded-full bg-love-100 flex items-center justify-center mb-4 relative overflow-hidden">
-                          {profile.photos && profile.photos.length > 0 ? (
-                            <img 
-                              src={profile.photos[0]} 
-                              alt={profile.name} 
-                              className="w-full h-full rounded-full object-cover"
-                            />
-                          ) : (
-                            <User size={48} className="text-love-500" />
-                          )}
-                        </div>
-                        
-                        {editing && (
-                          <Button 
-                            size="icon"
-                            variant="secondary" 
-                            className="absolute bottom-2 right-0 h-8 w-8 rounded-full bg-white shadow-md"
-                            onClick={triggerFileInput}
-                          >
-                            <Camera size={14} />
-                          </Button>
-                        )}
-                        
-                        <input 
-                          type="file" 
-                          ref={fileInputRef}
-                          className="hidden" 
-                          accept="image/*"
-                          onChange={handleFileSelect}
-                        />
-                      </div>
-                      
-                      {editing ? (
-                        <Input
-                          value={profile.name}
-                          onChange={(e) => setProfile({...profile, name: e.target.value})}
-                          className="text-center font-semibold text-xl mb-1"
-                        />
-                      ) : (
-                        <h2 className="font-semibold text-xl mb-1">{profile.name}</h2>
-                      )}
-                      
-                      <div className="flex items-center text-muted-foreground mb-4">
-                        <MapPin size={16} className="mr-1" />
-                        {editing ? (
-                          <Input
-                            value={profile.location}
-                            onChange={(e) => setProfile({...profile, location: e.target.value})}
-                            className="text-sm"
-                          />
-                        ) : (
-                          <span>{profile.location}</span>
-                        )}
-                      </div>
-                      
-                      {editing && (
-                        <div className="w-full space-y-2">
-                          <Button 
-                            variant="outline" 
-                            className="w-full flex items-center gap-2"
-                            onClick={triggerFileInput}
-                          >
-                            <Upload size={14} />
-                            <span>Upload New Photo</span>
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="mt-4">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold">Voice Introduction</h3>
-                      {profile.voiceIntro && !editing && (
-                        <Badge variant="outline" className="bg-love-50 text-love-700">
-                          <Mic className="h-3 w-3 mr-1" />
-                          <span>Recorded</span>
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    {editing ? (
-                      <VoiceRecorder 
-                        onRecordingComplete={handleVoiceRecordingComplete}
-                        initialAudio={profile.voiceIntro}
-                        onDelete={handleDeleteVoiceIntro}
-                      />
-                    ) : profile.voiceIntro ? (
-                      <VoicePlayer 
-                        audioUrl={profile.voiceIntro} 
-                        compact={isMobile}
-                      />
-                    ) : (
-                      <p className="text-sm text-gray-500 italic">
-                        No voice introduction recorded yet. Edit your profile to add one!
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                {!editing && (
-                  <>
-                    <Card className="mt-4">
-                      <CardHeader>
-                        <h3 className="text-lg font-semibold">Gift Benefits</h3>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <Sparkles className="text-amber-500 mr-2" />
-                              <span>Popularity Points</span>
-                            </div>
-                            <Badge variant="outline" className="bg-love-50 text-love-700">
-                              {benefits.popularityPoints}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <Star className="text-purple-500 mr-2" />
-                              <span>Premium Likes</span>
-                            </div>
-                            <Badge variant="outline" className="bg-love-50 text-love-700">
-                              {benefits.premiumLikes}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <Timer className="text-blue-500 mr-2" />
-                              <span>Profile Boost</span>
-                            </div>
-                            {benefits.profileBoost ? (
-                              <Badge variant="outline" className="bg-green-50 text-green-700">
-                                Active {benefits.boostTimeRemaining ? `(${benefits.boostTimeRemaining})` : ''}
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-gray-100 text-gray-500">
-                                Inactive
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                    
-                    <Card className="mt-4">
-                      <CardHeader>
-                        <h3 className="text-lg font-semibold">My Gift Inventory</h3>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <Heart className="text-rose-500 mr-2" />
-                              <span>Roses</span>
-                            </div>
-                            <Badge variant="outline">{giftInventory.rose || 0}</Badge>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <Heart className="text-red-500 fill-red-500 mr-2" />
-                              <span>Hearts</span>
-                            </div>
-                            <Badge variant="outline">{giftInventory.heart || 0}</Badge>
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <Gift className="text-amber-700 mr-2" />
-                              <span>Teddy Bears</span>
-                            </div>
-                            <Badge variant="outline">{giftInventory.teddy || 0}</Badge>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-4 pt-4 border-t">
-                          <h4 className="text-sm font-medium mb-2">Gifts Received:</h4>
-                          <div className="flex justify-between">
-                            <span>Roses</span>
-                            <Badge variant="outline" className="bg-love-50 text-love-700">{receivedGifts.rose}</Badge>
-                          </div>
-                          <div className="flex justify-between mt-1">
-                            <span>Hearts</span>
-                            <Badge variant="outline" className="bg-love-50 text-love-700">{receivedGifts.heart}</Badge>
-                          </div>
-                          <div className="flex justify-between mt-1">
-                            <span>Teddy Bears</span>
-                            <Badge variant="outline" className="bg-love-50 text-love-700">{receivedGifts.teddy}</Badge>
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-2 mt-4">
-                          <Button 
-                            onClick={() => setActiveTab('shop')} 
-                            variant="outline" 
-                            className="border-love-200 text-love-600"
-                          >
-                            <ShoppingCart size={16} className="mr-2" />
-                            Go to Shop
-                          </Button>
-                          
-                          <Button 
-                            onClick={() => setActiveTab('monetize')} 
-                            variant="outline" 
-                            className="border-purple-200 text-purple-600"
-                          >
-                            <Coins size={16} className="mr-2" />
-                            Monetize
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </>
-                )}
-              </div>
-              
-              <div className="md:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <h3 className="text-xl font-semibold">About Me</h3>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-6">
-                    <div>
-                      <Label htmlFor="bio">Bio</Label>
-                      {editing ? (
-                        <Textarea
-                          id="bio"
-                          value={profile.bio}
-                          onChange={(e) => setProfile({...profile, bio: e.target.value})}
-                          className="mt-2"
-                          rows={5}
-                          placeholder="Write a brief description about yourself, your interests, and what you're looking for in a relationship..."
-                        />
-                      ) : (
-                        <p className="mt-2 text-gray-700">{profile.bio}</p>
-                      )}
-                    </div>
-                    
-                    {editing && (
-                      <div>
-                        <Label htmlFor="favoriteMusic">Favorite Song</Label>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Music size={16} className="text-love-500" />
-                          <Input
-                            id="favoriteMusic"
-                            value={profile.favoriteMusic || ''}
-                            onChange={(e) => handleAddFavoriteMusic(e.target.value)}
-                            placeholder="Enter your favorite song or artist"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    
-                    {!editing && profile.favoriteMusic && (
-                      <div>
-                        <Label className="mb-2 block">Favorite Song</Label>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Music size={16} className="text-love-500" />
-                          <span className="text-gray-700">{profile.favoriteMusic}</span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    <Separator />
-                    
-                    {editing && (
-                      <div>
-                        <Label className="mb-2 block">Personality Traits</Label>
-                        <PersonalityTraitSelector 
-                          selectedTraits={profile.personalityTraits || []}
-                          onSelectTrait={handleTraitSelect}
-                        />
-                        {profile.personalityTraits && profile.personalityTraits.length >= 5 && (
-                          <p className="text-xs text-love-600 mt-2">Maximum 5 traits selected</p>
-                        )}
-                      </div>
-                    )}
-                    
-                    {!editing && profile.personalityTraits && profile.personalityTraits.length > 0 && (
-                      <div>
-                        <Label className="mb-2 block">Personality Traits</Label>
-                        <div className="flex flex-wrap gap-2">
-                          {profile.personalityTraits.map((trait, index) => (
-                            <Badge key={index} className="bg-love-500">
-                              {trait}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <Separator />
-                    
-                    <div>
-                      <Label className="mb-2 block">Interests</Label>
-                      
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {profile.interests.map((interest, index) => (
-                          <Badge 
-                            key={index} 
-                            variant="secondary" 
-                            className="bg-love-50 text-love-700 hover:bg-love-100 py-1.5 px-3"
-                          >
-                            {interest}
-                            {editing && (
-                              <button 
-                                className="ml-2 text-love-500 hover:text-love-700"
-                                onClick={() => handleRemoveInterest(index)}
-                              >
-                                <X size={14} />
-                              </button>
-                            )}
-                          </Badge>
-                        ))}
-                      </div>
-                      
-                      {editing && (
-                        <div className="flex gap-2">
-                          <Input
-                            value={newInterest}
-                            onChange={(e) => setNewInterest(e.target.value)}
-                            placeholder="Add new interest"
-                          />
-                          <Button 
-                            variant="outline" 
-                            onClick={handleAddInterest}
-                            disabled={!newInterest.trim()}
-                          >
-                            <Plus size={16} />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div>
-                      <Label htmlFor="age">Age</Label>
-                      {editing ? (
-                        <Input
-                          id="age"
-                          type="number"
-                          value={profile.age}
-                          onChange={(e) => setProfile({...profile, age: parseInt(e.target.value) || profile.age})}
-                          className="mt-2 max-w-xs"
-                        />
-                      ) : (
-                        <p className="mt-2 text-gray-700">{profile.age}</p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Heart className="h-5 w-5 text-love-500" />
+                <span>Interests</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {profileUser.interests && profileUser.interests.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profileUser.interests.map((interest, index) => (
+                    <Badge key={index} variant="secondary" className="bg-gray-100">
+                      {interest}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">No interests listed.</p>
+              )}
+            </CardContent>
+          </Card>
           
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Star className="h-5 w-5 text-love-500" />
+                <span>Personality Traits</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {profileUser.personalityTraits && profileUser.personalityTraits.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profileUser.personalityTraits.map((trait, index) => (
+                    <Badge key={index} variant="secondary" className="bg-purple-100 text-purple-700">
+                      {trait}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">No personality traits listed.</p>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Music className="h-5 w-5 text-love-500" />
+                <span>Favorite Music</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {profileUser.favoriteMusic && profileUser.favoriteMusic.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {profileUser.favoriteMusic.map((music, index) => (
+                    <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-700">
+                      {music}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">No favorite music listed.</p>
+              )}
+            </CardContent>
+          </Card>
+          
+          {isOwnProfile && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Package className="h-5 w-5 text-love-500" />
+                  <span>Your Subscription</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="font-medium">
+                      {profileUser.premiumStatus === 'vip' 
+                        ? 'VIP Member' 
+                        : profileUser.premiumStatus === 'premium' 
+                          ? 'Premium Member' 
+                          : 'Basic Member'}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {profileUser.premiumStatus === 'vip' 
+                        ? 'All features unlocked' 
+                        : profileUser.premiumStatus === 'premium' 
+                          ? 'Enhanced features available' 
+                          : 'Limited features'}
+                    </p>
+                  </div>
+                  <Button className="bg-gradient-love">
+                    {profileUser.premiumStatus === 'basic' ? 'Upgrade' : 'Manage'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+          
+          {isOwnProfile && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-love-500" />
+                  <span>Received Gifts</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between">
+                  <div className="text-center">
+                    <div className="text-xl mb-1">🌹</div>
+                    <div className="font-medium">{profileUser.receivedGifts?.rose || 0}</div>
+                    <div className="text-xs text-gray-500">Roses</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl mb-1">❤️</div>
+                    <div className="font-medium">{profileUser.receivedGifts?.heart || 0}</div>
+                    <div className="text-xs text-gray-500">Hearts</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl mb-1">🧸</div>
+                    <div className="font-medium">{profileUser.receivedGifts?.teddy || 0}</div>
+                    <div className="text-xs text-gray-500">Teddies</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        
+        {isOwnProfile && (
           <TabsContent value="blog">
             <Blog />
           </TabsContent>
-          
-          <TabsContent value="shop">
-            <GiftShop />
-          </TabsContent>
-          
+        )}
+        
+        {isOwnProfile && (
           <TabsContent value="monetize">
-            <Monetization />
+            <MonetizationPanel />
           </TabsContent>
-        </Tabs>
-      </main>
-      
-      <Footer />
-    </div>
+        )}
+        
+        {!isOwnProfile && (
+          <TabsContent value="compatibility" className="space-y-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Heart className="h-5 w-5 text-love-500" />
+                  <span>Compatibility Score</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-center flex-col">
+                  <div className="w-32 h-32 rounded-full border-8 border-love-100 flex items-center justify-center mb-4">
+                    <span className="text-3xl font-bold text-love-600">85%</span>
+                  </div>
+                  <p className="text-center text-gray-700 mb-2">
+                    You and {profileUser.name} are highly compatible!
+                  </p>
+                  <Button className="mt-2 bg-gradient-love">Send Message</Button>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Star className="h-5 w-5 text-love-500" />
+                  <span>Compatibility Factors</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Interests</span>
+                      <span className="text-sm text-love-600">90%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-love-500 h-2 rounded-full" style={{ width: '90%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Communication Style</span>
+                      <span className="text-sm text-love-600">85%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-love-500 h-2 rounded-full" style={{ width: '85%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Values</span>
+                      <span className="text-sm text-love-600">80%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-love-500 h-2 rounded-full" style={{ width: '80%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium">Lifestyle</span>
+                      <span className="text-sm text-love-600">75%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="bg-love-500 h-2 rounded-full" style={{ width: '75%' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+        
+        {!isOwnProfile && (
+          <TabsContent value="gifts" className="space-y-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-love-500" />
+                  <span>Send a Gift</span>
+                </CardTitle>
+                <CardDescription>
+                  Show {profileUser.name} that you're interested by sending a gift
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="flex flex-col items-center p-3 border rounded-lg hover:bg-love-50 cursor-pointer transition-colors">
+                    <div className="text-3xl mb-2">🌹</div>
+                    <div className="font-medium">Rose</div>
+                    <div className="text-xs text-gray-500">$5.00</div>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleSendGift('rose')} 
+                      className="mt-2 w-full"
+                    >
+                      Send
+                    </Button>
+                  </div>
+                  
+                  <div className="flex flex-col items-center p-3 border rounded-lg hover:bg-love-50 cursor-pointer transition-colors">
+                    <div className="text-3xl mb-2">❤️</div>
+                    <div className="font-medium">Heart</div>
+                    <div className="text-xs text-gray-500">$10.00</div>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleSendGift('heart')} 
+                      className="mt-2 w-full"
+                    >
+                      Send
+                    </Button>
+                  </div>
+                  
+                  <div className="flex flex-col items-center p-3 border rounded-lg hover:bg-love-50 cursor-pointer transition-colors">
+                    <div className="text-3xl mb-2">🧸</div>
+                    <div className="font-medium">Teddy</div>
+                    <div className="text-xs text-gray-500">$20.00</div>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => handleSendGift('teddy')} 
+                      className="mt-2 w-full"
+                    >
+                      Send
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+      </Tabs>
+    </MobileContainer>
   );
 };
 
