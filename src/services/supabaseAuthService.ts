@@ -1,4 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User } from '@/types/user';
 import { createClient } from '@supabase/supabase-js';
