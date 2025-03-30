@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useUser } from '@/context/UserContext';
 
 interface Message {
@@ -75,7 +75,10 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const [incomingVideoCall, setIncomingVideoCall] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showQuickActions, setShowQuickActions] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
@@ -88,7 +91,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const timerRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const chatFooterRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
 
   // Enhanced gifts array with premium options
   const gifts = [
@@ -133,7 +135,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const quickActions = [
     { icon: <Calendar size={16} />, label: "Schedule Date", action: () => handleQuickAction("schedule") },
     { icon: <MapPin size={16} />, label: "Share Location", action: () => handleQuickAction("location") },
-    { icon: <ImageIcon size={16} />, label: "Send Photo", action: () => handleQuickAction("photo") },
+    { icon: <ImageIcon size={16} />, label: "Send Photo", action: () => handleSelectImage() },
     { icon: <Clock size={16} />, label: "Set Reminder", action: () => handleQuickAction("reminder") },
   ];
 
@@ -142,30 +144,21 @@ const MessageChat: React.FC<MessageChatProps> = ({
     
     switch(type) {
       case "schedule":
-        toast({
-          title: "Schedule a Date",
+        toast.info("Schedule a Date", {
           description: "This feature will be available when we launch!",
         });
         setMessageText("Would you like to meet up sometime this week?");
         setTimeout(() => inputRef.current?.focus(), 100);
         break;
       case "location":
-        toast({
-          title: "Share Location",
+        toast.info("Share Location", {
           description: "This feature will be available when we launch!",
         });
         setMessageText("I'm at a great cafe near downtown. Would you like to join me?");
         setTimeout(() => inputRef.current?.focus(), 100);
         break;
-      case "photo":
-        toast({
-          title: "Send Photo",
-          description: "This feature will be available when we launch!",
-        });
-        break;
       case "reminder":
-        toast({
-          title: "Set Reminder",
+        toast.info("Set Reminder", {
           description: "This feature will be available when we launch!",
         });
         break;
@@ -174,7 +167,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
 
   const handleSendMessage = () => {
     if (messageText.trim()) {
-      console.log(`Sending message: ${messageText}`);
       onSendMessage(messageText, 'text');
       setMessageText('');
       setTimeout(scrollToBottom, 100);
@@ -185,6 +177,57 @@ const MessageChat: React.FC<MessageChatProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+  
+  const handleSelectImage = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Check file type and size
+      if (!file.type.startsWith('image/')) {
+        toast.error("Invalid file type", {
+          description: "Please select an image file"
+        });
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast.error("File too large", {
+          description: "Maximum file size is 5MB"
+        });
+        return;
+      }
+      
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      setShowQuickActions(false);
+    }
+  };
+  
+  const handleCancelImage = () => {
+    setImagePreview(null);
+    setSelectedImage(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+  
+  const handleSendImage = () => {
+    if (selectedImage && imagePreview) {
+      // In a real app, you would upload the image to a server first
+      // and then send the URL in the message
+      onSendMessage(imagePreview, 'text');
+      toast.success("Image sent!");
+      handleCancelImage();
+      setTimeout(scrollToBottom, 100);
     }
   };
   
@@ -209,7 +252,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
           const base64data = reader.result as string;
-          console.log("Voice message recorded");
           onSendMessage(base64data, 'voice');
         };
         
@@ -224,17 +266,14 @@ const MessageChat: React.FC<MessageChatProps> = ({
         setRecordingTime(prev => prev + 1);
       }, 1000);
       
-      toast({
-        title: "Recording Started",
+      toast.info("Recording Started", {
         description: "Speak clearly to record your voice message",
       });
       
     } catch (error) {
       console.error("Error accessing microphone:", error);
-      toast({
-        title: "Microphone Error",
+      toast.error("Microphone Error", {
         description: "Could not access your microphone. Please check permissions.",
-        variant: "destructive",
       });
     }
   };
@@ -249,8 +288,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
         timerRef.current = null;
       }
       
-      toast({
-        title: "Voice Message Recorded",
+      toast.success("Voice Message Recorded", {
         description: "Your voice message has been prepared for sending",
       });
     }
@@ -259,20 +297,22 @@ const MessageChat: React.FC<MessageChatProps> = ({
   const startVideoCall = async () => {
     try {
       setIsVideoCallRequested(true);
-      console.log("Requesting video call");
       onSendMessage("Video call request", 'video-request');
       
-      toast({
-        title: "Video Call Requested",
+      toast.info("Video Call Requested", {
         description: `Waiting for ${matchName} to accept your call...`,
       });
       
+      // In a real app, this would trigger a WebRTC connection
+      // For now, simulate the match accepting the call after a delay
+      setTimeout(() => {
+        setIncomingVideoCall(true);
+      }, 5000);
+      
     } catch (error) {
       console.error("Error starting video call:", error);
-      toast({
-        title: "Video Call Error",
+      toast.error("Video Call Error", {
         description: "Could not initiate video call. Please try again.",
-        variant: "destructive",
       });
       setIsVideoCallRequested(false);
     }
@@ -305,20 +345,16 @@ const MessageChat: React.FC<MessageChatProps> = ({
       
       setIsInVideoCall(true);
       setIncomingVideoCall(false);
-      console.log("Accepting video call");
       onSendMessage("Video call accepted", 'video-accepted');
       
-      toast({
-        title: "Video Call Connected",
+      toast.success("Video Call Connected", {
         description: `You are now in a video call with ${matchName}`,
       });
       
     } catch (error) {
       console.error("Error accepting video call:", error);
-      toast({
-        title: "Video Call Error",
+      toast.error("Video Call Error", {
         description: "Could not connect to video call. Please check camera permissions.",
-        variant: "destructive",
       });
       setIncomingVideoCall(false);
     }
@@ -337,32 +373,26 @@ const MessageChat: React.FC<MessageChatProps> = ({
     
     setIsInVideoCall(false);
     setIsVideoCallRequested(false);
-    console.log("Ending video call");
     onSendMessage("Video call ended", 'video-ended');
     
-    toast({
-      title: "Video Call Ended",
+    toast.info("Video Call Ended", {
       description: "Your video call has ended",
     });
   };
 
   const sendGift = (giftId: string) => {
     if (giftInventory[giftId] && giftInventory[giftId] > 0) {
-      console.log(`Sending gift: ${giftId}`);
       onSendMessage(giftId, 'gift', giftId);
       setShowGiftMenu(false);
       
       const gift = gifts.find(g => g.id === giftId);
       
-      toast({
-        title: "Gift Sent",
+      toast.success("Gift Sent", {
         description: `You sent a ${gift?.name || 'gift'} to ${matchName}. When they receive it, they'll gain: ${gift?.benefit}`,
       });
     } else {
-      toast({
-        title: "Gift Not Available",
+      toast.error("Gift Not Available", {
         description: "You don't have this gift in your inventory. Please purchase it from the shop.",
-        variant: "destructive"
       });
     }
   };
@@ -418,6 +448,16 @@ const MessageChat: React.FC<MessageChatProps> = ({
         <div className="flex items-center gap-2 py-1">
           <VideoOff size={16} className="text-gray-500" />
           <span>Video call ended</span>
+        </div>
+      );
+    } else if (message.content.startsWith('data:image')) {
+      return (
+        <div className="max-w-xs overflow-hidden rounded-lg">
+          <img 
+            src={message.content} 
+            alt="Shared" 
+            className="max-w-full h-auto object-cover" 
+          />
         </div>
       );
     } else {
@@ -484,7 +524,6 @@ const MessageChat: React.FC<MessageChatProps> = ({
 
   // Scroll to bottom on component mount and when messages change
   useEffect(() => {
-    // Use a small timeout to ensure the DOM has updated
     const timer = setTimeout(() => {
       scrollToBottom();
     }, 100);
@@ -708,7 +747,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
                             className={cn(
                               "rounded-2xl px-4 py-2",
                               message.sender === 'user'
-                                ? "bg-love-gradient text-white rounded-br-none"
+                                ? "bg-gradient-to-r from-love-500 to-love-600 text-white rounded-br-none"
                                 : "bg-gray-100 rounded-bl-none"
                             )}
                           >
@@ -868,6 +907,38 @@ const MessageChat: React.FC<MessageChatProps> = ({
         </div>
       )}
       
+      {imagePreview && (
+        <div className="p-3 border-t border-love-100 bg-love-50">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="font-medium text-sm">Image Preview</h4>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="z-10 text-red-500"
+              onClick={handleCancelImage}
+            >
+              Cancel
+            </Button>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="bg-white p-2 rounded-md border border-love-100">
+              <img 
+                src={imagePreview} 
+                alt="Preview" 
+                className="max-h-32 rounded-md mx-auto object-contain" 
+              />
+            </div>
+            <Button
+              onClick={handleSendImage}
+              className="bg-love-500 hover:bg-love-600 z-10"
+            >
+              <Send size={16} className="mr-2" />
+              Send Image
+            </Button>
+          </div>
+        </div>
+      )}
+      
       {!isInVideoCall && (
         <CardFooter className="p-3 border-t border-love-100 sticky bottom-0 bg-white z-10 flex-shrink-0" ref={chatFooterRef}>
           {isRecording ? (
@@ -913,6 +984,13 @@ const MessageChat: React.FC<MessageChatProps> = ({
                   >
                     <Gift size={18} />
                   </Button>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={handleImageChange}
+                  />
                 </div>
                 
                 <Button
@@ -940,7 +1018,7 @@ const MessageChat: React.FC<MessageChatProps> = ({
                   onClick={handleSendMessage}
                   size="icon"
                   className="bg-love-500 hover:bg-love-600 z-10"
-                  disabled={!messageText.trim()}
+                  disabled={!messageText.trim() && !imagePreview}
                 >
                   <Send size={16} className="text-white" />
                 </Button>
@@ -954,4 +1032,3 @@ const MessageChat: React.FC<MessageChatProps> = ({
 };
 
 export default MessageChat;
-

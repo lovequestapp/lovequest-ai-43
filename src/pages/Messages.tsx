@@ -1,346 +1,321 @@
-import React, { useState, useRef, useEffect } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
-import type { Message, GiftInventory } from '@/types/user';
-import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Heart, Gift, ImagePlus, Smile } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
+import { supabase } from '@/integrations/supabase/client';
+import MessageList from '@/components/MessageList';
+import MessageChat from '@/components/MessageChat';
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { toast } from 'sonner';
+import type { Message } from '@/types/user';
 
 const Messages = () => {
   const { currentUser, sendMessage, markMessagesAsRead, sendGift } = useUser();
+  const [matchUsers, setMatchUsers] = useState<any[]>([]);
+  const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [messageText, setMessageText] = useState('');
-  const [activeChat, setActiveChat] = useState<any>(null);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { userId } = useParams();
-  const scrollRef = useRef<HTMLDivElement>(null);
   
-  // Mock user data for demonstration
+  // Conversation starter suggestions
+  const suggestionStarters = [
+    "Hi! I noticed we have similar interests. What do you enjoy most about your hobbies?",
+    "Your profile caught my attention! What's your idea of a perfect first date?",
+    "Hey there! How's your day going so far?",
+    "I see we matched! What made you interested in my profile?",
+    "Hello! If you could travel anywhere right now, where would you go?",
+  ];
+  
+  // Mock user data - in a real app, this would come from a database
   const mockUsers = [
     {
       id: 'user-1',
       name: 'Alice',
-      avatar: 'https://avatar.vercel.sh/1.png',
+      photo: 'https://avatar.vercel.sh/1.png?text=A',
+      lastMessage: 'Would love to hear more about your travels!',
+      lastMessageTime: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+      unreadCount: 0,
+      compatibilityScore: 87,
       status: 'online'
     },
     {
       id: 'user-2',
       name: 'Bob',
-      avatar: 'https://avatar.vercel.sh/2.png',
+      photo: 'https://avatar.vercel.sh/2.png?text=B',
+      lastMessage: 'When are you free this weekend?',
+      lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 3), // 3 hours ago
+      unreadCount: 2,
+      compatibilityScore: 92,
       status: 'offline'
     },
     {
       id: 'user-3',
       name: 'Charlie',
-      avatar: 'https://avatar.vercel.sh/3.png',
+      photo: 'https://avatar.vercel.sh/3.png?text=C',
+      lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+      unreadCount: 0,
+      compatibilityScore: 76,
       status: 'away'
     },
     {
       id: 'user-4',
       name: 'Dave',
-      avatar: 'https://avatar.vercel.sh/4.png',
+      photo: 'https://avatar.vercel.sh/4.png?text=D',
+      lastMessage: "Just matched! Let's chat soon!",
+      lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 48), // 2 days ago
+      unreadCount: 0,
+      compatibilityScore: 81,
       status: 'online'
     },
     {
       id: 'user-5',
       name: 'Eve',
-      avatar: 'https://avatar.vercel.sh/5.png',
-      status: 'offline'
+      photo: 'https://avatar.vercel.sh/5.png?text=E',
+      lastMessage: "I'd love to know more about your favorite books!",
+      lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 72), // 3 days ago
+      unreadCount: 1,
+      compatibilityScore: 95,
+      status: 'online'
     },
   ];
   
-  // Mock messages for demonstration
+  // Mock messages for demonstration - in a real app, these would come from a database
   const mockMessages: Message[] = [
     {
       id: 'msg-1',
       senderId: 'user-1',
-      receiverId: 'user-2',
+      receiverId: currentUser?.id || '',
       content: 'Hey there!',
-      timestamp: new Date(),
+      timestamp: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
       isRead: true
     },
     {
       id: 'msg-2',
-      senderId: 'user-2',
+      senderId: currentUser?.id || '',
       receiverId: 'user-1',
-      content: 'Hello!',
-      timestamp: new Date(),
-      isRead: false
+      content: 'Hello! How are you?',
+      timestamp: new Date(Date.now() - 1000 * 60 * 59), // 59 minutes ago
+      isRead: true
     },
     {
       id: 'msg-3',
       senderId: 'user-1',
-      receiverId: 'user-2',
-      content: 'How are you?',
-      timestamp: new Date(),
-      isRead: false
+      receiverId: currentUser?.id || '',
+      content: 'I\'m good, thanks! I saw that we have a lot of common interests.',
+      timestamp: new Date(Date.now() - 1000 * 60 * 45), // 45 minutes ago
+      isRead: true
     },
     {
       id: 'msg-4',
-      senderId: 'user-2',
+      senderId: currentUser?.id || '',
       receiverId: 'user-1',
-      content: 'I\'m good, how about you?',
-      timestamp: new Date(),
+      content: 'Yes, I noticed that too! I love hiking and photography.',
+      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
       isRead: true
+    },
+    {
+      id: 'msg-5',
+      senderId: 'user-1',
+      receiverId: currentUser?.id || '',
+      content: 'Would love to hear more about your travels!',
+      timestamp: new Date(Date.now() - 1000 * 60 * 20), // 20 minutes ago
+      isRead: false
     },
   ];
   
   useEffect(() => {
-    // Simulate fetching messages from an API
-    setMessages(mockMessages);
+    // Simulate fetching matches and messages from an API
+    const fetchData = async () => {
+      setIsLoading(true);
+      
+      try {
+        // In a real app, you would fetch matches from your database
+        // const { data: matchesData, error: matchesError } = await supabase
+        //   .from('matches')
+        //   .select('*')
+        //   .or(`user1_id.eq.${currentUser?.id},user2_id.eq.${currentUser?.id}`)
+        //   .eq('match_status', 'matched');
+        
+        // For now, use mock data
+        setMatchUsers(mockUsers);
+        
+        // Set active match based on URL param or first match
+        if (userId) {
+          setActiveMatchId(userId);
+        } else if (mockUsers.length > 0 && !activeMatchId) {
+          setActiveMatchId(mockUsers[0].id);
+        }
+        
+        // In a real app, fetch messages for the active match
+        // if (activeMatchId) {
+        //   const { data: messagesData, error: messagesError } = await supabase
+        //     .from('messages')
+        //     .select('*')
+        //     .or(`(sender_id.eq.${currentUser?.id}.and.receiver_id.eq.${activeMatchId}),
+        //          (sender_id.eq.${activeMatchId}.and.receiver_id.eq.${currentUser?.id})`)
+        //     .order('created_at', { ascending: true });
+        // }
+        
+        // For now, use mock messages
+        setMessages(mockMessages);
+        
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load messages');
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    // Simulate setting the active chat based on the userId param
-    if (userId) {
-      const user = mockUsers.find(user => user.id === userId);
-      setActiveChat(user || null);
-    }
-  }, [userId]);
+    fetchData();
+  }, [currentUser, userId]);
   
   useEffect(() => {
-    // Scroll to bottom on message change
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-    
-    // Mark messages as read when the chat is active
-    if (activeChat) {
-      const unreadMessages = messages.filter(msg => msg.receiverId === currentUser?.id && msg.senderId === activeChat.id && !msg.isRead);
+    // When active match changes, fetch messages for that match
+    if (activeMatchId) {
+      // In a real app, fetch messages for the active match here
+      // For now, just navigate to the URL with the active match ID
+      if (userId !== activeMatchId) {
+        navigate(`/messages/${activeMatchId}`);
+      }
+      
+      // Mark unread messages as read
+      const unreadMessages = messages.filter(
+        msg => msg.receiverId === currentUser?.id && 
+               msg.senderId === activeMatchId && 
+               !msg.isRead
+      );
+      
       if (unreadMessages.length > 0) {
         const messageIds = unreadMessages.map(msg => msg.id);
-        handleMessageRead(messageIds[0]);
+        markMessagesAsRead(messageIds);
+        
+        // Update messages to mark them as read
+        setMessages(prevMessages => 
+          prevMessages.map(msg => 
+            unreadMessages.some(unread => unread.id === msg.id)
+              ? { ...msg, isRead: true }
+              : msg
+          )
+        );
+        
+        // Update match user to clear unread count
+        setMatchUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.id === activeMatchId
+              ? { ...user, unreadCount: 0 }
+              : user
+          )
+        );
       }
     }
-  }, [messages, activeChat, currentUser?.id]);
+  }, [activeMatchId, currentUser, messages, userId]);
   
-  // Fix for giftType not existing on Message type
-  const renderMessageContent = (message: Message) => {
-    // Safely check if there are any additional props we need to handle
-    const messageAny = message as any;
+  const handleSelectMatch = (matchId: string) => {
+    setActiveMatchId(matchId);
+    navigate(`/messages/${matchId}`);
+  };
+  
+  const handleSendMessage = (content: string, type: 'text' | 'voice' | 'gift' | 'video-request' | 'video-accepted' | 'video-ended' = 'text', giftType?: string) => {
+    if (!currentUser || !activeMatchId) return;
     
-    if (messageAny.giftType) {
-      if (messageAny.giftType === 'rose') {
-        return (
-          <div className="flex items-center space-x-2">
-            <Heart className="text-rose-500" />
-            <span>You received a rose!</span>
-          </div>
-        );
-      } else if (messageAny.giftType === 'heart') {
-        return (
-          <div className="flex items-center space-x-2">
-            <Heart className="text-red-500" />
-            <span>You received a heart!</span>
-          </div>
-        );
-      } else if (messageAny.giftType === 'teddy') {
-        return (
-          <div className="flex items-center space-x-2">
-            <Gift className="text-amber-700" />
-            <span>You received a teddy bear!</span>
-          </div>
-        );
-      }
+    // Create a new message
+    const newMessage: any = {
+      id: `msg-${Date.now()}-${Math.random().toString(36).substring(2)}`,
+      senderId: currentUser.id,
+      receiverId: activeMatchId,
+      content: content,
+      timestamp: new Date(),
+      isRead: false,
+      type: type
+    };
+    
+    if (type === 'gift' && giftType) {
+      newMessage.giftType = giftType;
+      sendGift(activeMatchId, giftType as 'rose' | 'heart' | 'teddy');
+    } else if (type === 'text') {
+      sendMessage(activeMatchId, content);
     }
     
-    return <span>{message.content}</span>;
-  };
-
-  // Fix for string vs string[] parameter type mismatch
-  const handleMessageRead = (messageId: string) => {
-    markMessagesAsRead([messageId]);
-  };
-
-  // Fix for symbol conversion issues
-  const handleSendGift = (type: 'rose' | 'heart' | 'teddy') => {
-    if (!activeChat) return;
+    // Add the new message to the state
+    setMessages(prevMessages => [...prevMessages, newMessage]);
     
-    // Convert symbol to string properly if needed
-    const giftType = typeof type === 'symbol' ? String(type) : type;
+    // Update the last message and time for the match
+    setMatchUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === activeMatchId
+          ? { 
+              ...user, 
+              lastMessage: type === 'text' ? content : 
+                          type === 'gift' ? 'Sent a gift' : 
+                          type === 'voice' ? 'Sent a voice message' : 
+                          'Sent a message',
+              lastMessageTime: new Date()
+            }
+          : user
+      )
+    );
     
-    // Updated to correct function signature - 2 params, not 3
-    sendGift(activeChat.id, giftType as 'rose' | 'heart' | 'teddy');
+    // In a real app, you would save the message to your database
+    // const { data, error } = await supabase
+    //   .from('messages')
+    //   .insert([{
+    //     sender_id: currentUser.id,
+    //     receiver_id: activeMatchId,
+    //     content: content,
+    //     message_type: type,
+    //     gift_type: type === 'gift' ? giftType : null,
+    //     created_at: new Date().toISOString(),
+    //     is_read: false
+    //   }]);
     
-    toast.success(`Sent a ${giftType} to ${activeChat.name}!`);
+    toast.success('Message sent!');
   };
-
-  // Fix for symbol conversion issues
-  const handleSendMessage = () => {
-    if (!currentUser || !activeChat) return;
-    
-    if (messageText.trim()) {
-      // Convert symbol to string properly if needed
-      const messageId = typeof Symbol() === 'symbol' ? String(Symbol()) : Symbol();
-      
-      sendMessage(activeChat.id, messageText);
-      
-      const newMessage: Message = {
-        id: messageId as string,
-        senderId: currentUser.id,
-        receiverId: activeChat.id,
-        content: messageText,
-        timestamp: new Date(),
-        isRead: false
-      };
-      
-      setMessages(prevMessages => [...prevMessages, newMessage]);
-      setMessageText('');
-    }
-  };
-
-  // Fix for status comparison - assuming 'matched' should be handled
-  const getStatusClass = (status: 'online' | 'offline' | 'away') => {
-    switch (status) {
-      case 'online':
-        return 'bg-green-500';
-      case 'away':
-        return 'bg-yellow-500';
-      case 'offline':
-        return 'bg-gray-400';
-      default:
-        return 'bg-gray-400';
-    }
-  };
+  
+  const activeMatch = matchUsers.find(user => user.id === activeMatchId) || null;
   
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-semibold mb-4">Messages</h1>
+    <div className="container mx-auto p-4 min-h-screen">
+      <h1 className="text-2xl font-semibold mb-4 text-love-900">Messages</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* User List */}
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-medium">Contacts</h3>
-            </CardHeader>
-            <CardContent className="p-2">
-              <ScrollArea className="h-[400px] md:h-[600px] pr-2">
-                {mockUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className={cn(
-                      "flex items-center space-x-3 py-2 px-3 rounded-md hover:bg-gray-100 cursor-pointer",
-                      activeChat?.id === user.id ? "bg-gray-100" : ""
-                    )}
-                    onClick={() => {
-                      setActiveChat(user);
-                      navigate(`/messages/${user.id}`);
-                    }}
-                  >
-                    <Avatar>
-                      <AvatarImage src={user.avatar} alt={user.name} />
-                      <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">{user.name}</p>
-                      <Badge
-                        variant="secondary"
-                        className={cn(
-                          "ml-2 text-xs",
-                          getStatusClass(user.status as 'online' | 'offline' | 'away')
-                        )}
-                      >
-                        {user.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
+        {/* Matches List */}
+        <div className="md:col-span-1 h-full">
+          <MessageList 
+            matches={matchUsers}
+            activeMatchId={activeMatchId}
+            onSelectMatch={handleSelectMatch}
+          />
         </div>
         
         {/* Chat Area */}
-        <div className="md:col-span-2">
-          {activeChat ? (
-            <Card>
-              <CardHeader className="flex items-center space-x-4">
-                <Button variant="ghost" size="icon" onClick={() => navigate('/profile/' + activeChat.id)}>
-                  <Avatar>
-                    <AvatarImage src={activeChat.avatar} alt={activeChat.name} />
-                    <AvatarFallback>{activeChat.name.substring(0, 2)}</AvatarFallback>
-                  </Avatar>
-                </Button>
-                <div className="flex-1">
-                  <h3 className="text-lg font-medium">{activeChat.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    {activeChat.status === 'online' ? 'Online' : 'Offline'}
-                  </p>
-                </div>
-                <Button variant="outline" size="icon" onClick={() => handleSendGift('rose')}>
-                  <Heart className="text-rose-500" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={() => handleSendGift('heart')}>
-                  <Heart className="text-red-500 fill-red-500" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={() => handleSendGift('teddy')}>
-                  <Gift className="text-amber-700" />
-                </Button>
-              </CardHeader>
-              <CardContent className="p-4">
-                <ScrollArea ref={scrollRef} className="h-[300px] md:h-[500px] pr-2">
-                  {messages.filter(msg =>
-                    (msg.senderId === currentUser?.id && msg.receiverId === activeChat.id) ||
-                    (msg.senderId === activeChat.id && msg.receiverId === currentUser?.id)
-                  ).map((message) => (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        "mb-2 p-3 rounded-md",
-                        message.senderId === currentUser?.id
-                          ? "bg-blue-100 ml-auto text-right"
-                          : "bg-gray-100 mr-auto text-left"
-                      )}
-                    >
-                      {renderMessageContent(message)}
-                      <p className="text-xs text-gray-500 mt-1">
-                        {message.timestamp.toLocaleTimeString()}
-                      </p>
-                    </div>
-                  ))}
-                </ScrollArea>
-              </CardContent>
-              <CardFooter className="p-4">
-                <div className="flex items-center space-x-2 w-full">
-                  <Button variant="ghost" size="icon">
-                    <ImagePlus className="h-5 w-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon">
-                    <Smile className="h-5 w-5" />
-                  </Button>
-                  <Input
-                    type="text"
-                    placeholder="Type your message..."
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    className="flex-1"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSendMessage();
-                      }
-                    }}
-                  />
-                  <Button onClick={handleSendMessage}>
-                    <Send className="h-4 w-4 mr-2" />
-                    Send
-                  </Button>
-                </div>
-              </CardFooter>
-            </Card>
+        <div className="md:col-span-2 h-full">
+          {activeMatch ? (
+            <MessageChat
+              matchName={activeMatch.name}
+              matchPhoto={activeMatch.photo}
+              compatibilityScore={activeMatch.compatibilityScore}
+              messages={messages.filter(msg =>
+                (msg.senderId === currentUser?.id && msg.receiverId === activeMatchId) ||
+                (msg.senderId === activeMatchId && msg.receiverId === currentUser?.id)
+              ).map(msg => ({
+                ...msg,
+                sender: msg.senderId === currentUser?.id ? 'user' : 'match',
+                type: (msg as any).type || 'text',
+                giftType: (msg as any).giftType
+              }))}
+              onSendMessage={handleSendMessage}
+              suggestionStarters={suggestionStarters}
+            />
           ) : (
-            <Card>
-              <CardContent className="py-8">
-                <p className="text-center text-gray-500">
-                  Select a contact to start a chat
+            <Card className="h-full flex items-center justify-center p-6">
+              <div className="text-center">
+                <p className="text-muted-foreground">
+                  Select a match to start chatting or find new matches in the Discover section
                 </p>
-              </CardContent>
+              </div>
             </Card>
           )}
         </div>

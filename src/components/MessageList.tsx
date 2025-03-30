@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Sparkles, Clock, MessageCircleHeart } from 'lucide-react';
+import { Heart, Sparkles, Clock, MessageCircleHeart, CircleUser } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday } from 'date-fns';
 
@@ -15,6 +15,7 @@ export interface MessageListProps {
     lastMessage?: string;
     lastMessageTime?: Date;
     unreadCount?: number;
+    status?: 'online' | 'offline' | 'away';
   }[];
   activeMatchId?: string | null;
   onSelectMatch: (matchId: string) => void;
@@ -37,6 +38,17 @@ const MessageList: React.FC<MessageListProps> = ({
       return 'Yesterday';
     } else {
       return format(date, 'MMM d');
+    }
+  };
+  
+  const getStatusClass = (status: string = 'offline') => {
+    switch (status) {
+      case 'online':
+        return 'bg-green-500';
+      case 'away':
+        return 'bg-yellow-500';
+      default:
+        return 'bg-gray-400';
     }
   };
   
@@ -68,12 +80,25 @@ const MessageList: React.FC<MessageListProps> = ({
                     "h-12 w-12 rounded-full overflow-hidden border-2",
                     activeMatchId === match.id ? "border-love-500" : "border-love-200"
                   )}>
-                    <img
-                      src={match.photo || '/placeholder.svg'}
-                      alt={match.name}
-                      className="h-full w-full object-cover"
-                    />
+                    {match.photo ? (
+                      <img
+                        src={match.photo}
+                        alt={match.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-love-100 flex items-center justify-center">
+                        <CircleUser className="text-love-300" size={32} />
+                      </div>
+                    )}
                   </div>
+                  
+                  {match.status && (
+                    <div className={cn(
+                      "absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white",
+                      getStatusClass(match.status)
+                    )} />
+                  )}
                   
                   {match.unreadCount && match.unreadCount > 0 && (
                     <Badge 
@@ -95,14 +120,14 @@ const MessageList: React.FC<MessageListProps> = ({
                     {match.lastMessageTime && (
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Clock size={10} />
-                        {formatMessageDate(new Date(match.lastMessageTime))}
+                        {formatMessageDate(match.lastMessageTime)}
                       </span>
                     )}
                   </div>
                   
                   {match.lastMessage ? (
                     <p className={cn(
-                      "text-sm truncate",
+                      "text-sm truncate max-w-[180px]",
                       match.unreadCount && match.unreadCount > 0 
                         ? "text-love-800 font-medium" 
                         : "text-muted-foreground"
