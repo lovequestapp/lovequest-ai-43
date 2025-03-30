@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Heart, Menu, X, ShieldCheck, LogIn, LogOut } from 'lucide-react';
@@ -50,12 +51,12 @@ const Header = () => {
               Discover
             </Link>
             <Link 
-              to="/explore" 
+              to="/matches" 
               className={`text-sm font-medium transition-colors hover:text-love-500 ${
-                isActive('/explore') ? 'text-love-500' : 'text-foreground'
+                isActive('/matches') ? 'text-love-500' : 'text-foreground'
               }`}
             >
-              Explore
+              Matches
             </Link>
             <Link 
               to="/messages" 
@@ -157,13 +158,13 @@ const Header = () => {
                 Discover
               </Link>
               <Link 
-                to="/explore" 
+                to="/matches" 
                 className={`text-sm font-medium transition-colors hover:text-love-500 ${
-                  isActive('/explore') ? 'text-love-500' : 'text-foreground'
+                  isActive('/matches') ? 'text-love-500' : 'text-foreground'
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Explore
+                Matches
               </Link>
               <Link 
                 to="/messages" 

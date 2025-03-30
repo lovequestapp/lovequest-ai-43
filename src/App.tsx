@@ -8,7 +8,7 @@ import Profile from './pages/Profile';
 import Messages from './pages/Messages';
 import EditProfile from './pages/edit-profile';
 import Discover from './pages/discover';
-import Matches from './pages/Matches';  // Updated import path
+import Matches from './pages/Matches';  // Updated import
 import Admin from './pages/Admin';
 import ProtectedRoute from './components/protected-route';
 import { useUser } from './context/UserContext';
