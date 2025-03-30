@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +21,7 @@ import {
 
 const Profile = () => {
   const { userId } = useParams();
-  const { currentUser, getUserById, sendGift } = useUser();
+  const { currentUser, getProfileById, sendGift } = useUser();
   const [profileUser, setProfileUser] = useState(currentUser);
   const [isOwnProfile, setIsOwnProfile] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
@@ -31,7 +30,7 @@ const Profile = () => {
   useEffect(() => {
     // If userId is provided and it's not the current user's ID, fetch that user's profile
     if (userId && currentUser && userId !== currentUser.id) {
-      const otherUser = getUserById(userId);
+      const otherUser = getProfileById(userId);
       if (otherUser) {
         setProfileUser(otherUser);
         setIsOwnProfile(false);
@@ -44,7 +43,7 @@ const Profile = () => {
       setProfileUser(currentUser);
       setIsOwnProfile(true);
     }
-  }, [userId, currentUser, getUserById, navigate]);
+  }, [userId, currentUser, getProfileById, navigate]);
 
   const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
     if (!profileUser || !currentUser) return;
