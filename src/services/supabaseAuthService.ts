@@ -1,6 +1,33 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User } from '@/types/user';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+interface ProfileRow {
+  id: string;
+  name: string;
+  email: string;
+  age: number;
+  bio: string;
+  location: string;
+  interests: string[];
+  gender: string;
+  interested_in: string[];
+  photos: string[];
+  popularity_points: number;
+  premium_status: string;
+  personality_traits: string[];
+  is_verified: boolean;
+  is_banned: boolean;
+  role: string;
+  created_at: string;
+  updated_at: string;
+  trial_end_date?: string;
+}
 
 export const login = async (email: string, password: string): Promise<{ success: boolean, user?: User }> => {
   try {
@@ -299,5 +326,33 @@ export const logout = async (): Promise<boolean> => {
       description: "An unexpected error occurred"
     });
     return false;
+  }
+};
+
+export const getUser = async (userId: string) => {
+  try {
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+
+    const trialEndDate = (profile as ProfileRow).trial_end_date;
+    const formattedTrialEndDate = trialEndDate ? new Date(trialEndDate) : null;
+
+    return {
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      trialEndDate: formattedTrialEndDate
+    };
+  } catch (error) {
+    console.error('Exception fetching user profile:', error);
+    return null;
   }
 };

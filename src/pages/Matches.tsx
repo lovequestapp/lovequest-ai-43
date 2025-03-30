@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
@@ -41,8 +42,18 @@ const MatchesPage = () => {
       setIsLoading(true);
       try {
         const mockProfiles = generateMockProfiles(20, currentUser);
-        setProfiles(mockProfiles);
-        applyFilters(mockProfiles);
+        
+        // Filter by gender preference before setting profiles
+        const genderFilteredProfiles = mockProfiles.filter(profile => {
+          // If the current user has gender preferences, filter by them
+          if (currentUser.interestedIn && currentUser.interestedIn.length > 0) {
+            return currentUser.interestedIn.includes(profile.gender);
+          }
+          return true; // If no preferences set, don't filter
+        });
+        
+        setProfiles(genderFilteredProfiles);
+        applyFilters(genderFilteredProfiles);
         
         try {
           const response = await fetch('https://ipapi.co/json/');
@@ -72,16 +83,12 @@ const MatchesPage = () => {
     
     let filtered = [...profilesData];
     
-    if (currentUser.interestedIn && currentUser.interestedIn.length > 0) {
-      filtered = filtered.filter(profile => 
-        currentUser.interestedIn.includes(profile.gender)
-      );
-    }
-    
+    // Filter by age range
     filtered = filtered.filter(profile => 
       profile.age >= ageRange[0] && profile.age <= ageRange[1]
     );
     
+    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(profile => 
@@ -92,10 +99,12 @@ const MatchesPage = () => {
       );
     }
     
+    // Filter by verification status
     if (onlyVerified) {
       filtered = filtered.filter(profile => profile.verificationStatus === 'verified');
     }
     
+    // Filter by tab
     if (activeTab === 'matches') {
       filtered = filtered.filter(profile => 
         getCompatibilityScore(currentUser, profile) > 75
@@ -145,7 +154,7 @@ const MatchesPage = () => {
   const generateMockProfiles = (count: number, user: User): User[] => {
     const genders = ['male', 'female', 'non-binary'] as const;
     const verificationStatuses = ['verified', 'unverified', 'pending'] as const;
-    const premiumStatuses = ['basic', 'premium', 'vip'] as const;
+    const premiumStatuses = ['basic', 'premium', 'vip', 'trial'] as const;
     
     const locations = [
       'New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX',
@@ -189,14 +198,17 @@ const MatchesPage = () => {
     const mockProfiles: User[] = [];
     
     for (let i = 0; i < count; i++) {
+      // Choose a gender that matches the user's preferences if they have any
       let gender: 'male' | 'female' | 'non-binary';
       
       if (user.interestedIn && user.interestedIn.length > 0) {
+        // Pick a gender from the user's preferences
         gender = user.interestedIn[Math.floor(Math.random() * user.interestedIn.length)];
       } else {
         gender = genders[Math.floor(Math.random() * genders.length)];
       }
       
+      // Select appropriate names and photos based on gender
       let name: string;
       let photos: string[];
       
@@ -211,6 +223,7 @@ const MatchesPage = () => {
         photos = [nonBinaryImages[Math.floor(Math.random() * nonBinaryImages.length)]];
       }
       
+      // Generate random interests
       const profileInterests: string[] = [];
       const interestCount = Math.floor(Math.random() * 3) + 3;
       
@@ -221,6 +234,7 @@ const MatchesPage = () => {
         }
       }
       
+      // Generate random personality traits
       const personalityTraits: string[] = [];
       const traitCount = Math.floor(Math.random() * 3) + 2;
       
@@ -241,7 +255,7 @@ const MatchesPage = () => {
         interests: profileInterests,
         photos,
         gender,
-        interestedIn: [user.gender],
+        interestedIn: [user.gender], // Make sure they're interested in the user's gender
         popularityPoints: Math.floor(Math.random() * 500) + 100,
         premiumStatus: premiumStatuses[Math.floor(Math.random() * premiumStatuses.length)],
         giftInventory: { rose: 0, heart: 0, teddy: 0 },
@@ -266,6 +280,7 @@ const MatchesPage = () => {
       });
     }
     
+    // Calculate compatibility scores
     mockProfiles.forEach(profile => {
       profile.compatibilityScore = getCompatibilityScore(user, profile);
     });
