@@ -11,14 +11,14 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from '@/context/UserContext';
 import { Layout } from '@/components/layout';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from "@/components/ui/separator";
 import { Heart, X, Filter, MapPin, Sparkles, Users, MessageCircle } from 'lucide-react';
 import ProfileCard from '@/components/ProfileCard';
 import { User } from '@/types/user';
 import { supabase } from '@/integrations/supabase/client';
 
-const ExplorePage = () => {
-  const { currentUser, getCompatibilityScore, likeProfile, passProfile } = useUser();
+const MatchesPage = () => {
+  const { currentUser, getCompatibilityScore, likeUser, passUser, sendMessage } = useUser();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -110,7 +110,7 @@ const ExplorePage = () => {
   };
   
   const handleLike = (profileId: string) => {
-    likeProfile(profileId);
+    likeUser(profileId);
     toast({
       title: "Liked!",
       description: "You've liked this profile",
@@ -138,7 +138,7 @@ const ExplorePage = () => {
   };
   
   const handlePass = (profileId: string) => {
-    passProfile(profileId);
+    passUser(profileId);
     setFilteredProfiles(prev => prev.filter(profile => profile.id !== profileId));
   };
   
@@ -278,7 +278,7 @@ const ExplorePage = () => {
       <div className="container max-w-6xl mx-auto px-4 py-6">
         <div className="mb-6">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-semibold tracking-tight">Explore</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Matches</h1>
             <div className="flex items-center space-x-2">
               <Button 
                 variant="outline" 
@@ -302,7 +302,7 @@ const ExplorePage = () => {
           
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
             <Users size={16} />
-            <span>Browse profiles in your area and find your perfect match</span>
+            <span>Browse matches in your area and find your perfect connection</span>
           </div>
           
           <Tabs 
@@ -319,11 +319,11 @@ const ExplorePage = () => {
               </TabsTrigger>
               <TabsTrigger value="matches" className="flex gap-1">
                 <Sparkles size={16} className="text-amber-500" />
-                <span>Matches</span>
+                <span>Mutual Matches</span>
               </TabsTrigger>
               <TabsTrigger value="likes" className="flex gap-1">
                 <Heart size={16} className="text-love-500" />
-                <span>Likes</span>
+                <span>Profiles You Liked</span>
               </TabsTrigger>
             </TabsList>
             
@@ -446,7 +446,7 @@ const ExplorePage = () => {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <h3 className="text-xl font-medium mb-2">No matches yet</h3>
+                  <h3 className="text-xl font-medium mb-2">No mutual matches yet</h3>
                   <p className="text-muted-foreground mb-4">Keep exploring profiles to find your perfect match!</p>
                   <div className="flex justify-center">
                     <Button 
@@ -477,8 +477,8 @@ const ExplorePage = () => {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <h3 className="text-xl font-medium mb-2">No likes yet</h3>
-                  <p className="text-muted-foreground mb-4">Keep exploring to find profiles you like!</p>
+                  <h3 className="text-xl font-medium mb-2">No liked profiles yet</h3>
+                  <p className="text-muted-foreground mb-4">Start liking profiles to build your collection!</p>
                   <div className="flex justify-center">
                     <Button 
                       onClick={() => setActiveTab('all')}
@@ -519,4 +519,4 @@ const ExplorePage = () => {
   );
 };
 
-export default ExplorePage;
+export default MatchesPage;

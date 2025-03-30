@@ -11,7 +11,7 @@ const MobileToolbar = () => {
   const { currentUser } = useUser();
   
   const isActive = (path: string) => {
-    if (path === '/discover' && (currentPath === '/discover' || currentPath.startsWith('/profiles'))) {
+    if (path === '/matches' && (currentPath === '/matches' || currentPath.startsWith('/profile'))) {
       return true;
     }
     if (path === '/messages' && (currentPath === '/messages' || currentPath.startsWith('/messages/'))) {
@@ -30,15 +30,15 @@ const MobileToolbar = () => {
     <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 md:hidden">
       <div className="flex justify-around items-center h-16 px-2 pb-safe-bottom">
         <Link 
-          to="/discover" 
+          to="/matches" 
           className={cn(
             "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
-            isActive('/discover') 
+            isActive('/matches') 
               ? "text-love-500" 
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <Heart size={22} className={cn(isActive('/discover') ? "fill-love-500" : "")} />
+          <Heart size={22} className={cn(isActive('/matches') ? "fill-love-500" : "")} />
           <span className="text-xs mt-1 font-medium">Matches</span>
         </Link>
         

@@ -49,7 +49,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   };
   
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow relative">
+    <Card className="overflow-hidden hover:shadow-md transition-shadow relative group">
       {isMatch && (
         <div className="absolute top-2 right-2 z-10">
           <Badge className="bg-gradient-to-r from-love-500 to-purple-500 text-white flex items-center gap-1 shadow-md">
@@ -74,13 +74,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       )}
       
       <div 
-        className="aspect-[3/4] w-full bg-muted cursor-pointer"
+        className="aspect-[3/4] w-full bg-muted cursor-pointer group-hover:opacity-95 transition-opacity"
         onClick={handleViewProfile}
       >
         <img 
           src={profileImage} 
           alt={`${profile.name}'s profile`}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         
         {/* Compatibility badge */}
@@ -148,7 +148,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             onClick={handleViewProfile}
             variant="outline"
             size="sm"
-            className="text-xs px-3"
+            className="text-xs px-3 hover:bg-love-50 hover:text-love-600"
           >
             View Profile
           </Button>
