@@ -13,12 +13,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Eye, EyeOff } from 'lucide-react';
 import { validatePasswordStrength } from '@/utils/security';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Login = () => {
   const navigate = useNavigate();
   const { setCurrentUser } = useUser();
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
+  const isMobile = useIsMobile();
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -90,39 +92,14 @@ const Login = () => {
       return;
     }
     
-    setIsRegistering(true);
-    
-    try {
-      const newUser = await authService.register(
-        {
-          email: registerEmail,
-          password: registerPassword
-        },
-        {
-          name: registerName,
-          email: registerEmail,
-          age: 25, // Default values
-          photos: [],
-          bio: '',
-          location: '',
-          interests: []
-        }
-      );
-      
-      if (newUser) {
-        // Update UserContext with the registered user
-        setCurrentUser(newUser);
-        toast.success('Account created successfully!');
-        navigate('/profile');
-      } else {
-        toast.error('Error creating account. Please try again.');
-      }
-    } catch (error) {
-      toast.error('Registration failed. Please try again.');
-      console.error('Registration error:', error);
-    } finally {
-      setIsRegistering(false);
-    }
+    // Navigate to subscription selection
+    navigate('/register', { 
+      state: { 
+        name: registerName, 
+        email: registerEmail, 
+        password: registerPassword 
+      } 
+    });
   };
   
   const checkPasswordStrength = (password: string) => {
@@ -134,8 +111,8 @@ const Login = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 py-12 flex items-center justify-center">
-        <Card className="w-full max-w-md mx-auto">
+      <main className="flex-grow container mx-auto px-4 py-8 flex items-center justify-center">
+        <Card className={`w-full ${isMobile ? 'max-w-full' : 'max-w-md'} mx-auto`}>
           <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab}>
             <CardHeader>
               <div className="flex justify-center mb-4">
@@ -152,11 +129,6 @@ const Login = () => {
                   ? 'Enter your credentials to access your account' 
                   : 'Sign up to start finding your perfect match'}
               </CardDescription>
-              {activeTab === 'login' && (
-                <div className="text-xs text-center mt-2 text-muted-foreground">
-                  Admin: hunainm.qureshi@gmail.com / LoveQuest14
-                </div>
-              )}
             </CardHeader>
             
             <CardContent>
@@ -279,7 +251,7 @@ const Login = () => {
                     className="w-full bg-gradient-love" 
                     disabled={isRegistering}
                   >
-                    {isRegistering ? 'Creating Account...' : 'Create Account'}
+                    Next: Choose Subscription
                   </Button>
                 </form>
               </TabsContent>

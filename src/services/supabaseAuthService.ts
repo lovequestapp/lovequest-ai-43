@@ -93,15 +93,42 @@ export const login = async (email: string, password: string): Promise<{ success:
       
     // Handle type-safe premiumStatus
     const premiumStatus = profile?.premium_status || 'basic';
-    const validPremiumStatus = (premiumStatus === 'basic' || premiumStatus === 'premium' || premiumStatus === 'vip')
-      ? premiumStatus as 'basic' | 'premium' | 'vip'
+    const validPremiumStatus = (
+      premiumStatus === 'basic' || 
+      premiumStatus === 'premium' || 
+      premiumStatus === 'vip' || 
+      premiumStatus === 'trial'
+    )
+      ? premiumStatus as 'basic' | 'premium' | 'vip' | 'trial'
       : 'basic' as const;
       
     // Handle type-safe role
     const role = profile?.role || 'subscriber';
-    const validRole = (role === 'admin' || role === 'moderator' || role === 'subscriber' || role === 'vip' || role === 'trial')
+    const validRole = (
+      role === 'admin' || 
+      role === 'moderator' || 
+      role === 'subscriber' || 
+      role === 'vip' || 
+      role === 'trial'
+    )
       ? role as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial'
       : 'subscriber' as const;
+    
+    // Check trial expiration
+    if (validPremiumStatus === 'trial' && profile?.trial_end_date) {
+      const trialEndDate = new Date(profile.trial_end_date);
+      const now = new Date();
+      
+      if (now > trialEndDate) {
+        // Trial has expired, update to basic
+        await supabase
+          .from('profiles')
+          .update({ premium_status: 'basic' })
+          .eq('id', data.user.id);
+          
+        toast.info("Your free trial has expired. You have been moved to our Basic plan.");
+      }
+    }
     
     // Map data to User type
     const user: User = {
