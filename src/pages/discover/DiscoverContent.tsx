@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, X, Info, MapPin, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 interface DiscoverContentProps {
   profiles: UserWithCoordinates[];
@@ -14,6 +15,8 @@ interface DiscoverContentProps {
 }
 
 const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) => {
+  const navigate = useNavigate();
+  
   // Format profiles to be compatible with SwipeableCard
   const formattedProfiles = profiles.map(profile => ({
     id: profile.id,
@@ -58,7 +61,8 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
             
             <motion.div 
               whileHover={{ scale: 1.1 }}
-              className="bg-white/10 backdrop-blur-sm h-10 w-10 rounded-full flex items-center justify-center cursor-pointer"
+              className="bg-white/10 backdrop-blur-sm h-10 w-10 rounded-full flex items-center justify-center cursor-pointer card-action-button"
+              onClick={() => navigate(`/profile/${profile.id}`)}
             >
               <Info size={20} className="text-white" />
             </motion.div>

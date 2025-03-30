@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Heart, MessageCircle, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 interface Post {
   id: string;
@@ -23,6 +24,8 @@ interface ProfilePostsProps {
 }
 
 const ProfilePosts: React.FC<ProfilePostsProps> = ({ userId, posts }) => {
+  const navigate = useNavigate();
+
   if (!posts || posts.length === 0) {
     return (
       <div className="py-12 text-center">
