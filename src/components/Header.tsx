@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { User, Wallet, LogOut } from 'lucide-react';
+import { User, Wallet, LogOut, Heart } from 'lucide-react';
 
 const Header = () => {
   const { currentUser, logout } = useUser();
@@ -20,8 +20,9 @@ const Header = () => {
   return (
     <header className="bg-white shadow-sm py-4">
       <div className="container mx-auto px-4 flex justify-between items-center">
-        <Link to="/" className="text-2xl font-display font-bold text-love-600">
-          LoveQuest
+        <Link to="/" className="flex items-center gap-2">
+          <Heart size={20} className="text-love-500 fill-love-500" />
+          <span className="text-2xl font-display font-bold text-love-600">LoveQuest</span>
         </Link>
         
         <nav>
