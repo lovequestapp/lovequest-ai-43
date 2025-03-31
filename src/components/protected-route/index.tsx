@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
-import { isSessionValid } from '@/lib/supabase';
+import { isSessionValid, refreshSession } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface ProtectedRouteProps {
@@ -14,20 +14,35 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   adminOnly = false 
 }) => {
-  const { currentUser } = useUser();
+  const { currentUser, setCurrentUser } = useUser();
   const location = useLocation();
   const [isChecking, setIsChecking] = useState(true);
   const [isSessionActive, setIsSessionActive] = useState(false);
   
   useEffect(() => {
     const checkSession = async () => {
-      const sessionValid = await isSessionValid();
-      setIsSessionActive(sessionValid);
-      setIsChecking(false);
+      try {
+        // First check if the session is valid
+        const sessionValid = await isSessionValid();
+        setIsSessionActive(sessionValid);
+        
+        // If session is valid but we have no user in context, attempt to refresh
+        if (sessionValid && !currentUser) {
+          const { success } = await refreshSession();
+          if (success) {
+            // Session refreshed, the App.tsx useEffect will load the user
+            console.log("Session refreshed successfully, waiting for user data to load");
+          }
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+      } finally {
+        setIsChecking(false);
+      }
     };
     
     checkSession();
-  }, []);
+  }, [currentUser]);
   
   // Show loading state while checking session
   if (isChecking) {

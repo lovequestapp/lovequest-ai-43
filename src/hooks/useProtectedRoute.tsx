@@ -1,7 +1,8 @@
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase, isSessionValid, refreshSession } from '@/lib/supabase';
+import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
 
 /**
@@ -16,40 +17,50 @@ export const useProtectedRoute = (options: { requireAuth?: boolean; adminOnly?: 
   const [isAuth, setIsAuth] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser } = useUser();
 
   useEffect(() => {
     // Helper function to check auth status and redirect if needed
     const checkAuthAndRedirect = async () => {
-      const isValid = await isSessionValid();
-      
-      if (requireAuth && !isValid) {
-        toast.error("Please log in to access this page");
-        navigate('/login');
-        return false;
-      }
-      
-      if (isValid && adminOnly) {
-        // Check user role if admin is required
-        const { data } = await supabase.auth.getUser();
-        if (data?.user) {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', data.user.id)
-            .single();
+      try {
+        // First check if there's a valid session
+        const isValid = await isSessionValid();
+        
+        if (requireAuth && !isValid) {
+          // No valid session, redirect to login
+          toast.error("Please log in to access this page");
+          navigate(`/login?returnTo=${encodeURIComponent(location.pathname)}`);
+          return false;
+        }
+        
+        if (isValid) {
+          // Session is valid, try to refresh if needed
+          await refreshSession();
           
-          const role = profileData?.role || 'subscriber';
-          setUserRole(role);
-          
-          if (role !== 'admin') {
-            toast.error("You need admin privileges to access this page");
-            navigate('/profile');
-            return false;
+          if (adminOnly) {
+            // Check user role if admin is required
+            if (currentUser) {
+              const role = currentUser.role || 'subscriber';
+              setUserRole(role);
+              
+              if (role !== 'admin') {
+                toast.error("You need admin privileges to access this page");
+                navigate('/profile');
+                return false;
+              }
+            } else {
+              // We have a valid session but no user yet, we should wait for the user to load
+              return true;
+            }
           }
         }
+        
+        return isValid;
+      } catch (error) {
+        console.error("Auth check error:", error);
+        return false;
       }
-      
-      return isValid;
     };
 
     // Set up auth state listener
@@ -62,14 +73,9 @@ export const useProtectedRoute = (options: { requireAuth?: boolean; adminOnly?: 
         if (requireAuth && !isAuthenticated && !isLoading) {
           // Use setTimeout to avoid potential auth deadlocks
           setTimeout(() => {
-            toast.error("Please log in to access this page");
-            navigate('/login');
+            toast.error("Your session has ended, please log in again");
+            navigate(`/login?returnTo=${encodeURIComponent(location.pathname)}`);
           }, 0);
-        }
-        
-        // Try to refresh the session if we're signing in
-        if (event === 'SIGNED_IN') {
-          await refreshSession();
         }
       }
     );
@@ -80,12 +86,6 @@ export const useProtectedRoute = (options: { requireAuth?: boolean; adminOnly?: 
         // First check session validity
         const isValid = await checkAuthAndRedirect();
         setIsAuth(isValid);
-        
-        // Attempt to refresh token if we have a session
-        if (isValid) {
-          await refreshSession();
-        }
-        
       } catch (error) {
         console.error('Auth check error:', error);
         if (requireAuth) {
@@ -104,7 +104,7 @@ export const useProtectedRoute = (options: { requireAuth?: boolean; adminOnly?: 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, requireAuth, adminOnly, isLoading]);
+  }, [navigate, requireAuth, adminOnly, isLoading, location.pathname, currentUser]);
 
   return { isAuthenticated: isAuth, isLoading, userRole };
 };

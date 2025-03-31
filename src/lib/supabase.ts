@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
@@ -23,8 +22,37 @@ export const getSupabaseStatus = () => ({
 
 // Helper function to check if a session is valid
 export const isSessionValid = async () => {
-  const { data, error } = await supabase.auth.getSession();
-  return !!data.session && !error;
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      console.error("Session check error:", error);
+      return false;
+    }
+    
+    const isValid = !!data.session;
+    
+    // If session will expire soon (within 1 hour), try to refresh it
+    if (isValid && data.session) {
+      const expiresAt = data.session.expires_at;
+      if (expiresAt) {
+        const expiresAtDate = new Date(expiresAt * 1000);
+        const now = new Date();
+        const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+        
+        if (expiresAtDate < oneHourFromNow) {
+          // Session expires within the next hour, attempt to refresh
+          console.log("Session expiring soon, refreshing...");
+          await refreshSession();
+        }
+      }
+    }
+    
+    return isValid;
+  } catch (error) {
+    console.error("Error checking session validity:", error);
+    return false;
+  }
 };
 
 // Authenticate with email and password
@@ -203,14 +231,17 @@ export const getCurrentUser = async () => {
 // Refresh user session
 export const refreshSession = async () => {
   try {
+    console.log("Attempting to refresh session...");
     const { data, error } = await supabase.auth.refreshSession();
     if (error) throw error;
     
     if (data.session) {
+      console.log("Session refreshed successfully");
       localStorage.setItem('lovequestLastAuth', new Date().toISOString());
       return { success: true, session: data.session };
     }
     
+    console.log("No session returned from refresh");
     return { success: false };
   } catch (error: any) {
     console.error('Error refreshing session:', error.message);
