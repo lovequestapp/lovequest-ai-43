@@ -21,6 +21,12 @@ export const getSupabaseStatus = () => ({
   url: supabaseUrl
 });
 
+// Helper function to check if a session is valid
+export const isSessionValid = async () => {
+  const { data, error } = await supabase.auth.getSession();
+  return !!data.session && !error;
+};
+
 // Authenticate with email and password
 export const signInWithEmail = async (email: string, password: string) => {
   try {
@@ -30,6 +36,12 @@ export const signInWithEmail = async (email: string, password: string) => {
     });
     
     if (error) throw error;
+    
+    // Store auth timestamp to help with session management
+    if (data.session) {
+      localStorage.setItem('lovequestLastAuth', new Date().toISOString());
+    }
+    
     return { success: true, data };
   } catch (error: any) {
     console.error('Error signing in:', error.message);
@@ -64,6 +76,9 @@ export const signUpWithEmail = async (email: string, password: string) => {
       };
     }
     
+    // Store auth timestamp
+    localStorage.setItem('lovequestLastAuth', new Date().toISOString());
+    
     return { success: true, data };
   } catch (error: any) {
     console.error('Error signing up:', error.message);
@@ -77,6 +92,9 @@ export const signUpWithEmail = async (email: string, password: string) => {
 // Sign out
 export const signOut = async () => {
   try {
+    // Clear auth timestamp
+    localStorage.removeItem('lovequestLastAuth');
+    
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     return { success: true };
@@ -101,6 +119,14 @@ export const getCurrentSession = async () => {
 // Get current user
 export const getCurrentUser = async () => {
   try {
+    // Check for session first
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !sessionData.session) {
+      console.log('No active session found');
+      return { success: false, user: null };
+    }
+    
     const { data, error } = await supabase.auth.getUser();
     if (error) throw error;
     
@@ -170,6 +196,24 @@ export const getCurrentUser = async () => {
     return { success: false, user: null };
   } catch (error: any) {
     console.error('Error getting user:', error.message);
+    return { success: false, error: error.message };
+  }
+};
+
+// Refresh user session
+export const refreshSession = async () => {
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) throw error;
+    
+    if (data.session) {
+      localStorage.setItem('lovequestLastAuth', new Date().toISOString());
+      return { success: true, session: data.session };
+    }
+    
+    return { success: false };
+  } catch (error: any) {
+    console.error('Error refreshing session:', error.message);
     return { success: false, error: error.message };
   }
 };

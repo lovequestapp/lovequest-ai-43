@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
 import { authService } from '@/services/authService';
+import { isSessionValid, refreshSession } from '@/lib/supabase';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setCurrentUser } = useUser();
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
@@ -34,6 +36,26 @@ const Login = () => {
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState({ isValid: false, message: '' });
+  
+  // Check for existing session on component mount
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      // If we have a valid session, redirect to profile
+      const sessionValid = await isSessionValid();
+      
+      if (sessionValid) {
+        // If user came from a specific location, return there
+        const returnPath = new URLSearchParams(location.search).get('returnTo');
+        if (returnPath) {
+          navigate(returnPath);
+        } else {
+          navigate('/profile');
+        }
+      }
+    };
+    
+    checkExistingSession();
+  }, [navigate, location]);
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +75,10 @@ const Login = () => {
       if (user) {
         // Update UserContext with the logged in user
         setCurrentUser(user);
+        
+        // Refresh session token to ensure it's valid
+        await refreshSession();
+        
         toast.success('Logged in successfully!');
         
         // Redirect admin users to the admin page, others to profile
@@ -60,7 +86,13 @@ const Login = () => {
           toast.success('Welcome, Admin!');
           navigate('/admin');
         } else {
-          navigate('/profile');
+          // Check if we have a returnTo parameter
+          const returnPath = new URLSearchParams(location.search).get('returnTo');
+          if (returnPath) {
+            navigate(returnPath);
+          } else {
+            navigate('/profile');
+          }
         }
       } else {
         toast.error('Invalid email or password');
