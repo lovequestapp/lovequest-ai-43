@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
 import { supabase } from '@/integrations/supabase/client';
 import MessageList from '@/components/MessageList';
@@ -8,6 +7,8 @@ import MessageChat from '@/components/MessageChat';
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from 'sonner';
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Home } from 'lucide-react';
 import type { Message } from '@/types/user';
 
 const Messages = () => {
@@ -276,9 +277,40 @@ const Messages = () => {
   
   const activeMatch = matchUsers.find(user => user.id === activeMatchId) || null;
   
+  const goBack = () => {
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
+  
   return (
     <div className="container mx-auto p-4 min-h-screen">
-      <h1 className="text-2xl font-semibold mb-4 text-love-900">Messages</h1>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={goBack} 
+            className="md:hidden"
+            aria-label="Go back"
+          >
+            <ArrowLeft size={20} />
+          </Button>
+          <h1 className="text-2xl font-semibold text-love-900">Messages</h1>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate('/')} 
+            aria-label="Go to home"
+          >
+            <Home size={20} />
+          </Button>
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
         {/* Matches List */}
