@@ -20,7 +20,7 @@ export const Navbar = () => {
         <div className="flex items-center">
           <Link to="/" className="flex items-center gap-2">
             <Heart className="h-6 w-6 text-love-500 fill-love-500" />
-            <span className="font-display text-xl hidden sm:inline font-semibold">LoveQuest</span>
+            <span className="text-xl font-display text-black">LoveQuest</span>
           </Link>
         </div>
         
