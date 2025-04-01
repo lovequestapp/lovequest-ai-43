@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
@@ -49,79 +48,72 @@ const Header = () => {
                 <span className="sr-only">Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[80%] sm:w-[350px]">
+            <SheetContent side="right" className="w-[80%] sm:w-[350px] border-love-100">
               <SheetHeader className="border-b pb-4">
-                <SheetTitle>Menu</SheetTitle>
+                <div className="flex justify-between items-center">
+                  <SheetTitle className="text-love-800 font-display">LoveQuest Menu</SheetTitle>
+                  <Button variant="ghost" size="icon" onClick={() => setSheetOpen(false)}>
+                    <X size={18} />
+                  </Button>
+                </div>
               </SheetHeader>
-              <div className="py-4 flex flex-col gap-2">
+              <div className="py-6 flex flex-col gap-3">
                 {currentUser ? (
                   <>
-                    <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-md">
-                      <Avatar className="h-10 w-10">
+                    <div className="flex items-center gap-3 mb-6 p-4 bg-love-50 rounded-lg border border-love-100">
+                      <Avatar className="h-14 w-14 border-2 border-love-100">
                         <AvatarImage src={currentUser.photos?.[0] || ''} alt={currentUser.name} />
-                        <AvatarFallback className="bg-love-100 text-love-800">
+                        <AvatarFallback className="bg-gradient-to-br from-love-200 to-love-400 text-white">
                           {currentUser.name.substring(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{currentUser.name}</p>
+                        <p className="font-semibold text-love-900">{currentUser.name}</p>
                         <p className="text-xs text-gray-500">{currentUser.email}</p>
+                        {currentUser.premiumStatus !== 'basic' && (
+                          <span className="inline-flex mt-1 items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            {currentUser.premiumStatus.charAt(0).toUpperCase() + currentUser.premiumStatus.slice(1)}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <Button 
-                      asChild 
-                      variant="ghost" 
-                      className="justify-start" 
-                      onClick={() => setSheetOpen(false)}
-                    >
-                      <Link to="/discover">Discover</Link>
-                    </Button>
-                    <Button 
-                      asChild 
-                      variant="ghost" 
-                      className="justify-start" 
-                      onClick={() => setSheetOpen(false)}
-                    >
-                      <Link to="/matches">Matches</Link>
-                    </Button>
-                    <Button 
-                      asChild 
-                      variant="ghost" 
-                      className="justify-start" 
-                      onClick={() => setSheetOpen(false)}
-                    >
-                      <Link to="/messages">Messages</Link>
-                    </Button>
-                    <Button 
-                      asChild 
-                      variant="ghost" 
-                      className="justify-start" 
-                      onClick={() => setSheetOpen(false)}
-                    >
-                      <Link to="/user-profile">My Profile</Link>
-                    </Button>
-                    <Button 
-                      asChild 
-                      variant="ghost" 
-                      className="justify-start" 
-                      onClick={() => setSheetOpen(false)}
-                    >
-                      <Link to="/user-profile?tab=monetize">Monetization</Link>
-                    </Button>
+                    
+                    <Link to="/discover" className="flex items-center gap-3 px-2 py-3 rounded-md hover:bg-love-50 text-gray-700 hover:text-love-700 transition-colors">
+                      <Heart size={20} className="text-love-500" />
+                      <span className="font-medium">Discover</span>
+                    </Link>
+                    
+                    <Link to="/matches" className="flex items-center gap-3 px-2 py-3 rounded-md hover:bg-love-50 text-gray-700 hover:text-love-700 transition-colors">
+                      <User size={20} className="text-love-500" />
+                      <span className="font-medium">Matches</span>
+                    </Link>
+                    
+                    <Link to="/messages" className="flex items-center gap-3 px-2 py-3 rounded-md hover:bg-love-50 text-gray-700 hover:text-love-700 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-love-500"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                      <span className="font-medium">Messages</span>
+                    </Link>
+                    
+                    <Link to="/user-profile" className="flex items-center gap-3 px-2 py-3 rounded-md hover:bg-love-50 text-gray-700 hover:text-love-700 transition-colors">
+                      <User size={20} className="text-love-500" />
+                      <span className="font-medium">My Profile</span>
+                    </Link>
+                    
+                    <Link to="/user-profile?tab=monetize" className="flex items-center gap-3 px-2 py-3 rounded-md hover:bg-love-50 text-gray-700 hover:text-love-700 transition-colors">
+                      <Wallet size={20} className="text-love-500" />
+                      <span className="font-medium">Monetization</span>
+                    </Link>
+                    
                     {currentUser.role === 'admin' && (
-                      <Button 
-                        asChild 
-                        variant="ghost" 
-                        className="justify-start" 
-                        onClick={() => setSheetOpen(false)}
-                      >
-                        <Link to="/admin">Admin Dashboard</Link>
-                      </Button>
+                      <Link to="/admin" className="flex items-center gap-3 px-2 py-3 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <span className="font-medium">Admin Dashboard</span>
+                      </Link>
                     )}
-                    <div className="mt-4 pt-4 border-t">
+                    
+                    <div className="mt-6 pt-6 border-t border-love-100">
                       <Button 
-                        variant="destructive" 
-                        className="w-full gap-2"
+                        variant="outline" 
+                        className="w-full gap-2 border-rose-200 hover:bg-rose-50 text-rose-600"
                         onClick={handleLogout}
                       >
                         <LogOut size={16} />
@@ -131,21 +123,18 @@ const Header = () => {
                   </>
                 ) : (
                   <>
-                    <Button 
-                      asChild 
-                      variant="ghost" 
-                      className="justify-start" 
-                      onClick={() => setSheetOpen(false)}
-                    >
-                      <Link to="/login">Log in</Link>
-                    </Button>
-                    <Button 
-                      asChild 
-                      className="mt-2 bg-gradient-love hover:opacity-90" 
-                      onClick={() => setSheetOpen(false)}
-                    >
-                      <Link to="/register">Sign up</Link>
-                    </Button>
+                    <Link to="/login" className="flex items-center gap-3 px-2 py-3 rounded-md hover:bg-love-50 text-gray-700 hover:text-love-700 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-love-500"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                      <span className="font-medium">Log in</span>
+                    </Link>
+                    
+                    <div className="mt-2">
+                      <Link to="/register">
+                        <Button className="w-full bg-gradient-to-r from-love-500 to-love-600 hover:opacity-90">
+                          Create an Account
+                        </Button>
+                      </Link>
+                    </div>
                   </>
                 )}
               </div>

@@ -70,6 +70,55 @@ export const getNearbyUsers = (
     .filter(user => (user.distance || 0) <= radius);
 };
 
+// Text similarity analysis for bio and writing style matching
+export const calculateTextSimilarity = (text1: string, text2: string): number => {
+  if (!text1 || !text2) return 0;
+  
+  // Convert to lowercase and remove special characters
+  const normalizedText1 = text1.toLowerCase().replace(/[^\w\s]/g, '');
+  const normalizedText2 = text2.toLowerCase().replace(/[^\w\s]/g, '');
+  
+  // Split into words
+  const words1 = normalizedText1.split(/\s+/).filter(word => word.length > 2);
+  const words2 = normalizedText2.split(/\s+/).filter(word => word.length > 2);
+  
+  // Count common words
+  const commonWords = words1.filter(word => words2.includes(word));
+  
+  // Calculate Jaccard similarity coefficient
+  const uniqueWords = new Set([...words1, ...words2]);
+  const similarity = uniqueWords.size > 0 ? commonWords.length / uniqueWords.size : 0;
+  
+  return similarity * 100;
+};
+
+// Calculate writing style similarity based on sentence structure, word usage patterns
+export const analyzeWritingStyle = (bio1: string, bio2: string): number => {
+  if (!bio1 || !bio2) return 0;
+  
+  // Average sentence length comparison
+  const sentences1 = bio1.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const sentences2 = bio2.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  
+  const avgLength1 = sentences1.reduce((acc, s) => acc + s.split(/\s+/).length, 0) / Math.max(1, sentences1.length);
+  const avgLength2 = sentences2.reduce((acc, s) => acc + s.split(/\s+/).length, 0) / Math.max(1, sentences2.length);
+  
+  // Sentence length similarity (0-100)
+  const lengthSimilarity = 100 - Math.min(100, Math.abs(avgLength1 - avgLength2) * 20);
+  
+  // Vocabulary richness comparison
+  const uniqueWords1 = new Set(bio1.toLowerCase().split(/\s+/));
+  const uniqueWords2 = new Set(bio2.toLowerCase().split(/\s+/));
+  
+  const vocabRichness1 = uniqueWords1.size / Math.max(1, bio1.split(/\s+/).length);
+  const vocabRichness2 = uniqueWords2.size / Math.max(1, bio2.split(/\s+/).length);
+  
+  const vocabSimilarity = 100 - Math.min(100, Math.abs(vocabRichness1 - vocabRichness2) * 100);
+  
+  // Return weighted average
+  return (lengthSimilarity * 0.5) + (vocabSimilarity * 0.5);
+};
+
 // Enhanced matching algorithm using simulated AI features
 export const getAiEnhancedMatches = (
   currentUser: UserWithCoordinates,
@@ -93,50 +142,112 @@ export const getAiEnhancedMatches = (
   });
 };
 
-// Calculate compatibility score between two users
-export const calculateCompatibilityScore = (
-  user1: UserWithCoordinates,
-  user2: UserWithCoordinates
-): number => {
-  // Implement using the same logic as in UserContext's getCompatibilityScore
-  if (!user1 || !user2) return 0;
+// Calculate interest overlap with weighted importance
+const calculateInterestOverlap = (user1: User, user2: User): number => {
+  if (!user1.interests || !user2.interests) return 0;
   
-  let score = 0;
-  let totalFactors = 0;
-  
-  if (user1.interestedIn.includes(user2.gender) && user2.interestedIn.includes(user1.gender)) {
-    score += 25;
-  } else {
-    return Math.floor(Math.random() * 20) + 5;
-  }
-  totalFactors += 25;
-  
+  // Count common interests
   const sharedInterests = user1.interests.filter(interest => 
     user2.interests.includes(interest)
   ).length;
   
-  const interestScore = Math.min(25, (sharedInterests / Math.max(1, Math.min(user1.interests.length, user2.interests.length))) * 25);
-  score += interestScore;
-  totalFactors += 25;
+  // Calculate percentage of shared interests relative to user's total interests
+  const percentageShared = Math.min(25, (sharedInterests / Math.max(1, Math.min(user1.interests.length, user2.interests.length))) * 25);
   
+  return percentageShared;
+};
+
+// Calculate personality trait compatibility
+const calculateTraitCompatibility = (user1: User, user2: User): number => {
+  if (!user1.personalityTraits || !user2.personalityTraits) return 0;
+  
+  // Some traits work better as complements, others as similarities
+  const complementaryTraits = [
+    ['Introvert', 'Extrovert'],
+    ['Planner', 'Spontaneous'],
+    ['Analytical', 'Creative']
+  ];
+  
+  // Count matching traits
   const sharedTraits = user1.personalityTraits.filter(trait => 
     user2.personalityTraits.includes(trait)
-  ).length;
+  );
   
-  const traitScore = Math.min(25, (sharedTraits / Math.max(1, Math.min(user1.personalityTraits.length, user2.personalityTraits.length))) * 25);
+  // Check for complementary traits
+  let complementaryScore = 0;
+  complementaryTraits.forEach(pair => {
+    if (
+      (user1.personalityTraits.includes(pair[0]) && user2.personalityTraits.includes(pair[1])) ||
+      (user1.personalityTraits.includes(pair[1]) && user2.personalityTraits.includes(pair[0]))
+    ) {
+      complementaryScore += 5;
+    }
+  });
+  
+  // Calculate base score from shared traits
+  const sharedScore = Math.min(20, (sharedTraits.length / Math.max(1, Math.min(user1.personalityTraits.length, user2.personalityTraits.length))) * 20);
+  
+  return sharedScore + complementaryScore;
+};
+
+// Calculate compatibility score between two users with enhanced factors
+export const calculateCompatibilityScore = (
+  user1: UserWithCoordinates,
+  user2: UserWithCoordinates
+): number => {
+  if (!user1 || !user2) return 0;
+  
+  let score = 0;
+  
+  // Gender preference match (essential factor)
+  if (user1.interestedIn.includes(user2.gender) && user2.interestedIn.includes(user1.gender)) {
+    score += 25;
+  } else {
+    // If gender preferences don't match, return a very low score
+    return Math.floor(Math.random() * 20) + 5;
+  }
+  
+  // Interest overlap (25% of score)
+  const interestScore = calculateInterestOverlap(user1, user2);
+  score += interestScore;
+  
+  // Personality traits (25% of score) 
+  const traitScore = calculateTraitCompatibility(user1, user2);
   score += traitScore;
-  totalFactors += 25;
   
+  // Age compatibility (15% of score)
   const ageDifference = Math.abs(user1.age - user2.age);
-  const ageScore = Math.max(0, 25 - (ageDifference * 2));
+  const ageScore = Math.max(0, 15 - (ageDifference * 0.75));
   score += ageScore;
-  totalFactors += 25;
   
-  const finalScore = Math.round((score / totalFactors) * 100);
+  // Writing style/bio similarity (10% of score)
+  if (user1.bio && user2.bio) {
+    const textSimilarity = calculateTextSimilarity(user1.bio, user2.bio) * 0.05;
+    const writingStyleSimilarity = analyzeWritingStyle(user1.bio, user2.bio) * 0.05;
+    score += textSimilarity + writingStyleSimilarity;
+  }
   
+  // Location proximity (if available) (5% of score)
+  if (user1.coordinates && user2.coordinates) {
+    const distance = calculateDistance(
+      user1.coordinates.latitude,
+      user1.coordinates.longitude,
+      user2.coordinates.latitude,
+      user2.coordinates.longitude
+    );
+    
+    // Within 10km is full score, decreasing linearly up to 100km
+    const locationScore = Math.max(0, 5 - (distance / 20));
+    score += locationScore;
+  }
+  
+  // Normalize score to 0-100 range
+  const normalizedScore = Math.min(100, score);
+  
+  // Add a small random factor for diversity in results (±5%)
   const randomFactor = Math.floor(Math.random() * 10) - 5;
   
-  return Math.max(0, Math.min(100, finalScore + randomFactor));
+  return Math.max(0, Math.min(100, normalizedScore + randomFactor));
 };
 
 // Export the types to be used elsewhere

@@ -51,68 +51,101 @@ export const Navbar = () => {
                       <span className="sr-only">Menu</span>
                     </Button>
                   </SheetTrigger>
-                  <SheetContent side="right" className="w-[80%] sm:w-[350px]">
+                  <SheetContent side="right" className="w-[80%] sm:w-[350px] border-love-100">
                     <SheetHeader className="border-b pb-4">
-                      <SheetTitle>Menu</SheetTitle>
+                      <div className="flex justify-between items-center">
+                        <SheetTitle className="text-love-800 font-display">LoveQuest Menu</SheetTitle>
+                        <Button variant="ghost" size="icon" onClick={() => setSheetOpen(false)}>
+                          <X size={18} />
+                        </Button>
+                      </div>
                     </SheetHeader>
-                    <div className="py-4 flex flex-col gap-2">
-                      <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-md">
-                        <div className="h-10 w-10 rounded-full bg-love-100 text-love-800 flex items-center justify-center">
+                    <div className="py-6 flex flex-col gap-3">
+                      <div className="flex items-center gap-3 mb-6 p-4 bg-love-50 rounded-lg border border-love-100">
+                        <div className="h-14 w-14 rounded-full bg-gradient-to-br from-love-200 to-love-400 text-white flex items-center justify-center font-semibold">
                           {currentUser.name.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium">{currentUser.name}</p>
+                          <p className="font-semibold text-love-900">{currentUser.name}</p>
                           <p className="text-xs text-gray-500">{currentUser.email}</p>
+                          {currentUser.premiumStatus !== 'basic' && (
+                            <span className="inline-flex mt-1 items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                              {currentUser.premiumStatus.charAt(0).toUpperCase() + currentUser.premiumStatus.slice(1)}
+                            </span>
+                          )}
                         </div>
                       </div>
+                      
                       <Button 
                         variant={isActive("/discover") ? "default" : "ghost"}
-                        className={`justify-start ${isActive("/discover") ? "bg-love-500 hover:bg-love-600" : ""}`}
+                        className={`justify-start ${isActive("/discover") 
+                          ? "bg-love-500 hover:bg-love-600" 
+                          : "hover:bg-love-50 hover:text-love-700"}`}
                         onClick={() => { navigate("/discover"); setSheetOpen(false); }}
                       >
+                        <Heart size={18} className="mr-2" />
                         Discover
                       </Button>
+                      
                       <Button 
                         variant={isActive("/matches") ? "default" : "ghost"}
-                        className={`justify-start ${isActive("/matches") ? "bg-love-500 hover:bg-love-600" : ""}`}
+                        className={`justify-start ${isActive("/matches") 
+                          ? "bg-love-500 hover:bg-love-600" 
+                          : "hover:bg-love-50 hover:text-love-700"}`}
                         onClick={() => { navigate("/matches"); setSheetOpen(false); }}
                       >
+                        <User size={18} className="mr-2" />
                         Matches
                       </Button>
+                      
                       <Button 
                         variant={isActive("/messages") ? "default" : "ghost"}
-                        className={`justify-start ${isActive("/messages") ? "bg-love-500 hover:bg-love-600" : ""}`}
+                        className={`justify-start ${isActive("/messages") 
+                          ? "bg-love-500 hover:bg-love-600" 
+                          : "hover:bg-love-50 hover:text-love-700"}`}
                         onClick={() => { navigate("/messages"); setSheetOpen(false); }}
                       >
+                        <MessageCircle size={18} className="mr-2" />
                         Messages
                       </Button>
+                      
                       <Button 
                         variant={isActive("/user-profile") ? "default" : "ghost"}
-                        className={`justify-start ${isActive("/user-profile") ? "bg-love-500 hover:bg-love-600" : ""}`}
+                        className={`justify-start ${isActive("/user-profile") 
+                          ? "bg-love-500 hover:bg-love-600" 
+                          : "hover:bg-love-50 hover:text-love-700"}`}
                         onClick={() => { navigate("/user-profile"); setSheetOpen(false); }}
                       >
+                        <User size={18} className="mr-2" />
                         My Profile
                       </Button>
+                      
                       <Button 
                         variant="ghost"
-                        className="justify-start"
+                        className="justify-start hover:bg-love-50 hover:text-love-700"
                         onClick={() => { navigate("/user-profile?tab=monetize"); setSheetOpen(false); }}
                       >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>
                         Monetization
                       </Button>
+                      
                       {currentUser.role === 'admin' && (
                         <Button 
                           variant={isActive("/admin") ? "default" : "ghost"}
-                          className={`justify-start ${isActive("/admin") ? "bg-love-500 hover:bg-love-600" : ""}`}
+                          className={`justify-start ${isActive("/admin") 
+                            ? "bg-amber-500 hover:bg-amber-600" 
+                            : "bg-amber-50 hover:bg-amber-100 text-amber-800"}`}
                           onClick={() => { navigate("/admin"); setSheetOpen(false); }}
                         >
+                          <Crown size={18} className="mr-2" />
                           Admin Dashboard
                         </Button>
                       )}
-                      <div className="mt-4 pt-4 border-t">
+                      
+                      <div className="mt-6 pt-6 border-t border-love-100">
                         <Button 
-                          variant="destructive" 
-                          className="w-full gap-2"
+                          variant="outline" 
+                          className="w-full gap-2 border-rose-200 hover:bg-rose-50 text-rose-600"
                           onClick={handleLogout}
                         >
                           <LogOut size={16} />
