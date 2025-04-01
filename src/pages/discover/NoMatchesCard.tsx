@@ -12,8 +12,8 @@ const NoMatchesCard: React.FC = () => {
   const { toast } = useToast();
   
   const handleUpdatePreferences = () => {
-    // Navigate to the user profile edit screen with preferences tab selected
-    navigate('/user-profile?tab=edit&section=preferences');
+    // Navigate to the user preferences page
+    navigate('/preferences');
     
     toast({
       title: "Opening preferences",

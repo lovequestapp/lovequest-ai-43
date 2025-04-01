@@ -1,6 +1,5 @@
-
 import { User } from '@/types/user';
-import type { UserWithCoordinates, BoostLevelType } from '@/types/user';
+import type { UserWithCoordinates, BoostLevelType, UserPreferences } from '@/types/user';
 
 // BOOST_PRIORITY mapping for sorting boosted profiles
 export const BOOST_PRIORITY: Record<BoostLevelType, number> = {
@@ -198,6 +197,26 @@ export const calculateCompatibilityScore = (
   if (!user1 || !user2) return 0;
   
   let score = 0;
+  let totalFactors = 0;
+  
+  // Get matching priorities or use defaults
+  const priorities = user1.preferences?.matchingPriorities || {
+    interests: 5,
+    personality: 4,
+    location: 3,
+    age: 2,
+    writingStyle: 4
+  };
+  
+  // Normalize priorities to sum to 1
+  const totalPriority = Object.values(priorities).reduce((sum, val) => sum + val, 0);
+  const normalizedPriorities = {
+    interests: priorities.interests / totalPriority,
+    personality: priorities.personality / totalPriority,
+    location: priorities.location / totalPriority,
+    age: priorities.age / totalPriority,
+    writingStyle: priorities.writingStyle / totalPriority
+  };
   
   // Gender preference match (essential factor)
   if (user1.interestedIn.includes(user2.gender) && user2.interestedIn.includes(user1.gender)) {
@@ -207,27 +226,27 @@ export const calculateCompatibilityScore = (
     return Math.floor(Math.random() * 20) + 5;
   }
   
-  // Interest overlap (25% of score)
-  const interestScore = calculateInterestOverlap(user1, user2);
+  // Interest overlap (weighted by priority)
+  const interestScore = calculateInterestOverlap(user1, user2) * normalizedPriorities.interests * 25;
   score += interestScore;
   
-  // Personality traits (25% of score) 
-  const traitScore = calculateTraitCompatibility(user1, user2);
+  // Personality traits (weighted by priority)
+  const traitScore = calculateTraitCompatibility(user1, user2) * normalizedPriorities.personality * 25;
   score += traitScore;
   
-  // Age compatibility (15% of score)
+  // Age compatibility (weighted by priority)
   const ageDifference = Math.abs(user1.age - user2.age);
-  const ageScore = Math.max(0, 15 - (ageDifference * 0.75));
+  const ageScore = Math.max(0, 15 - (ageDifference * 0.75)) * normalizedPriorities.age;
   score += ageScore;
   
-  // Writing style/bio similarity (10% of score)
+  // Writing style/bio similarity (weighted by priority)
   if (user1.bio && user2.bio) {
-    const textSimilarity = calculateTextSimilarity(user1.bio, user2.bio) * 0.05;
-    const writingStyleSimilarity = analyzeWritingStyle(user1.bio, user2.bio) * 0.05;
+    const textSimilarity = calculateTextSimilarity(user1.bio, user2.bio) * 0.05 * normalizedPriorities.writingStyle;
+    const writingStyleSimilarity = analyzeWritingStyle(user1.bio, user2.bio) * 0.05 * normalizedPriorities.writingStyle;
     score += textSimilarity + writingStyleSimilarity;
   }
   
-  // Location proximity (if available) (5% of score)
+  // Location proximity (if available) (weighted by priority)
   if (user1.coordinates && user2.coordinates) {
     const distance = calculateDistance(
       user1.coordinates.latitude,
@@ -236,9 +255,28 @@ export const calculateCompatibilityScore = (
       user2.coordinates.longitude
     );
     
-    // Within 10km is full score, decreasing linearly up to 100km
-    const locationScore = Math.max(0, 5 - (distance / 20));
-    score += locationScore;
+    // Check if user has max distance preference
+    const maxDistance = user1.preferences?.maxDistance || 100;
+    
+    if (distance <= maxDistance) {
+      // Within maxDistance is full score, decreasing linearly
+      const locationScore = Math.max(0, 5 - (distance / (maxDistance / 5))) * normalizedPriorities.location;
+      score += locationScore;
+    } else {
+      // Beyond max distance, but don't completely exclude
+      score += 1 * normalizedPriorities.location;
+    }
+  }
+  
+  // Preferred locations match
+  if (user1.preferences?.preferredLocations?.length && user2.location) {
+    const locationMatches = user1.preferences.preferredLocations.some(
+      loc => user2.location.toLowerCase().includes(loc.toLowerCase())
+    );
+    
+    if (locationMatches) {
+      score += 5 * normalizedPriorities.location;
+    }
   }
   
   // Normalize score to 0-100 range
@@ -250,5 +288,50 @@ export const calculateCompatibilityScore = (
   return Math.max(0, Math.min(100, normalizedScore + randomFactor));
 };
 
+// Filter users by preferences
+export const filterUsersByPreferences = (
+  currentUser: UserWithCoordinates,
+  potentialMatches: UserWithCoordinates[]
+): UserWithCoordinates[] => {
+  if (!currentUser || !potentialMatches.length) return [];
+  
+  const preferences = currentUser.preferences;
+  
+  return potentialMatches.filter(user => {
+    // Skip if user doesn't want to be shown to others
+    if (user.preferences?.showMeToUsers === false) {
+      return false;
+    }
+    
+    // Check gender preference
+    if (!currentUser.interestedIn.includes(user.gender)) {
+      return false;
+    }
+    
+    // Check age range if specified
+    if (preferences?.ageRange) {
+      if (user.age < preferences.ageRange.min || user.age > preferences.ageRange.max) {
+        return false;
+      }
+    }
+    
+    // Check distance if coordinates available and max distance specified
+    if (currentUser.coordinates && user.coordinates && preferences?.maxDistance) {
+      const distance = calculateDistance(
+        currentUser.coordinates.latitude,
+        currentUser.coordinates.longitude,
+        user.coordinates.latitude,
+        user.coordinates.longitude
+      );
+      
+      if (distance > preferences.maxDistance) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+};
+
 // Export the types to be used elsewhere
-export type { User, UserWithCoordinates, BoostLevelType };
+export type { User, UserWithCoordinates, BoostLevelType, UserPreferences };

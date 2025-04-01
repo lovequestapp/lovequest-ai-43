@@ -1,4 +1,3 @@
-
 export type User = {
   id: string;
   name: string;
@@ -33,9 +32,10 @@ export type User = {
   lastMessage: string;
   lastMessageTime: Date;
   status: 'online' | 'offline' | 'away';
+  // New preferences property
+  preferences?: UserPreferences;
 };
 
-// Export types used by other components
 export type GiftInventory = {
   rose: number;
   heart: number;
@@ -73,7 +73,29 @@ export type BlogPostType = {
   tags: string[];
 };
 
-// Add UserWithCoordinates type for matchmaking features
+export type UserPreferences = {
+  maxDistance: number;
+  ageRange: {
+    min: number;
+    max: number;
+  };
+  showMeToUsers: boolean;
+  notificationPreferences: {
+    messages: boolean;
+    matches: boolean;
+    likes: boolean;
+    app: boolean;
+  };
+  preferredLocations: string[];
+  matchingPriorities: {
+    interests: number;
+    personality: number;
+    location: number;
+    age: number;
+    writingStyle: number;
+  };
+};
+
 export type UserWithCoordinates = User & {
   coordinates?: {
     latitude: number;

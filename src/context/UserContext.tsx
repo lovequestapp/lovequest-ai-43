@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
-import { User, Message, BlogPostType, GiftInventory, BoostType, BoostLevelType, UserWithCoordinates } from '@/types/user';
+import { User, Message, BlogPostType, GiftInventory, BoostType, BoostLevelType, UserWithCoordinates, UserPreferences } from '@/types/user';
 
 interface UserContextType {
   currentUser: User | null;
@@ -50,6 +50,7 @@ interface UserContextType {
   updateBankDetails: (details: User['bankDetails']) => Promise<boolean>;
   getWithdrawalHistory: () => any[];
   getPendingWithdrawal: () => any;
+  updatePreferences: (preferences: Partial<UserPreferences>) => Promise<boolean>;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -97,6 +98,7 @@ const UserContext = createContext<UserContextType>({
   updateBankDetails: async () => false,
   getWithdrawalHistory: () => [],
   getPendingWithdrawal: () => null,
+  updatePreferences: async () => false,
 });
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
@@ -261,6 +263,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
           interests: data.interests,
           gender: data.gender,
           interested_in: data.interestedIn,
+          preferences: data.preferences,
         })
         .eq('id', currentUser.id);
         
@@ -618,6 +621,33 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     toast.success("User updated successfully!");
   };
   
+  const updatePreferences = async (preferences: Partial<UserPreferences>): Promise<boolean> => {
+    try {
+      if (!currentUser) {
+        toast.error("You must be logged in to update your preferences");
+        return false;
+      }
+      
+      // Merge with existing preferences
+      const updatedPreferences = {
+        ...(currentUser.preferences || {}),
+        ...preferences
+      };
+      
+      // Update user with new preferences
+      return await updateProfile({
+        preferences: updatedPreferences as UserPreferences
+      });
+      
+    } catch (error) {
+      console.error('Update preferences error:', error);
+      toast.error("Failed to update preferences", {
+        description: "An unexpected error occurred"
+      });
+      return false;
+    }
+  };
+  
   const contextValue: UserContextType = {
     currentUser,
     setCurrentUser,
@@ -687,6 +717,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     },
     getWithdrawalHistory: () => [],
     getPendingWithdrawal: () => null,
+    updatePreferences,
   };
   
   return (
@@ -697,4 +728,4 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useUser = () => useContext(UserContext);
-export type { User, Message, GiftInventory, BoostType, BoostLevelType, UserWithCoordinates };
+export type { User, Message, GiftInventory, BoostType, BoostLevelType, UserWithCoordinates, UserPreferences };
