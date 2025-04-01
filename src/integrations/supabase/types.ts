@@ -48,6 +48,7 @@ export type Database = {
           bio: string | null
           created_at: string | null
           email: string | null
+          favorite_music: string[] | null
           gender: string | null
           gift_inventory: Json | null
           id: string
@@ -65,12 +66,14 @@ export type Database = {
           role: string | null
           trial_end_date: string | null
           updated_at: string | null
+          voice_intro: string | null
         }
         Insert: {
           age?: number | null
           bio?: string | null
           created_at?: string | null
           email?: string | null
+          favorite_music?: string[] | null
           gender?: string | null
           gift_inventory?: Json | null
           id: string
@@ -88,12 +91,14 @@ export type Database = {
           role?: string | null
           trial_end_date?: string | null
           updated_at?: string | null
+          voice_intro?: string | null
         }
         Update: {
           age?: number | null
           bio?: string | null
           created_at?: string | null
           email?: string | null
+          favorite_music?: string[] | null
           gender?: string | null
           gift_inventory?: Json | null
           id?: string
@@ -111,6 +116,7 @@ export type Database = {
           role?: string | null
           trial_end_date?: string | null
           updated_at?: string | null
+          voice_intro?: string | null
         }
         Relationships: []
       }

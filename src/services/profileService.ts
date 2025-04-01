@@ -27,6 +27,7 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
         interested_in: profileData.interestedIn,
         personality_traits: profileData.personalityTraits,
         photos: profileData.photos,
+        favorite_music: profileData.favoriteMusic,
         // Handle voice intro if provided
         ...(profileData.voiceIntro ? { voice_intro: profileData.voiceIntro } : {})
       })
@@ -34,6 +35,9 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
     
     if (error) {
       console.error('Error updating profile:', error);
+      toast.error("Failed to update profile", {
+        description: error.message
+      });
       return false;
     }
     
@@ -41,6 +45,9 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
     return true;
   } catch (error: any) {
     console.error('Profile update error:', error.message);
+    toast.error("Failed to update profile", {
+      description: error.message || "An unexpected error occurred"
+    });
     return false;
   }
 };
@@ -56,19 +63,8 @@ export const uploadProfilePhoto = async (userId: string, file: File): Promise<st
     }
     
     const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}-${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-    const filePath = `profiles/${fileName}`;
-    
-    // First, ensure the bucket exists
-    try {
-      await supabase.storage.createBucket('profile-photos', {
-        public: true,
-        fileSizeLimit: 5242880 // 5MB in bytes
-      });
-    } catch (error) {
-      // Bucket might already exist, which is fine
-      console.log('Bucket creation:', error);
-    }
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const filePath = `profiles/${userId}/${fileName}`;
     
     // Upload the file
     const { data, error } = await supabase.storage
@@ -122,13 +118,20 @@ export const saveVoiceIntro = async (userId: string, audioData: string): Promise
     
     if (error) {
       console.error("Error saving voice intro:", error);
+      toast.error("Failed to save voice introduction", {
+        description: error.message
+      });
       return false;
     }
     
     console.log('Voice intro saved successfully');
+    toast.success("Voice introduction saved successfully");
     return true;
   } catch (error: any) {
     console.error('Voice intro save error:', error.message);
+    toast.error("Failed to save voice introduction", {
+      description: error.message || "An unexpected error occurred"
+    });
     return false;
   }
 };

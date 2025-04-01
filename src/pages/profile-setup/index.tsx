@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -15,6 +14,7 @@ import AboutYouForm from '@/components/profile-setup/AboutYouForm';
 import PhotoUploader from '@/components/profile-setup/PhotoUploader';
 import VoiceIntroSection from '@/components/profile-setup/VoiceIntroSection';
 import ProfileSetupFooter from '@/components/profile-setup/ProfileSetupFooter';
+import { uploadProfilePhoto, saveVoiceIntro } from '@/services/profileService';
 
 type GenderType = 'male' | 'female' | 'non-binary';
 
@@ -24,8 +24,8 @@ const ProfileSetup = () => {
   const { currentUser, updateUserProfile } = useUser();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [voiceNote, setVoiceNote] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>(currentUser?.photos || []);
+  const [voiceNote, setVoiceNote] = useState<string | null>(currentUser?.voiceIntro || null);
   const [isRecording, setIsRecording] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   
@@ -36,7 +36,8 @@ const ProfileSetup = () => {
     bio: currentUser?.bio || '',
     gender: (currentUser?.gender as GenderType) || '' as string,
     interestedIn: currentUser?.interestedIn || [],
-    personalityTraits: currentUser?.personalityTraits || []
+    personalityTraits: currentUser?.personalityTraits || [],
+    favoriteMusic: currentUser?.favoriteMusic || []
   });
   
   useEffect(() => {
@@ -105,12 +106,23 @@ const ProfileSetup = () => {
     
     setUploadingPhoto(true);
     try {
-      const imageUrl = URL.createObjectURL(file);
-      setPhotos([...photos, imageUrl]);
-      toast.success('Photo added successfully');
-    } catch (error) {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
+      const photoUrl = await uploadProfilePhoto(user.id, file);
+      
+      if (photoUrl) {
+        setPhotos(prev => [...prev, photoUrl]);
+        toast.success('Photo uploaded successfully');
+      } else {
+        throw new Error('Failed to upload photo');
+      }
+    } catch (error: any) {
       console.error('Error uploading photo:', error);
-      toast.error('Failed to upload photo');
+      toast.error('Failed to upload photo', {
+        description: error.message || 'An unexpected error occurred'
+      });
     } finally {
       setUploadingPhoto(false);
     }
@@ -123,19 +135,17 @@ const ProfileSetup = () => {
   };
   
   const toggleRecording = () => {
-    if (isRecording) {
-      setIsRecording(false);
-      setVoiceNote('voice_recording.mp3');
-      toast.success('Voice note recorded successfully');
-    } else {
-      setIsRecording(true);
-      toast.info('Recording voice note...');
-    }
+    setIsRecording(!isRecording);
   };
   
-  const handleVoiceRecordingComplete = (audioUrl: string) => {
-    setVoiceNote(audioUrl);
+  const handleVoiceRecordingComplete = async (audioData: string) => {
+    setVoiceNote(audioData);
     setIsRecording(false);
+    
+    // Save voice recording to the database
+    if (user?.id) {
+      await saveVoiceIntro(user.id, audioData);
+    }
   };
   
   const handleDeleteVoiceNote = () => {
@@ -192,7 +202,8 @@ const ProfileSetup = () => {
         ...profileData,
         gender: validGender,
         photos,
-        voiceIntro: voiceNote || ''
+        voiceIntro: voiceNote || '',
+        favoriteMusic: profileData.favoriteMusic
       });
       
       toast.success('Profile setup completed!');

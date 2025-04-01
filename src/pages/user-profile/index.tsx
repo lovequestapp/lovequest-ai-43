@@ -1,23 +1,23 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useUser } from '@/context/UserContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, User, Wallet, Crown, Shield } from 'lucide-react';
+import { Edit, User, Wallet, Crown, Shield, Music, Mic } from 'lucide-react';
 import Monetization from '@/components/Monetization';
 import ProfileEditor from '@/components/profile-editor/ProfileEditor';
 import ProfileInfo from '@/components/profile-editor/ProfileInfo';
 import ProtectedRoute from '@/components/protected-route';
 import { toast } from 'sonner';
+import { fetchUserProfile } from '@/services/profileService';
 
 const UserProfile = () => {
-  const { currentUser } = useUser();
+  const { currentUser, setCurrentUser } = useUser();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'profile';
   const [activeTab, setActiveTab] = useState(defaultTab);
@@ -26,32 +26,29 @@ const UserProfile = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const refreshUserProfile = async () => {
       if (!currentUser) return;
       
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
+        const userProfile = await fetchUserProfile(currentUser.id);
           
-        if (error) {
-          console.error('Error fetching profile:', error);
-          toast.error('Failed to load profile data');
+        if (userProfile) {
+          setProfileData(userProfile);
+          setCurrentUser(userProfile);
         } else {
-          setProfileData(data);
+          toast.error('Failed to load profile data');
         }
       } catch (err) {
         console.error('Error in profile fetch:', err);
+        toast.error('Error refreshing profile data');
       } finally {
         setLoading(false);
       }
     };
     
-    fetchUserProfile();
-  }, [currentUser]);
+    refreshUserProfile();
+  }, [currentUser?.id, setCurrentUser]);
 
   if (!currentUser) {
     return null; // ProtectedRoute will handle redirecting
@@ -162,6 +159,40 @@ const UserProfile = () => {
                   <>
                     <TabsContent value="profile" className="mt-0">
                       <ProfileInfo profile={profileData || currentUser} />
+                      
+                      {profileData?.voiceIntro && (
+                        <div className="mt-6 p-4 border rounded-lg">
+                          <h3 className="text-lg font-medium flex items-center gap-2">
+                            <Mic size={18} />
+                            Voice Introduction
+                          </h3>
+                          <div className="mt-3">
+                            <audio
+                              controls
+                              src={profileData.voiceIntro}
+                              className="w-full"
+                            >
+                              Your browser does not support the audio element.
+                            </audio>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {profileData?.favoriteMusic && profileData.favoriteMusic.length > 0 && (
+                        <div className="mt-6 p-4 border rounded-lg">
+                          <h3 className="text-lg font-medium flex items-center gap-2">
+                            <Music size={18} />
+                            Favorite Music
+                          </h3>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {profileData.favoriteMusic.map((genre: string, index: number) => (
+                              <Badge key={index} variant="secondary">
+                                {genre}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </TabsContent>
                     
                     <TabsContent value="edit" className="mt-0">
