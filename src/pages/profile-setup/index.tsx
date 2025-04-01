@@ -1,20 +1,20 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/context/UserContext';
 import { useAuth } from '@/hooks/useAuth';
-import PersonalityTraitSelector from '@/components/PersonalityTraitSelector';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { ChevronLeft, ChevronRight, Camera, Mic, User } from 'lucide-react';
+
+// Import refactored components
+import ProfileSetupProgress from '@/components/profile-setup/ProfileSetupProgress';
+import BasicInfoForm from '@/components/profile-setup/BasicInfoForm';
+import AboutYouForm from '@/components/profile-setup/AboutYouForm';
+import PhotoUploader from '@/components/profile-setup/PhotoUploader';
+import VoiceIntroSection from '@/components/profile-setup/VoiceIntroSection';
+import ProfileSetupFooter from '@/components/profile-setup/ProfileSetupFooter';
 
 type GenderType = 'male' | 'female' | 'non-binary';
 
@@ -133,6 +133,15 @@ const ProfileSetup = () => {
     }
   };
   
+  const handleVoiceRecordingComplete = (audioUrl: string) => {
+    setVoiceNote(audioUrl);
+    setIsRecording(false);
+  };
+  
+  const handleDeleteVoiceNote = () => {
+    setVoiceNote(null);
+  };
+  
   const handleNextStep = () => {
     if (step === 1) {
       if (!profileData.name || !profileData.age || !profileData.location) {
@@ -198,246 +207,43 @@ const ProfileSetup = () => {
     }
   };
   
-  const renderProgress = () => {
-    const percent = (step / 4) * 100;
-    return (
-      <div className="w-full mb-6">
-        <Progress value={percent} className="h-2" />
-        <div className="flex justify-between mt-1 text-xs text-muted-foreground">
-          <span>Step {step} of 4</span>
-          <span>{Math.round(percent)}% Complete</span>
-        </div>
-      </div>
-    );
-  };
-  
   const renderStepContent = () => {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Basic Information</h3>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input 
-                  id="name"
-                  name="name"
-                  value={profileData.name}
-                  onChange={handleProfileDataChange}
-                  placeholder="Enter your full name"
-                  required
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="age">Age</Label>
-                  <Input 
-                    id="age"
-                    name="age"
-                    type="number"
-                    min={18}
-                    value={profileData.age}
-                    onChange={handleProfileDataChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input 
-                    id="location"
-                    name="location"
-                    value={profileData.location}
-                    onChange={handleProfileDataChange}
-                    placeholder="City, Country"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="gender">Gender</Label>
-                <select
-                  id="gender"
-                  name="gender"
-                  value={profileData.gender}
-                  onChange={handleProfileDataChange}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-love-500 focus:border-love-500 sm:text-sm rounded-md"
-                  required
-                >
-                  <option value="">Select gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="non-binary">Non-binary</option>
-                </select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Interested In (select all that apply)</Label>
-                <div className="flex flex-wrap gap-2">
-                  {['male', 'female', 'non-binary'].map((gender) => (
-                    <Button
-                      key={gender}
-                      type="button"
-                      variant={profileData.interestedIn.includes(gender as any) ? "default" : "outline"}
-                      onClick={() => handleGenderInterestChange(gender as 'male' | 'female' | 'non-binary')}
-                      className="capitalize"
-                    >
-                      {gender}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          <BasicInfoForm 
+            profileData={profileData}
+            handleProfileDataChange={handleProfileDataChange}
+            handleGenderInterestChange={handleGenderInterestChange}
+          />
         );
       case 2:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">About You</h3>
-            
-            <div className="space-y-2">
-              <Label htmlFor="bio">Bio</Label>
-              <Textarea 
-                id="bio"
-                name="bio"
-                value={profileData.bio}
-                onChange={handleProfileDataChange}
-                placeholder="Tell us about yourself, your interests, hobbies, and what you're looking for..."
-                rows={6}
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                {profileData.bio.length}/500 characters 
-                {profileData.bio.length < 20 && " (minimum 20 characters)"}
-              </p>
-            </div>
-            
-            <div className="space-y-2 pt-4">
-              <Label>Personality Traits</Label>
-              <PersonalityTraitSelector 
-                selectedTraits={profileData.personalityTraits} 
-                onSelectTrait={handlePersonalityTraitSelect} 
-              />
-            </div>
-          </div>
+          <AboutYouForm 
+            profileData={profileData}
+            handleProfileDataChange={handleProfileDataChange}
+            handlePersonalityTraitSelect={handlePersonalityTraitSelect}
+          />
         );
       case 3:
         return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium">Profile Photos</h3>
-            <p className="text-sm text-muted-foreground">Upload up to 6 photos for your profile (at least 1 required)</p>
-            
-            <div className="grid grid-cols-3 gap-3">
-              {photos.map((photo, index) => (
-                <div key={index} className="relative group aspect-square">
-                  <img 
-                    src={photo} 
-                    alt={`Profile photo ${index + 1}`} 
-                    className="w-full h-full object-cover rounded-md"
-                  />
-                  <button
-                    type="button"
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removePhoto(index)}
-                  >
-                    <ChevronLeft size={16} className="rotate-45" />
-                  </button>
-                </div>
-              ))}
-              
-              {photos.length < 6 && (
-                <label className="aspect-square border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handlePhotoUpload}
-                    disabled={uploadingPhoto}
-                  />
-                  {uploadingPhoto ? (
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-love-500"></div>
-                  ) : (
-                    <>
-                      <Camera size={24} className="text-gray-400" />
-                      <span className="text-sm text-gray-500 mt-1">Add Photo</span>
-                      <span className="text-xs text-gray-400 mt-1">{photos.length}/6</span>
-                    </>
-                  )}
-                </label>
-              )}
-            </div>
-          </div>
+          <PhotoUploader 
+            photos={photos}
+            uploadingPhoto={uploadingPhoto}
+            handlePhotoUpload={handlePhotoUpload}
+            removePhoto={removePhoto}
+          />
         );
       case 4:
         return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium">Voice Introduction</h3>
-            <p className="text-sm text-muted-foreground">Add a voice note to let others hear your voice (optional)</p>
-            
-            <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-md">
-              {voiceNote ? (
-                <div className="flex flex-col items-center space-y-3">
-                  <div className="w-16 h-16 rounded-full bg-love-100 flex items-center justify-center">
-                    <Mic size={32} className="text-love-500" />
-                  </div>
-                  <p className="text-sm font-medium">Voice Note Recorded</p>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setVoiceNote(null)}
-                    size="sm"
-                  >
-                    Delete & Re-record
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center space-y-3">
-                  <Button
-                    className={isRecording ? "bg-red-500 hover:bg-red-600" : ""}
-                    onClick={toggleRecording}
-                  >
-                    {isRecording ? "Stop Recording" : "Record Voice Note"}
-                    <Mic size={18} className="ml-2" />
-                  </Button>
-                  <p className="text-xs text-muted-foreground">Maximum 30 seconds</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="bg-love-50 p-4 rounded-md mt-6">
-              <h4 className="text-base font-medium text-love-700 mb-2 flex items-center">
-                <User size={18} className="mr-2" />
-                Profile Preview
-              </h4>
-              <p className="text-sm text-gray-600 mb-2">
-                <span className="font-medium">Name:</span> {profileData.name}, {profileData.age}
-              </p>
-              <p className="text-sm text-gray-600 mb-2">
-                <span className="font-medium">Location:</span> {profileData.location}
-              </p>
-              <p className="text-sm text-gray-600 mb-2">
-                <span className="font-medium">Gender:</span> {profileData.gender || 'Not specified'} 
-                <span className="mx-2">•</span>
-                <span className="font-medium">Interested in:</span> {profileData.interestedIn.length > 0 ? profileData.interestedIn.join(', ') : 'Not specified'}
-              </p>
-              <div className="text-sm text-gray-600 mb-2">
-                <span className="font-medium">Personality:</span> 
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {profileData.personalityTraits.map(trait => (
-                    <span key={trait} className="inline-block px-2 py-1 bg-love-100 text-love-700 rounded-full text-xs">
-                      {trait}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mt-2 line-clamp-3">
-                <span className="font-medium">Bio:</span> {profileData.bio}
-              </p>
-            </div>
-          </div>
+          <VoiceIntroSection 
+            profileData={profileData}
+            voiceNote={voiceNote}
+            isRecording={isRecording}
+            toggleRecording={toggleRecording}
+            onVoiceRecordingComplete={handleVoiceRecordingComplete}
+            onDeleteVoiceNote={handleDeleteVoiceNote}
+          />
         );
       default:
         return null;
@@ -452,6 +258,8 @@ const ProfileSetup = () => {
     );
   }
   
+  const TOTAL_STEPS = 4;
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -460,45 +268,22 @@ const ProfileSetup = () => {
           <CardHeader>
             <CardTitle className="text-2xl font-display">Complete Your Profile</CardTitle>
             <CardDescription>Let potential matches learn more about you</CardDescription>
-            {renderProgress()}
+            <ProfileSetupProgress step={step} totalSteps={TOTAL_STEPS} />
           </CardHeader>
           
           <CardContent>
             {renderStepContent()}
           </CardContent>
           
-          <CardFooter className="flex justify-between">
-            {step > 1 && (
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={handlePrevStep}
-                className="flex items-center gap-1"
-              >
-                <ChevronLeft size={16} />
-                Back
-              </Button>
-            )}
-            
-            {step < 4 ? (
-              <Button 
-                type="button" 
-                className={`${step === 1 && 'w-full'} ${step > 1 ? 'ml-auto' : ''}`}
-                onClick={handleNextStep}
-              >
-                Next
-                <ChevronRight size={16} className="ml-1" />
-              </Button>
-            ) : (
-              <Button 
-                type="button"
-                onClick={handleSubmit}
-                className="ml-auto"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Saving Profile..." : "Complete Setup"}
-              </Button>
-            )}
+          <CardFooter>
+            <ProfileSetupFooter 
+              step={step}
+              totalSteps={TOTAL_STEPS}
+              isSubmitting={isSubmitting}
+              handlePrevStep={handlePrevStep}
+              handleNextStep={handleNextStep}
+              handleSubmit={handleSubmit}
+            />
           </CardFooter>
         </Card>
       </main>
