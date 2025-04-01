@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +22,7 @@ const SignUp = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('SignUp form submitted');
 
     // Form validation
     if (!name || !email || !password || !confirmPassword) {
@@ -43,8 +43,10 @@ const SignUp = () => {
     setIsLoading(true);
 
     try {
+      console.log('Attempting to sign up with:', { email, name });
       // Default to free plan
       const result = await signUp(email, password, name, 'free');
+      console.log('Sign up result:', result);
 
       if (result.success) {
         if (result.requiresEmailConfirmation) {

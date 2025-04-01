@@ -23,6 +23,7 @@ export const useAuth = () => {
 
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
+      console.log('Fetching user profile for ID:', userId);
       const { data, error } = await (supabase
         .from('profiles') as any)
         .select('*')
@@ -34,6 +35,7 @@ export const useAuth = () => {
         return null;
       }
 
+      console.log('Fetched profile data:', data);
       return data;
     } catch (error) {
       console.error('Exception fetching user profile:', error);
@@ -63,7 +65,7 @@ export const useAuth = () => {
       : 'subscriber';
       
     const isVerified = profile?.is_verified || false;
-    const validVerificationStatus = isVerified ? 'verified' : 'unverified';
+    const validVerificationStatus = isVerified ? 'verified' as const : 'unverified' as const;
 
     return {
       id: userId,
@@ -84,7 +86,7 @@ export const useAuth = () => {
       personalityTraits: profile?.personality_traits || [],
       role: validRole,
       isBanned: profile?.is_banned || false,
-      verificationStatus: validVerificationStatus as "pending" | "rejected" | "verified" | "unverified",
+      verificationStatus: validVerificationStatus,
       lastMessage: '',
       lastMessageTime: new Date(),
       status: 'online',
@@ -103,6 +105,7 @@ export const useAuth = () => {
   useEffect(() => {
     const initialize = async () => {
       try {
+        console.log('Initializing auth state');
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             console.log('Auth state changed:', event);
@@ -177,6 +180,7 @@ export const useAuth = () => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('Attempting to sign in with email:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -196,14 +200,6 @@ export const useAuth = () => {
       const profile = await fetchUserProfile(data.user.id);
       const userObj = mapProfileToUser(profile, data.user.id, data.user.email || '');
       
-      setAuthState({
-        loading: false,
-        authenticated: true,
-        user: userObj
-      });
-      
-      setCurrentUser(userObj);
-      
       toast.success("Login successful!");
       return { success: true };
     } catch (error: any) {
@@ -214,6 +210,7 @@ export const useAuth = () => {
 
   const signUp = async (email: string, password: string, name: string, planType: string = 'free') => {
     try {
+      console.log('Sign up with:', { email, name, planType });
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -223,11 +220,13 @@ export const useAuth = () => {
       });
 
       if (error) {
+        console.error('Sign up error:', error);
         toast.error("Registration failed", { description: error.message });
         return { success: false, error: error.message };
       }
 
       if (!data.user) {
+        console.error('No user account created');
         toast.error("Registration failed", { description: "No user account created" });
         return { success: false, error: "No user account created" };
       }
@@ -236,11 +235,19 @@ export const useAuth = () => {
       let premiumStatus = 'free';
       let trialEndDate = null;
       
-      if (planType === 'premium' || planType === 'vip') {
+      if (planType === 'premium' || planType === 'basic') {
         // Set trial period for premium plans (3 days)
         premiumStatus = 'trial';
         trialEndDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
       }
+
+      console.log('Creating profile with:', { 
+        id: data.user.id, 
+        name, 
+        email, 
+        premiumStatus, 
+        trialEndDate 
+      });
 
       const { error: profileError } = await (supabase
         .from('profiles') as any)
@@ -261,6 +268,7 @@ export const useAuth = () => {
 
       // If we have a session, sign in the user right away
       if (data.session) {
+        console.log('Session available, signing in user');
         const profile = await fetchUserProfile(data.user.id);
         const userObj = mapProfileToUser(profile, data.user.id, data.user.email || '');
         
@@ -276,6 +284,7 @@ export const useAuth = () => {
       toast.success("Registration successful!");
       
       if (!data.session) {
+        console.log('No session, email confirmation required');
         toast.info("Please check your email to confirm your registration");
         return { 
           success: true, 
@@ -285,6 +294,7 @@ export const useAuth = () => {
 
       return { success: true };
     } catch (error: any) {
+      console.error('Registration error:', error);
       toast.error("Registration failed", { description: error.message });
       return { success: false, error: error.message };
     }

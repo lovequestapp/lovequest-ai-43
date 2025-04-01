@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/context/UserContext';
 import { useAuth } from '@/hooks/useAuth';
 import { CreditCard, Star, Award, Clock, Check, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -123,6 +124,7 @@ const Register = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Register form submitted with plan:', selectedPlan);
     
     if (!name || !email || !password) {
       toast.error("Please fill out all fields");
@@ -132,11 +134,9 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      // Calculate trial end date for premium/basic plans
-      const trialEndDate = (selectedPlan === 'premium' || selectedPlan === 'basic') ? 
-        new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null;
-      
+      console.log('Attempting to sign up with plan:', selectedPlan);
       const result = await signUp(email, password, name, selectedPlan);
+      console.log('Sign up result:', result);
       
       if (!result.success) {
         throw new Error(result.error || "Registration failed");
@@ -403,7 +403,7 @@ const Register = () => {
           {renderProgress()}
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="space-y-4">
             {renderStepContent()}
           </form>
         </CardContent>
