@@ -1,9 +1,10 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase, isSessionValid, refreshSession, checkUserRoleAndSubscription } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
+import authService from '@/services/auth';
 
 /**
  * Hook to protect routes that require authentication
@@ -37,7 +38,7 @@ export const useProtectedRoute = (options: {
     const checkAuthAndRedirect = async () => {
       try {
         // First check if there's a valid session
-        const isValid = await isSessionValid();
+        const isValid = await authService.isSessionValid();
         
         if (requireAuth && !isValid) {
           // No valid session, redirect to login
@@ -48,11 +49,11 @@ export const useProtectedRoute = (options: {
         
         if (isValid) {
           // Session is valid, try to refresh if needed
-          await refreshSession();
+          await authService.refreshSession();
           
           // Check user role and subscription if needed
           if (adminOnly || moderatorOnly || requiredSubscription) {
-            const { role, subscription } = await checkUserRoleAndSubscription();
+            const { role, subscription } = await authService.checkUserRoleAndSubscription();
             setUserRole(role);
             setUserSubscription(subscription);
             
@@ -76,7 +77,7 @@ export const useProtectedRoute = (options: {
                 'vip': 3
               };
               
-              const userLevel = subscriptionLevels[subscription] || 0;
+              const userLevel = subscriptionLevels[subscription as keyof typeof subscriptionLevels] || 0;
               const requiredLevel = subscriptionLevels[requiredSubscription] || 0;
               
               if (userLevel < requiredLevel) {

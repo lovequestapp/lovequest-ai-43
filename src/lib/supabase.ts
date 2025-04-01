@@ -1,5 +1,6 @@
+
 import { createClient } from '@supabase/supabase-js';
-import { toast } from 'sonner';
+import authService from '@/services/auth';
 
 // Use the values from the Supabase integration
 const supabaseUrl = 'https://lcacrngizbvjhabkhrkf.supabase.co';
@@ -22,376 +23,51 @@ export const getSupabaseStatus = () => ({
 
 // Helper function to check if a session is valid
 export const isSessionValid = async () => {
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    
-    if (error) {
-      console.error("Session check error:", error);
-      return false;
-    }
-    
-    const isValid = !!data.session;
-    
-    // If session will expire soon (within 1 hour), try to refresh it
-    if (isValid && data.session) {
-      const expiresAt = data.session.expires_at;
-      if (expiresAt) {
-        const expiresAtDate = new Date(expiresAt * 1000);
-        const now = new Date();
-        const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
-        
-        if (expiresAtDate < oneHourFromNow) {
-          // Session expires within the next hour, attempt to refresh
-          console.log("Session expiring soon, refreshing...");
-          await refreshSession();
-        }
-      }
-    }
-    
-    return isValid;
-  } catch (error) {
-    console.error("Error checking session validity:", error);
-    return false;
-  }
+  return authService.isSessionValid();
 };
 
 // Check user role and subscription level
 export const checkUserRoleAndSubscription = async () => {
-  try {
-    // Check for admin user
-    const adminEmail = localStorage.getItem('admin_email');
-    if (adminEmail === 'hunainm.qureshi@gmail.com') {
-      return { 
-        isLoggedIn: true, 
-        role: 'admin', 
-        subscription: 'vip' 
-      };
-    }
-    
-    const { data, error } = await supabase.auth.getSession();
-    
-    if (error || !data.session) {
-      return { 
-        isLoggedIn: false, 
-        role: null, 
-        subscription: null 
-      };
-    }
-    
-    const userId = data.session.user.id;
-    
-    // Get user profile from the profiles table
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('role, premium_status, trial_end_date')
-      .eq('id', userId)
-      .single();
-      
-    if (profileError) {
-      console.error("Error fetching user profile:", profileError);
-      return { 
-        isLoggedIn: true, 
-        role: 'subscriber', 
-        subscription: 'basic' 
-      };
-    }
-    
-    // Check if trial has expired
-    if (profileData.premium_status === 'trial' && profileData.trial_end_date) {
-      const trialEndDate = new Date(profileData.trial_end_date);
-      const now = new Date();
-      
-      if (now > trialEndDate) {
-        // Trial has expired, update to basic
-        await supabase
-          .from('profiles')
-          .update({ premium_status: 'basic' })
-          .eq('id', userId);
-          
-        return { 
-          isLoggedIn: true, 
-          role: profileData.role || 'subscriber', 
-          subscription: 'basic' 
-        };
-      }
-    }
-    
-    return { 
-      isLoggedIn: true, 
-      role: profileData.role || 'subscriber', 
-      subscription: profileData.premium_status || 'basic' 
-    };
-  } catch (error) {
-    console.error("Error checking user role and subscription:", error);
-    return { 
-      isLoggedIn: false, 
-      role: null, 
-      subscription: null 
-    };
-  }
+  return authService.checkUserRoleAndSubscription();
 };
 
 // Authenticate with email and password
 export const signInWithEmail = async (email: string, password: string) => {
-  try {
-    // Check for admin credentials
-    if (email === "hunainm.qureshi@gmail.com" && password === "LoveQuest14") {
-      // Store a marker for admin login
-      localStorage.setItem('admin_email', email);
-      localStorage.setItem('lovequestLastAuth', new Date().toISOString());
-      
-      return { 
-        success: true, 
-        data: {
-          user: {
-            id: "admin-special-id",
-            email: "hunainm.qureshi@gmail.com",
-            role: "admin"
-          },
-          session: {
-            user: {
-              id: "admin-special-id",
-              email: "hunainm.qureshi@gmail.com",
-              role: "admin"
-            }
-          }
-        }
-      };
-    }
-    
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-    
-    if (error) throw error;
-    
-    // Store auth timestamp to help with session management
-    if (data.session) {
-      localStorage.setItem('lovequestLastAuth', new Date().toISOString());
-    }
-    
-    return { success: true, data };
-  } catch (error: any) {
-    console.error('Error signing in:', error.message);
-    return { success: false, error: error.message };
-  }
+  const result = await authService.signIn(email, password);
+  return {
+    success: result.success,
+    data: result.user ? { user: result.user, session: { user: result.user } } : undefined,
+    error: result.error
+  };
 };
 
 // Sign up with email and password
 export const signUpWithEmail = async (email: string, password: string) => {
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin + '/profile',
-        data: {
-          email: email,
-          name: email.split('@')[0] // Default name from email
-        }
-      }
-    });
-    
-    if (error) throw error;
-    
-    // Check if user needs to confirm email
-    if (!data.session) {
-      toast("Please check your email to confirm your registration.");
-      return { 
-        success: true, 
-        data, 
-        message: "Check your email for confirmation link" 
-      };
-    }
-    
-    // Store auth timestamp
-    localStorage.setItem('lovequestLastAuth', new Date().toISOString());
-    
-    return { success: true, data };
-  } catch (error: any) {
-    console.error('Error signing up:', error.message);
-    const errorMessage = error.message === "User already registered" 
-      ? "This email is already registered. Please log in instead."
-      : error.message;
-    return { success: false, error: errorMessage };
-  }
+  const result = await authService.signUp(email, password, email.split('@')[0] || 'User');
+  return {
+    success: result.success,
+    data: result.user ? { user: result.user, session: { user: result.user } } : undefined,
+    error: result.error,
+    message: result.requiresEmailConfirmation ? "Check your email for confirmation link" : undefined
+  };
 };
 
 // Sign out
 export const signOut = async () => {
-  try {
-    // Clear auth timestamp
-    localStorage.removeItem('lovequestLastAuth');
-    
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-    return { success: true };
-  } catch (error: any) {
-    console.error('Error signing out:', error.message);
-    return { success: false, error: error.message };
-  }
+  return authService.signOut();
 };
 
 // Get current session
 export const getCurrentSession = async () => {
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    return { success: true, session: data.session };
-  } catch (error: any) {
-    console.error('Error getting session:', error.message);
-    return { success: false, error: error.message };
-  }
+  return authService.getSession();
 };
 
 // Get current user
 export const getCurrentUser = async () => {
-  try {
-    // Check for admin user
-    const adminEmail = localStorage.getItem('admin_email');
-    if (adminEmail === 'hunainm.qureshi@gmail.com') {
-      return { 
-        success: true, 
-        user: {
-          id: "admin-special-id",
-          email: "hunainm.qureshi@gmail.com",
-          name: "Admin",
-          age: 30,
-          bio: "System Administrator",
-          location: "System",
-          interests: ["administration", "management"],
-          photos: [],
-          gender: 'non-binary' as const,
-          interestedIn: ['male', 'female', 'non-binary'] as ('male' | 'female' | 'non-binary')[],
-          popularityPoints: 100,
-          premiumStatus: 'vip' as const,
-          role: 'admin' as const,
-          isBanned: false,
-          verificationStatus: 'verified' as const,
-          personalityTraits: ["organized", "detail-oriented"],
-          giftInventory: { rose: 999, heart: 999, teddy: 999 },
-          receivedGifts: { rose: 0, heart: 0, teddy: 0 },
-          compatibilityScore: 0,
-        }
-      };
-    }
-    
-    // Check for session first
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !sessionData.session) {
-      console.log('No active session found');
-      return { success: false, user: null };
-    }
-    
-    const { data, error } = await supabase.auth.getUser();
-    if (error) throw error;
-    
-    // If we have a user, fetch their profile from the profiles table
-    if (data.user) {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-        
-      if (!profileError && profileData) {
-        // Check if trial has expired
-        if (profileData.premium_status === 'trial' && profileData.trial_end_date) {
-          const trialEndDate = new Date(profileData.trial_end_date);
-          const now = new Date();
-          
-          if (now > trialEndDate) {
-            // Trial has expired, update to basic
-            await supabase
-              .from('profiles')
-              .update({ premium_status: 'basic' })
-              .eq('id', data.user.id);
-              
-            profileData.premium_status = 'basic';
-            toast.info("Your free trial has expired. You have been moved to our Basic plan.");
-          }
-        }
-        
-        // Return user with profile data
-        return { 
-          success: true, 
-          user: {
-            id: data.user.id,
-            email: data.user.email,
-            name: profileData.name || data.user.email?.split('@')[0] || 'User',
-            age: profileData.age || 25,
-            bio: profileData.bio || '',
-            location: profileData.location || '',
-            interests: profileData.interests || [],
-            photos: profileData.photos || [],
-            gender: profileData.gender || 'non-binary',
-            interestedIn: profileData.interested_in || [],
-            popularityPoints: profileData.popularity_points || 0,
-            premiumStatus: profileData.premium_status || 'basic',
-            role: profileData.role || 'subscriber',
-            isBanned: profileData.is_banned || false,
-            verificationStatus: profileData.is_verified ? 'verified' : 'unverified',
-            personalityTraits: profileData.personality_traits || [],
-            giftInventory: profileData.gift_inventory || { rose: 0, heart: 0, teddy: 0 },
-            receivedGifts: profileData.received_gifts || { rose: 0, heart: 0, teddy: 0 },
-            compatibilityScore: 0,
-          }
-        };
-      }
-      
-      // If no profile or error, return basic user
-      return { 
-        success: true, 
-        user: {
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.email?.split('@')[0] || 'User',
-          age: 25,
-          bio: '',
-          location: '',
-          interests: [],
-          photos: [],
-          gender: 'non-binary' as const,
-          interestedIn: [],
-          popularityPoints: 0,
-          premiumStatus: 'basic' as const,
-          role: 'subscriber' as const,
-          isBanned: false,
-          verificationStatus: 'unverified' as const,
-          personalityTraits: [],
-          giftInventory: { rose: 0, heart: 0, teddy: 0 },
-          receivedGifts: { rose: 0, heart: 0, teddy: 0 },
-          compatibilityScore: 0,
-        }
-      };
-    }
-    
-    return { success: false, user: null };
-  } catch (error: any) {
-    console.error('Error getting user:', error.message);
-    return { success: false, error: error.message };
-  }
+  return authService.getCurrentUser();
 };
 
 // Refresh user session
 export const refreshSession = async () => {
-  try {
-    console.log("Attempting to refresh session...");
-    const { data, error } = await supabase.auth.refreshSession();
-    if (error) throw error;
-    
-    if (data.session) {
-      console.log("Session refreshed successfully");
-      localStorage.setItem('lovequestLastAuth', new Date().toISOString());
-      return { success: true, session: data.session };
-    }
-    
-    console.log("No session returned from refresh");
-    return { success: false };
-  } catch (error: any) {
-    console.error('Error refreshing session:', error.message);
-    return { success: false, error: error.message };
-  }
+  return authService.refreshSession();
 };
