@@ -1,3 +1,4 @@
+
 export type User = {
   id: string;
   name: string;
@@ -32,7 +33,7 @@ export type User = {
   lastMessage: string;
   lastMessageTime: Date;
   status: 'online' | 'offline' | 'away';
-  // New preferences property
+  // Preferences property - all properties are required
   preferences?: UserPreferences;
 };
 

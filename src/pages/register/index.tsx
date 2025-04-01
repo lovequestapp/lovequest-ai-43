@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { useUser } from '@/context/UserContext';
 import { CreditCard, Star, Award, Clock, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -151,6 +151,10 @@ const Register = () => {
         const premiumStatus = selectedPlan === 'premium' ? 'premium' : 
                              selectedPlan === 'basic' ? 'basic' : 'trial';
         
+        // Calculate trial end date - only set if free trial is selected
+        const trialEndDate = selectedPlan === 'free-trial' ? 
+          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null;
+          
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
@@ -168,58 +172,80 @@ const Register = () => {
             role: 'subscriber',
             is_verified: false,
             is_banned: false,
-            trial_end_date: selectedPlan === 'free-trial' ? 
-              new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null // 7 days from now
+            trial_end_date: trialEndDate
           });
           
         if (profileError) {
           console.error("Error creating profile:", profileError);
-        }
-          
-        const newUser = {
-          id: data.user.id,
-          name,
-          email,
-          age: 25, // Default value
-          photos: [],
-          bio: '',
-          location: '',
-          interests: [],
-          gender: 'non-binary' as const,
-          interestedIn: [],
-          popularityPoints: 0,
-          premiumStatus: premiumStatus as 'basic' | 'premium' | 'vip' | 'trial',
-          role: 'subscriber' as const,
-          isBanned: false,
-          verificationStatus: 'unverified' as const,
-          personalityTraits: [],
-          giftInventory: { rose: 0, heart: 0, teddy: 0 },
-          receivedGifts: { rose: 0, heart: 0, teddy: 0 },
-          compatibilityScore: 0,
-          lastMessage: '',
-          lastMessageTime: new Date(),
-          status: 'online' as 'online' | 'offline' | 'away',
-          favoriteMusic: [],
-          voiceIntro: '',
-          bankDetails: {
-            accountName: '',
-            accountNumber: '',
-            bankName: '',
-            routingNumber: '',
-            accountType: ''
-          }
-        };
-        
-        setCurrentUser(newUser);
-        
-        if (selectedPlan === 'free-trial') {
-          toast.success("Your free trial has been activated!");
+          toast.error("Failed to create profile");
         } else {
-          toast.success("Your subscription has been activated!");
+          const newUser = {
+            id: data.user.id,
+            name,
+            email,
+            age: 25, // Default value
+            photos: [],
+            bio: '',
+            location: '',
+            interests: [],
+            gender: 'non-binary' as const,
+            interestedIn: [],
+            popularityPoints: 0,
+            premiumStatus: premiumStatus as 'basic' | 'premium' | 'vip' | 'trial',
+            role: 'subscriber' as const,
+            isBanned: false,
+            verificationStatus: 'unverified' as const,
+            personalityTraits: [],
+            giftInventory: { rose: 0, heart: 0, teddy: 0 },
+            receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+            compatibilityScore: 0,
+            lastMessage: '',
+            lastMessageTime: new Date(),
+            status: 'online' as 'online' | 'offline' | 'away',
+            favoriteMusic: [],
+            voiceIntro: '',
+            bankDetails: {
+              accountName: '',
+              accountNumber: '',
+              bankName: '',
+              routingNumber: '',
+              accountType: ''
+            },
+            // Initialize user preferences with defaults
+            preferences: {
+              maxDistance: 50,
+              ageRange: { min: 18, max: 50 },
+              showMeToUsers: true,
+              notificationPreferences: {
+                messages: true,
+                matches: true,
+                likes: true,
+                app: true
+              },
+              preferredLocations: [],
+              matchingPriorities: {
+                interests: 5,
+                personality: 5,
+                location: 5,
+                age: 5,
+                writingStyle: 5
+              }
+            }
+          };
+          
+          setCurrentUser(newUser);
+          
+          if (selectedPlan === 'free-trial') {
+            toast.success("Your free trial has been activated!");
+          } else {
+            toast.success(`Your ${premiumStatus} subscription has been activated!`);
+          }
+          
+          // Navigate to profile after successful registration
+          navigate('/profile');
         }
-        
-        navigate('/profile');
       } else {
+        // This happens if email confirmation is required
         toast.info("Please check your email to confirm your registration");
       }
     } catch (error: any) {
