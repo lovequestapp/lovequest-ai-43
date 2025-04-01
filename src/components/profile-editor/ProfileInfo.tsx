@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { GiftInventory } from "@/types/user";
 
 interface ProfileInfoProps {
   profile?: any;
@@ -17,6 +18,15 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   if (!userData) {
     return <div>Loading profile...</div>;
   }
+
+  // Safe function to calculate total gifts
+  const calculateTotalGifts = (gifts?: GiftInventory): number => {
+    if (!gifts) return 0;
+    
+    return Object.entries(gifts).reduce((sum, [_, count]) => {
+      return sum + (typeof count === 'number' ? count : 0);
+    }, 0);
+  };
 
   return (
     <div className="space-y-6">
@@ -89,10 +99,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
             <div className="text-center">
               <p className="text-sm text-gray-500">Gifts Received</p>
               <p className="text-2xl font-semibold">
-                {userData.receivedGifts ? 
-                  // Convert object values to an array and sum them
-                  Object.values(userData.receivedGifts).reduce((sum: number, value: any) => sum + (typeof value === 'number' ? value : 0), 0)
-                  : 0}
+                {calculateTotalGifts(userData.receivedGifts)}
               </p>
             </div>
           </CardContent>
