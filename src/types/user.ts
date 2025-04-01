@@ -1,4 +1,5 @@
-export type User = {
+
+export interface User {
   id: string;
   name: string;
   email: string;
@@ -18,9 +19,11 @@ export type User = {
   role: 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial';
   isBanned: boolean;
   verificationStatus: 'verified' | 'unverified' | 'pending' | 'rejected';
-  // Additional properties needed by components
-  voiceIntro: string;
+  lastMessage: string;
+  lastMessageTime: Date;
+  status: 'online' | 'offline' | 'away';
   favoriteMusic: string[];
+  voiceIntro: string;
   bankDetails: {
     accountName: string;
     accountNumber: string;
@@ -28,54 +31,67 @@ export type User = {
     routingNumber: string;
     accountType: string;
   };
-  // Properties for Messages component
-  lastMessage: string;
-  lastMessageTime: Date;
-  status: 'online' | 'offline' | 'away';
-  // Preferences property
+  isDemo?: boolean; // Flag to indicate if this is a demo profile
   preferences?: UserPreferences;
-  // Demo profile flag
-  isDemo?: boolean;
-};
+}
 
-export type GiftInventory = {
+export interface UserWithCoordinates extends User {
+  coordinates: {
+    latitude: number;
+    longitude: number;
+  };
+  distance: number;
+}
+
+export interface GiftInventory {
   rose: number;
   heart: number;
   teddy: number;
-};
+}
 
-export type Message = {
+export interface Message {
   id: string;
   senderId: string;
   receiverId: string;
   content: string;
   timestamp: Date;
   isRead: boolean;
-  attachments?: string[];
-};
+  attachmentUrl?: string;
+}
 
-export type BoostType = 'local' | 'international' | 'super';
-export type BoostLevelType = BoostType | 'none';
-
-export type BlogPostType = {
+export interface BlogPostType {
   id: string;
   userId: string;
   title: string;
   content: string;
+  imageUrl?: string;
+  likes: string[];
+  comments: BlogComment[];
   createdAt: Date;
-  likes: number;
-  comments: {
-    id: string;
-    postId: string;
-    userId: string;
-    userName: string;
-    content: string;
-    createdAt: Date;
-  }[];
+  updatedAt: Date;
   tags: string[];
-};
+}
 
-export type UserPreferences = {
+export interface BlogComment {
+  id: string;
+  userId: string;
+  content: string;
+  timestamp: Date;
+}
+
+export interface BoostType {
+  id: string;
+  userId: string;
+  type: 'local' | 'international';
+  level: BoostLevelType;
+  startTime: Date;
+  endTime: Date;
+  isActive: boolean;
+}
+
+export type BoostLevelType = 'basic' | 'premium' | 'ultra';
+
+export interface UserPreferences {
   maxDistance: number;
   ageRange: {
     min: number;
@@ -90,22 +106,9 @@ export type UserPreferences = {
   };
   preferredLocations: string[];
   matchingPriorities: {
+    distance: number;
     interests: number;
-    personality: number;
-    location: number;
     age: number;
-    writingStyle: number;
+    personality: number;
   };
-};
-
-export type UserWithCoordinates = User & {
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
-  distance?: number;
-  isBoosted?: boolean;
-  boostLevel?: BoostLevelType;
-  activityScore?: number;
-  finalScore?: number;
-};
+}

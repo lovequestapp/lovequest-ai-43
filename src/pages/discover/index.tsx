@@ -1,14 +1,16 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import DiscoverContent from './DiscoverContent';
 import { UserWithCoordinates } from '@/types/user';
 import { toast } from 'sonner';
+import { useTestMode } from '@/context/TestModeContext';
 
 const Discover = () => {
+  const { isTestMode, demoProfiles } = useTestMode();
+  
   // Mock data for testing
-  const [profiles, setProfiles] = useState<UserWithCoordinates[]>([
+  const [regularProfiles, setRegularProfiles] = useState<UserWithCoordinates[]>([
     {
       id: "1",
       name: "Sophie",
@@ -80,10 +82,37 @@ const Discover = () => {
       }
     },
   ]);
+  
+  // Combine regular profiles with demo profiles when in test mode
+  const profiles = isTestMode 
+    ? [...regularProfiles, ...demoProfiles.map(profile => ({
+        ...profile,
+        coordinates: { latitude: 37.7749, longitude: -122.4194 },
+        distance: Math.floor(Math.random() * 20) + 1,
+        isDemo: true
+      }))]
+    : regularProfiles;
 
   const handleSwipe = (id: string, direction: 'left' | 'right') => {
-    // Remove the swiped profile from the list
-    setProfiles(profiles.filter(profile => profile.id !== id));
+    // If it's a demo profile in test mode, just show the toast but don't remove it
+    const isDemo = profiles.find(profile => profile.id === id)?.isDemo;
+    
+    if (isDemo) {
+      if (direction === 'right') {
+        toast.success("You liked this demo profile!", {
+          description: "In test mode, demo profiles will remain available.",
+        });
+      } else {
+        toast.info("Demo profile skipped", {
+          description: "In test mode, demo profiles will remain available.",
+        });
+      }
+      // For demo profiles, we'll just keep them in the list
+      return;
+    }
+    
+    // For regular profiles, remove them as usual
+    setRegularProfiles(regularProfiles.filter(profile => profile.id !== id));
     
     // Show feedback based on swipe direction
     if (direction === 'right') {
@@ -101,6 +130,11 @@ const Discover = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container mx-auto p-4 pb-32">
+        {isTestMode && (
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 text-sm">
+            <strong>Test Mode Active:</strong> Demo profiles are being displayed. These profiles will not be removed when swiped.
+          </div>
+        )}
         <DiscoverContent profiles={profiles} onSwipe={handleSwipe} />
       </main>
       <Footer className="mt-auto" />

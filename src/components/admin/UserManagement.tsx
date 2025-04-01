@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Ban, Check, Download, Edit, Upload, UserPlus, X, Shield, Trash } from "lucide-react";
+import { Ban, Check, Download, Edit, Upload, UserPlus, X, Shield, Trash, Search } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { User } from "@/types/user";
 import { toast } from "sonner";
