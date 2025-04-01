@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
@@ -59,6 +58,16 @@ export const isSessionValid = async () => {
 // Check user role and subscription level
 export const checkUserRoleAndSubscription = async () => {
   try {
+    // Check for admin user
+    const adminEmail = localStorage.getItem('admin_email');
+    if (adminEmail === 'hunainm.qureshi@gmail.com') {
+      return { 
+        isLoggedIn: true, 
+        role: 'admin', 
+        subscription: 'vip' 
+      };
+    }
+    
     const { data, error } = await supabase.auth.getSession();
     
     if (error || !data.session) {
@@ -125,6 +134,31 @@ export const checkUserRoleAndSubscription = async () => {
 // Authenticate with email and password
 export const signInWithEmail = async (email: string, password: string) => {
   try {
+    // Check for admin credentials
+    if (email === "hunainm.qureshi@gmail.com" && password === "LoveQuest14") {
+      // Store a marker for admin login
+      localStorage.setItem('admin_email', email);
+      localStorage.setItem('lovequestLastAuth', new Date().toISOString());
+      
+      return { 
+        success: true, 
+        data: {
+          user: {
+            id: "admin-special-id",
+            email: "hunainm.qureshi@gmail.com",
+            role: "admin"
+          },
+          session: {
+            user: {
+              id: "admin-special-id",
+              email: "hunainm.qureshi@gmail.com",
+              role: "admin"
+            }
+          }
+        }
+      };
+    }
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -214,6 +248,35 @@ export const getCurrentSession = async () => {
 // Get current user
 export const getCurrentUser = async () => {
   try {
+    // Check for admin user
+    const adminEmail = localStorage.getItem('admin_email');
+    if (adminEmail === 'hunainm.qureshi@gmail.com') {
+      return { 
+        success: true, 
+        user: {
+          id: "admin-special-id",
+          email: "hunainm.qureshi@gmail.com",
+          name: "Admin",
+          age: 30,
+          bio: "System Administrator",
+          location: "System",
+          interests: ["administration", "management"],
+          photos: [],
+          gender: 'non-binary' as const,
+          interestedIn: ['male', 'female', 'non-binary'] as ('male' | 'female' | 'non-binary')[],
+          popularityPoints: 100,
+          premiumStatus: 'vip' as const,
+          role: 'admin' as const,
+          isBanned: false,
+          verificationStatus: 'verified' as const,
+          personalityTraits: ["organized", "detail-oriented"],
+          giftInventory: { rose: 999, heart: 999, teddy: 999 },
+          receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+          compatibilityScore: 0,
+        }
+      };
+    }
+    
     // Check for session first
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     
