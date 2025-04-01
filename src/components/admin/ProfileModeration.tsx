@@ -7,41 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useUser } from '@/context/UserContext';
-import { User } from '@/types/user';
-import { Shield, Eye, Flag, Check, Ban, UserCheck, XCircle, Lock, Unlock } from 'lucide-react';
+import { UserIcon, Eye, Ban, CheckCircle, AlertTriangle, Shield } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ProfileModeration = () => {
-  const { allUsers } = useUser();
-  const [flaggedProfiles, setFlaggedProfiles] = useState([
-    { 
-      id: "user-123", 
-      name: "John Doe", 
-      reportCount: 3,
-      reason: "Inappropriate photos",
-      status: "flagged", 
-      isBanned: false,
-      createdAt: new Date() 
-    },
-    { 
-      id: "user-456", 
-      name: "Jane Smith", 
-      reportCount: 5,
-      reason: "Harassment",
-      status: "flagged", 
-      isBanned: false,
-      createdAt: new Date(Date.now() - 86400000 * 3) 
-    },
-    { 
-      id: "user-789", 
-      name: "Alex Johnson", 
-      reportCount: 2,
-      reason: "Impersonation",
-      status: "flagged", 
-      isBanned: true,
-      createdAt: new Date(Date.now() - 86400000 * 5)
-    }
+  const [profiles, setProfiles] = useState([
+    { id: "1", name: "John Doe", email: "john@example.com", age: 28, bio: "I love hiking and outdoor activities", photos: [], verificationStatus: "pending", isFlagged: true },
+    { id: "2", name: "Jane Smith", email: "jane@example.com", age: 24, bio: "Looking for meaningful connections", photos: [], verificationStatus: "pending", isFlagged: false }
   ]);
-  
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
   
   const handleViewProfile = (profile: any) => {
@@ -49,39 +22,39 @@ const ProfileModeration = () => {
   };
   
   const handleVerifyProfile = (profileId: string) => {
-    setFlaggedProfiles(prev => prev.map(profile => 
-      profile.id === profileId ? { ...profile, status: "verified" } : profile
+    setProfiles(prev => prev.map(profile => 
+      profile.id === profileId ? { ...profile, verificationStatus: "verified", isFlagged: false } : profile
     ));
     
     if (selectedProfile?.id === profileId) {
-      setSelectedProfile(prev => ({ ...prev, status: "verified" }));
+      setSelectedProfile(prev => prev ? { ...prev, verificationStatus: "verified", isFlagged: false } : null);
     }
     
-    toast.success("Profile has been verified");
+    toast("Profile verified successfully");
+  };
+  
+  const handleRejectProfile = (profileId: string) => {
+    setProfiles(prev => prev.map(profile => 
+      profile.id === profileId ? { ...profile, verificationStatus: "rejected" } : profile
+    ));
+    
+    if (selectedProfile?.id === profileId) {
+      setSelectedProfile(prev => prev ? { ...prev, verificationStatus: "rejected" } : null);
+    }
+    
+    toast("Profile rejected");
   };
   
   const handleBanProfile = (profileId: string) => {
-    setFlaggedProfiles(prev => prev.map(profile => 
+    setProfiles(prev => prev.map(profile => 
       profile.id === profileId ? { ...profile, isBanned: true } : profile
     ));
     
     if (selectedProfile?.id === profileId) {
-      setSelectedProfile(prev => ({ ...prev, isBanned: true }));
+      setSelectedProfile(prev => prev ? { ...prev, isBanned: true } : null);
     }
     
-    toast.success("User has been banned");
-  };
-  
-  const handleUnbanProfile = (profileId: string) => {
-    setFlaggedProfiles(prev => prev.map(profile => 
-      profile.id === profileId ? { ...profile, isBanned: false } : profile
-    ));
-    
-    if (selectedProfile?.id === profileId) {
-      setSelectedProfile(prev => ({ ...prev, isBanned: false }));
-    }
-    
-    toast.success("User has been unbanned");
+    toast("Profile banned successfully");
   };
   
   return (
@@ -89,8 +62,8 @@ const ProfileModeration = () => {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-xl flex items-center">
-            <Shield className="mr-2 h-5 w-5 text-love-500" />
-            Flagged Profiles
+            <UserIcon className="mr-2 h-5 w-5 text-love-500" />
+            Profile Verification
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -99,45 +72,58 @@ const ProfileModeration = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
-                  <TableHead>Report Count</TableHead>
-                  <TableHead>Main Reason</TableHead>
+                  <TableHead>Age</TableHead>
+                  <TableHead>Photos</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Account Created</TableHead>
+                  <TableHead>Flagged</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {flaggedProfiles.map((profile) => (
+                {profiles.map((profile) => (
                   <TableRow key={profile.id}>
                     <TableCell className="font-medium">
-                      {profile.name}
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback>{profile.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div>{profile.name}</div>
+                          <div className="text-xs text-muted-foreground">{profile.email}</div>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      {profile.reportCount}
+                      {profile.age}
                     </TableCell>
                     <TableCell>
-                      {profile.reason}
+                      {profile.photos?.length || 0}
                     </TableCell>
                     <TableCell>
-                      {profile.isBanned ? (
-                        <Badge variant="destructive" className="text-xs">
-                          <Ban className="h-3 w-3 mr-1" />
-                          Banned
+                      {profile.verificationStatus === "pending" ? (
+                        <Badge variant="outline" className="text-xs">
+                          Pending
                         </Badge>
-                      ) : profile.status === "verified" ? (
+                      ) : profile.verificationStatus === "verified" ? (
                         <Badge variant="success" className="bg-green-100 text-green-800 text-xs">
-                          <Check className="h-3 w-3 mr-1" />
+                          <CheckCircle className="h-3 w-3 mr-1" />
                           Verified
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="text-xs">
-                          <Flag className="h-3 w-3 mr-1" />
-                          Flagged
+                        <Badge variant="destructive" className="text-xs">
+                          <AlertTriangle className="h-3 w-3 mr-1" />
+                          Rejected
                         </Badge>
                       )}
                     </TableCell>
                     <TableCell>
-                      {new Date(profile.createdAt).toLocaleDateString()}
+                      {profile.isFlagged ? (
+                        <Badge variant="destructive" className="text-xs">
+                          Yes
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">No</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
@@ -149,44 +135,44 @@ const ProfileModeration = () => {
                           <Eye className="h-4 w-4" />
                         </Button>
                         
-                        {!profile.isBanned && profile.status !== "verified" && (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-green-600"
-                            onClick={() => handleVerifyProfile(profile.id)}
-                          >
-                            <UserCheck className="h-4 w-4" />
-                          </Button>
+                        {profile.verificationStatus === "pending" && (
+                          <>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-green-600"
+                              onClick={() => handleVerifyProfile(profile.id)}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-amber-600"
+                              onClick={() => handleRejectProfile(profile.id)}
+                            >
+                              <AlertTriangle className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
                         
-                        {!profile.isBanned ? (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-destructive"
-                            onClick={() => handleBanProfile(profile.id)}
-                          >
-                            <Ban className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-amber-600"
-                            onClick={() => handleUnbanProfile(profile.id)}
-                          >
-                            <Unlock className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="text-red-600"
+                          onClick={() => handleBanProfile(profile.id)}
+                        >
+                          <Ban className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))}
-                {flaggedProfiles.length === 0 && (
+                {profiles.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                      No flagged profiles to moderate
+                      No profiles to moderate
                     </TableCell>
                   </TableRow>
                 )}
@@ -205,70 +191,73 @@ const ProfileModeration = () => {
           
           {selectedProfile && (
             <div className="space-y-4">
+              <div className="flex justify-center">
+                <Avatar className="h-24 w-24">
+                  <AvatarFallback className="text-2xl">{selectedProfile.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </div>
+              
               <div>
-                <h4 className="font-medium text-sm">User Name</h4>
+                <h4 className="font-medium text-sm">Name</h4>
                 <p>{selectedProfile.name}</p>
               </div>
               
               <div>
-                <h4 className="font-medium text-sm">User ID</h4>
-                <p>{selectedProfile.id}</p>
+                <h4 className="font-medium text-sm">Email</h4>
+                <p>{selectedProfile.email}</p>
               </div>
               
               <div>
-                <h4 className="font-medium text-sm">Reports Received</h4>
-                <p>{selectedProfile.reportCount} reports</p>
+                <h4 className="font-medium text-sm">Age</h4>
+                <p>{selectedProfile.age}</p>
               </div>
               
               <div>
-                <h4 className="font-medium text-sm">Main Reason</h4>
-                <p>{selectedProfile.reason}</p>
+                <h4 className="font-medium text-sm">Bio</h4>
+                <p className="p-3 bg-muted rounded-md mt-1">{selectedProfile.bio}</p>
               </div>
               
               <div>
-                <h4 className="font-medium text-sm">Account Status</h4>
-                <p className="capitalize">
-                  {selectedProfile.isBanned ? "Banned" : selectedProfile.status}
-                </p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-sm">Account Created</h4>
-                <p>{new Date(selectedProfile.createdAt).toLocaleString()}</p>
+                <h4 className="font-medium text-sm">Status</h4>
+                <p className="capitalize">{selectedProfile.verificationStatus}</p>
+                {selectedProfile.isFlagged && (
+                  <Badge variant="destructive" className="mt-1">Flagged for review</Badge>
+                )}
               </div>
             </div>
           )}
           
           <DialogFooter className="gap-2">
-            {selectedProfile && !selectedProfile.isBanned && selectedProfile.status !== "verified" && (
-              <Button 
-                variant="outline" 
-                className="text-green-600"
-                onClick={() => handleVerifyProfile(selectedProfile.id)}
-              >
-                <UserCheck className="h-4 w-4 mr-2" />
-                Verify
-              </Button>
+            {selectedProfile?.verificationStatus === "pending" && (
+              <>
+                <Button 
+                  variant="outline" 
+                  className="text-green-600"
+                  onClick={() => handleVerifyProfile(selectedProfile.id)}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Verify
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  className="text-amber-600"
+                  onClick={() => handleRejectProfile(selectedProfile.id)}
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Reject
+                </Button>
+              </>
             )}
             
-            {selectedProfile && !selectedProfile.isBanned ? (
-              <Button 
-                variant="destructive"
-                onClick={() => handleBanProfile(selectedProfile.id)}
-              >
-                <Ban className="h-4 w-4 mr-2" />
-                Ban User
-              </Button>
-            ) : selectedProfile && (
-              <Button 
-                variant="outline"
-                className="text-amber-600"
-                onClick={() => handleUnbanProfile(selectedProfile.id)}
-              >
-                <Unlock className="h-4 w-4 mr-2" />
-                Unban User
-              </Button>
-            )}
+            <Button 
+              variant="outline"
+              className="text-red-600"
+              onClick={() => handleBanProfile(selectedProfile.id)}
+            >
+              <Ban className="h-4 w-4 mr-2" />
+              Ban User
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

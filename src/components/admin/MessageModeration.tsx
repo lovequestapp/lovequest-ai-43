@@ -7,28 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useUser } from '@/context/UserContext';
-import { Shield, Eye, MessageSquare, Check, Trash, XCircle, AlertTriangle } from 'lucide-react';
+import { MessageSquare, Eye, Ban, CheckCircle, MessageCircle } from 'lucide-react';
 
 const MessageModeration = () => {
-  const [flaggedMessages, setFlaggedMessages] = useState([
-    { 
-      id: "1", 
-      senderId: "user-123", 
-      receiverId: "user-456", 
-      content: "This message contains inappropriate content that needs moderation.", 
-      reason: "Inappropriate language",
-      status: "pending", 
-      createdAt: new Date() 
-    },
-    { 
-      id: "2", 
-      senderId: "user-789", 
-      receiverId: "user-101", 
-      content: "Another message that needs review by moderators.", 
-      reason: "Suspicious content",
-      status: "pending", 
-      createdAt: new Date(Date.now() - 86400000) 
-    }
+  const [messages, setMessages] = useState([
+    { id: "1", senderId: "user-123", receiverId: "user-456", content: "Hello there! How are you?", timestamp: new Date(), isFlagged: true, status: "pending" },
+    { id: "2", senderId: "user-789", receiverId: "user-123", content: "I'd like to know more about your interests", timestamp: new Date(Date.now() - 86400000), isFlagged: true, status: "pending" }
   ]);
   const [selectedMessage, setSelectedMessage] = useState<any>(null);
   
@@ -37,27 +21,27 @@ const MessageModeration = () => {
   };
   
   const handleApproveMessage = (messageId: string) => {
-    setFlaggedMessages(prev => prev.map(message => 
-      message.id === messageId ? { ...message, status: "approved" } : message
+    setMessages(prev => prev.map(message => 
+      message.id === messageId ? { ...message, status: "approved", isFlagged: false } : message
     ));
     
     if (selectedMessage?.id === messageId) {
       setSelectedMessage(null);
     }
     
-    toast.success("Message has been approved");
+    toast("Message approved");
   };
   
-  const handleRemoveMessage = (messageId: string) => {
-    setFlaggedMessages(prev => prev.map(message => 
-      message.id === messageId ? { ...message, status: "removed" } : message
+  const handleRejectMessage = (messageId: string) => {
+    setMessages(prev => prev.map(message => 
+      message.id === messageId ? { ...message, status: "rejected" } : message
     ));
     
     if (selectedMessage?.id === messageId) {
       setSelectedMessage(null);
     }
     
-    toast.success("Message has been removed");
+    toast("Message rejected and hidden from recipient");
   };
   
   return (
@@ -75,15 +59,15 @@ const MessageModeration = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Sender</TableHead>
-                  <TableHead>Receiver</TableHead>
-                  <TableHead>Reason</TableHead>
+                  <TableHead>Recipient</TableHead>
+                  <TableHead>Content</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {flaggedMessages.map((message) => (
+                {messages.map((message) => (
                   <TableRow key={message.id}>
                     <TableCell className="font-medium">
                       User {message.senderId.slice(-4)}
@@ -91,26 +75,24 @@ const MessageModeration = () => {
                     <TableCell>
                       User {message.receiverId.slice(-4)}
                     </TableCell>
-                    <TableCell>
-                      {message.reason}
+                    <TableCell className="max-w-xs truncate">
+                      {message.content}
                     </TableCell>
                     <TableCell>
-                      {new Date(message.createdAt).toLocaleDateString()}
+                      {new Date(message.timestamp).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
                       {message.status === "pending" ? (
                         <Badge variant="outline" className="text-xs">
-                          Pending
+                          Pending Review
                         </Badge>
                       ) : message.status === "approved" ? (
                         <Badge variant="success" className="bg-green-100 text-green-800 text-xs">
-                          <Check className="h-3 w-3 mr-1" />
                           Approved
                         </Badge>
                       ) : (
                         <Badge variant="destructive" className="text-xs">
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Removed
+                          Rejected
                         </Badge>
                       )}
                     </TableCell>
@@ -132,16 +114,16 @@ const MessageModeration = () => {
                               className="text-green-600"
                               onClick={() => handleApproveMessage(message.id)}
                             >
-                              <Check className="h-4 w-4" />
+                              <CheckCircle className="h-4 w-4" />
                             </Button>
                             
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              className="text-destructive"
-                              onClick={() => handleRemoveMessage(message.id)}
+                              className="text-red-600"
+                              onClick={() => handleRejectMessage(message.id)}
                             >
-                              <Trash className="h-4 w-4" />
+                              <Ban className="h-4 w-4" />
                             </Button>
                           </>
                         )}
@@ -149,10 +131,10 @@ const MessageModeration = () => {
                     </TableCell>
                   </TableRow>
                 ))}
-                {flaggedMessages.length === 0 && (
+                {messages.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                      No flagged messages to moderate
+                      No flagged messages to review
                     </TableCell>
                   </TableRow>
                 )}
@@ -177,30 +159,18 @@ const MessageModeration = () => {
               </div>
               
               <div>
-                <h4 className="font-medium text-sm">Receiver</h4>
+                <h4 className="font-medium text-sm">Recipient</h4>
                 <p>User ID: {selectedMessage.receiverId}</p>
               </div>
               
               <div>
                 <h4 className="font-medium text-sm">Message Content</h4>
-                <div className="p-3 bg-muted rounded-md mt-1">
-                  <p>{selectedMessage.content}</p>
-                </div>
+                <p className="p-3 bg-muted rounded-md mt-1">{selectedMessage.content}</p>
               </div>
               
               <div>
-                <h4 className="font-medium text-sm">Reason Flagged</h4>
-                <p>{selectedMessage.reason}</p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-sm">Date Sent</h4>
-                <p>{new Date(selectedMessage.createdAt).toLocaleString()}</p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium text-sm">Status</h4>
-                <p className="capitalize">{selectedMessage.status}</p>
+                <h4 className="font-medium text-sm">Sent At</h4>
+                <p>{new Date(selectedMessage.timestamp).toLocaleString()}</p>
               </div>
             </div>
           )}
@@ -213,16 +183,17 @@ const MessageModeration = () => {
                   className="text-green-600"
                   onClick={() => handleApproveMessage(selectedMessage.id)}
                 >
-                  <Check className="h-4 w-4 mr-2" />
+                  <CheckCircle className="h-4 w-4 mr-2" />
                   Approve
                 </Button>
                 
                 <Button 
-                  variant="destructive"
-                  onClick={() => handleRemoveMessage(selectedMessage.id)}
+                  variant="outline"
+                  className="text-red-600"
+                  onClick={() => handleRejectMessage(selectedMessage.id)}
                 >
-                  <Trash className="h-4 w-4 mr-2" />
-                  Remove
+                  <Ban className="h-4 w-4 mr-2" />
+                  Reject
                 </Button>
               </>
             )}

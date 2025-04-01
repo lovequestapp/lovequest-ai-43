@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -7,13 +7,13 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from '@/context/UserContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { type UserPreferences as UserPreferencesType } from '@/types/user';
 import { MapPin, Plus, X, Bell } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const UserPreferences = () => {
   const { currentUser, updatePreferences } = useUser();
-  const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [locationInput, setLocationInput] = useState('');
   
@@ -128,13 +128,18 @@ const UserPreferences = () => {
       });
       
       if (success) {
-        toast.success("Preferences saved successfully!");
+        toast("Preferences saved successfully!", {
+          description: "Your preferences have been updated."
+        });
       } else {
         throw new Error("Failed to save preferences");
       }
     } catch (error) {
       console.error("Error saving preferences:", error);
-      toast.error("Failed to save preferences");
+      toast("Failed to save preferences", {
+        description: "An error occurred while saving your preferences.",
+        variant: "destructive"
+      });
     } finally {
       setIsSaving(false);
     }
