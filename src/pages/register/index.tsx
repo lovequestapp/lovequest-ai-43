@@ -8,22 +8,23 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/context/UserContext';
+import { useAuth } from '@/hooks/useAuth';
 import { CreditCard, Star, Award, Clock, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const subscriptionPlans = [
   {
-    id: 'free-trial',
-    name: 'Free Trial',
+    id: 'free',
+    name: 'Free',
     price: 0,
-    duration: '7 days',
+    duration: 'forever',
     features: [
       'Basic profile creation',
-      'Limited matches per day',
-      'Basic messaging',
-      'Automatically converts to Basic after trial period'
+      'Limited to 5 matches per day',
+      'Basic messaging (5 messages per day)',
+      'View limited profiles'
     ],
-    badge: 'Limited Time',
+    badge: 'Free',
     icon: <Clock className="h-5 w-5 text-blue-500" />
   },
   {
@@ -35,7 +36,8 @@ const subscriptionPlans = [
       'Unlimited profile viewing',
       '10 matches per day',
       'Basic messaging features',
-      'Profile boosts (1 per month)'
+      'Profile boosts (1 per month)',
+      '3-day free trial'
     ],
     badge: 'Popular',
     icon: <Star className="h-5 w-5 text-amber-500" />
@@ -52,7 +54,8 @@ const subscriptionPlans = [
       'Read receipts',
       'Voice messages',
       'Video calls',
-      'Profile boosts (5 per month)'
+      'Profile boosts (5 per month)',
+      '3-day free trial'
     ],
     badge: 'Best Value',
     icon: <Award className="h-5 w-5 text-purple-500" />
@@ -63,7 +66,7 @@ const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState('free-trial');
+  const [selectedPlan, setSelectedPlan] = useState('free');
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [paymentInfo, setPaymentInfo] = useState({
@@ -76,6 +79,7 @@ const Register = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setCurrentUser } = useUser();
+  const { signUp } = useAuth();
   const isMobile = useIsMobile();
   
   useEffect(() => {
@@ -93,7 +97,7 @@ const Register = () => {
       return;
     }
     
-    if (step === 2 && selectedPlan !== 'free-trial') {
+    if (step === 2 && selectedPlan !== 'free') {
       if (!paymentInfo.cardName || !paymentInfo.cardNumber || 
           !paymentInfo.expMonth || !paymentInfo.expYear || !paymentInfo.cvc) {
         toast.error("Please fill in all payment details");
@@ -128,150 +132,27 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            email
-          }
-        }
-      });
+      // Calculate trial end date for premium/basic plans
+      const trialEndDate = (selectedPlan === 'premium' || selectedPlan === 'basic') ? 
+        new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) : null;
       
-      if (error) {
-        throw error;
+      const result = await signUp(email, password, name, selectedPlan);
+      
+      if (!result.success) {
+        throw new Error(result.error || "Registration failed");
       }
       
-      if (data.user) {
-        const premiumStatus = selectedPlan === 'premium' ? 'premium' : 
-                             selectedPlan === 'basic' ? 'basic' : 'trial';
-        
-        const trialEndDate = selectedPlan === 'free-trial' ? 
-          new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null;
-          
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            name,
-            email,
-            age: 25, // Default value
-            photos: [],
-            bio: '',
-            location: '',
-            interests: [],
-            gender: 'non-binary' as const,
-            interestedIn: [],
-            popularityPoints: 0,
-            premiumStatus: premiumStatus as 'basic' | 'premium' | 'vip' | 'trial',
-            role: 'subscriber' as const,
-            isBanned: false,
-            verificationStatus: 'unverified' as const,
-            personalityTraits: [],
-            giftInventory: { rose: 0, heart: 0, teddy: 0 },
-            receivedGifts: { rose: 0, heart: 0, teddy: 0 },
-            compatibilityScore: 0,
-            lastMessage: '',
-            lastMessageTime: new Date(),
-            status: 'online' as 'online' | 'offline' | 'away',
-            favoriteMusic: [],
-            voiceIntro: '',
-            bankDetails: {
-              accountName: '',
-              accountNumber: '',
-              bankName: '',
-              routingNumber: '',
-              accountType: ''
-            },
-            preferences: {
-              maxDistance: 50,
-              ageRange: { min: 18, max: 50 },
-              showMeToUsers: true,
-              notificationPreferences: {
-                messages: true,
-                matches: true,
-                likes: true,
-                app: true
-              },
-              preferredLocations: [],
-              matchingPriorities: {
-                distance: 5,
-                interests: 5,
-                personality: 5,
-                age: 5
-              }
-            }
-          });
-          
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          toast.error("Failed to create profile");
-        } else {
-          const newUser = {
-            id: data.user.id,
-            name,
-            email,
-            age: 25, // Default value
-            photos: [],
-            bio: '',
-            location: '',
-            interests: [],
-            gender: 'non-binary' as const,
-            interestedIn: [],
-            popularityPoints: 0,
-            premiumStatus: premiumStatus as 'basic' | 'premium' | 'vip' | 'trial',
-            role: 'subscriber' as const,
-            isBanned: false,
-            verificationStatus: 'unverified' as const,
-            personalityTraits: [],
-            giftInventory: { rose: 0, heart: 0, teddy: 0 },
-            receivedGifts: { rose: 0, heart: 0, teddy: 0 },
-            compatibilityScore: 0,
-            lastMessage: '',
-            lastMessageTime: new Date(),
-            status: 'online' as 'online' | 'offline' | 'away',
-            favoriteMusic: [],
-            voiceIntro: '',
-            bankDetails: {
-              accountName: '',
-              accountNumber: '',
-              bankName: '',
-              routingNumber: '',
-              accountType: ''
-            },
-            preferences: {
-              maxDistance: 50,
-              ageRange: { min: 18, max: 50 },
-              showMeToUsers: true,
-              notificationPreferences: {
-                messages: true,
-                matches: true,
-                likes: true,
-                app: true
-              },
-              preferredLocations: [],
-              matchingPriorities: {
-                distance: 5,
-                interests: 5,
-                personality: 5,
-                age: 5
-              }
-            }
-          };
-          
-          setCurrentUser(newUser);
-          
-          if (selectedPlan === 'free-trial') {
-            toast.success("Your free trial has been activated!");
-          } else {
-            toast.success(`Your ${premiumStatus} subscription has been activated!`);
-          }
-          
-          navigate('/profile');
-        }
-      } else {
+      if (result.requiresEmailConfirmation) {
         toast.info("Please check your email to confirm your registration");
+      } else {
+        // If no email confirmation required, redirect to profile
+        if (selectedPlan === 'free') {
+          toast.success("Your free account has been created!");
+        } else {
+          toast.success(`Your ${selectedPlan} subscription has been activated with a 3-day free trial!`);
+        }
+        
+        navigate('/profile');
       }
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -352,26 +233,17 @@ const Register = () => {
           </div>
         );
       case 2:
-        return selectedPlan === 'free-trial' ? (
+        return selectedPlan === 'free' ? (
           <div className="space-y-6">
-            <h3 className="text-lg font-medium">Free Trial Confirmation</h3>
+            <h3 className="text-lg font-medium">Free Account Confirmation</h3>
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-5">
               <h4 className="font-semibold flex items-center gap-2 text-blue-700">
                 <Clock className="h-5 w-5 text-blue-500" />
-                7-Day Free Trial
+                Free Account
               </h4>
               <p className="text-sm text-blue-700 mt-2">
-                You've selected our free trial option. You'll have full access to our basic features for 7 days.
+                You've selected our free account option. You'll have access to our basic features.
               </p>
-              <p className="text-sm text-blue-700 mt-2">
-                After the trial period, your account will automatically be converted to our Basic plan at $9.99/month 
-                unless you upgrade or cancel.
-              </p>
-              <div className="mt-4 pt-4 border-t border-blue-200">
-                <p className="text-sm font-medium text-blue-700">
-                  Trial ends: {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
-                </p>
-              </div>
             </div>
           </div>
         ) : (
@@ -471,11 +343,11 @@ const Register = () => {
             <div className="bg-green-50 border border-green-100 rounded-lg p-4 mb-4">
               <h4 className="font-semibold text-green-700 flex items-center gap-2">
                 <Check className="h-5 w-5 text-green-500" />
-                {selectedPlan === 'free-trial' ? 'Free Trial Selected' : 'Subscription Selected'}
+                {selectedPlan === 'free' ? 'Free Account Selected' : 'Subscription Selected'}
               </h4>
               <p className="text-sm text-green-700 mt-1">
-                {selectedPlan === 'free-trial' 
-                  ? 'Your 7-day free trial will begin after registration.' 
+                {selectedPlan === 'free' 
+                  ? 'Your free account will be created after registration.' 
                   : `Your ${selectedPlan === 'premium' ? 'Premium' : 'Basic'} subscription will be activated after registration.`}
               </p>
             </div>

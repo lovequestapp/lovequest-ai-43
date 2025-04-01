@@ -43,7 +43,8 @@ const SignUp = () => {
     setIsLoading(true);
 
     try {
-      const result = await signUp(email, password, name);
+      // Default to free plan
+      const result = await signUp(email, password, name, 'free');
 
       if (result.success) {
         if (result.requiresEmailConfirmation) {

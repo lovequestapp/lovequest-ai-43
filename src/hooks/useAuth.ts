@@ -192,6 +192,18 @@ export const useAuth = () => {
         return { success: false, error: "No session created" };
       }
 
+      // Fetch user profile and update state
+      const profile = await fetchUserProfile(data.user.id);
+      const userObj = mapProfileToUser(profile, data.user.id, data.user.email || '');
+      
+      setAuthState({
+        loading: false,
+        authenticated: true,
+        user: userObj
+      });
+      
+      setCurrentUser(userObj);
+      
       toast.success("Login successful!");
       return { success: true };
     } catch (error: any) {
@@ -200,7 +212,7 @@ export const useAuth = () => {
     }
   };
 
-  const signUp = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string, planType: string = 'free') => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -219,6 +231,16 @@ export const useAuth = () => {
         toast.error("Registration failed", { description: "No user account created" });
         return { success: false, error: "No user account created" };
       }
+      
+      // Determine premium status and trial end date
+      let premiumStatus = 'free';
+      let trialEndDate = null;
+      
+      if (planType === 'premium' || planType === 'vip') {
+        // Set trial period for premium plans (3 days)
+        premiumStatus = 'trial';
+        trialEndDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+      }
 
       const { error: profileError } = await (supabase
         .from('profiles') as any)
@@ -226,6 +248,8 @@ export const useAuth = () => {
           id: data.user.id,
           name,
           email,
+          premium_status: premiumStatus,
+          trial_end_date: trialEndDate,
           created_at: new Date().toISOString(),
         }]);
 
@@ -233,6 +257,20 @@ export const useAuth = () => {
         console.error("Error creating profile:", profileError);
         toast.error("Failed to create profile");
         return { success: false, error: profileError.message };
+      }
+
+      // If we have a session, sign in the user right away
+      if (data.session) {
+        const profile = await fetchUserProfile(data.user.id);
+        const userObj = mapProfileToUser(profile, data.user.id, data.user.email || '');
+        
+        setAuthState({
+          loading: false,
+          authenticated: true,
+          user: userObj
+        });
+        
+        setCurrentUser(userObj);
       }
 
       toast.success("Registration successful!");

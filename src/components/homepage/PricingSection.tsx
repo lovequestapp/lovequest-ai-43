@@ -81,11 +81,11 @@ const PricingSection = () => {
                 </li>
                 <li className="flex items-center">
                   <Check size={16} className="text-green-500 mr-2" />
-                  Limited matches per day
+                  5 matches per day
                 </li>
                 <li className="flex items-center">
                   <Check size={16} className="text-green-500 mr-2" />
-                  Text messaging
+                  5 messages per day
                 </li>
                 <li className="flex items-center text-gray-400">
                   <X size={16} className="text-gray-300 mr-2" />
@@ -104,8 +104,7 @@ const PricingSection = () => {
           
           <Card className="border-love-500 shadow-xl hover:-translate-y-2 transition-all duration-300 relative">
             <Badge 
-              variant="success" 
-              className="absolute top-2 right-2 px-2 py-1 text-xs font-medium flex items-center gap-1"
+              className="absolute top-2 right-2 px-2 py-1 text-xs font-medium flex items-center gap-1 bg-green-100 text-green-800"
             >
               <Star size={12} className="text-green-700" />
               Most Popular
@@ -119,6 +118,7 @@ const PricingSection = () => {
               {billingPeriod === 'yearly' && (
                 <p className="text-sm text-love-600 mb-4">Billed annually (${(7.99 * 12).toFixed(2)})</p>
               )}
+              <p className="text-sm text-green-600 mb-2">Includes 3-day free trial</p>
               <ul className="space-y-2 mb-6">
                 <li className="flex items-center">
                   <Check size={16} className="text-green-500 mr-2" />
@@ -157,6 +157,7 @@ const PricingSection = () => {
               {billingPeriod === 'yearly' && (
                 <p className="text-sm text-love-600 mb-4">Billed annually (${(15.99 * 12).toFixed(2)})</p>
               )}
+              <p className="text-sm text-green-600 mb-2">Includes 3-day free trial</p>
               <ul className="space-y-2 mb-6">
                 <li className="flex items-center">
                   <Check size={16} className="text-green-500 mr-2" />
