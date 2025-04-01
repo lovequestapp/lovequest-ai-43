@@ -1,14 +1,14 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
+import { User } from '@/types/user';
 
 interface AuthState {
   loading: boolean;
   authenticated: boolean;
-  user: any | null;
+  user: User | null;
 }
 
 export const useAuth = () => {
@@ -20,10 +20,8 @@ export const useAuth = () => {
   const { setCurrentUser } = useUser();
   const navigate = useNavigate();
 
-  // Fetch profile data in a way that avoids the TypeScript errors
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
-      // Use type assertion to tell TypeScript this is valid
       const { data, error } = await (supabase
         .from('profiles') as any)
         .select('*')
@@ -42,31 +40,29 @@ export const useAuth = () => {
     }
   }, []);
 
-  // Convert database profile to user object
   const mapProfileToUser = useCallback((profile: any, userId: string, userEmail: string) => {
-    // Type safe handling of gender
     const gender = profile?.gender || 'non-binary';
     const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary')
       ? gender
       : 'non-binary';
 
-    // Type safe handling of interested_in
     const interestedIn = profile?.interested_in || [];
     const validInterestedIn = Array.isArray(interestedIn)
       ? interestedIn.filter((gender: string) => ['male', 'female', 'non-binary'].includes(gender))
       : [];
 
-    // Type safe handling of premium_status
     const premiumStatus = profile?.premium_status || 'basic';
     const validPremiumStatus = ['basic', 'premium', 'vip', 'trial'].includes(premiumStatus)
       ? premiumStatus
       : 'basic';
 
-    // Type safe handling of role
     const role = profile?.role || 'subscriber';
     const validRole = ['admin', 'moderator', 'subscriber', 'vip', 'trial'].includes(role)
       ? role
       : 'subscriber';
+      
+    const isVerified = profile?.is_verified || false;
+    const verificationStatus = isVerified ? 'verified' : 'unverified';
 
     return {
       id: userId,
@@ -87,7 +83,7 @@ export const useAuth = () => {
       personalityTraits: profile?.personality_traits || [],
       role: validRole,
       isBanned: profile?.is_banned || false,
-      verificationStatus: profile?.is_verified ? 'verified' : 'unverified',
+      verificationStatus: verificationStatus,
       lastMessage: '',
       lastMessageTime: new Date(),
       status: 'online',
@@ -100,14 +96,12 @@ export const useAuth = () => {
         routingNumber: '',
         accountType: ''
       }
-    };
+    } as User;
   }, []);
 
-  // Check for existing session and set up auth state listener
   useEffect(() => {
     const initialize = async () => {
       try {
-        // First set up the auth state change listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, session) => {
             console.log('Auth state changed:', event);
@@ -123,7 +117,6 @@ export const useAuth = () => {
             }
 
             if (session && session.user) {
-              // Use setTimeout to avoid Supabase auth deadlocks
               setTimeout(async () => {
                 const profile = await fetchUserProfile(session.user.id);
                 const user = mapProfileToUser(profile, session.user.id, session.user.email || '');
@@ -140,7 +133,6 @@ export const useAuth = () => {
           }
         );
 
-        // Then check for existing session
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -182,7 +174,6 @@ export const useAuth = () => {
     initialize();
   }, [setCurrentUser, fetchUserProfile, mapProfileToUser]);
 
-  // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -208,7 +199,6 @@ export const useAuth = () => {
     }
   };
 
-  // Sign up with email and password
   const signUp = async (email: string, password: string, name: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -229,7 +219,6 @@ export const useAuth = () => {
         return { success: false, error: "No user account created" };
       }
 
-      // Create profile
       const { error: profileError } = await (supabase
         .from('profiles') as any)
         .insert([{ 
@@ -247,7 +236,6 @@ export const useAuth = () => {
 
       toast.success("Registration successful!");
       
-      // If email confirmation is required
       if (!data.session) {
         toast.info("Please check your email to confirm your registration");
         return { 
@@ -263,7 +251,6 @@ export const useAuth = () => {
     }
   };
 
-  // Sign out
   const signOut = async () => {
     try {
       const { error } = await supabase.auth.signOut();

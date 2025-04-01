@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -134,9 +135,8 @@ const UserPreferences = () => {
       }
     } catch (error) {
       console.error("Error saving preferences:", error);
-      toast("Failed to save preferences", {
-        description: "An error occurred while saving your preferences.",
-        variant: "destructive"
+      toast.error("Failed to save preferences", {
+        description: "An error occurred while saving your preferences."
       });
     } finally {
       setIsSaving(false);

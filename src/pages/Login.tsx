@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
-import { authService } from '@/services/authService';
+import { useAuth } from '@/hooks/useAuth';
 import { isSessionValid, refreshSession } from '@/lib/supabase';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -20,6 +19,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setCurrentUser } = useUser();
+  const { signIn } = useAuth();
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
   const isMobile = useIsMobile();
@@ -40,11 +40,9 @@ const Login = () => {
   // Check for existing session on component mount
   useEffect(() => {
     const checkExistingSession = async () => {
-      // If we have a valid session, redirect to profile
       const sessionValid = await isSessionValid();
       
       if (sessionValid) {
-        // If user came from a specific location, return there
         const returnPath = new URLSearchParams(location.search).get('returnTo');
         if (returnPath) {
           navigate(returnPath);
@@ -67,32 +65,18 @@ const Login = () => {
     setIsLoggingIn(true);
     
     try {
-      const user = await authService.login({
-        email: loginEmail,
-        password: loginPassword
-      });
+      const result = await signIn(loginEmail, loginPassword);
       
-      if (user) {
-        // Update UserContext with the logged in user
-        setCurrentUser(user);
-        
-        // Refresh session token to ensure it's valid
+      if (result.success) {
+        setCurrentUser(result.user);
         await refreshSession();
-        
         toast.success('Logged in successfully!');
         
-        // Redirect admin users to the admin page, others to profile
-        if (user.role === 'admin') {
-          toast.success('Welcome, Admin!');
-          navigate('/admin');
+        const returnPath = new URLSearchParams(location.search).get('returnTo');
+        if (returnPath) {
+          navigate(returnPath);
         } else {
-          // Check if we have a returnTo parameter
-          const returnPath = new URLSearchParams(location.search).get('returnTo');
-          if (returnPath) {
-            navigate(returnPath);
-          } else {
-            navigate('/profile');
-          }
+          navigate('/profile');
         }
       } else {
         toast.error('Invalid email or password');
@@ -108,7 +92,6 @@ const Login = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate form
     if (!registerName || !registerEmail || !registerPassword) {
       toast.error('Please fill in all fields');
       return;
@@ -124,7 +107,6 @@ const Login = () => {
       return;
     }
     
-    // Navigate to subscription selection
     navigate('/register', { 
       state: { 
         name: registerName, 
