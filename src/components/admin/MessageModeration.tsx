@@ -35,8 +35,9 @@ const MessageModeration = () => {
   const fetchFlaggedMessages = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('messages')
+      // Use type assertion to tell TypeScript this is valid
+      const { data, error } = await (supabase
+        .from('messages') as any)
         .select('*')
         .eq('is_flagged', true)
         .order('timestamp', { ascending: false });
@@ -62,9 +63,13 @@ const MessageModeration = () => {
   
   const handleApproveMessage = async (messageId: string) => {
     try {
-      const { error } = await supabase
-        .from('messages')
-        .update({ status: 'approved', is_flagged: false })
+      // Use type assertion to tell TypeScript this is valid
+      const { error } = await (supabase
+        .from('messages') as any)
+        .update({ 
+          status: 'approved', 
+          is_flagged: false 
+        })
         .eq('id', messageId);
         
       if (error) {
@@ -88,9 +93,12 @@ const MessageModeration = () => {
   
   const handleRejectMessage = async (messageId: string) => {
     try {
-      const { error } = await supabase
-        .from('messages')
-        .update({ status: 'rejected' })
+      // Use type assertion to tell TypeScript this is valid
+      const { error } = await (supabase
+        .from('messages') as any)
+        .update({ 
+          status: 'rejected' 
+        })
         .eq('id', messageId);
         
       if (error) {

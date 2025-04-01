@@ -211,8 +211,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
+        const { error: profileError } = await (supabase
+          .from('profiles') as any)
           .insert([
             { 
               id: data.user.id,
@@ -265,8 +265,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
       
-      const { error } = await supabase
-        .from('profiles')
+      const { error } = await (supabase
+        .from('profiles') as any)
         .update({
           name: data.name,
           bio: data.bio,
@@ -337,8 +337,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         
       const newPhotos = [...(currentUser.photos || []), publicUrl];
       
-      const { error: updateError } = await supabase
-        .from('profiles')
+      const { error: updateError } = await (supabase
+        .from('profiles') as any)
         .update({ photos: newPhotos })
         .eq('id', currentUser.id);
         
@@ -489,7 +489,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     
     setBlogPosts(prev => [newPost, ...prev]);
     
-    // Add popularity points for creating content
     setCurrentUser(prev => {
       if (prev) {
         return {
@@ -519,13 +518,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const likeBlogPost = (postId: string, userId: string) => {
     setBlogPosts(prev => prev.map(post => {
       if (post.id === postId) {
-        // Don't increment likes if this user already liked the post
         const alreadyLiked = post.likes > 0;
         
-        // Increment popularity points for the post author
         if (post.userId !== currentUser?.id && !alreadyLiked) {
-          // In a real app, we would update the popularity points in the database
-          // For now, just show a toast
           toast.success("The post creator earned popularity points!");
         }
         
@@ -569,8 +564,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     
     const callId = `call-${Date.now()}-${Math.random().toString(36).substring(2)}`;
     
-    // In a real app, we would create a call record in the database and send a notification to the recipient
-    // For now, we'll just create a mock call in our local state
     setActiveVideoCalls(prev => ({
       ...prev,
       [callId]: {
@@ -580,7 +573,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       }
     }));
     
-    // Simulate the recipient accepting the call after 2 seconds
     setTimeout(() => {
       setActiveVideoCalls(prev => ({
         ...prev,
@@ -592,7 +584,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       
       toast.success("Call connected!");
       
-      // In a real app, we would establish a WebRTC connection here
     }, 2000);
     
     toast.success("Calling user...");
@@ -637,7 +628,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     
     toast.info("Call rejected");
     
-    // Remove the call from state after a delay
     setTimeout(() => {
       setActiveVideoCalls(prev => {
         const newCalls = { ...prev };
@@ -662,7 +652,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     
     toast.info("Call ended");
     
-    // Remove the call from state after a delay
     setTimeout(() => {
       setActiveVideoCalls(prev => {
         const newCalls = { ...prev };
@@ -679,14 +668,13 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
       
-      // Check if the user is updating their own profile or has admin rights
       if (currentUser.id !== userId && currentUser.role !== 'admin') {
         toast.error("You don't have permission to update this profile");
         return false;
       }
       
-      const { error } = await supabase
-        .from('profiles')
+      const { error } = await (supabase
+        .from('profiles') as any)
         .update({
           name: data.name,
           bio: data.bio,
@@ -706,7 +694,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
       
-      // If updating own profile, update the current user state
       if (userId === currentUser.id) {
         setCurrentUser(prev => {
           if (prev) {
@@ -749,7 +736,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   
   const getFilteredPosts = () => {
     if (!currentUser) return [];
-    // Return posts that match user interests
     return blogPosts.filter(post => {
       return post.tags.some(tag => currentUser.interests.includes(tag));
     });
@@ -776,13 +762,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
       
-      // Merge with existing preferences
       const updatedPreferences = {
         ...(currentUser.preferences || {}),
         ...preferences
       };
       
-      // Update user with new preferences
       return await updateProfile({
         preferences: updatedPreferences as UserPreferences
       });

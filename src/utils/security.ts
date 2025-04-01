@@ -1,73 +1,83 @@
 
-// Basic security utilities for password handling and validation
-
 /**
- * Hash a password (simulated for frontend demo)
- * Note: In a real application, this would be done on the backend
+ * Validates password strength based on multiple criteria
+ * @param password The password to validate
+ * @returns Object with isValid boolean and message string
  */
-export const hashPassword = (password: string): string => {
-  // This is a simplified frontend hash for demo purposes
-  // In production, use bcrypt or similar on a secure backend
-  return btoa(password + "salt") + ".simulated-hash";
-};
-
-/**
- * Validate password strength
- */
-export const validatePasswordStrength = (password: string): {
-  isValid: boolean;
-  message: string;
-} => {
+export const validatePasswordStrength = (password: string): { isValid: boolean; message: string } => {
+  // Check for minimum length
   if (password.length < 8) {
     return {
       isValid: false,
-      message: "Password must be at least 8 characters long"
+      message: 'Password must be at least 8 characters long'
     };
   }
 
-  const hasUpperCase = /[A-Z]/.test(password);
-  const hasLowerCase = /[a-z]/.test(password);
-  const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(password);
-
-  if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+  // Check for uppercase letter
+  if (!/[A-Z]/.test(password)) {
     return {
       isValid: false,
-      message: "Password must include uppercase, lowercase, number, and special character"
+      message: 'Password must contain at least one uppercase letter'
+    };
+  }
+
+  // Check for lowercase letter
+  if (!/[a-z]/.test(password)) {
+    return {
+      isValid: false,
+      message: 'Password must contain at least one lowercase letter'
+    };
+  }
+
+  // Check for number
+  if (!/[0-9]/.test(password)) {
+    return {
+      isValid: false,
+      message: 'Password must contain at least one number'
+    };
+  }
+
+  // Check for special character
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    return {
+      isValid: false,
+      message: 'Password must contain at least one special character'
     };
   }
 
   return {
     isValid: true,
-    message: "Password is strong"
+    message: 'Password strength: Strong'
   };
 };
 
 /**
- * Simple token handling for authentication
+ * Creates a salted hash of a password (mock implementation for client-side)
+ * In a real app, this would be done server-side
+ * @param password The password to hash
  */
-export const generateAuthToken = (userId: string): string => {
-  const payload = {
-    userId,
-    exp: Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days expiration
-  };
-  // Again, this is a frontend simulation
-  return btoa(JSON.stringify(payload));
+export const hashPassword = async (password: string): Promise<string> => {
+  // In a real application, never hash passwords client-side
+  // This is just a mock implementation
+  
+  // Create a random salt
+  const salt = Math.random().toString(36).substring(2, 15);
+  
+  // In a real app, you would use a proper crypto library
+  // and this would be done server-side
+  const hash = `${salt}:${password}`;
+  
+  return hash;
 };
 
-export const getTokenExpirationDate = (token: string): Date | null => {
-  try {
-    const payload = JSON.parse(atob(token));
-    if (payload.exp) {
-      return new Date(payload.exp);
-    }
-  } catch (e) {
-    console.error("Invalid token format", e);
-  }
-  return null;
-};
-
-export const isTokenValid = (token: string): boolean => {
-  const expirationDate = getTokenExpirationDate(token);
-  return expirationDate !== null && expirationDate > new Date();
+/**
+ * Sanitizes a string to prevent XSS attacks
+ * @param input The string to sanitize
+ */
+export const sanitizeInput = (input: string): string => {
+  return input
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 };

@@ -128,9 +128,7 @@ const UserPreferences = () => {
       });
       
       if (success) {
-        toast("Preferences saved successfully!", {
-          description: "Your preferences have been updated."
-        });
+        toast.success("Preferences updated");
       } else {
         throw new Error("Failed to save preferences");
       }
