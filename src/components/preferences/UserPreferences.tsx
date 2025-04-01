@@ -47,6 +47,7 @@ import {
   MapPin, 
   SlidersHorizontal,
 } from 'lucide-react';
+import { UserPreferences as UserPreferencesType } from '@/types/user';
 
 // Define schema for form validation
 const preferencesSchema = z.object({
@@ -136,7 +137,31 @@ const UserPreferences: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      const success = await updatePreferences(data);
+      // Ensure all values are properly defined before submitting
+      const processedData: UserPreferencesType = {
+        maxDistance: data.maxDistance,
+        ageRange: {
+          min: data.ageRange.min,
+          max: data.ageRange.max,
+        },
+        showMeToUsers: data.showMeToUsers,
+        notificationPreferences: {
+          messages: data.notificationPreferences.messages,
+          matches: data.notificationPreferences.matches,
+          likes: data.notificationPreferences.likes,
+          app: data.notificationPreferences.app,
+        },
+        preferredLocations: data.preferredLocations,
+        matchingPriorities: {
+          interests: data.matchingPriorities.interests,
+          personality: data.matchingPriorities.personality,
+          location: data.matchingPriorities.location,
+          age: data.matchingPriorities.age,
+          writingStyle: data.matchingPriorities.writingStyle,
+        },
+      };
+      
+      const success = await updatePreferences(processedData);
       if (success) {
         toast.success("Preferences updated successfully");
       } else {
