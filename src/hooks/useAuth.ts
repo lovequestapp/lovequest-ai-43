@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,7 +63,7 @@ export const useAuth = () => {
       : 'subscriber';
       
     const isVerified = profile?.is_verified || false;
-    const verificationStatus = isVerified ? 'verified' : 'unverified';
+    const validVerificationStatus = isVerified ? 'verified' : 'unverified';
 
     return {
       id: userId,
@@ -83,7 +84,7 @@ export const useAuth = () => {
       personalityTraits: profile?.personality_traits || [],
       role: validRole,
       isBanned: profile?.is_banned || false,
-      verificationStatus: verificationStatus,
+      verificationStatus: validVerificationStatus as "pending" | "rejected" | "verified" | "unverified",
       lastMessage: '',
       lastMessageTime: new Date(),
       status: 'online',

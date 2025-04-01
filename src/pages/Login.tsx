@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
@@ -19,7 +20,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setCurrentUser } = useUser();
-  const { signIn } = useAuth();
+  const { signIn, authenticated, user } = useAuth();
   const [activeTab, setActiveTab] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
   const isMobile = useIsMobile();
@@ -68,7 +69,6 @@ const Login = () => {
       const result = await signIn(loginEmail, loginPassword);
       
       if (result.success) {
-        setCurrentUser(result.user);
         await refreshSession();
         toast.success('Logged in successfully!');
         
