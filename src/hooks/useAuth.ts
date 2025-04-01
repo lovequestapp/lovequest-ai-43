@@ -24,8 +24,8 @@ export const useAuth = () => {
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
       console.log('Fetching user profile for ID:', userId);
-      const { data, error } = await (supabase
-        .from('profiles') as any)
+      const { data, error } = await supabase
+        .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
@@ -211,6 +211,8 @@ export const useAuth = () => {
   const signUp = async (email: string, password: string, name: string, planType: string = 'free') => {
     try {
       console.log('Sign up with:', { email, name, planType });
+      
+      // First, create the user account
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -249,25 +251,27 @@ export const useAuth = () => {
         trialEndDate 
       });
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({ 
-          id: data.user.id,
-          name,
-          email,
-          premium_status: premiumStatus,
-          trial_end_date: trialEndDate,
-          created_at: new Date().toISOString(),
-        });
-
-      if (profileError) {
-        console.error("Error creating profile:", profileError);
-        toast.error("Failed to create profile", { description: profileError.message });
-        return { success: false, error: profileError.message };
-      }
-
-      // If we have a session, sign in the user right away
+      // Wait for the auth session to be established before creating the profile
       if (data.session) {
+        // Create profile with the authenticated session
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            name,
+            email,
+            premium_status: premiumStatus,
+            trial_end_date: trialEndDate,
+            created_at: new Date().toISOString(),
+          });
+
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          toast.error("Failed to create profile", { description: profileError.message });
+          return { success: false, error: profileError.message };
+        }
+        
+        // If we have a session, sign in the user right away
         console.log('Session available, signing in user');
         const profile = await fetchUserProfile(data.user.id);
         const userObj = mapProfileToUser(profile, data.user.id, data.user.email || '');
@@ -279,11 +283,21 @@ export const useAuth = () => {
         });
         
         setCurrentUser(userObj);
+        
+        if (planType === 'free') {
+          toast.success("Your free account has been created!");
+        } else {
+          toast.success(`Your ${planType} subscription has been activated with a 3-day free trial!`);
+        }
+        
+        return { success: true };
       }
       
       if (!data.session) {
         console.log('No session, email confirmation required');
-        toast.info("Please check your email to confirm your registration");
+        toast.success("Registration successful!", {
+          description: "Please check your email to confirm your account"
+        });
         return { 
           success: true, 
           requiresEmailConfirmation: true 
