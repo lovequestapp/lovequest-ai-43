@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase, isSessionValid, refreshSession } from '@/lib/supabase';
+import { supabase, isSessionValid, refreshSession, checkUserRoleAndSubscription } from '@/lib/supabase';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
 
@@ -10,12 +10,24 @@ import { toast } from 'sonner';
  * @param options - Configuration options
  * @param options.requireAuth - Whether to require authentication (default: true)
  * @param options.adminOnly - Whether to require admin role (default: false)
+ * @param options.requiredSubscription - Required subscription level (default: undefined)
  */
-export const useProtectedRoute = (options: { requireAuth?: boolean; adminOnly?: boolean } = {}) => {
-  const { requireAuth = true, adminOnly = false } = options;
+export const useProtectedRoute = (options: { 
+  requireAuth?: boolean; 
+  adminOnly?: boolean;
+  moderatorOnly?: boolean;
+  requiredSubscription?: 'basic' | 'premium' | 'vip' | 'trial';
+} = {}) => {
+  const { 
+    requireAuth = true, 
+    adminOnly = false,
+    moderatorOnly = false,
+    requiredSubscription = undefined 
+  } = options;
   const [isLoading, setIsLoading] = useState(true);
   const [isAuth, setIsAuth] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userSubscription, setUserSubscription] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useUser();
@@ -38,21 +50,45 @@ export const useProtectedRoute = (options: { requireAuth?: boolean; adminOnly?: 
           // Session is valid, try to refresh if needed
           await refreshSession();
           
-          if (adminOnly) {
-            // Check user role if admin is required
-            if (currentUser) {
-              const role = currentUser.role || 'subscriber';
-              setUserRole(role);
+          // Check user role and subscription if needed
+          if (adminOnly || moderatorOnly || requiredSubscription) {
+            const { role, subscription } = await checkUserRoleAndSubscription();
+            setUserRole(role);
+            setUserSubscription(subscription);
+            
+            if (adminOnly && role !== 'admin') {
+              toast.error("You need admin privileges to access this page");
+              navigate('/discover');
+              return false;
+            }
+            
+            if (moderatorOnly && role !== 'admin' && role !== 'moderator') {
+              toast.error("You need moderator privileges to access this page");
+              navigate('/discover');
+              return false;
+            }
+            
+            if (requiredSubscription) {
+              const subscriptionLevels = {
+                'basic': 0,
+                'trial': 1,
+                'premium': 2,
+                'vip': 3
+              };
               
-              if (role !== 'admin') {
-                toast.error("You need admin privileges to access this page");
-                navigate('/profile');
+              const userLevel = subscriptionLevels[subscription] || 0;
+              const requiredLevel = subscriptionLevels[requiredSubscription] || 0;
+              
+              if (userLevel < requiredLevel) {
+                toast.error(`You need a ${requiredSubscription} subscription to access this page`);
+                navigate('/user-profile?tab=monetize');
                 return false;
               }
-            } else {
-              // We have a valid session but no user yet, we should wait for the user to load
-              return true;
             }
+          } else if (currentUser) {
+            // Use currentUser data if available
+            setUserRole(currentUser.role);
+            setUserSubscription(currentUser.premiumStatus);
           }
         }
         
@@ -104,7 +140,12 @@ export const useProtectedRoute = (options: { requireAuth?: boolean; adminOnly?: 
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, requireAuth, adminOnly, isLoading, location.pathname, currentUser]);
+  }, [navigate, requireAuth, adminOnly, moderatorOnly, requiredSubscription, isLoading, location.pathname, currentUser]);
 
-  return { isAuthenticated: isAuth, isLoading, userRole };
+  return { 
+    isAuthenticated: isAuth, 
+    isLoading, 
+    userRole,
+    userSubscription
+  };
 };

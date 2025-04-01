@@ -18,7 +18,6 @@ interface AdminMobileContainerProps {
   preventOverflow?: boolean;
 }
 
-// Define the extended props for admin tables
 interface AdminTableProps {
   editingUser?: number | null;
   userFormData?: any;
@@ -46,7 +45,6 @@ const AdminMobileContainer = ({
   const location = useLocation();
   const { currentUser, logout, updateUserData } = useUser();
   
-  // Hide export/import buttons and fix overflow
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -348,15 +346,16 @@ const AdminMobileContainer = ({
   };
   
   useEffect(() => {
-    const handleTabChange = (event: any) => {
+    const handleTabChange = (event: CustomEvent<string>) => {
       if (event.detail) {
         setActiveTab(event.detail);
+        console.log("Tab changed to:", event.detail);
       }
     };
     
-    window.addEventListener('setAdminTab', handleTabChange);
+    window.addEventListener('setAdminTab', handleTabChange as EventListener);
     return () => {
-      window.removeEventListener('setAdminTab', handleTabChange);
+      window.removeEventListener('setAdminTab', handleTabChange as EventListener);
     };
   }, []);
   

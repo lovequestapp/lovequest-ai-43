@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
@@ -52,6 +53,72 @@ export const isSessionValid = async () => {
   } catch (error) {
     console.error("Error checking session validity:", error);
     return false;
+  }
+};
+
+// Check user role and subscription level
+export const checkUserRoleAndSubscription = async () => {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error || !data.session) {
+      return { 
+        isLoggedIn: false, 
+        role: null, 
+        subscription: null 
+      };
+    }
+    
+    const userId = data.session.user.id;
+    
+    // Get user profile from the profiles table
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('role, premium_status, trial_end_date')
+      .eq('id', userId)
+      .single();
+      
+    if (profileError) {
+      console.error("Error fetching user profile:", profileError);
+      return { 
+        isLoggedIn: true, 
+        role: 'subscriber', 
+        subscription: 'basic' 
+      };
+    }
+    
+    // Check if trial has expired
+    if (profileData.premium_status === 'trial' && profileData.trial_end_date) {
+      const trialEndDate = new Date(profileData.trial_end_date);
+      const now = new Date();
+      
+      if (now > trialEndDate) {
+        // Trial has expired, update to basic
+        await supabase
+          .from('profiles')
+          .update({ premium_status: 'basic' })
+          .eq('id', userId);
+          
+        return { 
+          isLoggedIn: true, 
+          role: profileData.role || 'subscriber', 
+          subscription: 'basic' 
+        };
+      }
+    }
+    
+    return { 
+      isLoggedIn: true, 
+      role: profileData.role || 'subscriber', 
+      subscription: profileData.premium_status || 'basic' 
+    };
+  } catch (error) {
+    console.error("Error checking user role and subscription:", error);
+    return { 
+      isLoggedIn: false, 
+      role: null, 
+      subscription: null 
+    };
   }
 };
 
@@ -167,6 +234,23 @@ export const getCurrentUser = async () => {
         .single();
         
       if (!profileError && profileData) {
+        // Check if trial has expired
+        if (profileData.premium_status === 'trial' && profileData.trial_end_date) {
+          const trialEndDate = new Date(profileData.trial_end_date);
+          const now = new Date();
+          
+          if (now > trialEndDate) {
+            // Trial has expired, update to basic
+            await supabase
+              .from('profiles')
+              .update({ premium_status: 'basic' })
+              .eq('id', data.user.id);
+              
+            profileData.premium_status = 'basic';
+            toast.info("Your free trial has expired. You have been moved to our Basic plan.");
+          }
+        }
+        
         // Return user with profile data
         return { 
           success: true, 
@@ -187,8 +271,8 @@ export const getCurrentUser = async () => {
             isBanned: profileData.is_banned || false,
             verificationStatus: profileData.is_verified ? 'verified' : 'unverified',
             personalityTraits: profileData.personality_traits || [],
-            giftInventory: { rose: 0, heart: 0, teddy: 0 },
-            receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+            giftInventory: profileData.gift_inventory || { rose: 0, heart: 0, teddy: 0 },
+            receivedGifts: profileData.received_gifts || { rose: 0, heart: 0, teddy: 0 },
             compatibilityScore: 0,
           }
         };

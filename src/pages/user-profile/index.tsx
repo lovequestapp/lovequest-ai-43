@@ -1,36 +1,131 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useUser } from '@/context/UserContext';
+import { supabase } from '@/lib/supabase';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
-import { Edit, User, Wallet } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Edit, User, Wallet, Crown, Shield } from 'lucide-react';
 import Monetization from '@/components/Monetization';
 import ProfileEditor from '@/components/profile-editor/ProfileEditor';
 import ProfileInfo from '@/components/profile-editor/ProfileInfo';
 import ProtectedRoute from '@/components/protected-route';
+import { toast } from 'sonner';
 
 const UserProfile = () => {
   const { currentUser } = useUser();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'profile';
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [profileData, setProfileData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!currentUser) return;
+      
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+          
+        if (error) {
+          console.error('Error fetching profile:', error);
+          toast.error('Failed to load profile data');
+        } else {
+          setProfileData(data);
+        }
+      } catch (err) {
+        console.error('Error in profile fetch:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserProfile();
+  }, [currentUser]);
 
   if (!currentUser) {
     return null; // ProtectedRoute will handle redirecting
   }
+
+  const getRoleBadge = () => {
+    const role = currentUser?.role || 'subscriber';
+    
+    switch(role) {
+      case 'admin':
+        return (
+          <Badge className="bg-gradient-to-r from-amber-500 to-amber-700 text-white ml-2">
+            <Crown className="h-3 w-3 mr-1" /> Admin
+          </Badge>
+        );
+      case 'moderator':
+        return (
+          <Badge className="bg-gradient-to-r from-blue-500 to-blue-700 text-white ml-2">
+            <Shield className="h-3 w-3 mr-1" /> Moderator
+          </Badge>
+        );
+      case 'vip':
+        return (
+          <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white ml-2">
+            <Crown className="h-3 w-3 mr-1" /> VIP
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const getSubscriptionBadge = () => {
+    const subscription = currentUser?.premiumStatus || 'basic';
+    
+    switch(subscription) {
+      case 'vip':
+        return (
+          <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white ml-2">
+            VIP
+          </Badge>
+        );
+      case 'premium':
+        return (
+          <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white ml-2">
+            Premium
+          </Badge>
+        );
+      case 'trial':
+        return (
+          <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white ml-2">
+            Trial
+          </Badge>
+        );
+      default:
+        return (
+          <Badge className="bg-gradient-to-r from-gray-400 to-gray-500 text-white ml-2">
+            Basic
+          </Badge>
+        );
+    }
+  };
 
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow container mx-auto px-4 py-8">
-          <div className="mb-6 flex items-center justify-between">
-            <h1 className="text-3xl font-display font-bold">Your Profile</h1>
+          <div className="mb-6 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center flex-wrap">
+              <h1 className="text-2xl md:text-3xl font-display font-bold">Your Profile</h1>
+              {getRoleBadge()}
+              {getSubscriptionBadge()}
+            </div>
             <Button 
               variant="outline" 
               className="flex items-center gap-2"
@@ -59,17 +154,25 @@ const UserProfile = () => {
 
             <Card>
               <CardContent className="pt-6">
-                <TabsContent value="profile" className="mt-0">
-                  <ProfileInfo />
-                </TabsContent>
-                
-                <TabsContent value="edit" className="mt-0">
-                  <ProfileEditor />
-                </TabsContent>
-                
-                <TabsContent value="monetize" className="mt-0">
-                  <Monetization />
-                </TabsContent>
+                {loading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="h-8 w-8 rounded-full border-2 border-t-love-500 border-love-200 animate-spin"></div>
+                  </div>
+                ) : (
+                  <>
+                    <TabsContent value="profile" className="mt-0">
+                      <ProfileInfo profile={profileData} />
+                    </TabsContent>
+                    
+                    <TabsContent value="edit" className="mt-0">
+                      <ProfileEditor initialData={profileData} />
+                    </TabsContent>
+                    
+                    <TabsContent value="monetize" className="mt-0">
+                      <Monetization userData={profileData} />
+                    </TabsContent>
+                  </>
+                )}
               </CardContent>
             </Card>
           </Tabs>
