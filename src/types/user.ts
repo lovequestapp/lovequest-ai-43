@@ -33,6 +33,8 @@ export interface User {
   };
   isDemo?: boolean; // Flag to indicate if this is a demo profile
   preferences?: UserPreferences;
+  isBoosted?: boolean;
+  boostLevel?: BoostLevelType;
 }
 
 export interface UserWithCoordinates extends User {
@@ -41,6 +43,9 @@ export interface UserWithCoordinates extends User {
     longitude: number;
   };
   distance: number;
+  isBoosted?: boolean;
+  boostLevel?: BoostLevelType;
+  finalScore?: number;
 }
 
 export interface GiftInventory {
@@ -65,7 +70,7 @@ export interface BlogPostType {
   title: string;
   content: string;
   imageUrl?: string;
-  likes: string[];
+  likes: number; // Changed from string[] to number to match implementation
   comments: BlogComment[];
   createdAt: Date;
   updatedAt: Date;
@@ -75,21 +80,13 @@ export interface BlogPostType {
 export interface BlogComment {
   id: string;
   userId: string;
+  userName: string; // Added to match implementation
   content: string;
-  timestamp: Date;
+  createdAt: Date; // Changed from timestamp to createdAt to match implementation
+  postId?: string; // Added to match implementation
 }
 
-export interface BoostType {
-  id: string;
-  userId: string;
-  type: 'local' | 'international';
-  level: BoostLevelType;
-  startTime: Date;
-  endTime: Date;
-  isActive: boolean;
-}
-
-export type BoostLevelType = 'basic' | 'premium' | 'ultra';
+export type BoostLevelType = 'basic' | 'premium' | 'ultra' | 'none' | 'local' | 'international' | 'super';
 
 export interface UserPreferences {
   maxDistance: number;
@@ -110,5 +107,7 @@ export interface UserPreferences {
     interests: number;
     age: number;
     personality: number;
+    location?: number;
+    writingStyle?: number;
   };
 }

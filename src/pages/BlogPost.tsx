@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -260,21 +259,17 @@ const BlogPost: React.FC = () => {
             <h3 className="font-semibold mb-4">Comments</h3>
             
             <div className="space-y-4 mb-6">
-              {post.comments.length > 0 ? (
-                post.comments.map((comment) => (
-                  <div key={comment.id} className="bg-muted p-3 rounded-md">
-                    <div className="flex justify-between">
-                      <span className="font-medium">{comment.userName}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm">{comment.content}</p>
+              {post.comments.map((comment) => (
+                <div key={comment.id} className="bg-muted p-3 rounded-md">
+                  <div className="flex justify-between">
+                    <span className="font-medium">{comment.userName}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                    </span>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No comments yet. Be the first to comment!</p>
-              )}
+                  <p className="mt-1 text-sm">{comment.content}</p>
+                </div>
+              ))}
             </div>
             
             <div className="flex gap-2">

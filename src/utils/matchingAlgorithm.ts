@@ -6,7 +6,10 @@ export const BOOST_PRIORITY: Record<BoostLevelType, number> = {
   'super': 1,
   'international': 2,
   'local': 3,
-  'none': 4
+  'basic': 4,
+  'premium': 5,
+  'ultra': 6,
+  'none': 7
 };
 
 // Function to determine if a profile should be boosted based on popularity
@@ -201,11 +204,10 @@ export const calculateCompatibilityScore = (
   
   // Get matching priorities or use defaults
   const priorities = user1.preferences?.matchingPriorities || {
+    distance: 5,
     interests: 5,
-    personality: 4,
-    location: 3,
     age: 2,
-    writingStyle: 4
+    personality: 4
   };
   
   // Normalize priorities to sum to 1
@@ -213,10 +215,18 @@ export const calculateCompatibilityScore = (
   const normalizedPriorities = {
     interests: priorities.interests / totalPriority,
     personality: priorities.personality / totalPriority,
-    location: priorities.location / totalPriority,
-    age: priorities.age / totalPriority,
-    writingStyle: priorities.writingStyle / totalPriority
+    distance: priorities.distance / totalPriority,
+    age: priorities.age / totalPriority
   };
+
+  // Add optional properties if they exist
+  if (priorities.location !== undefined) {
+    normalizedPriorities.location = priorities.location / totalPriority;
+  }
+  
+  if (priorities.writingStyle !== undefined) {
+    normalizedPriorities.writingStyle = priorities.writingStyle / totalPriority;
+  }
   
   // Gender preference match (essential factor)
   if (user1.interestedIn.includes(user2.gender) && user2.interestedIn.includes(user1.gender)) {
@@ -239,15 +249,15 @@ export const calculateCompatibilityScore = (
   const ageScore = Math.max(0, 15 - (ageDifference * 0.75)) * normalizedPriorities.age;
   score += ageScore;
   
-  // Writing style/bio similarity (weighted by priority)
-  if (user1.bio && user2.bio) {
+  // Writing style/bio similarity (weighted by priority) - only if the writingStyle priority exists
+  if (user1.bio && user2.bio && normalizedPriorities.writingStyle !== undefined) {
     const textSimilarity = calculateTextSimilarity(user1.bio, user2.bio) * 0.05 * normalizedPriorities.writingStyle;
     const writingStyleSimilarity = analyzeWritingStyle(user1.bio, user2.bio) * 0.05 * normalizedPriorities.writingStyle;
     score += textSimilarity + writingStyleSimilarity;
   }
   
-  // Location proximity (if available) (weighted by priority)
-  if (user1.coordinates && user2.coordinates) {
+  // Location proximity (if available) - only if the location priority exists
+  if (user1.coordinates && user2.coordinates && normalizedPriorities.location !== undefined) {
     const distance = calculateDistance(
       user1.coordinates.latitude,
       user1.coordinates.longitude,

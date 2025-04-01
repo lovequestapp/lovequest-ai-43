@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +9,7 @@ import {
   Crown,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { UserWithCoordinates } from '@/utils/matchingAlgorithm';
+import { UserWithCoordinates } from '@/types/user';
 
 interface MatchGridProps {
   matches: UserWithCoordinates[];

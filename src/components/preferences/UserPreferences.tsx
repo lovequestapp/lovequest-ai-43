@@ -1,501 +1,394 @@
-
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { 
-  Bell, 
-  Settings, 
-  Save, 
-  RefreshCw, 
-  Info, 
-  MapPin, 
-  SlidersHorizontal,
-} from 'lucide-react';
-import { UserPreferences as UserPreferencesType } from '@/types/user';
+import { UserPreferences } from '@/types/user';
+import { X, Plus, MapPin, Bell, Eye, Sliders } from 'lucide-react';
 
-// Define schema for form validation
-const preferencesSchema = z.object({
-  maxDistance: z.number().min(1).max(100),
-  ageRange: z.object({
-    min: z.number().min(18).max(100),
-    max: z.number().min(18).max(100),
-  }),
-  showMeToUsers: z.boolean(),
-  notificationPreferences: z.object({
-    messages: z.boolean(),
-    matches: z.boolean(),
-    likes: z.boolean(),
-    app: z.boolean(),
-  }),
-  preferredLocations: z.array(z.string()),
-  matchingPriorities: z.object({
-    interests: z.number().min(1).max(10),
-    personality: z.number().min(1).max(10),
-    location: z.number().min(1).max(10),
-    age: z.number().min(1).max(10),
-    writingStyle: z.number().min(1).max(10),
-  }),
-});
-
-type PreferencesFormValues = z.infer<typeof preferencesSchema>;
-
-const UserPreferences: React.FC = () => {
+const UserPreferences = () => {
   const { currentUser, updatePreferences } = useUser();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newLocation, setNewLocation] = useState('');
-  const [activeTab, setActiveTab] = useState('matching');
+  const [isSaving, setIsSaving] = useState(false);
+  const [locationInput, setLocationInput] = useState('');
   
-  // Set default values from user preferences or defaults
-  const defaultValues: PreferencesFormValues = {
-    maxDistance: currentUser?.preferences?.maxDistance || 50,
-    ageRange: {
-      min: currentUser?.preferences?.ageRange?.min || 18,
-      max: currentUser?.preferences?.ageRange?.max || 50,
-    },
-    showMeToUsers: currentUser?.preferences?.showMeToUsers !== false,
+  // Default preferences
+  const defaultPreferences: UserPreferences = {
+    maxDistance: 50,
+    ageRange: { min: 18, max: 50 },
+    showMeToUsers: true,
     notificationPreferences: {
-      messages: currentUser?.preferences?.notificationPreferences?.messages !== false,
-      matches: currentUser?.preferences?.notificationPreferences?.matches !== false,
-      likes: currentUser?.preferences?.notificationPreferences?.likes !== false,
-      app: currentUser?.preferences?.notificationPreferences?.app !== false,
+      messages: true,
+      matches: true,
+      likes: true,
+      app: true
     },
-    preferredLocations: currentUser?.preferences?.preferredLocations || [],
+    preferredLocations: [],
     matchingPriorities: {
-      interests: currentUser?.preferences?.matchingPriorities?.interests || 5,
-      personality: currentUser?.preferences?.matchingPriorities?.personality || 5,
-      location: currentUser?.preferences?.matchingPriorities?.location || 5,
-      age: currentUser?.preferences?.matchingPriorities?.age || 5,
-      writingStyle: currentUser?.preferences?.matchingPriorities?.writingStyle || 5,
-    },
-  };
-  
-  const form = useForm<PreferencesFormValues>({
-    resolver: zodResolver(preferencesSchema),
-    defaultValues,
-  });
-  
-  const addLocation = () => {
-    if (!newLocation.trim()) return;
-    
-    const currentLocations = form.getValues().preferredLocations || [];
-    
-    // Check if location already exists
-    if (currentLocations.includes(newLocation.trim())) {
-      toast.error("This location is already in your list");
-      return;
+      distance: 5,
+      interests: 5,
+      age: 5,
+      personality: 5
     }
+  };
+  
+  // Use current user preferences or defaults
+  const [preferences, setPreferences] = useState<UserPreferences>(
+    currentUser?.preferences || defaultPreferences
+  );
+  
+  // Update preferences when user changes
+  useEffect(() => {
+    if (currentUser?.preferences) {
+      setPreferences(currentUser.preferences);
+    }
+  }, [currentUser]);
+  
+  const handleDistanceChange = (value: number[]) => {
+    setPreferences({
+      ...preferences,
+      maxDistance: value[0]
+    });
+  };
+  
+  const handleAgeRangeChange = (value: number[]) => {
+    setPreferences({
+      ...preferences,
+      ageRange: {
+        min: value[0],
+        max: value[1]
+      }
+    });
+  };
+  
+  const handleVisibilityChange = (value: boolean) => {
+    setPreferences({
+      ...preferences,
+      showMeToUsers: value
+    });
+  };
+  
+  const handleNotificationChange = (key: keyof UserPreferences['notificationPreferences'], value: boolean) => {
+    setPreferences({
+      ...preferences,
+      notificationPreferences: {
+        ...preferences.notificationPreferences,
+        [key]: value
+      }
+    });
+  };
+  
+  const handleAddLocation = () => {
+    if (locationInput.trim() && !preferences.preferredLocations.includes(locationInput.trim())) {
+      setPreferences({
+        ...preferences,
+        preferredLocations: [...preferences.preferredLocations, locationInput.trim()]
+      });
+      setLocationInput('');
+    }
+  };
+  
+  const handleRemoveLocation = (location: string) => {
+    setPreferences({
+      ...preferences,
+      preferredLocations: preferences.preferredLocations.filter(loc => loc !== location)
+    });
+  };
+  
+  const handlePriorityChange = (key: string, value: number) => {
+    // Must use keys that exist in our preferences.matchingPriorities type
+    const updatedPriorities = { ...preferences.matchingPriorities, [key]: value };
     
-    form.setValue('preferredLocations', [...currentLocations, newLocation.trim()]);
-    setNewLocation('');
+    setPreferences({
+      ...preferences,
+      matchingPriorities: updatedPriorities
+    });
   };
   
-  const removeLocation = (location: string) => {
-    const currentLocations = form.getValues().preferredLocations || [];
-    form.setValue(
-      'preferredLocations', 
-      currentLocations.filter(loc => loc !== location)
-    );
-  };
-  
-  const onSubmit = async (data: PreferencesFormValues) => {
-    setIsSubmitting(true);
+  const handleSave = async () => {
+    setIsSaving(true);
     
     try {
-      // Ensure all values are properly defined before submitting
-      const processedData: UserPreferencesType = {
-        maxDistance: data.maxDistance,
-        ageRange: {
-          min: data.ageRange.min,
-          max: data.ageRange.max,
-        },
-        showMeToUsers: data.showMeToUsers,
-        notificationPreferences: {
-          messages: data.notificationPreferences.messages,
-          matches: data.notificationPreferences.matches,
-          likes: data.notificationPreferences.likes,
-          app: data.notificationPreferences.app,
-        },
-        preferredLocations: data.preferredLocations,
+      const success = await updatePreferences({
+        maxDistance: preferences.maxDistance,
+        ageRange: preferences.ageRange,
+        showMeToUsers: preferences.showMeToUsers,
+        notificationPreferences: preferences.notificationPreferences,
+        preferredLocations: preferences.preferredLocations,
         matchingPriorities: {
-          interests: data.matchingPriorities.interests,
-          personality: data.matchingPriorities.personality,
-          location: data.matchingPriorities.location,
-          age: data.matchingPriorities.age,
-          writingStyle: data.matchingPriorities.writingStyle,
-        },
-      };
+          distance: preferences.matchingPriorities.distance,
+          interests: preferences.matchingPriorities.interests,
+          personality: preferences.matchingPriorities.personality,
+          age: preferences.matchingPriorities.age
+        }
+      });
       
-      const success = await updatePreferences(processedData);
       if (success) {
-        toast.success("Preferences updated successfully");
+        toast.success("Preferences saved successfully!");
       } else {
-        toast.error("Failed to update preferences");
+        throw new Error("Failed to save preferences");
       }
     } catch (error) {
-      console.error("Error updating preferences:", error);
-      toast.error("An error occurred while updating preferences");
+      console.error("Error saving preferences:", error);
+      toast.error("Failed to save preferences");
     } finally {
-      setIsSubmitting(false);
+      setIsSaving(false);
     }
   };
   
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="matching">Matching Preferences</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-        </TabsList>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-            <TabsContent value="matching" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-love-500" />
-                    Location Settings
-                  </CardTitle>
-                  <CardDescription>
-                    Configure your location preferences and distance settings
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="maxDistance"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Maximum Distance (miles)</FormLabel>
-                        <FormControl>
-                          <div className="space-y-3">
-                            <Slider
-                              min={1}
-                              max={100}
-                              step={1}
-                              value={[field.value]}
-                              onValueChange={(value) => field.onChange(value[0])}
-                            />
-                            <div className="flex justify-between">
-                              <span className="text-xs text-muted-foreground">1 mile</span>
-                              <span className="text-sm font-medium">{field.value} miles</span>
-                              <span className="text-xs text-muted-foreground">100 miles</span>
-                            </div>
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          This is the maximum distance for potential matches
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="space-y-3">
-                    <FormLabel>Preferred Locations</FormLabel>
-                    <div className="flex gap-2 mb-2">
-                      <Input
-                        placeholder="Add a city or location"
-                        value={newLocation}
-                        onChange={(e) => setNewLocation(e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button type="button" variant="outline" onClick={addLocation}>
-                        Add
-                      </Button>
-                    </div>
-                    <FormDescription>
-                      Add locations where you'd prefer to find matches
-                    </FormDescription>
-                    
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {form.watch('preferredLocations').map((location) => (
-                        <Badge 
-                          key={location} 
-                          variant="secondary"
-                          className="flex items-center gap-1 py-1.5"
-                        >
-                          <MapPin className="h-3 w-3" />
-                          {location}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            className="h-4 w-4 p-0 ml-1"
-                            onClick={() => removeLocation(location)}
-                          >
-                            <span className="sr-only">Remove</span>
-                            <span className="text-xs">×</span>
-                          </Button>
-                        </Badge>
-                      ))}
-                      
-                      {form.watch('preferredLocations').length === 0 && (
-                        <p className="text-sm text-muted-foreground italic">
-                          No preferred locations added yet
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <FormField
-                    control={form.control}
-                    name="showMeToUsers"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">
-                            Show me in discover
-                          </FormLabel>
-                          <FormDescription>
-                            When disabled, you won't appear in other users' discover feed
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <SlidersHorizontal className="h-5 w-5 text-love-500" />
-                    Matching Priorities
-                  </CardTitle>
-                  <CardDescription>
-                    Adjust how important each factor is for your matching preferences
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="ageRange"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Age Range</FormLabel>
-                          <FormControl>
-                            <div className="flex items-center gap-4">
-                              <Input
-                                type="number"
-                                min={18}
-                                max={100}
-                                placeholder="Min age"
-                                value={field.value.min}
-                                onChange={(e) => 
-                                  field.onChange({ 
-                                    ...field.value, 
-                                    min: parseInt(e.target.value) || 18 
-                                  })
-                                }
-                                className="w-24"
-                              />
-                              <span>to</span>
-                              <Input
-                                type="number"
-                                min={18}
-                                max={100}
-                                placeholder="Max age"
-                                value={field.value.max}
-                                onChange={(e) => 
-                                  field.onChange({ 
-                                    ...field.value, 
-                                    max: parseInt(e.target.value) || 50 
-                                  })
-                                }
-                                className="w-24"
-                              />
-                            </div>
-                          </FormControl>
-                          <FormDescription>
-                            The age range of potential matches
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem value="priorities">
-                        <AccordionTrigger>Matching Priorities</AccordionTrigger>
-                        <AccordionContent className="space-y-4 pt-2">
-                          {[
-                            { name: 'interests', label: 'Shared Interests', description: 'Importance of having similar interests' },
-                            { name: 'personality', label: 'Personality Compatibility', description: 'Importance of personality types matching' },
-                            { name: 'location', label: 'Location', description: 'Importance of being close to each other' },
-                            { name: 'age', label: 'Age', description: 'Importance of age compatibility' },
-                            { name: 'writingStyle', label: 'Communication Style', description: 'Importance of similar communication patterns' },
-                          ].map((priority) => (
-                            <FormField
-                              key={priority.name}
-                              control={form.control}
-                              name={`matchingPriorities.${priority.name}` as any}
-                              render={({ field }) => (
-                                <FormItem>
-                                  <div className="mb-2 flex justify-between">
-                                    <FormLabel>{priority.label}</FormLabel>
-                                    <span className="text-sm font-medium">
-                                      {field.value}/10
-                                    </span>
-                                  </div>
-                                  <FormControl>
-                                    <Slider
-                                      min={1}
-                                      max={10}
-                                      step={1}
-                                      value={[field.value]}
-                                      onValueChange={(value) => field.onChange(value[0])}
-                                    />
-                                  </FormControl>
-                                  <FormDescription>
-                                    {priority.description}
-                                  </FormDescription>
-                                </FormItem>
-                              )}
-                            />
-                          ))}
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="notifications" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Bell className="h-5 w-5 text-love-500" />
-                    Notification Preferences
-                  </CardTitle>
-                  <CardDescription>
-                    Control which notifications you receive
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {[
-                    { name: 'messages', label: 'New Messages', description: 'Get notified when you receive new messages' },
-                    { name: 'matches', label: 'New Matches', description: 'Get notified when you have new matches' },
-                    { name: 'likes', label: 'Likes', description: 'Get notified when someone likes your profile' },
-                    { name: 'app', label: 'App Updates', description: 'Get notified about new features and updates' },
-                  ].map((notification) => (
-                    <FormField
-                      key={notification.name}
-                      control={form.control}
-                      name={`notificationPreferences.${notification.name}` as any}
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between space-y-0 rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">
-                              {notification.label}
-                            </FormLabel>
-                            <FormDescription>
-                              {notification.description}
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  ))}
-                </CardContent>
-              </Card>
-              
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Reset All Notification Settings
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will reset all your notification preferences to their default settings.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => {
-                        form.setValue('notificationPreferences', {
-                          messages: true,
-                          matches: true,
-                          likes: true,
-                          app: true,
-                        });
-                        toast.success("Notification settings reset to defaults");
-                      }}
-                    >
-                      Continue
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </TabsContent>
-            
-            <div className="flex justify-end">
-              <Button 
-                type="submit" 
-                className="bg-gradient-love"
-                disabled={isSubmitting}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {isSubmitting ? "Saving..." : "Save Preferences"}
-              </Button>
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-love-500" />
+                <span>Discovery Preferences</span>
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Control who you see and how far you want to search
+              </p>
             </div>
-          </form>
-        </Form>
-      </Tabs>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label htmlFor="max-distance">Maximum Distance</Label>
+                  <span className="text-sm text-muted-foreground">{preferences.maxDistance} miles</span>
+                </div>
+                <Slider 
+                  id="max-distance"
+                  min={5} 
+                  max={100} 
+                  step={5} 
+                  value={[preferences.maxDistance]} 
+                  onValueChange={handleDistanceChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label htmlFor="age-range">Age Range</Label>
+                  <span className="text-sm text-muted-foreground">
+                    {preferences.ageRange.min} - {preferences.ageRange.max}
+                  </span>
+                </div>
+                <Slider 
+                  id="age-range"
+                  min={18} 
+                  max={80} 
+                  step={1} 
+                  value={[preferences.ageRange.min, preferences.ageRange.max]} 
+                  onValueChange={handleAgeRangeChange}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label htmlFor="show-me">Show Me to Others</Label>
+                  <p className="text-sm text-muted-foreground">
+                    When disabled, you won't be shown to other users
+                  </p>
+                </div>
+                <Switch 
+                  id="show-me" 
+                  checked={preferences.showMeToUsers}
+                  onCheckedChange={handleVisibilityChange}
+                />
+              </div>
+            </div>
+            
+            <Separator />
+            
+            <div>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-love-500" />
+                <span>Preferred Locations</span>
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Add cities or regions where you'd prefer to match with people
+              </p>
+              
+              <div className="flex gap-2 mt-4">
+                <Input 
+                  placeholder="Add a city or region..." 
+                  value={locationInput}
+                  onChange={(e) => setLocationInput(e.target.value)}
+                  className="flex-1"
+                />
+                <Button 
+                  type="button" 
+                  onClick={handleAddLocation}
+                  disabled={!locationInput.trim()}
+                >
+                  <Plus size={16} />
+                </Button>
+              </div>
+              
+              <div className="flex flex-wrap gap-2 mt-4">
+                {preferences.preferredLocations.length > 0 ? (
+                  preferences.preferredLocations.map((location, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="secondary"
+                      className="flex items-center gap-1 py-1.5 px-3"
+                    >
+                      <MapPin size={12} />
+                      {location}
+                      <button 
+                        type="button" 
+                        className="ml-1 text-muted-foreground hover:text-foreground"
+                        onClick={() => handleRemoveLocation(location)}
+                      >
+                        <X size={12} />
+                      </button>
+                    </Badge>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No preferred locations added</p>
+                )}
+              </div>
+            </div>
+            
+            <Separator />
+            
+            <div>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Bell className="h-5 w-5 text-love-500" />
+                <span>Notification Preferences</span>
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Control which notifications you receive
+              </p>
+              
+              <div className="space-y-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="notify-messages">New Messages</Label>
+                  <Switch 
+                    id="notify-messages" 
+                    checked={preferences.notificationPreferences.messages}
+                    onCheckedChange={(value) => handleNotificationChange('messages', value)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="notify-matches">New Matches</Label>
+                  <Switch 
+                    id="notify-matches" 
+                    checked={preferences.notificationPreferences.matches}
+                    onCheckedChange={(value) => handleNotificationChange('matches', value)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="notify-likes">Profile Likes</Label>
+                  <Switch 
+                    id="notify-likes" 
+                    checked={preferences.notificationPreferences.likes}
+                    onCheckedChange={(value) => handleNotificationChange('likes', value)}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="notify-app">App Updates</Label>
+                  <Switch 
+                    id="notify-app" 
+                    checked={preferences.notificationPreferences.app}
+                    onCheckedChange={(value) => handleNotificationChange('app', value)}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <Separator />
+            
+            <div className="space-y-4 mb-6">
+              <h3 className="text-lg font-semibold">Matching Priorities</h3>
+              <p className="text-sm text-muted-foreground">
+                Adjust how much importance each factor has in finding your matches.
+              </p>
+              
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label htmlFor="distance-priority">Distance</Label>
+                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities.distance}</span>
+                  </div>
+                  <Slider 
+                    id="distance-priority"
+                    min={1} 
+                    max={10} 
+                    step={1} 
+                    value={[preferences.matchingPriorities.distance]} 
+                    onValueChange={(values) => handlePriorityChange('distance', values[0])}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label htmlFor="interests-priority">Shared Interests</Label>
+                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities.interests}</span>
+                  </div>
+                  <Slider 
+                    id="interests-priority"
+                    min={1} 
+                    max={10} 
+                    step={1} 
+                    value={[preferences.matchingPriorities.interests]} 
+                    onValueChange={(values) => handlePriorityChange('interests', values[0])}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label htmlFor="personality-priority">Personality Match</Label>
+                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities.personality}</span>
+                  </div>
+                  <Slider 
+                    id="personality-priority"
+                    min={1} 
+                    max={10} 
+                    step={1} 
+                    value={[preferences.matchingPriorities.personality]} 
+                    onValueChange={(values) => handlePriorityChange('personality', values[0])}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label htmlFor="age-priority">Age Similarity</Label>
+                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities.age}</span>
+                  </div>
+                  <Slider 
+                    id="age-priority"
+                    min={1} 
+                    max={10} 
+                    step={1} 
+                    value={[preferences.matchingPriorities.age]} 
+                    onValueChange={(values) => handlePriorityChange('age', values[0])}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-gradient-love hover:opacity-90"
+            >
+              {isSaving ? "Saving..." : "Save Preferences"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

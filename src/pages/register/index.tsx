@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import { useUser } from '@/context/UserContext';
 import { CreditCard, Star, Award, Clock, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-// Subscription plans
 const subscriptionPlans = [
   {
     id: 'free-trial',
@@ -80,7 +78,6 @@ const Register = () => {
   const { setCurrentUser } = useUser();
   const isMobile = useIsMobile();
   
-  // Get data from previous form if coming from login page
   useEffect(() => {
     if (location.state) {
       const { name: stateName, email: stateEmail, password: statePassword } = location.state as any;
@@ -97,7 +94,6 @@ const Register = () => {
     }
     
     if (step === 2 && selectedPlan !== 'free-trial') {
-      // Validate payment info
       if (!paymentInfo.cardName || !paymentInfo.cardNumber || 
           !paymentInfo.expMonth || !paymentInfo.expYear || !paymentInfo.cvc) {
         toast.error("Please fill in all payment details");
@@ -151,7 +147,6 @@ const Register = () => {
         const premiumStatus = selectedPlan === 'premium' ? 'premium' : 
                              selectedPlan === 'basic' ? 'basic' : 'trial';
         
-        // Calculate trial end date - only set if free trial is selected
         const trialEndDate = selectedPlan === 'free-trial' ? 
           new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() : null;
           
@@ -162,17 +157,51 @@ const Register = () => {
             name,
             email,
             age: 25, // Default value
+            photos: [],
             bio: '',
             location: '',
             interests: [],
-            photos: [],
-            gender: 'non-binary',
-            interested_in: [],
-            premium_status: premiumStatus,
-            role: 'subscriber',
-            is_verified: false,
-            is_banned: false,
-            trial_end_date: trialEndDate
+            gender: 'non-binary' as const,
+            interestedIn: [],
+            popularityPoints: 0,
+            premiumStatus: premiumStatus as 'basic' | 'premium' | 'vip' | 'trial',
+            role: 'subscriber' as const,
+            isBanned: false,
+            verificationStatus: 'unverified' as const,
+            personalityTraits: [],
+            giftInventory: { rose: 0, heart: 0, teddy: 0 },
+            receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+            compatibilityScore: 0,
+            lastMessage: '',
+            lastMessageTime: new Date(),
+            status: 'online' as 'online' | 'offline' | 'away',
+            favoriteMusic: [],
+            voiceIntro: '',
+            bankDetails: {
+              accountName: '',
+              accountNumber: '',
+              bankName: '',
+              routingNumber: '',
+              accountType: ''
+            },
+            preferences: {
+              maxDistance: 50,
+              ageRange: { min: 18, max: 50 },
+              showMeToUsers: true,
+              notificationPreferences: {
+                messages: true,
+                matches: true,
+                likes: true,
+                app: true
+              },
+              preferredLocations: [],
+              matchingPriorities: {
+                distance: 5,
+                interests: 5,
+                personality: 5,
+                age: 5
+              }
+            }
           });
           
         if (profileError) {
@@ -211,7 +240,6 @@ const Register = () => {
               routingNumber: '',
               accountType: ''
             },
-            // Initialize user preferences with defaults
             preferences: {
               maxDistance: 50,
               ageRange: { min: 18, max: 50 },
@@ -224,11 +252,10 @@ const Register = () => {
               },
               preferredLocations: [],
               matchingPriorities: {
+                distance: 5,
                 interests: 5,
                 personality: 5,
-                location: 5,
-                age: 5,
-                writingStyle: 5
+                age: 5
               }
             }
           };
@@ -241,11 +268,9 @@ const Register = () => {
             toast.success(`Your ${premiumStatus} subscription has been activated!`);
           }
           
-          // Navigate to profile after successful registration
           navigate('/profile');
         }
       } else {
-        // This happens if email confirmation is required
         toast.info("Please check your email to confirm your registration");
       }
     } catch (error: any) {

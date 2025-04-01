@@ -469,6 +469,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       title,
       content,
       createdAt: new Date(),
+      updatedAt: new Date(),
       likes: 0,
       comments: [],
       tags
@@ -507,7 +508,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     
     setBlogPosts(prev => prev.map(post => {
       if (post.id === postId) {
-        const newComment = {
+        const newComment: BlogComment = {
           id: `comment-${Date.now()}-${Math.random().toString(36).substring(2)}`,
           postId,
           userId: currentUser.id,
