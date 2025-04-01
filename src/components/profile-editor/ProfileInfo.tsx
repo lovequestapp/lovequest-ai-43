@@ -89,7 +89,10 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
             <div className="text-center">
               <p className="text-sm text-gray-500">Gifts Received</p>
               <p className="text-2xl font-semibold">
-                {userData.receivedGifts ? Object.values(userData.receivedGifts).reduce((sum: number, value: number) => sum + value, 0) : 0}
+                {userData.receivedGifts ? 
+                  // Convert object values to an array and sum them
+                  Object.values(userData.receivedGifts).reduce((sum: number, value: any) => sum + (typeof value === 'number' ? value : 0), 0)
+                  : 0}
               </p>
             </div>
           </CardContent>
