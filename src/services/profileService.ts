@@ -66,6 +66,8 @@ export const uploadProfilePhoto = async (userId: string, file: File): Promise<st
     const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
     const filePath = `profiles/${userId}/${fileName}`;
     
+    console.log('Uploading photo to path:', filePath);
+    
     // Upload the file
     const { data, error } = await supabase.storage
       .from('profile-photos')
@@ -87,6 +89,7 @@ export const uploadProfilePhoto = async (userId: string, file: File): Promise<st
       .from('profile-photos')
       .getPublicUrl(data.path);
     
+    console.log('Photo uploaded successfully:', publicUrl);
     return publicUrl;
   } catch (error: any) {
     console.error('Upload photo error:', error);

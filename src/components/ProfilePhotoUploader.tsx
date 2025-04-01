@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Upload, ImagePlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
-import { supabase } from '@/integrations/supabase/client';
+import { uploadProfilePhoto } from '@/services/profileService';
 
 interface ProfilePhotoUploaderProps {
   onPhotoUploaded?: (url: string) => void;
@@ -13,7 +13,7 @@ interface ProfilePhotoUploaderProps {
 
 const ProfilePhotoUploader = ({ onPhotoUploaded }: ProfilePhotoUploaderProps) => {
   const [uploading, setUploading] = useState(false);
-  const { currentUser, uploadProfilePhoto } = useUser();
+  const { currentUser } = useUser();
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -43,22 +43,20 @@ const ProfilePhotoUploader = ({ onPhotoUploaded }: ProfilePhotoUploaderProps) =>
 
       setUploading(true);
 
-      // Create bucket if it doesn't exist (this will actually be handled by our SQL)
-      try {
-        await supabase.storage.createBucket('profile-photos', {
-          public: true,
-          fileSizeLimit: 2097152 // 2MB in bytes
-        });
-      } catch (error) {
-        // Bucket might already exist, continue
-        console.log('Bucket creation:', error);
+      if (!currentUser || !currentUser.id) {
+        toast.error("You must be logged in to upload photos");
+        setUploading(false);
+        return;
       }
 
       // Upload the photo
-      const photoUrl = await uploadProfilePhoto(file);
+      const photoUrl = await uploadProfilePhoto(currentUser.id, file);
       
       if (photoUrl && onPhotoUploaded) {
         onPhotoUploaded(photoUrl);
+        toast.success("Photo uploaded successfully");
+      } else {
+        throw new Error("Failed to upload photo");
       }
     } catch (error) {
       console.error('Error uploading photo:', error);

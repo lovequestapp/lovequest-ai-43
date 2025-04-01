@@ -14,7 +14,7 @@ import AboutYouForm from '@/components/profile-setup/AboutYouForm';
 import PhotoUploader from '@/components/profile-setup/PhotoUploader';
 import VoiceIntroSection from '@/components/profile-setup/VoiceIntroSection';
 import ProfileSetupFooter from '@/components/profile-setup/ProfileSetupFooter';
-import { uploadProfilePhoto, saveVoiceIntro } from '@/services/profileService';
+import { uploadProfilePhoto, saveVoiceIntro, updateProfileData } from '@/services/profileService';
 
 type GenderType = 'male' | 'female' | 'non-binary';
 
@@ -110,11 +110,22 @@ const ProfileSetup = () => {
         throw new Error('User not authenticated');
       }
       
+      console.log('Uploading photo for user:', user.id);
       const photoUrl = await uploadProfilePhoto(user.id, file);
       
       if (photoUrl) {
         setPhotos(prev => [...prev, photoUrl]);
-        toast.success('Photo uploaded successfully');
+        
+        // Update user profile with new photos
+        const success = await updateProfileData(user.id, {
+          photos: [...photos, photoUrl]
+        });
+        
+        if (success) {
+          toast.success('Photo uploaded successfully');
+        } else {
+          throw new Error('Failed to update profile with new photo');
+        }
       } else {
         throw new Error('Failed to upload photo');
       }
@@ -128,10 +139,24 @@ const ProfileSetup = () => {
     }
   };
   
-  const removePhoto = (index: number) => {
-    const newPhotos = [...photos];
-    newPhotos.splice(index, 1);
-    setPhotos(newPhotos);
+  const removePhoto = async (index: number) => {
+    try {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
+      const newPhotos = [...photos];
+      newPhotos.splice(index, 1);
+      setPhotos(newPhotos);
+      
+      // Update user profile with new photos array
+      await updateProfileData(user.id, { photos: newPhotos });
+    } catch (error: any) {
+      console.error('Error removing photo:', error);
+      toast.error('Failed to remove photo', {
+        description: error.message || 'An unexpected error occurred'
+      });
+    }
   };
   
   const toggleRecording = () => {

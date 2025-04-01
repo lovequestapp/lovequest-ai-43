@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Camera, ChevronLeft } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 
 interface PhotoUploaderProps {
   photos: string[];
@@ -33,7 +34,7 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
               onClick={() => removePhoto(index)}
             >
-              <ChevronLeft size={16} className="rotate-45" />
+              <X size={16} />
             </button>
           </div>
         ))}
@@ -48,7 +49,7 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               disabled={uploadingPhoto}
             />
             {uploadingPhoto ? (
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-love-500"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
             ) : (
               <>
                 <Camera size={24} className="text-gray-400" />
@@ -59,6 +60,10 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
           </label>
         )}
       </div>
+      
+      {photos.length === 0 && (
+        <p className="text-xs text-amber-600">Please upload at least one photo to continue.</p>
+      )}
     </div>
   );
 };
