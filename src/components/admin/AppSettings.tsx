@@ -1,782 +1,605 @@
-
-import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { 
-  Save, 
-  Database, 
-  Server, 
-  Bell, 
-  Globe, 
-  Mail, 
-  ShieldCheck, 
-  Key, 
-  Upload, 
-  CreditCard,
-  Upload as UploadIcon, 
-  Smartphone,
-  FileCode 
-} from 'lucide-react';
-
-interface AppSetting {
-  id: string;
-  category: string;
-  key: string;
-  value: string;
-  description: string;
-  dataType: 'string' | 'number' | 'boolean' | 'json';
-}
-
-interface APIKey {
-  id: string;
-  name: string;
-  key: string;
-  scopes: string[];
-  createdAt: string;
-  expiresAt: string | null;
-  lastUsed: string | null;
-}
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertTriangle, Award, BellRing, Filter, Fingerprint, Flag, Globe, HeartHandshake, Lock, Shield, Users, Vegan } from 'lucide-react';
+import { useTestMode } from '@/context/TestModeContext';
 
 const AppSettings = () => {
-  const [settings, setSettings] = useState<Record<string, Record<string, AppSetting>>>({});
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
+  const { isTestMode, toggleTestMode } = useTestMode();
   
-  useEffect(() => {
-    fetchSettings();
-    fetchApiKeys();
-  }, []);
+  const handleReset = () => {
+    toast.error("This action requires additional confirmation", {
+      description: "Please contact your database administrator to perform this action."
+    });
+  };
   
-  const fetchSettings = () => {
-    // For demo purposes, we'll create mock settings
-    setLoading(true);
-    
-    // Mock settings organized by category
-    const mockSettings: Record<string, Record<string, AppSetting>> = {
-      general: {
-        app_name: {
-          id: '1',
-          category: 'general',
-          key: 'app_name',
-          value: 'LoveQuest AI',
-          description: 'The name of the application',
-          dataType: 'string'
-        },
-        app_description: {
-          id: '2',
-          category: 'general',
-          key: 'app_description',
-          value: 'An AI-powered dating platform that helps people find meaningful connections',
-          description: 'Short description of the application',
-          dataType: 'string'
-        },
-        maintenance_mode: {
-          id: '3',
-          category: 'general',
-          key: 'maintenance_mode',
-          value: 'false',
-          description: 'Enable maintenance mode to prevent users from accessing the app',
-          dataType: 'boolean'
-        },
-        app_version: {
-          id: '4',
-          category: 'general',
-          key: 'app_version',
-          value: '1.2.0',
-          description: 'Current application version',
-          dataType: 'string'
-        }
-      },
-      notifications: {
-        push_notifications: {
-          id: '5',
-          category: 'notifications',
-          key: 'push_notifications',
-          value: 'true',
-          description: 'Enable push notifications',
-          dataType: 'boolean'
-        },
-        email_notifications: {
-          id: '6',
-          category: 'notifications',
-          key: 'email_notifications',
-          value: 'true',
-          description: 'Enable email notifications',
-          dataType: 'boolean'
-        },
-        new_match_notification: {
-          id: '7',
-          category: 'notifications',
-          key: 'new_match_notification',
-          value: 'true',
-          description: 'Send notifications for new matches',
-          dataType: 'boolean'
-        },
-        message_notification: {
-          id: '8',
-          category: 'notifications',
-          key: 'message_notification',
-          value: 'true',
-          description: 'Send notifications for new messages',
-          dataType: 'boolean'
-        }
-      },
-      email: {
-        smtp_host: {
-          id: '9',
-          category: 'email',
-          key: 'smtp_host',
-          value: 'smtp.example.com',
-          description: 'SMTP server host',
-          dataType: 'string'
-        },
-        smtp_port: {
-          id: '10',
-          category: 'email',
-          key: 'smtp_port',
-          value: '587',
-          description: 'SMTP server port',
-          dataType: 'number'
-        },
-        smtp_username: {
-          id: '11',
-          category: 'email',
-          key: 'smtp_username',
-          value: 'noreply@example.com',
-          description: 'SMTP username',
-          dataType: 'string'
-        },
-        sender_email: {
-          id: '12',
-          category: 'email',
-          key: 'sender_email',
-          value: 'noreply@lovequest.ai',
-          description: 'Email address to send from',
-          dataType: 'string'
-        }
-      },
-      security: {
-        min_password_length: {
-          id: '13',
-          category: 'security',
-          key: 'min_password_length',
-          value: '8',
-          description: 'Minimum password length',
-          dataType: 'number'
-        },
-        require_special_chars: {
-          id: '14',
-          category: 'security',
-          key: 'require_special_chars',
-          value: 'true',
-          description: 'Require special characters in passwords',
-          dataType: 'boolean'
-        },
-        max_login_attempts: {
-          id: '15',
-          category: 'security',
-          key: 'max_login_attempts',
-          value: '5',
-          description: 'Maximum login attempts before account lockout',
-          dataType: 'number'
-        },
-        two_factor_auth: {
-          id: '16',
-          category: 'security',
-          key: 'two_factor_auth',
-          value: 'false',
-          description: 'Enable two-factor authentication',
-          dataType: 'boolean'
-        }
-      },
-      mobile: {
-        enable_location: {
-          id: '17',
-          category: 'mobile',
-          key: 'enable_location',
-          value: 'true',
-          description: 'Enable location services for mobile app',
-          dataType: 'boolean'
-        },
-        default_search_radius: {
-          id: '18',
-          category: 'mobile',
-          key: 'default_search_radius',
-          value: '50',
-          description: 'Default search radius in miles',
-          dataType: 'number'
-        },
-        show_online_status: {
-          id: '19',
-          category: 'mobile',
-          key: 'show_online_status',
-          value: 'true',
-          description: 'Show online status to other users',
-          dataType: 'boolean'
-        },
-        enable_video_calls: {
-          id: '20',
-          category: 'mobile',
-          key: 'enable_video_calls',
-          value: 'true',
-          description: 'Enable video calls in the mobile app',
-          dataType: 'boolean'
-        }
-      },
-      payment: {
-        stripe_public_key: {
-          id: '21',
-          category: 'payment',
-          key: 'stripe_public_key',
-          value: 'pk_test_...',
-          description: 'Stripe public API key',
-          dataType: 'string'
-        },
-        currency: {
-          id: '22',
-          category: 'payment',
-          key: 'currency',
-          value: 'USD',
-          description: 'Default currency for payments',
-          dataType: 'string'
-        },
-        tax_rate: {
-          id: '23',
-          category: 'payment',
-          key: 'tax_rate',
-          value: '7.5',
-          description: 'Default tax rate percentage',
-          dataType: 'number'
-        },
-        trial_period_days: {
-          id: '24',
-          category: 'payment',
-          key: 'trial_period_days',
-          value: '7',
-          description: 'Free trial period in days',
-          dataType: 'number'
-        }
-      }
-    };
-    
-    setSettings(mockSettings);
-    setLoading(false);
-  };
-
-  const fetchApiKeys = () => {
-    // For demo purposes, we'll create mock API keys
-    const mockApiKeys: APIKey[] = [
-      {
-        id: 'key1',
-        name: 'Mobile App API Key',
-        key: 'mbl_' + randomString(24),
-        scopes: ['read:users', 'write:messages', 'read:matches'],
-        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        lastUsed: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 'key2',
-        name: 'Analytics Service',
-        key: 'anl_' + randomString(24),
-        scopes: ['read:analytics', 'read:users'],
-        createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-        expiresAt: null,
-        lastUsed: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 'key3',
-        name: 'Integration Testing',
-        key: 'tst_' + randomString(24),
-        scopes: ['read:users', 'write:users', 'read:messages', 'write:messages'],
-        createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-        expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-        lastUsed: null
-      }
-    ];
-    
-    setApiKeys(mockApiKeys);
-  };
-
-  const randomString = (length: number) => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
-
-  const updateSetting = (category: string, key: string, value: string) => {
-    const newSettings = { ...settings };
-    if (newSettings[category] && newSettings[category][key]) {
-      newSettings[category][key] = {
-        ...newSettings[category][key],
-        value: value
-      };
-      setSettings(newSettings);
-      setHasChanges(true);
-    }
-  };
-
-  const saveSettings = () => {
-    // In a real app, we would save to the database here
-    toast("Settings saved successfully");
-    setHasChanges(false);
-  };
-
-  const generateNewApiKey = () => {
-    const newKey: APIKey = {
-      id: 'key' + (apiKeys.length + 1),
-      name: 'New API Key',
-      key: 'api_' + randomString(32),
-      scopes: ['read:users'],
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
-      lastUsed: null
-    };
-    
-    setApiKeys([...apiKeys, newKey]);
-    toast("New API key generated");
-  };
-
-  const deleteApiKey = (id: string) => {
-    setApiKeys(apiKeys.filter(key => key.id !== id));
-    toast("API key deleted");
-  };
-
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleString();
-  };
-
-  const renderSettingInput = (setting: AppSetting) => {
-    switch (setting.dataType) {
-      case 'boolean':
-        return (
-          <div className="flex items-center space-x-2">
-            <Switch
-              id={setting.id}
-              checked={setting.value === 'true'}
-              onCheckedChange={(checked) => 
-                updateSetting(setting.category, setting.key, checked ? 'true' : 'false')
-              }
-            />
-            <Label htmlFor={setting.id}>{setting.value === 'true' ? 'Enabled' : 'Disabled'}</Label>
-          </div>
-        );
-      case 'number':
-        return (
-          <Input 
-            type="number"
-            value={setting.value}
-            onChange={(e) => updateSetting(setting.category, setting.key, e.target.value)}
-          />
-        );
-      case 'json':
-        return (
-          <Textarea 
-            value={setting.value}
-            onChange={(e) => updateSetting(setting.category, setting.key, e.target.value)}
-            className="font-mono text-xs"
-            rows={4}
-          />
-        );
-      default:
-        return (
-          <Input 
-            type="text"
-            value={setting.value}
-            onChange={(e) => updateSetting(setting.category, setting.key, e.target.value)}
-          />
-        );
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'general':
-        return <Globe className="h-4 w-4" />;
-      case 'notifications':
-        return <Bell className="h-4 w-4" />;
-      case 'email':
-        return <Mail className="h-4 w-4" />;
-      case 'security':
-        return <ShieldCheck className="h-4 w-4" />;
-      case 'mobile':
-        return <Smartphone className="h-4 w-4" />;
-      case 'payment':
-        return <CreditCard className="h-4 w-4" />;
-      default:
-        return <Server className="h-4 w-4" />;
-    }
-  };
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold">App Settings</h2>
-          <p className="text-muted-foreground">
-            Configure application settings and API integrations
-          </p>
+          <h2 className="text-2xl font-bold text-love-800">App Settings</h2>
+          <p className="text-love-600">Configure your dating app's global settings</p>
         </div>
-        
-        {hasChanges && (
-          <Button onClick={saveSettings}>
-            <Save className="mr-2 h-4 w-4" />
-            Save Changes
-          </Button>
-        )}
       </div>
       
-      <Tabs defaultValue="general">
-        <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-6">
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="matching">Matching</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="mobile">Mobile App</TabsTrigger>
-          <TabsTrigger value="payment">Payment</TabsTrigger>
         </TabsList>
         
-        {loading ? (
-          <div className="flex justify-center my-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <>
-            {Object.keys(settings).map((category) => (
-              <TabsContent key={category} value={category} className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center space-x-2">
-                      {getCategoryIcon(category)}
-                      <CardTitle className="capitalize">{category} Settings</CardTitle>
+        <div className="mt-4 space-y-4">
+          <TabsContent value="general" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-love-600" />
+                  <span>Global App Settings</span>
+                </CardTitle>
+                <CardDescription>Configure general app behavior and appearance</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="app-name">App Name</Label>
+                      <Input id="app-name" defaultValue="LoveQuest" />
                     </div>
-                    <CardDescription>
-                      Configure {category} settings for your application
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      {Object.values(settings[category]).map((setting) => (
-                        <div key={setting.id} className="grid gap-2">
-                          <Label htmlFor={setting.id} className="font-medium">
-                            {setting.key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                          </Label>
-                          {renderSettingInput(setting)}
-                          <p className="text-sm text-muted-foreground">
-                            {setting.description}
-                          </p>
-                        </div>
-                      ))}
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="app-description">App Description</Label>
+                      <Textarea 
+                        id="app-description" 
+                        rows={3}
+                        defaultValue="Find your perfect match with our AI-powered dating app"
+                      />
                     </div>
-                  </CardContent>
-                </Card>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Maintenance Mode</Label>
+                        <p className="text-sm text-muted-foreground">Temporarily disable the app for maintenance</p>
+                      </div>
+                      <Switch id="maintenance-mode" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">New User Registration</Label>
+                        <p className="text-sm text-muted-foreground">Allow new users to register</p>
+                      </div>
+                      <Switch id="allow-registration" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Free Trials</Label>
+                        <p className="text-sm text-muted-foreground">Allow free premium trials for new users</p>
+                      </div>
+                      <Switch id="allow-trials" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg bg-love-50">
+                      <div className="space-y-0.5">
+                        <Label className="text-base font-semibold flex items-center gap-2">
+                          <Users className="h-4 w-4 text-love-600" />
+                          Test Mode
+                        </Label>
+                        <p className="text-sm text-love-700">
+                          Enable demo profiles for testing ({isTestMode ? 'Enabled' : 'Disabled'})
+                        </p>
+                      </div>
+                      <Switch 
+                        id="test-mode" 
+                        checked={isTestMode}
+                        onCheckedChange={toggleTestMode}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline">Cancel</Button>
+                <Button>Save Changes</Button>
+              </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <HeartHandshake className="h-5 w-5 text-love-600" />
+                  <span>Monetization Settings</span>
+                </CardTitle>
+                <CardDescription>Configure pricing and subscription options</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="premium-price">Premium Subscription Price ($)</Label>
+                      <Input id="premium-price" type="number" defaultValue="9.99" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="vip-price">VIP Subscription Price ($)</Label>
+                      <Input id="vip-price" type="number" defaultValue="19.99" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="trial-days">Free Trial Duration (days)</Label>
+                      <Input id="trial-days" type="number" defaultValue="7" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Enable Gifting</Label>
+                        <p className="text-sm text-muted-foreground">Allow users to send virtual gifts</p>
+                      </div>
+                      <Switch id="enable-gifting" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Enable Boosts</Label>
+                        <p className="text-sm text-muted-foreground">Allow users to boost their profiles</p>
+                      </div>
+                      <Switch id="enable-boosts" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Enable Referral Rewards</Label>
+                        <p className="text-sm text-muted-foreground">Reward users for referring friends</p>
+                      </div>
+                      <Switch id="enable-referrals" defaultChecked />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline">Cancel</Button>
+                <Button>Save Changes</Button>
+              </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-red-600">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <span>Danger Zone</span>
+                </CardTitle>
+                <CardDescription>Destructive actions that should be used with caution</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="border border-red-200 p-4 rounded-lg bg-red-50">
+                    <h3 className="text-red-700 font-medium mb-2">Reset All User Data</h3>
+                    <p className="text-sm text-red-600 mb-4">This will permanently delete all user accounts and their data. This action cannot be undone.</p>
+                    <Button variant="destructive" size="sm" onClick={handleReset}>
+                      Reset User Data
+                    </Button>
+                  </div>
+                  
+                  <div className="border border-red-200 p-4 rounded-lg bg-red-50">
+                    <h3 className="text-red-700 font-medium mb-2">Reset App Settings</h3>
+                    <p className="text-sm text-red-600 mb-4">This will reset all app settings to their default values. This action cannot be undone.</p>
+                    <Button variant="destructive" size="sm" onClick={handleReset}>
+                      Reset App Settings
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="matching" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5 text-love-600" />
+                  <span>Matching Algorithm Settings</span>
+                </CardTitle>
+                <CardDescription>Configure how users are matched with each other</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="default-distance">Default Maximum Distance (miles)</Label>
+                      <Input id="default-distance" type="number" defaultValue="50" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="default-age-min">Default Minimum Age</Label>
+                      <Input id="default-age-min" type="number" defaultValue="18" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="default-age-max">Default Maximum Age</Label>
+                      <Input id="default-age-max" type="number" defaultValue="99" />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Matching Priority Weights</Label>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Interests</span>
+                          <Input className="w-20" type="number" defaultValue="5" min="1" max="10" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Location</span>
+                          <Input className="w-20" type="number" defaultValue="4" min="1" max="10" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Age</span>
+                          <Input className="w-20" type="number" defaultValue="3" min="1" max="10" />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">Personality</span>
+                          <Input className="w-20" type="number" defaultValue="5" min="1" max="10" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 
-                {category === 'security' && (
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Key className="h-4 w-4" />
-                          <CardTitle>API Keys</CardTitle>
-                        </div>
-                        <Button size="sm" onClick={generateNewApiKey}>
-                          Generate New Key
-                        </Button>
+                <div className="space-y-2 mt-4">
+                  <Label>Matching Features</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Location-Based Matching</Label>
+                        <p className="text-sm text-muted-foreground">Match users based on proximity</p>
                       </div>
-                      <CardDescription>
-                        Manage API keys for external integrations
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="rounded-md border">
-                        <div className="bg-muted px-4 py-2 border-b">
-                          <div className="grid grid-cols-5 text-xs font-medium">
-                            <div>Name</div>
-                            <div>Key</div>
-                            <div>Created</div>
-                            <div>Last Used</div>
-                            <div className="text-right">Actions</div>
-                          </div>
+                      <Switch id="location-matching" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Interest-Based Matching</Label>
+                        <p className="text-sm text-muted-foreground">Match users with similar interests</p>
+                      </div>
+                      <Switch id="interest-matching" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Personality Matching</Label>
+                        <p className="text-sm text-muted-foreground">Match users with compatible personalities</p>
+                      </div>
+                      <Switch id="personality-matching" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">AI-Enhanced Matching</Label>
+                        <p className="text-sm text-muted-foreground">Use AI to improve match quality</p>
+                      </div>
+                      <Switch id="ai-matching" defaultChecked />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline">Cancel</Button>
+                <Button>Save Changes</Button>
+              </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5 text-love-600" />
+                  <span>Content Filtering</span>
+                </CardTitle>
+                <CardDescription>Configure content filtering and moderation settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Profanity Filter</Label>
+                        <p className="text-sm text-muted-foreground">Filter out profanity in messages and profiles</p>
+                      </div>
+                      <Switch id="profanity-filter" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Image Moderation</Label>
+                        <p className="text-sm text-muted-foreground">Automatically review uploaded images</p>
+                      </div>
+                      <Switch id="image-moderation" defaultChecked />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">AI Content Moderation</Label>
+                        <p className="text-sm text-muted-foreground">Use AI to detect inappropriate content</p>
+                      </div>
+                      <Switch id="ai-moderation" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">User Reporting</Label>
+                        <p className="text-sm text-muted-foreground">Allow users to report inappropriate content</p>
+                      </div>
+                      <Switch id="user-reporting" defaultChecked />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline">Cancel</Button>
+                <Button>Save Changes</Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="notifications" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BellRing className="h-5 w-5 text-love-600" />
+                  <span>Notification Settings</span>
+                </CardTitle>
+                <CardDescription>Configure how and when notifications are sent to users</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Email Notifications</Label>
+                        <p className="text-sm text-muted-foreground">Send notifications via email</p>
+                      </div>
+                      <Switch id="email-notifications" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Push Notifications</Label>
+                        <p className="text-sm text-muted-foreground">Send push notifications to mobile devices</p>
+                      </div>
+                      <Switch id="push-notifications" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">In-App Notifications</Label>
+                        <p className="text-sm text-muted-foreground">Show notifications within the app</p>
+                      </div>
+                      <Switch id="in-app-notifications" defaultChecked />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Notification Types</Label>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between border p-3 rounded-lg">
+                          <span className="text-sm">New Matches</span>
+                          <Switch defaultChecked />
                         </div>
-                        <div className="divide-y">
-                          {apiKeys.map((apiKey) => (
-                            <div key={apiKey.id} className="px-4 py-3 grid grid-cols-5 items-center">
-                              <div>
-                                <p className="font-medium">{apiKey.name}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {apiKey.scopes.join(', ')}
-                                </p>
-                              </div>
-                              <div>
-                                <code className="bg-muted text-xs p-1 rounded">
-                                  {apiKey.key.substring(0, 10)}...
-                                </code>
-                              </div>
-                              <div className="text-sm">
-                                {formatDate(apiKey.createdAt)}
-                              </div>
-                              <div className="text-sm">
-                                {formatDate(apiKey.lastUsed)}
-                              </div>
-                              <div className="flex justify-end space-x-2">
-                                <Button variant="outline" size="sm">
-                                  <Upload className="h-4 w-4" />
-                                  <span className="sr-only">Copy</span>
-                                </Button>
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm"
-                                  onClick={() => deleteApiKey(apiKey.id)}
-                                >
-                                  <span className="sr-only">Delete</span>
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="24"
-                                    height="24"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="h-4 w-4"
-                                  >
-                                    <path d="M3 6h18"></path>
-                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
-                                  </svg>
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
+                        <div className="flex items-center justify-between border p-3 rounded-lg">
+                          <span className="text-sm">New Messages</span>
+                          <Switch defaultChecked />
+                        </div>
+                        <div className="flex items-center justify-between border p-3 rounded-lg">
+                          <span className="text-sm">Profile Likes</span>
+                          <Switch defaultChecked />
+                        </div>
+                        <div className="flex items-center justify-between border p-3 rounded-lg">
+                          <span className="text-sm">Gifts Received</span>
+                          <Switch defaultChecked />
+                        </div>
+                        <div className="flex items-center justify-between border p-3 rounded-lg">
+                          <span className="text-sm">System Announcements</span>
+                          <Switch defaultChecked />
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                    </div>
+                  </div>
+                </div>
                 
-                {category === 'general' && (
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center space-x-2">
-                        <Database className="h-4 w-4" />
-                        <CardTitle>Database & Storage</CardTitle>
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="quiet-hours-start">Quiet Hours</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="quiet-hours-start" className="text-sm">Start Time</Label>
+                      <Input id="quiet-hours-start" type="time" defaultValue="22:00" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="quiet-hours-end" className="text-sm">End Time</Label>
+                      <Input id="quiet-hours-end" type="time" defaultValue="08:00" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline">Cancel</Button>
+                <Button>Save Changes</Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="security" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lock className="h-5 w-5 text-love-600" />
+                  <span>Security Settings</span>
+                </CardTitle>
+                <CardDescription>Configure security and privacy settings for your app</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Two-Factor Authentication</Label>
+                        <p className="text-sm text-muted-foreground">Require 2FA for admin accounts</p>
                       </div>
-                      <CardDescription>
-                        Manage database and file storage settings
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                        <div className="grid gap-4">
-                          <div className="flex flex-col md:flex-row justify-between gap-4">
-                            <div className="space-y-2">
-                              <h3 className="font-medium">Database Information</h3>
-                              <p className="text-sm text-muted-foreground">
-                                Connected to Supabase PostgreSQL database
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button variant="outline">Run Migrations</Button>
-                              <Button variant="outline">Backup Database</Button>
-                            </div>
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4 border rounded-md p-4 bg-muted/50">
-                            <div>
-                              <p className="text-sm font-medium">Database Size</p>
-                              <p className="text-xl font-bold">256 MB</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">Storage Used</p>
-                              <p className="text-xl font-bold">1.2 GB</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">Total Tables</p>
-                              <p className="text-xl font-bold">24</p>
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">Total Files</p>
-                              <p className="text-xl font-bold">8,750</p>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="grid gap-4">
-                          <div className="flex flex-col md:flex-row justify-between gap-4">
-                            <div className="space-y-2">
-                              <h3 className="font-medium">File Storage</h3>
-                              <p className="text-sm text-muted-foreground">
-                                Configure file storage settings
-                              </p>
-                            </div>
-                            <Button variant="outline">
-                              <UploadIcon className="mr-2 h-4 w-4" />
-                              Upload Files
-                            </Button>
-                          </div>
-                          
-                          <div className="grid gap-3">
-                            <div className="flex items-center justify-between">
-                              <Label>Maximum file size (MB)</Label>
-                              <Input type="number" defaultValue="10" className="w-24" />
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <Label>Allowed file types</Label>
-                              <Input defaultValue="jpg, png, gif, webp" className="w-64" />
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <Label>Auto-compress images</Label>
-                              <div className="flex items-center space-x-2">
-                                <Switch id="compress-images" defaultChecked />
-                                <Label htmlFor="compress-images">Enabled</Label>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                      <Switch id="two-factor-auth" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Password Complexity</Label>
+                        <p className="text-sm text-muted-foreground">Require strong passwords</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
+                      <Switch id="password-complexity" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Account Verification</Label>
+                        <p className="text-sm text-muted-foreground">Require email verification</p>
+                      </div>
+                      <Switch id="account-verification" defaultChecked />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Data Encryption</Label>
+                        <p className="text-sm text-muted-foreground">Encrypt sensitive user data</p>
+                      </div>
+                      <Switch id="data-encryption" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Login Attempt Limits</Label>
+                        <p className="text-sm text-muted-foreground">Limit failed login attempts</p>
+                      </div>
+                      <Switch id="login-limits" defaultChecked />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="session-timeout">Session Timeout (minutes)</Label>
+                      <Input id="session-timeout" type="number" defaultValue="60" />
+                    </div>
+                  </div>
+                </div>
                 
-                {category === 'mobile' && (
-                  <Card>
-                    <CardHeader>
-                      <div className="flex items-center space-x-2">
-                        <FileCode className="h-4 w-4" />
-                        <CardTitle>Mobile App Configuration</CardTitle>
+                <div className="space-y-2 mt-4">
+                  <Label>Privacy Settings</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Profile Privacy</Label>
+                        <p className="text-sm text-muted-foreground">Allow users to control profile visibility</p>
                       </div>
-                      <CardDescription>
-                        Configure mobile application build settings
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-6">
-                        <div className="grid gap-4">
-                          <div className="flex flex-col md:flex-row justify-between gap-4">
-                            <div className="space-y-2">
-                              <h3 className="font-medium">App Store Information</h3>
-                              <p className="text-sm text-muted-foreground">
-                                Configure app store listings and release settings
-                              </p>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button variant="outline">Generate Build</Button>
-                              <Button>Publish Update</Button>
-                            </div>
-                          </div>
-                          
-                          <div className="grid gap-3">
-                            <div className="grid gap-2">
-                              <Label>Current iOS Version</Label>
-                              <div className="flex gap-2">
-                                <Input defaultValue="1.2.0" className="w-32" />
-                                <Input defaultValue="15" placeholder="Build number" className="w-24" />
-                              </div>
-                            </div>
-                            
-                            <div className="grid gap-2">
-                              <Label>Current Android Version</Label>
-                              <div className="flex gap-2">
-                                <Input defaultValue="1.2.0" className="w-32" />
-                                <Input defaultValue="18" placeholder="Build number" className="w-24" />
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center justify-between mt-2">
-                              <Label>Force Update</Label>
-                              <div className="flex items-center space-x-2">
-                                <Switch id="force-update" />
-                                <Label htmlFor="force-update">Disabled</Label>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center justify-between">
-                              <Label>Maintenance Mode</Label>
-                              <div className="flex items-center space-x-2">
-                                <Switch id="app-maintenance" />
-                                <Label htmlFor="app-maintenance">Disabled</Label>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="grid gap-3">
-                          <h3 className="font-medium">Feature Flags</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Toggle features on or off for mobile applications
-                          </p>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                            <div className="flex items-center justify-between border p-3 rounded-md">
-                              <div>
-                                <p className="font-medium">Video Chat</p>
-                                <p className="text-xs text-muted-foreground">Enable video chat functionality</p>
-                              </div>
-                              <Switch defaultChecked />
-                            </div>
-                            
-                            <div className="flex items-center justify-between border p-3 rounded-md">
-                              <div>
-                                <p className="font-medium">Voice Messages</p>
-                                <p className="text-xs text-muted-foreground">Allow sending voice messages</p>
-                              </div>
-                              <Switch defaultChecked />
-                            </div>
-                            
-                            <div className="flex items-center justify-between border p-3 rounded-md">
-                              <div>
-                                <p className="font-medium">Location Sharing</p>
-                                <p className="text-xs text-muted-foreground">Enable location sharing features</p>
-                              </div>
-                              <Switch defaultChecked />
-                            </div>
-                            
-                            <div className="flex items-center justify-between border p-3 rounded-md">
-                              <div>
-                                <p className="font-medium">New AI Matching (Beta)</p>
-                                <p className="text-xs text-muted-foreground">Experimental AI matching algorithm</p>
-                              </div>
-                              <Switch />
-                            </div>
-                          </div>
-                        </div>
+                      <Switch id="profile-privacy" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Location Privacy</Label>
+                        <p className="text-sm text-muted-foreground">Allow users to hide exact location</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </TabsContent>
-            ))}
-          </>
-        )}
+                      <Switch id="location-privacy" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Activity Status</Label>
+                        <p className="text-sm text-muted-foreground">Allow users to hide online status</p>
+                      </div>
+                      <Switch id="activity-status" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Data Deletion</Label>
+                        <p className="text-sm text-muted-foreground">Allow users to delete their data</p>
+                      </div>
+                      <Switch id="data-deletion" defaultChecked />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline">Cancel</Button>
+                <Button>Save Changes</Button>
+              </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Fingerprint className="h-5 w-5 text-love-600" />
+                  <span>Authentication Providers</span>
+                </CardTitle>
+                <CardDescription>Configure third-party authentication providers</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Google Authentication</Label>
+                        <p className="text-sm text-muted-foreground">Allow sign in with Google</p>
+                      </div>
+                      <Switch id="google-auth" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Facebook Authentication</Label>
+                        <p className="text-sm text-muted-foreground">Allow sign in with Facebook</p>
+                      </div>
+                      <Switch id="facebook-auth" defaultChecked />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Apple Authentication</Label>
+                        <p className="text-sm text-muted-foreground">Allow sign in with Apple</p>
+                      </div>
+                      <Switch id="apple-auth" defaultChecked />
+                    </div>
+                    
+                    <div className="flex items-center justify-between border p-4 rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Phone Authentication</Label>
+                        <p className="text-sm text-muted-foreground">Allow sign in with phone number</p>
+                      </div>
+                      <Switch id="phone-auth" defaultChecked />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline">Cancel</Button>
+                <Button>Save Changes</Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );

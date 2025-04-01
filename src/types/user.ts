@@ -1,4 +1,3 @@
-
 export type User = {
   id: string;
   name: string;
@@ -35,6 +34,8 @@ export type User = {
   status: 'online' | 'offline' | 'away';
   // Preferences property
   preferences?: UserPreferences;
+  // Demo profile flag
+  isDemo?: boolean;
 };
 
 export type GiftInventory = {
