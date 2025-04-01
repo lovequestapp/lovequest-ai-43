@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from '@/context/UserContext';
-import { toast } from "sonner";
-import type { UserPreferences as UserPreferencesType } from '@/types/user';
+import { useToast } from '@/hooks/use-toast';
+import { type UserPreferences as UserPreferencesType } from '@/types/user';
+import { MapPin, Plus, X, Bell } from 'lucide-react';
 
 const UserPreferences = () => {
   const { currentUser, updatePreferences } = useUser();
+  const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [locationInput, setLocationInput] = useState('');
   
