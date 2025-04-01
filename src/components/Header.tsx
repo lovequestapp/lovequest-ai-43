@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
 import { Button } from './ui/button';
@@ -33,12 +34,61 @@ const Header = () => {
   };
   
   return (
-    <header className="bg-white shadow-sm py-4">
-      <div className="container mx-auto px-4 flex justify-between items-center">
-        <Link to="/" className="flex items-center gap-2">
-          <Heart size={20} className="text-love-500 fill-love-500" />
-          <span className="text-xl font-display text-black">LoveQuest</span>
-        </Link>
+    <header className="border-b bg-card shadow-sm">
+      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+        <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2">
+            <Heart size={20} className="text-love-500 fill-love-500" />
+            <span className="text-xl font-display text-black">LoveQuest</span>
+          </Link>
+        </div>
+        
+        <nav className="hidden md:flex items-center gap-5">
+          <Link 
+            to="/discover"
+            className="text-sm font-medium transition-colors hover:text-primary"
+          >
+            Discover
+          </Link>
+          <Link 
+            to="/blog"
+            className="text-sm font-medium transition-colors hover:text-primary"
+          >
+            Blog
+          </Link>
+          <Link 
+            to="/explore"
+            className="text-sm font-medium transition-colors hover:text-primary"
+          >
+            Explore
+          </Link>
+          <Link 
+            to="/matches"
+            className="text-sm font-medium transition-colors hover:text-primary"
+          >
+            Matches
+          </Link>
+          <Link 
+            to="/messages"
+            className="text-sm font-medium transition-colors hover:text-primary"
+          >
+            Messages
+          </Link>
+          <Link 
+            to="/profile"
+            className="text-sm font-medium transition-colors hover:text-primary"
+          >
+            Profile
+          </Link>
+          {currentUser?.role === 'admin' && (
+            <Link 
+              to="/admin"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              Admin
+            </Link>
+          )}
+        </nav>
         
         {isMobile ? (
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>

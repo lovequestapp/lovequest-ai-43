@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -19,6 +20,9 @@ import { useUser } from './context/UserContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import './index.css';
+import BlogPage from './pages/BlogPage';
+import BlogPost from './pages/BlogPost';
+import Explore from './pages/Explore';
 
 const App = () => {
   return (
@@ -99,6 +103,31 @@ const App = () => {
               element={
                 <ProtectedRoute adminOnly>
                   <Admin />
+                </ProtectedRoute>
+              } 
+            />
+            {/* New Blog Routes */}
+            <Route 
+              path="/blog" 
+              element={
+                <ProtectedRoute>
+                  <BlogPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/blog/:postId" 
+              element={
+                <ProtectedRoute>
+                  <BlogPost />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/explore" 
+              element={
+                <ProtectedRoute>
+                  <Explore />
                 </ProtectedRoute>
               } 
             />

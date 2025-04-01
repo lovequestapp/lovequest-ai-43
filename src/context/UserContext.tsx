@@ -25,7 +25,10 @@ interface UserContextType {
   deleteBlogPost: (postId: string) => void;
   likeBlogPost: (postId: string, userId: string) => void;
   commentOnBlogPost: (postId: string, content: string) => void;
-  
+  initiateVideoCall: (userId: string) => Promise<string>;
+  acceptVideoCall: (callId: string) => Promise<boolean>;
+  rejectVideoCall: (callId: string) => void;
+  endVideoCall: (callId: string) => void;
   isAuthenticated: boolean;
   potentialMatches: User[];
   matches: User[];
@@ -74,6 +77,10 @@ const UserContext = createContext<UserContextType>({
   deleteBlogPost: () => {},
   likeBlogPost: () => {},
   commentOnBlogPost: () => {},
+  initiateVideoCall: async () => "",
+  acceptVideoCall: async () => false,
+  rejectVideoCall: () => {},
+  endVideoCall: () => {},
   isAuthenticated: false,
   potentialMatches: [],
   matches: [],
@@ -106,6 +113,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
   const [passedProfiles, setPassedProfiles] = useState<Set<string>>(new Set());
   const [blogPosts, setBlogPosts] = useState<BlogPostType[]>([]);
+  const [activeVideoCalls, setActiveVideoCalls] = useState<Record<string, {
+    callId: string,
+    userId: string,
+    status: 'pending' | 'active' | 'ended' | 'rejected'
+  }>>({});
   const navigate = useNavigate();
   
   const isAuthenticated = currentUser !== null;
@@ -476,6 +488,19 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     };
     
     setBlogPosts(prev => [newPost, ...prev]);
+    
+    // Add popularity points for creating content
+    setCurrentUser(prev => {
+      if (prev) {
+        return {
+          ...prev,
+          popularityPoints: Math.min(100, prev.popularityPoints + 5)
+        };
+      }
+      return prev;
+    });
+    
+    toast.success("Post created! +5 popularity points");
   };
   
   const updateBlogPost = (postId: string, updates: Partial<BlogPostType>) => {
@@ -494,7 +519,17 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const likeBlogPost = (postId: string, userId: string) => {
     setBlogPosts(prev => prev.map(post => {
       if (post.id === postId) {
-        return { ...post, likes: post.likes + 1 };
+        // Don't increment likes if this user already liked the post
+        const alreadyLiked = post.likes > 0;
+        
+        // Increment popularity points for the post author
+        if (post.userId !== currentUser?.id && !alreadyLiked) {
+          // In a real app, we would update the popularity points in the database
+          // For now, just show a toast
+          toast.success("The post creator earned popularity points!");
+        }
+        
+        return { ...post, likes: alreadyLiked ? post.likes : post.likes + 1 };
       }
       return post;
     }));
@@ -524,6 +559,117 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       }
       return post;
     }));
+  };
+  
+  const initiateVideoCall = async (userId: string): Promise<string> => {
+    if (!currentUser) {
+      toast.error("You must be logged in to start a video call");
+      return "";
+    }
+    
+    const callId = `call-${Date.now()}-${Math.random().toString(36).substring(2)}`;
+    
+    // In a real app, we would create a call record in the database and send a notification to the recipient
+    // For now, we'll just create a mock call in our local state
+    setActiveVideoCalls(prev => ({
+      ...prev,
+      [callId]: {
+        callId,
+        userId,
+        status: 'pending'
+      }
+    }));
+    
+    // Simulate the recipient accepting the call after 2 seconds
+    setTimeout(() => {
+      setActiveVideoCalls(prev => ({
+        ...prev,
+        [callId]: {
+          ...prev[callId],
+          status: 'active'
+        }
+      }));
+      
+      toast.success("Call connected!");
+      
+      // In a real app, we would establish a WebRTC connection here
+    }, 2000);
+    
+    toast.success("Calling user...");
+    return callId;
+  };
+  
+  const acceptVideoCall = async (callId: string): Promise<boolean> => {
+    if (!currentUser) {
+      toast.error("You must be logged in to accept a video call");
+      return false;
+    }
+    
+    if (!activeVideoCalls[callId]) {
+      toast.error("Call not found or has ended");
+      return false;
+    }
+    
+    setActiveVideoCalls(prev => ({
+      ...prev,
+      [callId]: {
+        ...prev[callId],
+        status: 'active'
+      }
+    }));
+    
+    toast.success("Call connected!");
+    return true;
+  };
+  
+  const rejectVideoCall = (callId: string) => {
+    if (!activeVideoCalls[callId]) {
+      return;
+    }
+    
+    setActiveVideoCalls(prev => ({
+      ...prev,
+      [callId]: {
+        ...prev[callId],
+        status: 'rejected'
+      }
+    }));
+    
+    toast.info("Call rejected");
+    
+    // Remove the call from state after a delay
+    setTimeout(() => {
+      setActiveVideoCalls(prev => {
+        const newCalls = { ...prev };
+        delete newCalls[callId];
+        return newCalls;
+      });
+    }, 2000);
+  };
+  
+  const endVideoCall = (callId: string) => {
+    if (!activeVideoCalls[callId]) {
+      return;
+    }
+    
+    setActiveVideoCalls(prev => ({
+      ...prev,
+      [callId]: {
+        ...prev[callId],
+        status: 'ended'
+      }
+    }));
+    
+    toast.info("Call ended");
+    
+    // Remove the call from state after a delay
+    setTimeout(() => {
+      setActiveVideoCalls(prev => {
+        const newCalls = { ...prev };
+        delete newCalls[callId];
+        return newCalls;
+      });
+    }, 2000);
   };
   
   const updateUserProfile = async (userId: string, data: Partial<User>): Promise<boolean> => {
@@ -603,6 +749,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   
   const getFilteredPosts = () => {
     if (!currentUser) return [];
+    // Return posts that match user interests
     return blogPosts.filter(post => {
       return post.tags.some(tag => currentUser.interests.includes(tag));
     });
@@ -670,6 +817,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     deleteBlogPost,
     likeBlogPost,
     commentOnBlogPost,
+    initiateVideoCall,
+    acceptVideoCall,
+    rejectVideoCall,
+    endVideoCall,
     isAuthenticated,
     potentialMatches,
     matches,
