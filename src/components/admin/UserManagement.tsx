@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Ban, Check, Download, Edit, FileUpload, SaveAll, Search, Shield, Trash, Upload, UserPlus, X } from "lucide-react";
+import { Ban, Check, Download, Edit, Upload, UserPlus, X, Shield, Trash } from "lucide-react";
 import { useUser } from "@/context/UserContext";
 import { User } from "@/types/user";
 import { toast } from "sonner";
@@ -31,10 +30,8 @@ const UserManagement = () => {
     verificationStatus: "unverified",
   });
   
-  // Combine demo and real users
   const displayUsers = isTestMode ? [...demoProfiles, ...allUsers] : allUsers;
   
-  // Filter users based on search query and active tab
   const filteredUsers = displayUsers.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
@@ -54,7 +51,6 @@ const UserManagement = () => {
       return;
     }
     
-    // Generate a fake user based on the provided info
     const user: User = {
       id: `user-${Date.now()}`,
       name: newUser.name,
