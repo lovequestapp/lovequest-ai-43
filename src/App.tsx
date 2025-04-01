@@ -15,6 +15,7 @@ import Discover from './pages/discover';
 import Matches from './pages/Matches';
 import Admin from './pages/Admin';
 import UserProfile from './pages/user-profile';
+import ProfileSetup from './pages/profile-setup';
 import ProtectedRoute from './components/protected-route';
 import { useUser } from './context/UserContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +35,14 @@ const App = () => {
             <Route path="/" element={<Home />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
+            <Route 
+              path="/profile-setup" 
+              element={
+                <ProtectedRoute>
+                  <ProfileSetup />
+                </ProtectedRoute>
+              } 
+            />
             <Route 
               path="/profile" 
               element={

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -200,8 +199,15 @@ export const useAuth = () => {
       const profile = await fetchUserProfile(data.user.id);
       const userObj = mapProfileToUser(profile, data.user.id, data.user.email || '');
       
+      // Check if profile is incomplete - if bio is empty or no photos, redirect to profile setup
+      const isProfileIncomplete = !profile?.bio || !profile?.photos || profile?.photos.length === 0;
+      
       toast.success("Login successful!");
-      return { success: true };
+      return { 
+        success: true,
+        user: userObj,
+        isProfileIncomplete 
+      };
     } catch (error: any) {
       toast.error("Login failed", { description: error.message });
       return { success: false, error: error.message };

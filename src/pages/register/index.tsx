@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -147,14 +146,13 @@ const Register = () => {
           description: "Please check your email to confirm your account"
         });
       } else {
-        // If no email confirmation required, redirect to profile
         if (selectedPlan === 'free') {
           toast.success("Your free account has been created!");
         } else {
           toast.success(`Your ${selectedPlan} subscription has been activated with a 3-day free trial!`);
         }
         
-        navigate('/profile');
+        navigate('/profile-setup');
       }
     } catch (error: any) {
       console.error("Registration error:", error);
