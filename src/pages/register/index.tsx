@@ -134,7 +134,7 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      console.log('Attempting to sign up with plan:', selectedPlan);
+      console.log('Attempting to sign up with:', { email, name, plan: selectedPlan });
       const result = await signUp(email, password, name, selectedPlan);
       console.log('Sign up result:', result);
       
@@ -143,7 +143,9 @@ const Register = () => {
       }
       
       if (result.requiresEmailConfirmation) {
-        toast.info("Please check your email to confirm your registration");
+        toast.success("Registration successful!", {
+          description: "Please check your email to confirm your account"
+        });
       } else {
         // If no email confirmation required, redirect to profile
         if (selectedPlan === 'free') {
@@ -157,11 +159,9 @@ const Register = () => {
     } catch (error: any) {
       console.error("Registration error:", error);
       
-      if (error.message?.includes("User already registered")) {
-        toast.error("This email is already registered. Please try logging in instead.");
-      } else {
-        toast.error(error.message || "An error occurred during registration");
-      }
+      toast.error("Registration failed", {
+        description: error.message || "An error occurred during registration"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -403,7 +403,7 @@ const Register = () => {
           {renderProgress()}
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form id="registrationForm" onSubmit={handleSubmit} className="space-y-4">
             {renderStepContent()}
           </form>
         </CardContent>
@@ -431,7 +431,8 @@ const Register = () => {
             </Button>
           ) : (
             <Button 
-              type="submit" 
+              type="submit"
+              form="registrationForm"
               className="ml-auto"
               disabled={isLoading}
             >

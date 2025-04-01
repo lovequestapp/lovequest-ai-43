@@ -249,20 +249,20 @@ export const useAuth = () => {
         trialEndDate 
       });
 
-      const { error: profileError } = await (supabase
-        .from('profiles') as any)
-        .insert([{ 
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({ 
           id: data.user.id,
           name,
           email,
           premium_status: premiumStatus,
           trial_end_date: trialEndDate,
           created_at: new Date().toISOString(),
-        }]);
+        });
 
       if (profileError) {
         console.error("Error creating profile:", profileError);
-        toast.error("Failed to create profile");
+        toast.error("Failed to create profile", { description: profileError.message });
         return { success: false, error: profileError.message };
       }
 
@@ -280,8 +280,6 @@ export const useAuth = () => {
         
         setCurrentUser(userObj);
       }
-
-      toast.success("Registration successful!");
       
       if (!data.session) {
         console.log('No session, email confirmation required');
