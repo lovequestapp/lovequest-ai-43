@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -100,7 +99,7 @@ const UserContext = createContext<UserContextType>({
   getPendingWithdrawal: () => null,
 });
 
-export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
   const [passedProfiles, setPassedProfiles] = useState<Set<string>>(new Set());
@@ -698,6 +697,4 @@ export const UserProvider: React.FC<{children: React.ReactNode}> = ({ children }
 };
 
 export const useUser = () => useContext(UserContext);
-
-// Export types with "export type" syntax to fix isolatedModules error
 export type { User, Message, GiftInventory, BoostType, BoostLevelType, UserWithCoordinates };
