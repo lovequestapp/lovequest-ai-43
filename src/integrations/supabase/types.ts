@@ -9,69 +9,7 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      profiles: {
-        Row: {
-          age: number | null
-          bio: string | null
-          created_at: string | null
-          email: string | null
-          gender: string | null
-          id: string
-          interested_in: string[] | null
-          interests: string[] | null
-          is_banned: boolean | null
-          is_verified: boolean | null
-          location: string | null
-          name: string | null
-          personality_traits: string[] | null
-          photos: string[] | null
-          popularity_points: number | null
-          premium_status: string | null
-          role: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          age?: number | null
-          bio?: string | null
-          created_at?: string | null
-          email?: string | null
-          gender?: string | null
-          id: string
-          interested_in?: string[] | null
-          interests?: string[] | null
-          is_banned?: boolean | null
-          is_verified?: boolean | null
-          location?: string | null
-          name?: string | null
-          personality_traits?: string[] | null
-          photos?: string[] | null
-          popularity_points?: number | null
-          premium_status?: string | null
-          role?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          age?: number | null
-          bio?: string | null
-          created_at?: string | null
-          email?: string | null
-          gender?: string | null
-          id?: string
-          interested_in?: string[] | null
-          interests?: string[] | null
-          is_banned?: boolean | null
-          is_verified?: boolean | null
-          location?: string | null
-          name?: string | null
-          personality_traits?: string[] | null
-          photos?: string[] | null
-          popularity_points?: number | null
-          premium_status?: string | null
-          role?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Views: {
       [_ in never]: never
