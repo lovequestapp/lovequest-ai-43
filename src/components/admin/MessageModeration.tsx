@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,40 +8,108 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { useUser } from '@/context/UserContext';
 import { MessageSquare, Eye, Ban, CheckCircle, MessageCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Separator } from '@/components/ui/separator';
+
+// Define the Message type to match what we get from the database
+interface Message {
+  id: string;
+  sender_id: string | null;
+  receiver_id: string | null;
+  content: string | null;
+  timestamp: string | null;
+  is_flagged: boolean | null;
+  status: string | null;
+  is_read: boolean | null;
+}
 
 const MessageModeration = () => {
-  const [messages, setMessages] = useState([
-    { id: "1", senderId: "user-123", receiverId: "user-456", content: "Hello there! How are you?", timestamp: new Date(), isFlagged: true, status: "pending" },
-    { id: "2", senderId: "user-789", receiverId: "user-123", content: "I'd like to know more about your interests", timestamp: new Date(Date.now() - 86400000), isFlagged: true, status: "pending" }
-  ]);
-  const [selectedMessage, setSelectedMessage] = useState<any>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  const handleViewMessage = (message: any) => {
+  useEffect(() => {
+    fetchFlaggedMessages();
+  }, []);
+  
+  const fetchFlaggedMessages = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('is_flagged', true)
+        .order('timestamp', { ascending: false });
+        
+      if (error) {
+        throw error;
+      }
+      
+      if (data) {
+        setMessages(data as Message[]);
+      }
+    } catch (error) {
+      console.error('Error fetching flagged messages:', error);
+      toast.error('Failed to load flagged messages');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleViewMessage = (message: Message) => {
     setSelectedMessage(message);
   };
   
-  const handleApproveMessage = (messageId: string) => {
-    setMessages(prev => prev.map(message => 
-      message.id === messageId ? { ...message, status: "approved", isFlagged: false } : message
-    ));
-    
-    if (selectedMessage?.id === messageId) {
-      setSelectedMessage(null);
+  const handleApproveMessage = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ status: 'approved', is_flagged: false })
+        .eq('id', messageId);
+        
+      if (error) {
+        throw error;
+      }
+      
+      setMessages(prev => prev.map(message => 
+        message.id === messageId ? { ...message, status: 'approved', is_flagged: false } : message
+      ));
+      
+      if (selectedMessage?.id === messageId) {
+        setSelectedMessage(null);
+      }
+      
+      toast.success("Message approved");
+    } catch (error) {
+      console.error('Error approving message:', error);
+      toast.error('Failed to approve message');
     }
-    
-    toast("Message approved");
   };
   
-  const handleRejectMessage = (messageId: string) => {
-    setMessages(prev => prev.map(message => 
-      message.id === messageId ? { ...message, status: "rejected" } : message
-    ));
-    
-    if (selectedMessage?.id === messageId) {
-      setSelectedMessage(null);
+  const handleRejectMessage = async (messageId: string) => {
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .update({ status: 'rejected' })
+        .eq('id', messageId);
+        
+      if (error) {
+        throw error;
+      }
+      
+      setMessages(prev => prev.map(message => 
+        message.id === messageId ? { ...message, status: 'rejected' } : message
+      ));
+      
+      if (selectedMessage?.id === messageId) {
+        setSelectedMessage(null);
+      }
+      
+      toast.success("Message rejected and hidden from recipient");
+    } catch (error) {
+      console.error('Error rejecting message:', error);
+      toast.error('Failed to reject message');
     }
-    
-    toast("Message rejected and hidden from recipient");
   };
   
   return (
@@ -70,16 +138,16 @@ const MessageModeration = () => {
                 {messages.map((message) => (
                   <TableRow key={message.id}>
                     <TableCell className="font-medium">
-                      User {message.senderId.slice(-4)}
+                      User {message.sender_id ? message.sender_id.slice(-4) : 'Unknown'}
                     </TableCell>
                     <TableCell>
-                      User {message.receiverId.slice(-4)}
+                      User {message.receiver_id ? message.receiver_id.slice(-4) : 'Unknown'}
                     </TableCell>
                     <TableCell className="max-w-xs truncate">
-                      {message.content}
+                      {message.content || ''}
                     </TableCell>
                     <TableCell>
-                      {new Date(message.timestamp).toLocaleDateString()}
+                      {message.timestamp ? new Date(message.timestamp).toLocaleDateString() : 'Unknown'}
                     </TableCell>
                     <TableCell>
                       {message.status === "pending" ? (
@@ -87,7 +155,7 @@ const MessageModeration = () => {
                           Pending Review
                         </Badge>
                       ) : message.status === "approved" ? (
-                        <Badge variant="success" className="bg-green-100 text-green-800 text-xs">
+                        <Badge variant="outline" className="bg-green-100 text-green-800 text-xs">
                           Approved
                         </Badge>
                       ) : (
@@ -131,10 +199,17 @@ const MessageModeration = () => {
                     </TableCell>
                   </TableRow>
                 ))}
-                {messages.length === 0 && (
+                {messages.length === 0 && !loading && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                       No flagged messages to review
+                    </TableCell>
+                  </TableRow>
+                )}
+                {loading && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                      Loading messages...
                     </TableCell>
                   </TableRow>
                 )}
@@ -155,22 +230,33 @@ const MessageModeration = () => {
             <div className="space-y-4">
               <div>
                 <h4 className="font-medium text-sm">Sender</h4>
-                <p>User ID: {selectedMessage.senderId}</p>
+                <p>User ID: {selectedMessage.sender_id || 'Unknown'}</p>
               </div>
               
               <div>
                 <h4 className="font-medium text-sm">Recipient</h4>
-                <p>User ID: {selectedMessage.receiverId}</p>
+                <p>User ID: {selectedMessage.receiver_id || 'Unknown'}</p>
               </div>
               
               <div>
                 <h4 className="font-medium text-sm">Message Content</h4>
-                <p className="p-3 bg-muted rounded-md mt-1">{selectedMessage.content}</p>
+                <p className="p-3 bg-muted rounded-md mt-1">{selectedMessage.content || ''}</p>
               </div>
               
               <div>
                 <h4 className="font-medium text-sm">Sent At</h4>
-                <p>{new Date(selectedMessage.timestamp).toLocaleString()}</p>
+                <p>{selectedMessage.timestamp ? new Date(selectedMessage.timestamp).toLocaleString() : 'Unknown'}</p>
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <h4 className="font-medium text-sm">Moderation Status</h4>
+                <p>{selectedMessage.status === 'pending' 
+                  ? 'Pending Review' 
+                  : selectedMessage.status === 'approved' 
+                    ? 'Approved' 
+                    : 'Rejected'}</p>
               </div>
             </div>
           )}

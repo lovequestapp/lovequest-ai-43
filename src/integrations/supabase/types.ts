@@ -9,7 +9,111 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      messages: {
+        Row: {
+          content: string | null
+          id: string
+          is_flagged: boolean | null
+          is_read: boolean | null
+          receiver_id: string | null
+          sender_id: string | null
+          status: string | null
+          timestamp: string | null
+        }
+        Insert: {
+          content?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          is_read?: boolean | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          status?: string | null
+          timestamp?: string | null
+        }
+        Update: {
+          content?: string | null
+          id?: string
+          is_flagged?: boolean | null
+          is_read?: boolean | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          status?: string | null
+          timestamp?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          age: number | null
+          bio: string | null
+          created_at: string | null
+          email: string | null
+          gender: string | null
+          gift_inventory: Json | null
+          id: string
+          interested_in: string[] | null
+          interests: string[] | null
+          is_banned: boolean | null
+          is_verified: boolean | null
+          location: string | null
+          name: string | null
+          personality_traits: string[] | null
+          photos: string[] | null
+          popularity_points: number | null
+          premium_status: string | null
+          received_gifts: Json | null
+          role: string | null
+          trial_end_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          age?: number | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string | null
+          gender?: string | null
+          gift_inventory?: Json | null
+          id: string
+          interested_in?: string[] | null
+          interests?: string[] | null
+          is_banned?: boolean | null
+          is_verified?: boolean | null
+          location?: string | null
+          name?: string | null
+          personality_traits?: string[] | null
+          photos?: string[] | null
+          popularity_points?: number | null
+          premium_status?: string | null
+          received_gifts?: Json | null
+          role?: string | null
+          trial_end_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          age?: number | null
+          bio?: string | null
+          created_at?: string | null
+          email?: string | null
+          gender?: string | null
+          gift_inventory?: Json | null
+          id?: string
+          interested_in?: string[] | null
+          interests?: string[] | null
+          is_banned?: boolean | null
+          is_verified?: boolean | null
+          location?: string | null
+          name?: string | null
+          personality_traits?: string[] | null
+          photos?: string[] | null
+          popularity_points?: number | null
+          premium_status?: string | null
+          received_gifts?: Json | null
+          role?: string | null
+          trial_end_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
