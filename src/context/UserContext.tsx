@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
-import { User, Message, BlogPostType, GiftInventory, BoostType, BoostLevelType, UserWithCoordinates, UserPreferences } from '@/types/user';
+import { User, Message, BlogPostType, GiftInventory, BoostLevelType, UserWithCoordinates, UserPreferences, BlogComment } from '@/types/user';
 
 interface UserContextType {
   currentUser: User | null;
@@ -729,4 +729,4 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 };
 
 export const useUser = () => useContext(UserContext);
-export type { User, Message, GiftInventory, BoostType, BoostLevelType, UserWithCoordinates, UserPreferences };
+export type { User, Message, GiftInventory, BoostLevelType, UserWithCoordinates, UserPreferences };

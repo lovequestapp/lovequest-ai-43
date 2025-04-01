@@ -64,26 +64,26 @@ export interface Message {
   attachmentUrl?: string;
 }
 
+export interface BlogComment {
+  id: string;
+  userId: string;
+  userName: string;
+  content: string;
+  postId: string;
+  createdAt: Date;
+}
+
 export interface BlogPostType {
   id: string;
   userId: string;
   title: string;
   content: string;
   imageUrl?: string;
-  likes: number; // Changed from string[] to number to match implementation
+  likes: number;
   comments: BlogComment[];
   createdAt: Date;
   updatedAt: Date;
   tags: string[];
-}
-
-export interface BlogComment {
-  id: string;
-  userId: string;
-  userName: string; // Added to match implementation
-  content: string;
-  createdAt: Date; // Changed from timestamp to createdAt to match implementation
-  postId?: string; // Added to match implementation
 }
 
 export type BoostLevelType = 'basic' | 'premium' | 'ultra' | 'none' | 'local' | 'international' | 'super';

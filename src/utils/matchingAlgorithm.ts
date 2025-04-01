@@ -1,3 +1,4 @@
+
 import { User } from '@/types/user';
 import type { UserWithCoordinates, BoostLevelType, UserPreferences } from '@/types/user';
 
@@ -212,7 +213,7 @@ export const calculateCompatibilityScore = (
   
   // Normalize priorities to sum to 1
   const totalPriority = Object.values(priorities).reduce((sum, val) => sum + val, 0);
-  const normalizedPriorities = {
+  const normalizedPriorities: Record<string, number> = {
     interests: priorities.interests / totalPriority,
     personality: priorities.personality / totalPriority,
     distance: priorities.distance / totalPriority,
@@ -279,7 +280,7 @@ export const calculateCompatibilityScore = (
   }
   
   // Preferred locations match
-  if (user1.preferences?.preferredLocations?.length && user2.location) {
+  if (user1.preferences?.preferredLocations?.length && user2.location && normalizedPriorities.location !== undefined) {
     const locationMatches = user1.preferences.preferredLocations.some(
       loc => user2.location.toLowerCase().includes(loc.toLowerCase())
     );

@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useUser } from '@/context/UserContext';
-import { toast } from 'sonner';
-import { UserPreferences } from '@/types/user';
-import { X, Plus, MapPin, Bell, Eye, Sliders } from 'lucide-react';
+import { toast } from "sonner";
+import type { UserPreferences as UserPreferencesType } from '@/types/user';
 
 const UserPreferences = () => {
   const { currentUser, updatePreferences } = useUser();
@@ -18,7 +17,7 @@ const UserPreferences = () => {
   const [locationInput, setLocationInput] = useState('');
   
   // Default preferences
-  const defaultPreferences: UserPreferences = {
+  const defaultPreferences: UserPreferencesType = {
     maxDistance: 50,
     ageRange: { min: 18, max: 50 },
     showMeToUsers: true,
@@ -38,7 +37,7 @@ const UserPreferences = () => {
   };
   
   // Use current user preferences or defaults
-  const [preferences, setPreferences] = useState<UserPreferences>(
+  const [preferences, setPreferences] = useState<UserPreferencesType>(
     currentUser?.preferences || defaultPreferences
   );
   
@@ -73,7 +72,7 @@ const UserPreferences = () => {
     });
   };
   
-  const handleNotificationChange = (key: keyof UserPreferences['notificationPreferences'], value: boolean) => {
+  const handleNotificationChange = (key: keyof UserPreferencesType['notificationPreferences'], value: boolean) => {
     setPreferences({
       ...preferences,
       notificationPreferences: {
@@ -101,7 +100,6 @@ const UserPreferences = () => {
   };
   
   const handlePriorityChange = (key: string, value: number) => {
-    // Must use keys that exist in our preferences.matchingPriorities type
     const updatedPriorities = { ...preferences.matchingPriorities, [key]: value };
     
     setPreferences({
@@ -144,18 +142,11 @@ const UserPreferences = () => {
   return (
     <div className="space-y-6">
       <Card>
+        <CardHeader>
+          <CardTitle>Discovery Preferences</CardTitle>
+        </CardHeader>
         <CardContent className="p-6">
           <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-love-500" />
-                <span>Discovery Preferences</span>
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Control who you see and how far you want to search
-              </p>
-            </div>
-            
             <div className="space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between">
