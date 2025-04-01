@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import { supabase } from '@/integrations/supabase/client';
 import { User, Message, BlogPostType, GiftInventory, BoostLevelType, UserWithCoordinates, UserPreferences, BlogComment } from '@/types/user';
+import { updateProfileData, uploadProfilePhoto, fetchUserProfile } from '@/services/profileService';
 
 interface UserContextType {
   currentUser: User | null;
@@ -265,38 +266,25 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
       
-      const { error } = await (supabase
-        .from('profiles') as any)
-        .update({
-          name: data.name,
-          bio: data.bio,
-          age: data.age,
-          location: data.location,
-          interests: data.interests,
-          gender: data.gender,
-          interested_in: data.interestedIn,
-          preferences: data.preferences,
-        })
-        .eq('id', currentUser.id);
-        
-      if (error) {
-        console.error("Error updating profile:", error);
-        toast.error("Failed to update profile", {
-          description: error.message
+      // Use the profileService for updating the profile
+      const success = await updateProfileData(currentUser.id, data);
+      
+      if (success) {
+        // Update the current user state with the new data
+        setCurrentUser(prev => {
+          if (prev) {
+            return { ...prev, ...data };
+          }
+          return prev;
         });
+        
+        toast.success("Profile updated successfully!");
+        return true;
+      } else {
+        toast.error("Failed to update profile");
         return false;
       }
-      
-      setCurrentUser(prev => {
-        if (prev) {
-          return { ...prev, ...data };
-        }
-        return prev;
-      });
-      
-      toast.success("Profile updated successfully!");
-      return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update profile error:', error);
       toast.error("Failed to update profile", {
         description: "An unexpected error occurred"
@@ -305,61 +293,37 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
   
-  const uploadProfilePhoto = async (file: File): Promise<string | null> => {
+  const uploadProfilePhotoHandler = async (file: File): Promise<string | null> => {
     try {
       if (!currentUser) {
         toast.error("You must be logged in to upload a photo");
         return null;
       }
       
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${currentUser.id}-${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-      const filePath = `profiles/${fileName}`;
+      // Use the profileService for uploading a photo
+      const photoUrl = await uploadProfilePhoto(currentUser.id, file);
       
-      const { data, error } = await supabase.storage
-        .from('profile-photos')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
+      if (photoUrl) {
+        // Update the current user's photos array
+        const newPhotos = [...(currentUser.photos || []), photoUrl];
+        
+        // Update the database with the new photos array
+        await updateProfileData(currentUser.id, { photos: newPhotos });
+        
+        // Update the currentUser state
+        setCurrentUser(prev => {
+          if (prev) {
+            return { ...prev, photos: newPhotos };
+          }
+          return prev;
         });
         
-      if (error) {
-        console.error("Error uploading photo:", error);
-        toast.error("Failed to upload photo", {
-          description: error.message
-        });
-        return null;
+        toast.success("Photo uploaded successfully!");
+        return photoUrl;
       }
       
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-photos')
-        .getPublicUrl(data.path);
-        
-      const newPhotos = [...(currentUser.photos || []), publicUrl];
-      
-      const { error: updateError } = await (supabase
-        .from('profiles') as any)
-        .update({ photos: newPhotos })
-        .eq('id', currentUser.id);
-        
-      if (updateError) {
-        console.error("Error updating profile photos:", updateError);
-        toast.error("Failed to update profile photos", {
-          description: updateError.message
-        });
-        return null;
-      }
-      
-      setCurrentUser(prev => {
-        if (prev) {
-          return { ...prev, photos: newPhotos };
-        }
-        return prev;
-      });
-      
-      toast.success("Photo uploaded successfully!");
-      return publicUrl;
-    } catch (error) {
+      return null;
+    } catch (error: any) {
       console.error('Upload photo error:', error);
       toast.error("Failed to upload photo", {
         description: "An unexpected error occurred"
@@ -673,39 +637,27 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
       
-      const { error } = await (supabase
-        .from('profiles') as any)
-        .update({
-          name: data.name,
-          bio: data.bio,
-          age: data.age,
-          location: data.location,
-          interests: data.interests,
-          gender: data.gender,
-          interested_in: data.interestedIn,
-        })
-        .eq('id', userId);
+      // Use the profileService for updating the profile
+      const success = await updateProfileData(userId, data);
+      
+      if (success) {
+        // If updating the current user, update the currentUser state
+        if (userId === currentUser.id) {
+          setCurrentUser(prev => {
+            if (prev) {
+              return { ...prev, ...data };
+            }
+            return prev;
+          });
+        }
         
-      if (error) {
-        console.error("Error updating profile:", error);
-        toast.error("Failed to update profile", {
-          description: error.message
-        });
+        toast.success("Profile updated successfully!");
+        return true;
+      } else {
+        toast.error("Failed to update profile");
         return false;
       }
-      
-      if (userId === currentUser.id) {
-        setCurrentUser(prev => {
-          if (prev) {
-            return { ...prev, ...data };
-          }
-          return prev;
-        });
-      }
-      
-      toast.success("Profile updated successfully!");
-      return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update profile error:', error);
       toast.error("Failed to update profile", {
         description: "An unexpected error occurred"
@@ -787,7 +739,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     register,
     logout,
     updateProfile,
-    uploadProfilePhoto,
+    uploadProfilePhoto: uploadProfilePhotoHandler,
     likeProfile,
     passProfile,
     getCompatibilityScore,

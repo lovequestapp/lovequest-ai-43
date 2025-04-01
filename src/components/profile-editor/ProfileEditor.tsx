@@ -8,10 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { useUser } from '@/context/UserContext';
-import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Camera, X, Plus, Upload } from 'lucide-react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
+import { updateProfileData, uploadProfilePhoto } from '@/services/profileService';
+import VoiceRecorder from '@/components/VoiceRecorder';
 
 // Define the schema for form validation
 const profileSchema = z.object({
@@ -30,10 +31,11 @@ interface ProfileEditorProps {
 }
 
 const ProfileEditor: React.FC<ProfileEditorProps> = ({ initialData }) => {
-  const { currentUser, updateUserProfile } = useUser();
+  const { currentUser, setCurrentUser } = useUser();
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [voiceIntro, setVoiceIntro] = useState<string | null>(null);
   
   const userData = initialData || currentUser;
   
@@ -63,18 +65,47 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ initialData }) => {
       form.setValue('favoriteMusic', userData.favoriteMusic || []);
       form.setValue('personalityTraits', userData.personalityTraits || []);
       setPhotos(userData.photos || []);
+      setVoiceIntro(userData.voiceIntro || null);
     }
   }, [userData, form]);
   
   const onSubmit = async (data: any) => {
     setLoading(true);
     try {
-      // Pass both userId and data to updateUserProfile
-      await updateUserProfile(userData.id, {
+      if (!userData || !userData.id) {
+        toast.error('User data not available');
+        return;
+      }
+      
+      console.log('Submitting profile update:', { ...data, photos, voiceIntro });
+      
+      // Call the profileService to update the user's profile
+      const success = await updateProfileData(userData.id, {
         ...data,
         photos,
+        voiceIntro,
       });
-      toast.success('Profile updated successfully');
+      
+      if (success) {
+        // Update local state with new data
+        if (setCurrentUser) {
+          setCurrentUser(prev => {
+            if (prev) {
+              return { 
+                ...prev, 
+                ...data, 
+                photos, 
+                voiceIntro 
+              };
+            }
+            return prev;
+          });
+        }
+        
+        toast.success('Profile updated successfully');
+      } else {
+        toast.error('Failed to update profile');
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile');
@@ -101,13 +132,26 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ initialData }) => {
     
     setUploadingPhoto(true);
     try {
-      // For demo purposes, create object URL
-      // In production, you would upload to Supabase storage
-      const imageUrl = URL.createObjectURL(file);
+      if (!userData || !userData.id) {
+        toast.error('User data not available for photo upload');
+        return;
+      }
       
-      // Add to photos array
-      setPhotos([...photos, imageUrl]);
-      toast.success('Photo added successfully');
+      // Upload photo using profileService
+      const photoUrl = await uploadProfilePhoto(userData.id, file);
+      
+      if (photoUrl) {
+        // Add to photos array
+        const newPhotos = [...photos, photoUrl];
+        setPhotos(newPhotos);
+        
+        // Update user's profile with new photos array
+        await updateProfileData(userData.id, { photos: newPhotos });
+        
+        toast.success('Photo added successfully');
+      } else {
+        toast.error('Failed to upload photo');
+      }
     } catch (error) {
       console.error('Error uploading photo:', error);
       toast.error('Failed to upload photo');
@@ -116,10 +160,63 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ initialData }) => {
     }
   };
   
-  const removePhoto = (index: number) => {
-    const newPhotos = [...photos];
-    newPhotos.splice(index, 1);
-    setPhotos(newPhotos);
+  const removePhoto = async (index: number) => {
+    try {
+      if (!userData || !userData.id) {
+        toast.error('User data not available');
+        return;
+      }
+      
+      const newPhotos = [...photos];
+      newPhotos.splice(index, 1);
+      setPhotos(newPhotos);
+      
+      // Update user's profile with new photos array
+      await updateProfileData(userData.id, { photos: newPhotos });
+      
+      toast.success('Photo removed successfully');
+    } catch (error) {
+      console.error('Error removing photo:', error);
+      toast.error('Failed to remove photo');
+    }
+  };
+  
+  const handleVoiceRecordingComplete = async (audioData: string) => {
+    try {
+      if (!userData || !userData.id) {
+        toast.error('User data not available');
+        return;
+      }
+      
+      setVoiceIntro(audioData);
+      
+      // Update user's profile with new voice intro
+      await updateProfileData(userData.id, { voiceIntro: audioData });
+      
+      toast.success('Voice intro saved successfully');
+    } catch (error) {
+      console.error('Error saving voice intro:', error);
+      toast.error('Failed to save voice intro');
+    }
+  };
+  
+  const handleDeleteVoiceIntro = async () => {
+    try {
+      if (!userData || !userData.id) {
+        toast.error('User data not available');
+        return;
+      }
+      
+      setVoiceIntro(null);
+      
+      // Update user's profile with empty voice intro
+      await updateProfileData(userData.id, { voiceIntro: '' });
+      
+      toast.success('Voice intro removed successfully');
+    } catch (error) {
+      console.error('Error removing voice intro:', error);
+      toast.error('Failed to remove voice intro');
+    }
   };
   
   return (
@@ -197,7 +294,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ initialData }) => {
                 )}
               />
               
-              {/* More form fields for location, age, gender, etc. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -257,7 +353,15 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ initialData }) => {
                 )}
               />
               
-              {/* Add interest tags, personality traits here */}
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Voice Introduction</h3>
+                <p className="text-sm text-gray-500">Record a brief voice introduction for your profile</p>
+                <VoiceRecorder 
+                  onRecordingComplete={handleVoiceRecordingComplete}
+                  initialAudio={voiceIntro || undefined}
+                  onDelete={handleDeleteVoiceIntro}
+                />
+              </div>
               
               <div className="flex justify-end">
                 <Button type="submit" disabled={loading} className="bg-love-500 hover:bg-love-600">

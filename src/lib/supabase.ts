@@ -15,6 +15,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+// Log any storage initialization errors
+if (typeof window !== 'undefined') {
+  console.log('Supabase client initialized with localStorage');
+} else {
+  console.log('Supabase client initialized without localStorage (server-side)');
+}
+
 // Check if Supabase is properly configured
 export const getSupabaseStatus = () => ({
   isConfigured: true,
@@ -36,6 +43,7 @@ export const signInWithEmail = async (email: string, password: string) => {
   const result = await authService.signIn(email, password);
   return {
     success: result.success,
+    isProfileIncomplete: result.isProfileIncomplete,
     data: result.user ? { user: result.user, session: { user: result.user } } : undefined,
     error: result.error
   };
@@ -46,6 +54,7 @@ export const signUpWithEmail = async (email: string, password: string) => {
   const result = await authService.signUp(email, password, email.split('@')[0] || 'User');
   return {
     success: result.success,
+    requiresEmailConfirmation: result.requiresEmailConfirmation,
     data: result.user ? { user: result.user, session: { user: result.user } } : undefined,
     error: result.error,
     message: result.requiresEmailConfirmation ? "Check your email for confirmation link" : undefined
