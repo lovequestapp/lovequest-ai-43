@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/context/UserContext';
 import { User } from '@/types/user';
-import authService from '@/services/auth';
+import authService, { AuthResult } from '@/services/auth';
 
 interface AuthState {
   loading: boolean;
@@ -102,7 +101,7 @@ export const useAuth = () => {
     initialize();
   }, [setCurrentUser]);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<AuthResult> => {
     try {
       const result = await authService.signIn(email, password);
       
@@ -123,7 +122,7 @@ export const useAuth = () => {
     }
   };
 
-  const signUp = async (email: string, password: string, name: string, planType: string = 'free') => {
+  const signUp = async (email: string, password: string, name: string, planType: string = 'free'): Promise<AuthResult> => {
     try {
       const result = await authService.signUp(email, password, name, planType);
       
