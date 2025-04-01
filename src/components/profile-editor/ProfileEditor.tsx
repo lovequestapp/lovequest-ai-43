@@ -11,6 +11,7 @@ import { useUser } from '@/context/UserContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Camera, X, Plus, Upload } from 'lucide-react';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
 
 // Define the schema for form validation
 const profileSchema = z.object({
@@ -37,12 +38,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ initialData }) => {
   const userData = initialData || currentUser;
   
   // Use react-hook-form for form handling
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm({
+  const form = useForm({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: userData?.name || '',
@@ -58,22 +54,23 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ initialData }) => {
   
   useEffect(() => {
     if (userData) {
-      setValue('name', userData.name || '');
-      setValue('bio', userData.bio || '');
-      setValue('location', userData.location || '');
-      setValue('age', userData.age || 18);
-      setValue('gender', userData.gender || '');
-      setValue('interests', userData.interests || []);
-      setValue('favoriteMusic', userData.favoriteMusic || []);
-      setValue('personalityTraits', userData.personalityTraits || []);
+      form.setValue('name', userData.name || '');
+      form.setValue('bio', userData.bio || '');
+      form.setValue('location', userData.location || '');
+      form.setValue('age', userData.age || 18);
+      form.setValue('gender', userData.gender || '');
+      form.setValue('interests', userData.interests || []);
+      form.setValue('favoriteMusic', userData.favoriteMusic || []);
+      form.setValue('personalityTraits', userData.personalityTraits || []);
       setPhotos(userData.photos || []);
     }
-  }, [userData, setValue]);
+  }, [userData, form]);
   
   const onSubmit = async (data: any) => {
     setLoading(true);
     try {
-      await updateUserProfile({
+      // Pass both userId and data to updateUserProfile
+      await updateUserProfile(userData.id, {
         ...data,
         photos,
       });
@@ -128,141 +125,148 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ initialData }) => {
   return (
     <Card>
       <CardContent className="pt-6">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <h3 className="text-lg font-medium">Profile Photos</h3>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {photos.map((photo, index) => (
-              <div key={index} className="relative group">
-                <img 
-                  src={photo} 
-                  alt={`Profile photo ${index + 1}`} 
-                  className="w-full h-32 object-cover rounded-md"
-                />
-                <button
-                  type="button"
-                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => removePhoto(index)}
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ))}
-            
-            {photos.length < 6 && (
-              <label className="w-full h-32 border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handlePhotoUpload}
-                  disabled={uploadingPhoto}
-                />
-                {uploadingPhoto ? (
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-love-500"></div>
-                ) : (
-                  <>
-                    <Plus size={24} className="text-gray-400" />
-                    <span className="text-sm text-gray-500 mt-1">Add Photo</span>
-                    <span className="text-xs text-gray-400 mt-1">{photos.length}/6</span>
-                  </>
-                )}
-              </label>
-            )}
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Name
-              </label>
-              <Input
-                id="name"
-                {...register('name')}
-                className="mt-1"
-                error={errors.name?.message}
-              />
-              {errors.name && (
-                <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
-              )}
-            </div>
-            
-            <div>
-              <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
-                Bio
-              </label>
-              <Textarea
-                id="bio"
-                {...register('bio')}
-                className="mt-1 h-32"
-                error={errors.bio?.message}
-              />
-              {errors.bio && (
-                <p className="text-red-500 text-sm mt-1">{errors.bio.message}</p>
-              )}
-            </div>
-            
-            {/* More form fields for location, age, gender, etc. */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="location" className="block text-sm font-medium text-gray-700">
-                  Location
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <h3 className="text-lg font-medium">Profile Photos</h3>
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+              {photos.map((photo, index) => (
+                <div key={index} className="relative group">
+                  <img 
+                    src={photo} 
+                    alt={`Profile photo ${index + 1}`} 
+                    className="w-full h-32 object-cover rounded-md"
+                  />
+                  <button
+                    type="button"
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => removePhoto(index)}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+              
+              {photos.length < 6 && (
+                <label className="w-full h-32 border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                    disabled={uploadingPhoto}
+                  />
+                  {uploadingPhoto ? (
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-love-500"></div>
+                  ) : (
+                    <>
+                      <Plus size={24} className="text-gray-400" />
+                      <span className="text-sm text-gray-500 mt-1">Add Photo</span>
+                      <span className="text-xs text-gray-400 mt-1">{photos.length}/6</span>
+                    </>
+                  )}
                 </label>
-                <Input
-                  id="location"
-                  {...register('location')}
-                  className="mt-1"
-                  error={errors.location?.message}
-                />
-                {errors.location && (
-                  <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>
+              )}
+            </div>
+            
+            <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input id="name" {...field} className="mt-1" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="bio"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Bio</FormLabel>
+                    <FormControl>
+                      <Textarea id="bio" {...field} className="mt-1 h-32" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* More form fields for location, age, gender, etc. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        <Input id="location" {...field} className="mt-1" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Age</FormLabel>
+                      <FormControl>
+                        <Input 
+                          id="age" 
+                          type="number" 
+                          {...field} 
+                          onChange={(e) => field.onChange(parseInt(e.target.value, 10))}
+                          className="mt-1" 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
               
-              <div>
-                <label htmlFor="age" className="block text-sm font-medium text-gray-700">
-                  Age
-                </label>
-                <Input
-                  id="age"
-                  type="number"
-                  {...register('age', { valueAsNumber: true })}
-                  className="mt-1"
-                  error={errors.age?.message}
-                />
-                {errors.age && (
-                  <p className="text-red-500 text-sm mt-1">{errors.age.message}</p>
+              <FormField
+                control={form.control}
+                name="gender"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Gender</FormLabel>
+                    <FormControl>
+                      <select
+                        id="gender"
+                        {...field}
+                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-love-500 focus:border-love-500 sm:text-sm rounded-md"
+                      >
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="non-binary">Non-binary</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
+              
+              {/* Add interest tags, personality traits here */}
+              
+              <div className="flex justify-end">
+                <Button type="submit" disabled={loading} className="bg-love-500 hover:bg-love-600">
+                  {loading ? 'Updating...' : 'Save Profile'}
+                </Button>
               </div>
             </div>
-            
-            <div>
-              <label htmlFor="gender" className="block text-sm font-medium text-gray-700">
-                Gender
-              </label>
-              <select
-                id="gender"
-                {...register('gender')}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-love-500 focus:border-love-500 sm:text-sm rounded-md"
-              >
-                <option value="">Select gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="non-binary">Non-binary</option>
-              </select>
-              {errors.gender && (
-                <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>
-              )}
-            </div>
-            
-            {/* Add interest tags, personality traits here */}
-            
-            <div className="flex justify-end">
-              <Button type="submit" disabled={loading} className="bg-love-500 hover:bg-love-600">
-                {loading ? 'Updating...' : 'Save Profile'}
-              </Button>
-            </div>
-          </div>
-        </form>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

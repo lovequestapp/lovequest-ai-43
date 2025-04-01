@@ -24,7 +24,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
         <Avatar className="h-24 w-24 border-2 border-love-100">
           <AvatarImage src={userData.photos?.[0] || ''} alt={userData.name} />
           <AvatarFallback className="text-2xl bg-love-100 text-love-800">
-            {userData.name.substring(0, 2).toUpperCase()}
+            {userData.name?.substring(0, 2).toUpperCase() || 'U'}
           </AvatarFallback>
         </Avatar>
         
