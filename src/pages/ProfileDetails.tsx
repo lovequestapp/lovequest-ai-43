@@ -25,7 +25,10 @@ import {
   Gift,
   Lock,
   Globe,
-  BookOpen
+  BookOpen,
+  Volume2,
+  Pause,
+  Play
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -37,6 +40,7 @@ const ProfileDetails = () => {
   const [profile, setProfile] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('about');
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [isPlayingVoice, setIsPlayingVoice] = useState(false);
   const { isAuthenticated } = useProtectedRoute();
   
   // Mock posts data
@@ -45,7 +49,7 @@ const ProfileDetails = () => {
       id: '1',
       title: 'My hiking adventure',
       content: 'Went hiking in the mountains today. The view was absolutely breathtaking!',
-      imageUrl: 'https://images.unsplash.com/photo-1551632811-561732d1e306?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1551632811-561732d1e306',
       date: '2 days ago',
       likes: 24,
       comments: 5,
@@ -55,7 +59,7 @@ const ProfileDetails = () => {
       id: '2',
       title: 'Coffee with friends',
       content: 'Had a wonderful time catching up with old friends at our favorite café. The best conversations happen over coffee!',
-      imageUrl: 'https://images.unsplash.com/photo-1517231925375-bf2cb42917a5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1517231925375-bf2cb42917a5',
       date: '1 week ago',
       likes: 31,
       comments: 8,
@@ -113,6 +117,18 @@ const ProfileDetails = () => {
     navigate(-1);
   };
   
+  const toggleVoicePlay = () => {
+    setIsPlayingVoice(!isPlayingVoice);
+    if (!isPlayingVoice) {
+      toast.success(`Playing ${profile.name}'s voice introduction`);
+      // Simulate voice playback
+      setTimeout(() => setIsPlayingVoice(false), 5000);
+    }
+  };
+  
+  // Ensure profile has photos
+  const photos = profile.photos && profile.photos.length ? profile.photos : ['https://via.placeholder.com/400x600?text=No+Photo'];
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -141,14 +157,14 @@ const ProfileDetails = () => {
               transition={{ duration: 0.2 }}
             >
               <img 
-                src={profile.photos[activePhotoIndex]} 
+                src={photos[activePhotoIndex]} 
                 alt={`${profile.name}'s photo ${activePhotoIndex + 1}`} 
                 className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
               />
               
-              {profile.photos.length > 1 && (
+              {photos.length > 1 && (
                 <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                  {profile.photos.map((photo: string, index: number) => (
+                  {photos.map((photo: string, index: number) => (
                     <button 
                       key={index}
                       className={`w-2 h-2 rounded-full transition-all ${
@@ -167,14 +183,14 @@ const ProfileDetails = () => {
                 <div className="flex items-center gap-1.5">
                   <Camera size={14} className="text-white" />
                   <span className="text-white text-sm font-medium">
-                    {activePhotoIndex + 1}/{profile.photos.length}
+                    {activePhotoIndex + 1}/{photos.length}
                   </span>
                 </div>
               </div>
             </motion.div>
             
-            <div className="grid grid-cols-4 gap-2">
-              {profile.photos.map((photo: string, index: number) => (
+            <div className="grid grid-cols-6 gap-2">
+              {photos.map((photo: string, index: number) => (
                 <motion.div 
                   key={index}
                   className={`aspect-square rounded-lg overflow-hidden cursor-pointer transition-all ${
@@ -208,10 +224,26 @@ const ProfileDetails = () => {
                     <h3 className="text-xl font-semibold mb-4">About {profile.name}</h3>
                     <p className="text-gray-700 whitespace-pre-line">{profile.bio}</p>
                     
-                    {profile.favoriteMusic && (
-                      <div className="flex items-center gap-2 mt-6 text-love-700">
+                    {/* Voice Introduction */}
+                    <div className="mt-6 p-3 bg-love-50 rounded-lg flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Volume2 size={18} className="text-love-700" />
+                        <span className="text-love-700 font-medium">Voice Introduction</span>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className={`rounded-full h-8 w-8 p-0 ${isPlayingVoice ? 'bg-love-100 text-love-700' : ''}`}
+                        onClick={toggleVoicePlay}
+                      >
+                        {isPlayingVoice ? <Pause size={16} /> : <Play size={16} />}
+                      </Button>
+                    </div>
+                    
+                    {profile.favoriteMusic && profile.favoriteMusic.length > 0 && (
+                      <div className="flex items-center gap-2 mt-4 text-love-700">
                         <Music size={18} />
-                        <span>Favorite music: {profile.favoriteMusic}</span>
+                        <span>Favorite music: {profile.favoriteMusic.join(', ')}</span>
                       </div>
                     )}
                   </CardContent>
@@ -413,7 +445,7 @@ const ProfileDetails = () => {
         </div>
       </motion.main>
       
-      <Footer />
+      <Footer className="mt-auto" />
     </div>
   );
 };

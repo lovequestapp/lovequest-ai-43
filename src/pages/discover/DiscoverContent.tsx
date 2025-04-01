@@ -5,9 +5,10 @@ import { UserWithCoordinates } from '@/types/user';
 import NoMatchesCard from './NoMatchesCard';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, X, Info, MapPin, Sparkles } from 'lucide-react';
+import { Heart, X, Info, MapPin, Sparkles, Camera, Verified, Music } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 
 interface DiscoverContentProps {
   profiles: UserWithCoordinates[];
@@ -25,19 +26,42 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
     bio: profile.bio,
     image: profile.photos?.[0] || 'https://via.placeholder.com/400x600?text=No+Photo',
     location: profile.location,
-    distance: profile.distance
+    distance: profile.distance,
+    traits: profile.personalityTraits || [],
+    verified: profile.verificationStatus === 'verified',
+    allPhotos: profile.photos || []
   }));
 
   const renderCard = (profile: any) => {
     return (
-      <div className="h-full w-full flex flex-col relative">
+      <div className="h-full w-full flex flex-col relative group">
         <div 
-          className="h-full w-full bg-cover bg-center absolute inset-0" 
+          className="h-full w-full bg-cover bg-center absolute inset-0 rounded-xl overflow-hidden" 
           style={{ backgroundImage: `url(${profile.image})` }}
         >
           {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
         </div>
+        
+        {/* Photo counter */}
+        <div className="absolute top-4 right-4 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full">
+          <div className="flex items-center gap-1.5">
+            <Camera size={14} className="text-white" />
+            <span className="text-white text-sm font-medium">
+              {profile.allPhotos.length} {profile.allPhotos.length === 1 ? 'Photo' : 'Photos'}
+            </span>
+          </div>
+        </div>
+        
+        {/* Verification badge */}
+        {profile.verified && (
+          <div className="absolute top-4 left-4">
+            <Badge className="bg-blue-500/80 backdrop-blur-sm text-white flex items-center gap-1.5 py-1.5">
+              <Verified size={14} className="text-white" />
+              <span>Verified</span>
+            </Badge>
+          </div>
+        )}
         
         <div className="absolute bottom-0 left-0 right-0 p-6 text-white z-10">
           <div className="flex items-end justify-between">
@@ -61,12 +85,31 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
             
             <motion.div 
               whileHover={{ scale: 1.1 }}
-              className="bg-white/10 backdrop-blur-sm h-10 w-10 rounded-full flex items-center justify-center cursor-pointer card-action-button"
-              onClick={() => navigate(`/profile/${profile.id}`)}
+              className="bg-white/20 backdrop-blur-sm h-10 w-10 rounded-full flex items-center justify-center cursor-pointer card-action-button shadow-lg"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/profile/${profile.id}`);
+              }}
             >
               <Info size={20} className="text-white" />
             </motion.div>
           </div>
+          
+          {/* Personality traits */}
+          {profile.traits && profile.traits.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {profile.traits.slice(0, 3).map((trait: string, index: number) => (
+                <Badge key={index} className="bg-white/20 backdrop-blur-sm text-white">
+                  {trait}
+                </Badge>
+              ))}
+              {profile.traits.length > 3 && (
+                <Badge className="bg-white/10 backdrop-blur-sm text-white/80">
+                  +{profile.traits.length - 3} more
+                </Badge>
+              )}
+            </div>
+          )}
           
           <div className="mt-4 bg-black/30 backdrop-blur-sm p-3 rounded-lg">
             <p className="text-sm text-white/90 line-clamp-3">{profile.bio}</p>
@@ -110,7 +153,7 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
           <SwipeableCard
             onSwipeRight={handleSwipeRight}
             onSwipeLeft={handleSwipeLeft}
-            cardClassName="w-full overflow-hidden shadow-2xl"
+            cardClassName="w-full overflow-hidden shadow-2xl rounded-xl border border-gray-200"
             profileId={currentProfile.id}
           >
             {renderCard(currentProfile)}
@@ -119,7 +162,7 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
       </motion.div>
       
       {/* Action buttons below the card */}
-      <div className="absolute bottom-[-70px] left-0 right-0 flex justify-center gap-6">
+      <div className="absolute bottom-[-80px] left-0 right-0 flex justify-center gap-6">
         <Button 
           variant="outline"
           className="h-14 w-14 rounded-full bg-white border-gray-200 shadow-lg hover:bg-red-50 hover:border-red-200 transition-all duration-300"

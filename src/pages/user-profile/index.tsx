@@ -161,15 +161,15 @@ const UserProfile = () => {
                 ) : (
                   <>
                     <TabsContent value="profile" className="mt-0">
-                      <ProfileInfo profile={profileData} />
+                      <ProfileInfo profile={profileData || currentUser} />
                     </TabsContent>
                     
                     <TabsContent value="edit" className="mt-0">
-                      <ProfileEditor initialData={profileData} />
+                      <ProfileEditor initialData={profileData || currentUser} />
                     </TabsContent>
                     
                     <TabsContent value="monetize" className="mt-0">
-                      <Monetization userData={profileData} />
+                      <Monetization userData={profileData || currentUser} />
                     </TabsContent>
                   </>
                 )}

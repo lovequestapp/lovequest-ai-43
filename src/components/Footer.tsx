@@ -1,10 +1,15 @@
 
 import React from 'react';
 import { Heart } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-const Footer = () => {
+interface FooterProps {
+  className?: string;
+}
+
+const Footer: React.FC<FooterProps> = ({ className }) => {
   return (
-    <footer className="py-6 border-t border-love-100 bg-background z-10">
+    <footer className={cn("py-6 border-t border-love-100 bg-background z-10", className)}>
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
