@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,8 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { ChevronLeft, ChevronRight, Camera, Mic, User } from 'lucide-react';
 
+type GenderType = 'male' | 'female' | 'non-binary';
+
 const ProfileSetup = () => {
   const navigate = useNavigate();
   const { user, authenticated, loading } = useAuth();
@@ -28,18 +29,16 @@ const ProfileSetup = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   
-  // Profile data state
   const [profileData, setProfileData] = useState({
     name: currentUser?.name || '',
     age: currentUser?.age || 18,
     location: currentUser?.location || '',
     bio: currentUser?.bio || '',
-    gender: currentUser?.gender || '',
+    gender: (currentUser?.gender as GenderType) || '' as string,
     interestedIn: currentUser?.interestedIn || [],
     personalityTraits: currentUser?.personalityTraits || []
   });
   
-  // Redirect if not authenticated
   useEffect(() => {
     if (!loading && !authenticated) {
       navigate('/login');
@@ -94,13 +93,11 @@ const ProfileSetup = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Check file size (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('File size must be less than 5MB');
       return;
     }
     
-    // Check if already at max 6 photos
     if (photos.length >= 6) {
       toast.error('You can only upload up to 6 photos');
       return;
@@ -108,11 +105,7 @@ const ProfileSetup = () => {
     
     setUploadingPhoto(true);
     try {
-      // For demo purposes, create object URL
-      // In production, you would upload to Supabase storage
       const imageUrl = URL.createObjectURL(file);
-      
-      // Add to photos array
       setPhotos([...photos, imageUrl]);
       toast.success('Photo added successfully');
     } catch (error) {
@@ -129,22 +122,18 @@ const ProfileSetup = () => {
     setPhotos(newPhotos);
   };
   
-  // Mock voice recording functionality
   const toggleRecording = () => {
     if (isRecording) {
-      // Stop recording and save mock voice note
       setIsRecording(false);
       setVoiceNote('voice_recording.mp3');
       toast.success('Voice note recorded successfully');
     } else {
-      // Start recording
       setIsRecording(true);
       toast.info('Recording voice note...');
     }
   };
   
   const handleNextStep = () => {
-    // Validation for each step
     if (step === 1) {
       if (!profileData.name || !profileData.age || !profileData.location) {
         toast.error('Please fill in all required basic information');
@@ -183,8 +172,16 @@ const ProfileSetup = () => {
         throw new Error('User data not available');
       }
       
+      const gender = profileData.gender;
+      let validGender: GenderType = 'non-binary';
+      
+      if (gender === 'male' || gender === 'female' || gender === 'non-binary') {
+        validGender = gender as GenderType;
+      }
+      
       await updateUserProfile(currentUser.id, {
         ...profileData,
+        gender: validGender,
         photos,
         voiceIntro: voiceNote || ''
       });
