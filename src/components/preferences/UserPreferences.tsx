@@ -39,7 +39,7 @@ import {
   X, 
   Plus, 
   MapPin, 
-  SliderHorizontal,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 // Define schema for form validation
