@@ -9,6 +9,9 @@ export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean>(false)
 
   React.useEffect(() => {
+    // Check if window exists (for SSR)
+    if (typeof window === 'undefined') return;
+    
     // Set initial value based on window width
     const checkMobile = () => window.innerWidth < MOBILE_BREAKPOINT
     setIsMobile(checkMobile())
@@ -41,6 +44,9 @@ export function useBreakpoint() {
   const [breakpoint, setBreakpoint] = React.useState<string>('sm')
 
   React.useEffect(() => {
+    // Check if window exists (for SSR)
+    if (typeof window === 'undefined') return;
+    
     // Create debounced event handler
     let resizeTimeout: ReturnType<typeof setTimeout>;
     

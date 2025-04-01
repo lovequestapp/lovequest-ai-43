@@ -1,9 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useUser } from '@/context/UserContext';
-import { Heart, MessageCircle, Search, User, LogOut, Menu, Crown } from 'lucide-react';
+import { Heart, MessageCircle, Search, User, LogOut, Menu, Crown, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,14 +11,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
 
 export const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useUser();
+  const isMobile = useIsMobile();
+  const [sheetOpen, setSheetOpen] = useState(false);
   
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+  
+  const handleLogout = () => {
+    logout();
+    setSheetOpen(false);
   };
   
   return (
@@ -33,113 +42,179 @@ export const Navbar = () => {
         
         {currentUser ? (
           <>
-            <nav className="hidden md:flex items-center space-x-1">
-              <Button 
-                variant={isActive("/discover") ? "default" : "ghost"}
-                className={isActive("/discover") ? "bg-love-500 hover:bg-love-600" : ""}
-                onClick={() => navigate("/discover")}
-              >
-                Discover
-              </Button>
-              <Button 
-                variant={isActive("/matches") ? "default" : "ghost"}
-                className={isActive("/matches") ? "bg-love-500 hover:bg-love-600" : ""}
-                onClick={() => navigate("/matches")}
-              >
-                Matches
-              </Button>
-              <Button 
-                variant={isActive("/messages") ? "default" : "ghost"}
-                className={isActive("/messages") ? "bg-love-500 hover:bg-love-600" : ""}
-                onClick={() => navigate("/messages")}
-              >
-                Messages
-              </Button>
-            </nav>
-            
-            <div className="flex items-center space-x-2">
-              <div className="md:hidden flex space-x-1">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => navigate("/matches")}
-                  className={isActive("/matches") ? "bg-love-100 text-love-700" : ""}
-                >
-                  <Search className="h-5 w-5" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => navigate("/messages")}
-                  className={isActive("/messages") ? "bg-love-100 text-love-700" : ""}
-                >
-                  <MessageCircle className="h-5 w-5" />
-                </Button>
-              </div>
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className={isActive("/profile") ? "bg-love-100 text-love-700" : ""}
-                  >
-                    <User className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 z-50 bg-white">
-                  <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">
-                      {currentUser.name}
+            {isMobile ? (
+              <div className="flex items-center">
+                <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Menu className="h-5 w-5" />
+                      <span className="sr-only">Menu</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-[80%] sm:w-[350px]">
+                    <SheetHeader className="border-b pb-4">
+                      <SheetTitle>Menu</SheetTitle>
+                    </SheetHeader>
+                    <div className="py-4 flex flex-col gap-2">
+                      <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-md">
+                        <div className="h-10 w-10 rounded-full bg-love-100 text-love-800 flex items-center justify-center">
+                          {currentUser.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-medium">{currentUser.name}</p>
+                          <p className="text-xs text-gray-500">{currentUser.email}</p>
+                        </div>
+                      </div>
+                      <Button 
+                        variant={isActive("/discover") ? "default" : "ghost"}
+                        className={`justify-start ${isActive("/discover") ? "bg-love-500 hover:bg-love-600" : ""}`}
+                        onClick={() => { navigate("/discover"); setSheetOpen(false); }}
+                      >
+                        Discover
+                      </Button>
+                      <Button 
+                        variant={isActive("/matches") ? "default" : "ghost"}
+                        className={`justify-start ${isActive("/matches") ? "bg-love-500 hover:bg-love-600" : ""}`}
+                        onClick={() => { navigate("/matches"); setSheetOpen(false); }}
+                      >
+                        Matches
+                      </Button>
+                      <Button 
+                        variant={isActive("/messages") ? "default" : "ghost"}
+                        className={`justify-start ${isActive("/messages") ? "bg-love-500 hover:bg-love-600" : ""}`}
+                        onClick={() => { navigate("/messages"); setSheetOpen(false); }}
+                      >
+                        Messages
+                      </Button>
+                      <Button 
+                        variant={isActive("/user-profile") ? "default" : "ghost"}
+                        className={`justify-start ${isActive("/user-profile") ? "bg-love-500 hover:bg-love-600" : ""}`}
+                        onClick={() => { navigate("/user-profile"); setSheetOpen(false); }}
+                      >
+                        My Profile
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        className="justify-start"
+                        onClick={() => { navigate("/user-profile?tab=monetize"); setSheetOpen(false); }}
+                      >
+                        Monetization
+                      </Button>
                       {currentUser.role === 'admin' && (
-                        <span className="ml-2 text-xs px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded-full">
-                          Admin
-                        </span>
+                        <Button 
+                          variant={isActive("/admin") ? "default" : "ghost"}
+                          className={`justify-start ${isActive("/admin") ? "bg-love-500 hover:bg-love-600" : ""}`}
+                          onClick={() => { navigate("/admin"); setSheetOpen(false); }}
+                        >
+                          Admin Dashboard
+                        </Button>
                       )}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {currentUser.email}
-                    </p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/user-profile" className="cursor-pointer">
-                      Your Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/user-profile?tab=edit" className="cursor-pointer">
-                      Edit Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/user-profile?tab=monetize" className="cursor-pointer">
-                      Monetization
-                    </Link>
-                  </DropdownMenuItem>
-                  
-                  {currentUser.role === 'admin' && (
-                    <>
+                      <div className="mt-4 pt-4 border-t">
+                        <Button 
+                          variant="destructive" 
+                          className="w-full gap-2"
+                          onClick={handleLogout}
+                        >
+                          <LogOut size={16} />
+                          <span>Log out</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            ) : (
+              <>
+                <nav className="hidden md:flex items-center space-x-1">
+                  <Button 
+                    variant={isActive("/discover") ? "default" : "ghost"}
+                    className={isActive("/discover") ? "bg-love-500 hover:bg-love-600" : ""}
+                    onClick={() => navigate("/discover")}
+                  >
+                    Discover
+                  </Button>
+                  <Button 
+                    variant={isActive("/matches") ? "default" : "ghost"}
+                    className={isActive("/matches") ? "bg-love-500 hover:bg-love-600" : ""}
+                    onClick={() => navigate("/matches")}
+                  >
+                    Matches
+                  </Button>
+                  <Button 
+                    variant={isActive("/messages") ? "default" : "ghost"}
+                    className={isActive("/messages") ? "bg-love-500 hover:bg-love-600" : ""}
+                    onClick={() => navigate("/messages")}
+                  >
+                    Messages
+                  </Button>
+                </nav>
+                
+                <div className="flex items-center space-x-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className={isActive("/profile") ? "bg-love-100 text-love-700" : ""}
+                      >
+                        <User className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56 z-50 bg-white">
+                      <div className="px-2 py-1.5">
+                        <p className="text-sm font-medium">
+                          {currentUser.name}
+                          {currentUser.role === 'admin' && (
+                            <span className="ml-2 text-xs px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded-full">
+                              Admin
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {currentUser.email}
+                        </p>
+                      </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link to="/admin" className="cursor-pointer flex items-center text-amber-700">
-                          <Crown className="mr-2 h-4 w-4" />
-                          <span>Admin Dashboard</span>
+                        <Link to="/user-profile" className="cursor-pointer">
+                          Your Profile
                         </Link>
                       </DropdownMenuItem>
-                    </>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    className="text-red-600 focus:text-red-600 cursor-pointer"
-                    onClick={() => logout()}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    <span>Logout</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                      <DropdownMenuItem asChild>
+                        <Link to="/user-profile?tab=edit" className="cursor-pointer">
+                          Edit Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/user-profile?tab=monetize" className="cursor-pointer">
+                          Monetization
+                        </Link>
+                      </DropdownMenuItem>
+                      
+                      {currentUser.role === 'admin' && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link to="/admin" className="cursor-pointer flex items-center text-amber-700">
+                              <Crown className="mr-2 h-4 w-4" />
+                              <span>Admin Dashboard</span>
+                            </Link>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        className="text-red-600 focus:text-red-600 cursor-pointer"
+                        onClick={() => logout()}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        <span>Logout</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </>
+            )}
           </>
         ) : (
           <div className="flex items-center space-x-2">
