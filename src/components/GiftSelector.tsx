@@ -1,30 +1,62 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Rocket, Globe, MapPin, Check } from 'lucide-react';
+import { Rocket, Globe, MapPin, Check, Gift, ShoppingBag } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
+import { useGifts } from '@/hooks/useGifts';
+import { useNavigate } from 'react-router-dom';
 
 interface GiftSelectorProps {
   isOpen: boolean;
   onClose: () => void;
   onSendGift: (giftType: 'rose' | 'heart' | 'teddy') => void;
+  recipientId?: string;
 }
 
-const GiftSelector: React.FC<GiftSelectorProps> = ({ isOpen, onClose, onSendGift }) => {
+const GiftSelector: React.FC<GiftSelectorProps> = ({ isOpen, onClose, onSendGift, recipientId }) => {
   const { currentUser, boostProfile } = useUser();
+  const { inventory, sendGift, isProcessing, updateInventory } = useGifts();
   const [activeTab, setActiveTab] = useState<'gifts' | 'boost'>('gifts');
   const [boostType, setBoostType] = useState<'local' | 'international'>('local');
+  const navigate = useNavigate();
   
-  if (!currentUser || !currentUser.giftInventory) return null;
+  useEffect(() => {
+    if (isOpen) {
+      updateInventory();
+    }
+  }, [isOpen, updateInventory]);
+  
+  if (!currentUser) return null;
+  
+  const handleSendGift = async (giftType: 'rose' | 'heart' | 'teddy') => {
+    if (!recipientId || isProcessing) return;
+    
+    const success = await sendGift(recipientId, giftType);
+    if (success) {
+      onSendGift(giftType);
+      onClose();
+    }
+  };
   
   const handleBoost = () => {
     const success = boostProfile(boostType);
     if (success) {
       onClose();
     }
+  };
+  
+  const renderGiftCount = (type: 'rose' | 'heart' | 'teddy') => {
+    const giftItem = inventory[type];
+    const count = typeof giftItem === 'object' ? giftItem.count : giftItem;
+    return count || 0;
+  };
+  
+  const goToShop = () => {
+    onClose();
+    navigate('/shop');
   };
   
   return (
@@ -49,42 +81,58 @@ const GiftSelector: React.FC<GiftSelectorProps> = ({ isOpen, onClose, onSendGift
               <Button 
                 variant="outline" 
                 className="flex flex-col items-center p-4" 
-                onClick={() => onSendGift('rose')}
-                disabled={currentUser.giftInventory.rose <= 0}
+                onClick={() => handleSendGift('rose')}
+                disabled={isProcessing || renderGiftCount('rose') <= 0}
               >
                 <span className="text-3xl mb-2">🌹</span>
                 <span>Rose</span>
                 <span className="text-xs text-muted-foreground mt-1">
-                  {currentUser.giftInventory.rose} available
+                  {renderGiftCount('rose')} available
                 </span>
               </Button>
               
               <Button 
                 variant="outline" 
                 className="flex flex-col items-center p-4" 
-                onClick={() => onSendGift('heart')}
-                disabled={currentUser.giftInventory.heart <= 0}
+                onClick={() => handleSendGift('heart')}
+                disabled={isProcessing || renderGiftCount('heart') <= 0}
               >
                 <span className="text-3xl mb-2">❤️</span>
                 <span>Heart</span>
                 <span className="text-xs text-muted-foreground mt-1">
-                  {currentUser.giftInventory.heart} available
+                  {renderGiftCount('heart')} available
                 </span>
               </Button>
               
               <Button 
                 variant="outline" 
                 className="flex flex-col items-center p-4" 
-                onClick={() => onSendGift('teddy')}
-                disabled={currentUser.giftInventory.teddy <= 0}
+                onClick={() => handleSendGift('teddy')}
+                disabled={isProcessing || renderGiftCount('teddy') <= 0}
               >
                 <span className="text-3xl mb-2">🧸</span>
                 <span>Teddy</span>
                 <span className="text-xs text-muted-foreground mt-1">
-                  {currentUser.giftInventory.teddy} available
+                  {renderGiftCount('teddy')} available
                 </span>
               </Button>
             </div>
+            
+            {(renderGiftCount('rose') <= 0 && renderGiftCount('heart') <= 0 && renderGiftCount('teddy') <= 0) && (
+              <div className="text-center mt-4">
+                <p className="text-sm text-muted-foreground mb-3">
+                  You don't have any gifts in your inventory.
+                </p>
+                <Button 
+                  variant="default" 
+                  onClick={goToShop} 
+                  className="flex items-center gap-2"
+                >
+                  <ShoppingBag size={16} />
+                  <span>Go to Shop</span>
+                </Button>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="boost" className="space-y-4">

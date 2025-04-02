@@ -17,6 +17,7 @@ import Preferences from '@/pages/Preferences';
 import Verification from './Verification';
 import EmailConfirmation from './EmailConfirmation';
 import EmailConfirmSuccess from './auth/confirm-email';
+import Shop from './Shop';
 
 export {
   Home,
@@ -36,5 +37,6 @@ export {
   Preferences,
   Verification,
   EmailConfirmation,
-  EmailConfirmSuccess
+  EmailConfirmSuccess,
+  Shop
 };

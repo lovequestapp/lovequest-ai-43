@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -8,13 +9,15 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, User, Wallet, Crown, Shield, Music, Mic } from 'lucide-react';
+import { Edit, User, Wallet, Crown, Shield, Music, Mic, ShoppingBag } from 'lucide-react';
 import Monetization from '@/components/Monetization';
 import ProfileEditor from '@/components/profile-editor/ProfileEditor';
 import ProfileInfo from '@/components/profile-editor/ProfileInfo';
 import ProtectedRoute from '@/components/protected-route';
 import { toast } from 'sonner';
 import { fetchUserProfile } from '@/services/profileService';
+import GiftInventory from '@/components/GiftInventory';
+import GiftTransactionHistory from '@/components/GiftTransactionHistory';
 
 const UserProfile = () => {
   const { currentUser, setCurrentUser } = useUser();
@@ -134,7 +137,7 @@ const UserProfile = () => {
           </div>
 
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-3 mb-8">
+            <TabsList className="grid grid-cols-4 mb-8">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User size={16} />
                 <span>Profile Info</span>
@@ -142,6 +145,10 @@ const UserProfile = () => {
               <TabsTrigger value="edit" className="flex items-center gap-2">
                 <Edit size={16} />
                 <span>Edit Profile</span>
+              </TabsTrigger>
+              <TabsTrigger value="shop" className="flex items-center gap-2">
+                <ShoppingBag size={16} />
+                <span>Gift Shop</span>
               </TabsTrigger>
               <TabsTrigger value="monetize" className="flex items-center gap-2">
                 <Wallet size={16} />
@@ -197,6 +204,29 @@ const UserProfile = () => {
                     
                     <TabsContent value="edit" className="mt-0">
                       <ProfileEditor initialData={profileData || currentUser} />
+                    </TabsContent>
+                    
+                    <TabsContent value="shop" className="mt-0">
+                      <div className="space-y-8">
+                        <div>
+                          <h2 className="text-xl font-semibold mb-4">Gift Inventory</h2>
+                          <GiftInventory />
+                          <div className="mt-4 flex justify-center">
+                            <Button 
+                              onClick={() => navigate('/shop')}
+                              className="flex items-center gap-2"
+                            >
+                              <ShoppingBag size={16} />
+                              Go to Gift Shop
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
+                          <GiftTransactionHistory />
+                        </div>
+                      </div>
                     </TabsContent>
                     
                     <TabsContent value="monetize" className="mt-0">
