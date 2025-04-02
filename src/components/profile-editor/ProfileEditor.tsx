@@ -13,13 +13,14 @@ import { Camera, X, Plus, Upload } from 'lucide-react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
 import { updateProfileData, uploadProfilePhoto } from '@/services/profileService';
 import VoiceRecorder from '@/components/VoiceRecorder';
+import PhotoUploader from '@/components/profile-setup/PhotoUploader';
 
 // Define the schema for form validation
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   bio: z.string().max(500, 'Bio must not exceed 500 characters'),
   location: z.string().min(2, 'Location must be at least 2 characters'),
-  age: z.number().min(18, 'Must be at least 18 years old').max(100, 'Age must be reasonable'),
+  age: z.coerce.number().min(18, 'Must be at least 18 years old').max(100, 'Age must be reasonable'),
   gender: z.string().min(1, 'Gender is required'),
   interests: z.array(z.string()).optional(),
   favoriteMusic: z.array(z.string()).optional(),
@@ -224,48 +225,15 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({ initialData }) => {
       <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <h3 className="text-lg font-medium">Profile Photos</h3>
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-              {photos.map((photo, index) => (
-                <div key={index} className="relative group">
-                  <img 
-                    src={photo} 
-                    alt={`Profile photo ${index + 1}`} 
-                    className="w-full h-32 object-cover rounded-md"
-                  />
-                  <button
-                    type="button"
-                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removePhoto(index)}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-              
-              {photos.length < 6 && (
-                <label className="w-full h-32 border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handlePhotoUpload}
-                    disabled={uploadingPhoto}
-                  />
-                  {uploadingPhoto ? (
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-love-500"></div>
-                  ) : (
-                    <>
-                      <Plus size={24} className="text-gray-400" />
-                      <span className="text-sm text-gray-500 mt-1">Add Photo</span>
-                      <span className="text-xs text-gray-400 mt-1">{photos.length}/6</span>
-                    </>
-                  )}
-                </label>
-              )}
-            </div>
-            
             <div className="space-y-4">
+              <h3 className="text-lg font-medium">Profile Photos</h3>
+              <PhotoUploader 
+                photos={photos}
+                uploadingPhoto={uploadingPhoto}
+                handlePhotoUpload={handlePhotoUpload}
+                removePhoto={removePhoto}
+              />
+            
               <FormField
                 control={form.control}
                 name="name"

@@ -15,23 +15,27 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
 
     console.log('Updating profile for user:', userId, 'with data:', profileData);
 
-    const { error } = await supabase
+    // Prepare update data with appropriate column names for Supabase
+    const updateData = {
+      name: profileData.name,
+      bio: profileData.bio,
+      age: profileData.age,
+      location: profileData.location,
+      interests: profileData.interests,
+      gender: profileData.gender,
+      interested_in: profileData.interestedIn,
+      personality_traits: profileData.personalityTraits,
+      photos: profileData.photos,
+      favorite_music: profileData.favoriteMusic,
+      // Handle voice intro if provided
+      ...(profileData.voiceIntro !== undefined ? { voice_intro: profileData.voiceIntro } : {})
+    };
+
+    const { error, data } = await supabase
       .from('profiles')
-      .update({
-        name: profileData.name,
-        bio: profileData.bio,
-        age: profileData.age,
-        location: profileData.location,
-        interests: profileData.interests,
-        gender: profileData.gender,
-        interested_in: profileData.interestedIn,
-        personality_traits: profileData.personalityTraits,
-        photos: profileData.photos,
-        favorite_music: profileData.favoriteMusic,
-        // Handle voice intro if provided
-        ...(profileData.voiceIntro ? { voice_intro: profileData.voiceIntro } : {})
-      })
-      .eq('id', userId);
+      .update(updateData)
+      .eq('id', userId)
+      .select();
     
     if (error) {
       console.error('Error updating profile:', error);
@@ -41,7 +45,8 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
       return false;
     }
     
-    console.log('Profile updated successfully');
+    console.log('Profile updated successfully:', data);
+    toast.success("Profile updated successfully");
     return true;
   } catch (error: any) {
     console.error('Profile update error:', error.message);
@@ -192,11 +197,11 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
       favoriteMusic: data.favorite_music || [],
       voiceIntro: data.voice_intro || '',
       bankDetails: {
-        accountName: '',
-        accountNumber: '',
-        bankName: '',
-        routingNumber: '',
-        accountType: ''
+        accountName: data.bank_details?.accountName || '',
+        accountNumber: data.bank_details?.accountNumber || '',
+        bankName: data.bank_details?.bankName || '',
+        routingNumber: data.bank_details?.routingNumber || '',
+        accountType: data.bank_details?.accountType || ''
       }
     };
   } catch (error: any) {
@@ -204,3 +209,77 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
     return null;
   }
 };
+
+/**
+ * Updates bank details for a user's profile
+ */
+export const updateBankDetails = async (userId: string, bankDetails: {
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+  routingNumber: string;
+  accountType: string;
+}): Promise<boolean> => {
+  try {
+    if (!userId) {
+      console.error('No user ID provided for bank details update');
+      return false;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        bank_details: bankDetails
+      })
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error updating bank details:', error);
+      toast.error("Failed to update bank details", {
+        description: error.message
+      });
+      return false;
+    }
+    
+    toast.success("Bank details updated successfully");
+    return true;
+  } catch (error: any) {
+    console.error('Bank details update error:', error.message);
+    toast.error("Failed to update bank details", {
+      description: error.message || "An unexpected error occurred"
+    });
+    return false;
+  }
+};
+
+/**
+ * Initiates a withdrawal request
+ */
+export const initiateWithdrawal = async (userId: string, amount: number, method: 'bank' | 'paypal'): Promise<boolean> => {
+  try {
+    if (!userId) {
+      console.error('No user ID provided for withdrawal request');
+      return false;
+    }
+
+    if (amount <= 0) {
+      toast.error("Invalid withdrawal amount");
+      return false;
+    }
+
+    // In a real app, this would create a withdrawal record in the database
+    // For demo purposes, we'll just show a success message
+    toast.success(`Withdrawal of $${amount.toFixed(2)} initiated via ${method}`, {
+      description: `Your ${method === 'bank' ? 'bank transfer' : 'PayPal transfer'} has been initiated and will be processed shortly.`
+    });
+    
+    return true;
+  } catch (error: any) {
+    console.error('Withdrawal initiation error:', error.message);
+    toast.error("Failed to initiate withdrawal", {
+      description: error.message || "An unexpected error occurred"
+    });
+    return false;
+  }
+};
+

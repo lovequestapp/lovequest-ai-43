@@ -18,7 +18,6 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 }) => {
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-medium">Profile Photos</h3>
       <p className="text-sm text-muted-foreground">Upload up to 6 photos for your profile (at least 1 required)</p>
       
       <div className="grid grid-cols-3 gap-3">
