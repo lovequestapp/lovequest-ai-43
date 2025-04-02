@@ -38,7 +38,7 @@ export const useRealTimeMessages = (userId: string | undefined) => {
         content: msg.content,
         timestamp: new Date(msg.timestamp),
         isRead: msg.is_read,
-        status: msg.status,
+        // Removed status property as it's not in the Message type
       }));
 
       setMessages(formattedMessages);
@@ -67,7 +67,7 @@ export const useRealTimeMessages = (userId: string | undefined) => {
           content,
           timestamp: new Date().toISOString(),
           is_read: false,
-          status: 'sent'
+          status: 'sent' // This field exists in the database but not in our Message type
         })
         .select()
         .single();
@@ -138,7 +138,7 @@ export const useRealTimeMessages = (userId: string | undefined) => {
           content: payload.new.content,
           timestamp: new Date(payload.new.timestamp),
           isRead: payload.new.is_read,
-          status: payload.new.status,
+          // Removed status property as it's not in the Message type
         };
 
         setMessages(prev => [newMessage, ...prev]);
@@ -164,7 +164,7 @@ export const useRealTimeMessages = (userId: string | undefined) => {
                   ...msg,
                   content: payload.new.content,
                   isRead: payload.new.is_read,
-                  status: payload.new.status
+                  // Removed status property as it's not in the Message type
                 } 
               : msg
           )
