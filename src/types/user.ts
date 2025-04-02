@@ -75,7 +75,7 @@ export interface GiftInventory {
 export interface Message {
   id: string;
   senderId: string;
-  recipientId: string; // Keeping this as recipientId to match the existing code
+  recipientId: string; // Using recipientId to be consistent
   content: string;
   timestamp: Date;
   isRead: boolean;

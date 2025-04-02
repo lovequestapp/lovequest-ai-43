@@ -57,8 +57,6 @@ interface UserContextType {
   updatePreferences: (preferences: Partial<UserPreferences>) => Promise<boolean>;
   getUser: (userId: string) => Promise<User | null>;
   allMessages: Message[];
-  allUsers: User[];
-  sendMessage: (recipientId: string, content: string) => void;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -111,6 +109,8 @@ const UserContext = createContext<UserContextType>({
   getWithdrawalHistory: () => [],
   getPendingWithdrawal: () => null,
   updatePreferences: async () => false,
+  getUser: async () => null,
+  allMessages: [],
 });
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
@@ -123,6 +123,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     userId: string,
     status: 'pending' | 'active' | 'ended' | 'rejected'
   }>>({});
+  const [messages, setMessages] = useState<Message[]>([]);
   const navigate = useNavigate();
   
   const isAuthenticated = currentUser !== null;
@@ -666,8 +667,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   
   const matches: User[] = [];
   
-  const messages: Message[] = [];
-  
   const likeUser = (userId: string) => {
     likeProfile(userId);
   };
@@ -729,7 +728,30 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
   
   const getUser = async (userId: string): Promise<User | null> => {
-    return allUsers.find(user => user.id === userId) || null;
+    if (currentUser && currentUser.id === userId) {
+      return currentUser;
+    }
+
+    const foundUser = allUsers.find(user => user.id === userId);
+    return foundUser || null;
+  };
+  
+  const allMessages: Message[] = messages;
+  
+  const sendMessage = (recipientId: string, content: string) => {
+    const newMessage: Message = {
+      id: `msg-${Date.now()}`,
+      senderId: currentUser?.id || '',
+      recipientId: recipientId,
+      content,
+      timestamp: new Date(),
+      isRead: false,
+      type: 'text'
+    };
+    
+    setMessages(prev => [...prev, newMessage]);
+    console.log("Sending message:", newMessage);
+    toast.success("Message sent!");
   };
   
   const contextValue: UserContextType = {
@@ -761,21 +783,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     potentialMatches,
     matches,
     messages,
-    sendMessage: (recipientId: string, content: string) => {
-      const newMessage: Message = {
-        id: `msg-${Date.now()}`,
-        senderId: currentUser?.id || '',
-        recipientId: recipientId,
-        content,
-        timestamp: new Date(),
-        isRead: false
-      };
-      
-      console.log("Sending message:", newMessage);
-      toast.success("Message sent!");
-    },
+    sendMessage,
     markMessagesAsRead: (messageIds: string[]) => {
       console.log("Marking messages as read:", messageIds);
+      setMessages(prev => prev.map(msg => 
+        messageIds.includes(msg.id) ? {...msg, isRead: true} : msg
+      ));
     },
     updateUserProfile,
     getGiftBenefits: () => ({}),
@@ -816,6 +829,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     getWithdrawalHistory: () => [],
     getPendingWithdrawal: () => null,
     updatePreferences,
+    getUser,
+    allMessages,
   };
   
   return (
