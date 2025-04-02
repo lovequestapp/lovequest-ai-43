@@ -1,109 +1,117 @@
+
 import React from 'react';
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Heart, X, Zap, MapPin, MessageCircle } from "lucide-react";
-import { UserWithCoordinates } from '@/types/user';
+import { Heart, X, MessageCircle, Star, Shield } from 'lucide-react';
+import { User } from '@/types/user';
 import { useNavigate } from 'react-router-dom';
 
 export interface ProfileCardProps {
-  profile: UserWithCoordinates;
-  onBoost?: () => void;  // Make this prop optional
+  profile: User;
+  currentUser: User | null;
+  showActions?: boolean;
+  isMatch?: boolean;
+  alreadyLiked?: boolean;
+  onLike?: (profileId: string) => void;
+  onPass?: (profileId: string) => void;
 }
 
-const ProfileCard: React.FC<ProfileCardProps> = ({ profile, onBoost }) => {
+const ProfileCard: React.FC<ProfileCardProps> = ({ 
+  profile, 
+  currentUser, 
+  showActions = false,
+  isMatch = false,
+  alreadyLiked = false,
+  onLike,
+  onPass
+}) => {
   const navigate = useNavigate();
   
-  const handleLike = () => {
-    console.log('Liked profile:', profile.id);
+  const handleProfileClick = () => {
+    navigate(`/profile/${profile.id}`);
   };
   
-  const handlePass = () => {
-    console.log('Passed profile:', profile.id);
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onLike) onLike(profile.id);
   };
   
-  const handleBoost = () => {
-    if (onBoost) {
-      onBoost();
-    } else {
-      console.log('Boost profile:', profile.id);
-    }
-  };
-  
-  const handleMessage = () => {
-    navigate(`/messages/${profile.id}`);
+  const handlePass = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onPass) onPass(profile.id);
   };
   
   return (
-    <Card className="overflow-hidden transition-all hover:shadow-md">
-      <div className="relative">
-        <div className="aspect-[4/5] overflow-hidden bg-muted">
-          <img 
-            src={profile.photos?.[0] || 'https://via.placeholder.com/300x400?text=No+Photo'} 
-            alt={profile.name} 
-            className="object-cover w-full h-full"
-          />
+    <Card className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow" onClick={handleProfileClick}>
+      <div className="aspect-[3/4] relative">
+        <img 
+          src={profile.photos?.[0] || 'https://via.placeholder.com/300x400?text=No+Image'} 
+          alt={profile.name}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+          <h3 className="text-white font-medium text-lg">
+            {profile.name}, {profile.age}
+          </h3>
+          <p className="text-white/80 text-sm flex items-center gap-1">
+            <span>{profile.location || 'Unknown location'}</span>
+          </p>
         </div>
         
-        <div className="absolute top-3 right-3 flex gap-1">
-          {profile.verificationStatus === 'verified' && (
-            <Badge variant="secondary" className="bg-blue-500 text-white">
-              Verified
+        {profile.verificationStatus === 'verified' && (
+          <div className="absolute top-2 left-2">
+            <Badge className="bg-blue-100 text-blue-700 border-none flex items-center gap-1">
+              <Shield className="h-3 w-3" />
+              <span>Verified</span>
             </Badge>
-          )}
-          {profile.premiumStatus === 'vip' && (
-            <Badge variant="secondary" className="bg-amber-500 text-white">
-              VIP
+          </div>
+        )}
+        
+        {isMatch && (
+          <div className="absolute top-2 right-2">
+            <Badge className="bg-love-100 text-love-700 border-none flex items-center gap-1">
+              <Star className="h-3 w-3 fill-love-500" />
+              <span>Match!</span>
             </Badge>
-          )}
-        </div>
+          </div>
+        )}
       </div>
       
-      <CardContent className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            <h3 className="text-lg font-semibold">{profile.name}, {profile.age}</h3>
-            <div className="flex items-center text-sm text-muted-foreground">
-              <MapPin size={14} className="mr-1" />
-              <span>{profile.location}</span>
-            </div>
+      {showActions && (
+        <CardContent className="p-3">
+          <div className="flex gap-2">
+            <Button 
+              className={`flex-1 ${alreadyLiked ? 'bg-love-100 text-love-700' : ''}`}
+              variant={alreadyLiked ? 'outline' : 'default'}
+              size="sm"
+              onClick={handleLike}
+              disabled={alreadyLiked}
+            >
+              <Heart className={`h-4 w-4 ${alreadyLiked ? 'fill-love-500' : ''}`} />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/messages/${profile.id}`);
+              }}
+            >
+              <MessageCircle className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1"
+              onClick={handlePass}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-          
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={profile.photos?.[0]} />
-            <AvatarFallback>{profile.name?.slice(0, 2).toUpperCase()}</AvatarFallback>
-          </Avatar>
-        </div>
-        
-        <p className="text-sm line-clamp-2 mb-3">{profile.bio}</p>
-        
-        <div className="flex flex-wrap gap-1">
-          {profile.interests?.slice(0, 3).map((interest, i) => (
-            <Badge key={i} variant="outline" className="text-xs">
-              {interest}
-            </Badge>
-          ))}
-          {profile.interests && profile.interests.length > 3 && (
-            <Badge variant="outline" className="text-xs">+{profile.interests.length - 3}</Badge>
-          )}
-        </div>
-      </CardContent>
-      
-      <CardFooter className="p-2 bg-muted/20 flex justify-between">
-        <Button variant="ghost" size="icon" onClick={handlePass} className="rounded-full">
-          <X className="h-5 w-5 text-gray-500" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={handleBoost} className="rounded-full">
-          <Zap className="h-5 w-5 text-amber-500" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={handleMessage} className="rounded-full">
-          <MessageCircle className="h-5 w-5 text-blue-500" />
-        </Button>
-        <Button variant="ghost" size="icon" onClick={handleLike} className="rounded-full">
-          <Heart className="h-5 w-5 text-rose-500" />
-        </Button>
-      </CardFooter>
+        </CardContent>
+      )}
     </Card>
   );
 };

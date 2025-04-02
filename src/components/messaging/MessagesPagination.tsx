@@ -1,13 +1,6 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationPrevious, 
-  PaginationNext 
-} from "@/components/ui/pagination";
 
 interface MessagesPaginationProps {
   hasMore: boolean;

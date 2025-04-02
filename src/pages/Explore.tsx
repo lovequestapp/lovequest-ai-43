@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser } from '@/context/UserContext';
+import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { BlogPostType, User } from '@/types/user';
 import { calculateCompatibilityScore } from '@/utils/matchingAlgorithm';
 import { 
@@ -19,38 +21,68 @@ import {
 import { toast } from 'sonner';
 
 const Explore = () => {
-  const { currentUser, getAllPosts, getFilteredPosts, likeUser, boostProfile, sendGift } = useUser();
+  const { currentUser, likeUser, boostProfile, sendGift } = useUser();
+  const { allPosts, fetchFilteredPosts, isLoadingPosts } = useBlogPosts();
+  
   const [activeTab, setActiveTab] = useState('trending');
   const [searchText, setSearchText] = useState('');
+  const [filteredPosts, setFilteredPosts] = useState<BlogPostType[]>([]);
+  const [trendingPosts, setTrendingPosts] = useState<BlogPostType[]>([]);
+  const [recentPosts, setRecentPosts] = useState<BlogPostType[]>([]);
+  const [searchResults, setSearchResults] = useState<BlogPostType[]>([]);
+  const [topicTags, setTopicTags] = useState<string[]>([]);
+  
   const navigate = useNavigate();
   
-  if (!currentUser) return null;
+  useEffect(() => {
+    const loadFilteredPosts = async () => {
+      const posts = await fetchFilteredPosts('');
+      setFilteredPosts(posts);
+    };
+    
+    loadFilteredPosts();
+  }, [fetchFilteredPosts]);
   
-  const allPosts = getAllPosts();
-  const personalizedPosts = getFilteredPosts();
+  useEffect(() => {
+    if (allPosts.length > 0) {
+      // Sort trending posts by engagement (likes + comments)
+      const trending = [...allPosts]
+        .sort((a, b) => {
+          const aEngagement = a.likes + a.comments.length;
+          const bEngagement = b.likes + b.comments.length;
+          return bEngagement - aEngagement;
+        })
+        .slice(0, 8);
+      setTrendingPosts(trending);
+      
+      // Get recent posts (newest first)
+      const recent = [...allPosts]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 8);
+      setRecentPosts(recent);
+      
+      // Extract unique tags
+      const allTags = allPosts.flatMap(post => post.tags);
+      const uniqueTags = Array.from(new Set(allTags)).slice(0, 12);
+      setTopicTags(uniqueTags);
+    }
+  }, [allPosts]);
   
-  // Sort trending posts by engagement (likes + comments)
-  const trendingPosts = [...allPosts]
-    .sort((a, b) => {
-      const aEngagement = a.likes + a.comments.length;
-      const bEngagement = b.likes + b.comments.length;
-      return bEngagement - aEngagement;
-    })
-    .slice(0, 8);
-  
-  // Get recent posts (newest first)
-  const recentPosts = [...allPosts]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 8);
-  
-  // Filter by search query if provided
-  const filteredPosts = searchText
-    ? allPosts.filter(post => 
+  useEffect(() => {
+    // Filter by search query if provided
+    if (searchText.trim()) {
+      const filtered = allPosts.filter(post => 
         post.title.toLowerCase().includes(searchText.toLowerCase()) ||
         post.content.toLowerCase().includes(searchText.toLowerCase()) ||
         post.tags.some(tag => tag.toLowerCase().includes(searchText.toLowerCase()))
-      )
-    : [];
+      );
+      setSearchResults(filtered);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchText, allPosts]);
+  
+  if (!currentUser) return null;
   
   // Simulated potential matches based on content engagement
   const potentialMatches = allPosts
@@ -85,6 +117,15 @@ const Explore = () => {
     toast.success("Gift sent successfully!");
   };
   
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchText(e.target.value);
+  };
+  
+  const handleTagClick = (tag: string) => {
+    setSearchText(tag);
+    setActiveTab('trending');
+  };
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -103,7 +144,7 @@ const Explore = () => {
             className="pl-10 bg-background"
             placeholder="Search for posts, topics, or interests..."
             value={searchText}
-            onChange={(e) => setSearchText(e.target.value as string)}
+            onChange={handleSearchChange}
           />
         </div>
         
@@ -132,9 +173,9 @@ const Explore = () => {
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Search Results</h2>
               
-              {filteredPosts.length > 0 ? (
+              {searchResults.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredPosts.map(post => (
+                  {searchResults.map(post => (
                     <Card 
                       key={post.id}
                       className="cursor-pointer hover:shadow-md transition-shadow"
@@ -168,48 +209,13 @@ const Explore = () => {
           )}
           
           <TabsContent value="trending" className="focus-visible:outline-none focus-visible:ring-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {trendingPosts.map(post => (
-                <Card 
-                  key={post.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => navigate(`/blog/${post.id}`)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-semibold line-clamp-1">{post.title}</h3>
-                      <Badge variant="secondary" className="bg-orange-50 text-orange-700">
-                        <Flame className="h-3 w-3 mr-1" />
-                        Hot
-                      </Badge>
-                    </div>
-                    <p className="line-clamp-2 text-sm mb-3">{post.content}</p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Heart className="h-3 w-3 mr-1" />
-                      <span>{post.likes}</span>
-                      <span className="mx-1">•</span>
-                      <MessageSquare className="h-3 w-3 mr-1" />
-                      <span>{post.comments.length}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            <div className="mt-6 text-center">
-              <Button 
-                variant="outline"
-                onClick={() => navigate('/blog')}
-              >
-                View All Posts
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="foryou" className="focus-visible:outline-none focus-visible:ring-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {personalizedPosts.length > 0 ? (
-                personalizedPosts.map(post => (
+            {isLoadingPosts ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Loading trending posts...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {trendingPosts.map(post => (
                   <Card 
                     key={post.id}
                     className="cursor-pointer hover:shadow-md transition-shadow"
@@ -218,9 +224,9 @@ const Explore = () => {
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-lg font-semibold line-clamp-1">{post.title}</h3>
-                        <Badge variant="secondary" className="bg-green-50 text-green-700">
-                          <Zap className="h-3 w-3 mr-1" />
-                          For You
+                        <Badge variant="secondary" className="bg-orange-50 text-orange-700">
+                          <Flame className="h-3 w-3 mr-1" />
+                          Hot
                         </Badge>
                       </div>
                       <p className="line-clamp-2 text-sm mb-3">{post.content}</p>
@@ -233,15 +239,62 @@ const Explore = () => {
                       </div>
                     </CardContent>
                   </Card>
-                ))
-              ) : (
-                <div className="col-span-full text-center py-8">
-                  <p className="text-muted-foreground">
-                    We're still learning your preferences. Explore more content to see personalized recommendations!
-                  </p>
-                </div>
-              )}
+                ))}
+              </div>
+            )}
+            
+            <div className="mt-6 text-center">
+              <Button 
+                variant="outline"
+                onClick={() => navigate('/blog')}
+              >
+                View All Posts
+              </Button>
             </div>
+          </TabsContent>
+          
+          <TabsContent value="foryou" className="focus-visible:outline-none focus-visible:ring-0">
+            {isLoadingPosts ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Loading personalized posts...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredPosts.length > 0 ? (
+                  filteredPosts.map(post => (
+                    <Card 
+                      key={post.id}
+                      className="cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => navigate(`/blog/${post.id}`)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-lg font-semibold line-clamp-1">{post.title}</h3>
+                          <Badge variant="secondary" className="bg-green-50 text-green-700">
+                            <Zap className="h-3 w-3 mr-1" />
+                            For You
+                          </Badge>
+                        </div>
+                        <p className="line-clamp-2 text-sm mb-3">{post.content}</p>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Heart className="h-3 w-3 mr-1" />
+                          <span>{post.likes}</span>
+                          <span className="mx-1">•</span>
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          <span>{post.comments.length}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-muted-foreground">
+                      We're still learning your preferences. Explore more content to see personalized recommendations!
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="discover" className="focus-visible:outline-none focus-visible:ring-0">
@@ -252,23 +305,27 @@ const Explore = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {recentPosts.slice(0, 5).map(post => (
-                      <div 
-                        key={post.id}
-                        className="p-2 hover:bg-gray-50 rounded-md cursor-pointer flex items-center"
-                        onClick={() => navigate(`/blog/${post.id}`)}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
-                          <PenSquare className="h-4 w-4 text-gray-500" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm line-clamp-1">{post.title}</p>
-                          <div className="flex items-center text-xs text-muted-foreground mt-1">
-                            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                    {recentPosts.length > 0 ? (
+                      recentPosts.slice(0, 5).map(post => (
+                        <div 
+                          key={post.id}
+                          className="p-2 hover:bg-gray-50 rounded-md cursor-pointer flex items-center"
+                          onClick={() => navigate(`/blog/${post.id}`)}
+                        >
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-2">
+                            <PenSquare className="h-4 w-4 text-gray-500" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-sm line-clamp-1">{post.title}</p>
+                            <div className="flex items-center text-xs text-muted-foreground mt-1">
+                              <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No recent posts yet</p>
+                    )}
                   </div>
                   <Button 
                     variant="ghost" 
@@ -286,17 +343,12 @@ const Explore = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from(
-                      new Set(allPosts.flatMap(post => post.tags))
-                    ).slice(0, 12).map((tag, i) => (
+                    {topicTags.map((tag, i) => (
                       <Badge 
                         key={i}
                         variant="secondary"
                         className="cursor-pointer hover:bg-secondary/80"
-                        onClick={() => {
-                          setSearchText(tag);
-                          setActiveTab('trending');
-                        }}
+                        onClick={() => handleTagClick(tag)}
                       >
                         {tag}
                       </Badge>

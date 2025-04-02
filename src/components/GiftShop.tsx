@@ -1,306 +1,326 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Heart, Gift, ShoppingCart, Info } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
 import { useUser } from '@/context/UserContext';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { Gift, CreditCard, ShoppingCart, Heart, Package, Award } from 'lucide-react';
 
 interface GiftItem {
   id: string;
+  type: 'rose' | 'heart' | 'teddy';
   name: string;
+  icon: string;
   price: number;
-  icon: React.ReactNode;
   description: string;
-  recipientBenefit: string;
+  discount?: number;
 }
 
+const giftItems: GiftItem[] = [
+  {
+    id: 'rose',
+    type: 'rose',
+    name: 'Rose',
+    icon: '🌹',
+    price: 5,
+    description: 'A beautiful rose to show your interest',
+  },
+  {
+    id: 'heart',
+    type: 'heart',
+    name: 'Heart',
+    icon: '❤️',
+    price: 10,
+    description: 'A heart to express your affection',
+    discount: 15,
+  },
+  {
+    id: 'teddy',
+    type: 'teddy',
+    name: 'Teddy Bear',
+    icon: '🧸',
+    price: 20,
+    description: 'A cute teddy bear to win their heart',
+  },
+];
+
 const GiftShop: React.FC = () => {
-  const [quantities, setQuantities] = useState<Record<string, number>>({
-    'rose': 0,
-    'heart': 0,
-    'teddy': 0
-  });
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardName, setCardName] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvc, setCardCvc] = useState('');
-  const [showBenefits, setShowBenefits] = useState(false);
-  const { toast } = useToast();
-  const { purchaseGifts } = useUser();
-
-  const giftItems: GiftItem[] = [
-    { 
-      id: 'rose', 
-      name: 'Virtual Rose', 
-      price: 20, 
-      icon: <Heart className="text-rose-500" />,
-      description: 'Send a beautiful rose to show your affection',
-      recipientBenefit: 'Recipient gains +2 popularity points'
-    },
-    { 
-      id: 'heart', 
-      name: 'Virtual Heart', 
-      price: 100, 
-      icon: <Heart className="text-red-500 fill-red-500" />,
-      description: 'Express your feelings with a premium heart',
-      recipientBenefit: 'Recipient gains +10 popularity points and 1 premium like token'
-    },
-    { 
-      id: 'teddy', 
-      name: 'Virtual Teddy Bear', 
-      price: 50, 
-      icon: <Gift className="text-amber-700" />,
-      description: 'A cute teddy bear to make them smile',
-      recipientBenefit: 'Recipient gains +5 popularity points and profile boost for 24 hours'
-    },
-  ];
-
-  const updateQuantity = (id: string, value: number) => {
-    if (value >= 0) {
-      setQuantities(prev => ({
-        ...prev,
-        [id]: value
-      }));
-    }
-  };
-
-  const getTotal = () => {
-    return giftItems.reduce((total, item) => {
-      return total + (item.price * (quantities[item.id] || 0));
-    }, 0);
-  };
-
-  const handleCheckout = () => {
-    if (getTotal() <= 0) {
-      toast({
-        title: "No items selected",
-        description: "Please add at least one gift to your cart",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsCheckingOut(true);
-  };
-
-  const handlePayment = async () => {
-    if (!cardNumber || !cardName || !cardExpiry || !cardCvc) {
-      toast({
-        title: "Incomplete payment details",
-        description: "Please fill in all payment information",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const itemsToPurchase = Object.entries(quantities)
-      .filter(([_, quantity]) => quantity > 0)
-      .map(([type, quantity]) => ({
-        type: type as 'rose' | 'heart' | 'teddy',
-        quantity
-      }));
-      
-    const success = await purchaseGifts(itemsToPurchase);
+  const { currentUser, purchaseGift } = useUser();
+  const [selectedGift, setSelectedGift] = useState<GiftItem | null>(null);
+  const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('available');
+  
+  if (!currentUser) return null;
+  
+  const handlePurchase = async () => {
+    if (!selectedGift) return;
     
-    if (success) {
-      toast({
-        title: "Purchase successful!",
-        description: `You purchased virtual gifts for $${getTotal()}`,
-      });
-
-      setQuantities({ 'rose': 0, 'heart': 0, 'teddy': 0 });
-      setIsCheckingOut(false);
-      setCardNumber('');
-      setCardName('');
-      setCardExpiry('');
-      setCardCvc('');
+    try {
+      // Call the purchaseGift function with the gift type
+      const success = await purchaseGift(selectedGift.type);
+      
+      if (success) {
+        toast.success(`You purchased a ${selectedGift.name}!`);
+        setPurchaseDialogOpen(false);
+      } else {
+        toast.error('Purchase failed. Please try again.');
+      }
+    } catch (error) {
+      toast.error('An error occurred during purchase.');
+      console.error('Purchase error:', error);
     }
   };
-
+  
+  const calculateInventory = (type: 'rose' | 'heart' | 'teddy'): number => {
+    return currentUser.giftInventory?.[type] || 0;
+  };
+  
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-love-500" />
-            Gift Shop
-          </h3>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-love-600 flex items-center gap-1"
-            onClick={() => setShowBenefits(!showBenefits)}
-          >
-            <Info size={16} />
-            Gift Benefits
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {showBenefits && (
-          <Card className="bg-love-50 border-love-100 mb-4">
-            <CardContent className="p-4">
-              <h4 className="font-semibold mb-2">Benefits for Recipients</h4>
-              <ul className="space-y-2 text-sm">
-                {giftItems.map((gift) => (
-                  <li key={`benefit-${gift.id}`} className="flex items-start gap-2">
-                    <div className="mt-1">{gift.icon}</div>
-                    <div>
-                      <span className="font-medium">{gift.name}:</span> {gift.recipientBenefit}
+    <div className="container mx-auto p-4 max-w-4xl">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Gift className="text-love-500" />
+          <span>Gift Shop</span>
+        </h1>
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          className="flex items-center gap-1"
+          onClick={() => setActiveTab('inventory')}
+        >
+          <Package size={16} />
+          <span>My Inventory</span>
+        </Button>
+      </div>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="w-full mb-6">
+          <TabsTrigger value="available" className="flex-1">
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Available Gifts
+          </TabsTrigger>
+          <TabsTrigger value="inventory" className="flex-1">
+            <Package className="mr-2 h-4 w-4" />
+            My Inventory
+          </TabsTrigger>
+          <TabsTrigger value="popular" className="flex-1">
+            <Award className="mr-2 h-4 w-4" />
+            Most Popular
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="available" className="focus-visible:outline-none focus-visible:ring-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {giftItems.map((gift) => (
+              <Card key={gift.id} className="overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center">
+                    <div className="text-6xl mb-4">{gift.icon}</div>
+                    <h3 className="text-xl font-semibold mb-1">{gift.name}</h3>
+                    <p className="text-muted-foreground text-sm mb-3 text-center">
+                      {gift.description}
+                    </p>
+                    
+                    <div className="flex items-center mb-4">
+                      {gift.discount ? (
+                        <>
+                          <span className="text-lg font-bold">${(gift.price * (1 - gift.discount / 100)).toFixed(2)}</span>
+                          <span className="text-muted-foreground line-through ml-2">${gift.price.toFixed(2)}</span>
+                          <Badge className="ml-2 bg-green-100 text-green-800">Save {gift.discount}%</Badge>
+                        </>
+                      ) : (
+                        <span className="text-lg font-bold">${gift.price.toFixed(2)}</span>
+                      )}
                     </div>
-                  </li>
+                    
+                    <Button 
+                      className="w-full bg-gradient-love hover:opacity-90"
+                      onClick={() => {
+                        setSelectedGift(gift);
+                        setPurchaseDialogOpen(true);
+                      }}
+                    >
+                      Purchase
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="inventory" className="focus-visible:outline-none focus-visible:ring-0">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Your Gift Inventory</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {giftItems.map((gift) => (
+                  <div key={gift.id} className="flex flex-col items-center p-4 border rounded-lg">
+                    <div className="text-4xl mb-3">{gift.icon}</div>
+                    <h3 className="font-medium">{gift.name}</h3>
+                    <span className="text-2xl font-bold mt-2">{calculateInventory(gift.type)}</span>
+                    <span className="text-sm text-muted-foreground">available</span>
+                  </div>
                 ))}
-              </ul>
-              <p className="text-xs text-muted-foreground mt-2">
-                Popularity points help boost your profile visibility in the matching algorithm.
-              </p>
+              </div>
+              
+              <Separator className="my-6" />
+              
+              <div className="text-center">
+                <p className="text-muted-foreground mb-4">
+                  Send gifts to profiles you're interested in to stand out from the crowd!
+                </p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActiveTab('available')}
+                >
+                  Get More Gifts
+                </Button>
+              </div>
             </CardContent>
           </Card>
-        )}
-
-        {!isCheckingOut ? (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {giftItems.map((item) => (
-                <Card key={item.id} className="border-love-100">
-                  <CardContent className="p-4 text-center">
-                    <div className="text-4xl mb-2 flex justify-center">{item.icon}</div>
-                    <h4 className="font-medium">{item.name}</h4>
-                    <p className="text-love-700 font-semibold">${item.price}</p>
-                    <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
-                    <Badge variant="outline" className="mb-4 bg-love-50 text-love-700 border-love-200 text-xs">
-                      {item.recipientBenefit}
-                    </Badge>
-                    
-                    <div className="flex items-center justify-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => updateQuantity(item.id, (quantities[item.id] || 0) - 1)}
-                        disabled={!quantities[item.id]}
-                      >-</Button>
-                      
-                      <Input 
-                        className="w-16 text-center" 
-                        value={quantities[item.id] || 0}
-                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 0)}
-                        min="0"
-                      />
-                      
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => updateQuantity(item.id, (quantities[item.id] || 0) + 1)}
-                      >+</Button>
+        </TabsContent>
+        
+        <TabsContent value="popular" className="focus-visible:outline-none focus-visible:ring-0">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Most Popular Gifts</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="flex items-center">
+                  <div className="text-3xl mr-4">❤️</div>
+                  <div className="flex-1">
+                    <h3 className="font-medium">Heart</h3>
+                    <p className="text-sm text-muted-foreground">Most popular gift this month</p>
+                    <div className="w-full bg-gray-200 h-2 rounded-full mt-2">
+                      <div className="bg-love-500 h-2 rounded-full" style={{ width: '80%' }}></div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="flex justify-between items-center pt-4 border-t">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Items: {Object.values(quantities).reduce((a, b) => a + b, 0)}</p>
-                <p className="font-medium">Total: ${getTotal()}</p>
-              </div>
-              
-              <Button 
-                className="bg-gradient-love hover:opacity-90"
-                onClick={handleCheckout}
-                disabled={getTotal() <= 0}
-              >
-                Checkout
-              </Button>
-            </div>
-          </>
-        ) : (
-          <div className="space-y-4">
-            <h4 className="font-medium">Payment Details</h4>
-            
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="card-number">Card Number</Label>
-                <Input 
-                  id="card-number" 
-                  placeholder="1234 5678 9012 3456"
-                  value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="card-name">Cardholder Name</Label>
-                <Input 
-                  id="card-name" 
-                  placeholder="John Doe"
-                  value={cardName}
-                  onChange={(e) => setCardName(e.target.value)}
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="card-expiry">Expiry Date</Label>
-                  <Input 
-                    id="card-expiry" 
-                    placeholder="MM/YY"
-                    value={cardExpiry}
-                    onChange={(e) => setCardExpiry(e.target.value)}
-                  />
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="ml-4"
+                    onClick={() => {
+                      const heartGift = giftItems.find(g => g.id === 'heart');
+                      if (heartGift) {
+                        setSelectedGift(heartGift);
+                        setPurchaseDialogOpen(true);
+                      }
+                    }}
+                  >
+                    Buy
+                  </Button>
                 </div>
-                <div>
-                  <Label htmlFor="card-cvc">CVC</Label>
-                  <Input 
-                    id="card-cvc" 
-                    placeholder="123"
-                    value={cardCvc}
-                    onChange={(e) => setCardCvc(e.target.value)}
-                  />
+                
+                <div className="flex items-center">
+                  <div className="text-3xl mr-4">🌹</div>
+                  <div className="flex-1">
+                    <h3 className="font-medium">Rose</h3>
+                    <p className="text-sm text-muted-foreground">Classic choice for showing interest</p>
+                    <div className="w-full bg-gray-200 h-2 rounded-full mt-2">
+                      <div className="bg-love-500 h-2 rounded-full" style={{ width: '65%' }}></div>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="ml-4"
+                    onClick={() => {
+                      const roseGift = giftItems.find(g => g.id === 'rose');
+                      if (roseGift) {
+                        setSelectedGift(roseGift);
+                        setPurchaseDialogOpen(true);
+                      }
+                    }}
+                  >
+                    Buy
+                  </Button>
+                </div>
+                
+                <div className="flex items-center">
+                  <div className="text-3xl mr-4">🧸</div>
+                  <div className="flex-1">
+                    <h3 className="font-medium">Teddy Bear</h3>
+                    <p className="text-sm text-muted-foreground">Premium gift with highest response rate</p>
+                    <div className="w-full bg-gray-200 h-2 rounded-full mt-2">
+                      <div className="bg-love-500 h-2 rounded-full" style={{ width: '50%' }}></div>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="ml-4"
+                    onClick={() => {
+                      const teddyGift = giftItems.find(g => g.id === 'teddy');
+                      if (teddyGift) {
+                        setSelectedGift(teddyGift);
+                        setPurchaseDialogOpen(true);
+                      }
+                    }}
+                  >
+                    Buy
+                  </Button>
                 </div>
               </div>
-            </div>
-            
-            <div className="pt-4 border-t">
-              <p className="font-medium mb-4">Order Summary</p>
-              {giftItems.map((item) => {
-                if (quantities[item.id] > 0) {
-                  return (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <span>{item.name} x{quantities[item.id]}</span>
-                      <span>${item.price * quantities[item.id]}</span>
-                    </div>
-                  );
-                }
-                return null;
-              })}
-              <div className="flex justify-between font-medium mt-2 pt-2 border-t">
-                <span>Total</span>
-                <span>${getTotal()}</span>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+      
+      <Dialog open={purchaseDialogOpen} onOpenChange={setPurchaseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Purchase</DialogTitle>
+          </DialogHeader>
+          
+          {selectedGift && (
+            <div className="flex flex-col items-center p-4">
+              <div className="text-6xl mb-4">{selectedGift.icon}</div>
+              <h3 className="text-xl font-semibold mb-1">{selectedGift.name}</h3>
+              <p className="text-muted-foreground text-sm mb-4 text-center">
+                {selectedGift.description}
+              </p>
+              
+              <div className="flex items-center mb-6">
+                {selectedGift.discount ? (
+                  <>
+                    <span className="text-2xl font-bold">
+                      ${(selectedGift.price * (1 - selectedGift.discount / 100)).toFixed(2)}
+                    </span>
+                    <span className="text-muted-foreground line-through ml-2">
+                      ${selectedGift.price.toFixed(2)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-2xl font-bold">${selectedGift.price.toFixed(2)}</span>
+                )}
+              </div>
+              
+              <div className="w-full">
+                <p className="text-sm text-muted-foreground mb-4 text-center">
+                  This gift will be added to your inventory and you can send it to anyone you're interested in.
+                </p>
               </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-
-      <CardFooter className="flex justify-between">
-        {isCheckingOut && (
-          <>
-            <Button variant="outline" onClick={() => setIsCheckingOut(false)}>
-              Back
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPurchaseDialogOpen(false)}>
+              Cancel
             </Button>
-            <Button className="bg-gradient-love hover:opacity-90" onClick={handlePayment}>
+            <Button onClick={handlePurchase} className="bg-gradient-love">
+              <CreditCard className="mr-2 h-4 w-4" />
               Complete Purchase
             </Button>
-          </>
-        )}
-      </CardFooter>
-    </Card>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 

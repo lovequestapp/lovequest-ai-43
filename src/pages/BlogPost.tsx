@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -10,26 +11,66 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Heart, MessageSquare, Share, User, ArrowLeft, Gift, Send } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
+import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { formatDistanceToNow } from 'date-fns';
-import GiftSelector from '@/components/GiftSelector';
+import { BlogPostType } from '@/types/user';
 import { toast } from "sonner";
 
 const BlogPost: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const navigate = useNavigate();
-  const { currentUser, getAllPosts, likeBlogPost, commentOnBlogPost } = useUser();
+  const { currentUser, sendGift } = useUser();
+  const { allPosts, findPostById, likePost, commentOnPost } = useBlogPosts();
+  
+  const [post, setPost] = useState<BlogPostType | null>(null);
   const [comment, setComment] = useState('');
   const [showGiftDialog, setShowGiftDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // Log that we've reached the BlogPost page
     console.log(`BlogPost page loaded for postId: ${postId}`);
-  }, [postId]);
+    
+    const loadPost = async () => {
+      if (!postId) return;
+      
+      try {
+        setIsLoading(true);
+        const foundPost = await findPostById(postId);
+        setPost(foundPost);
+      } catch (error) {
+        console.error('Error loading post:', error);
+        toast.error('Failed to load the blog post');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadPost();
+  }, [postId, findPostById]);
   
   if (!currentUser) return null;
   
-  const allPosts = getAllPosts();
-  const post = allPosts.find(p => p.id === postId);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <Button 
+            variant="ghost" 
+            className="mb-4" 
+            onClick={() => navigate('/explore')}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Explore
+          </Button>
+          <div className="p-8 text-center">
+            <div className="animate-pulse">Loading post...</div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
   
   if (!post) {
     return (
@@ -63,18 +104,16 @@ const BlogPost: React.FC = () => {
   const isCurrentUser = post.userId === currentUser.id;
   const author = isCurrentUser 
     ? currentUser.name 
-    : allPosts.find(p => p.userId === post.userId)?.comments[0]?.userName || 'Unknown';
+    : post.comments.length > 0 ? post.comments[0]?.userName : 'Unknown';
   
   const handleLike = () => {
-    likeBlogPost(post.id, post.userId);
-    toast.success("You liked this post!");
+    likePost(post.id);
   };
   
   const handleComment = () => {
     if (comment.trim()) {
-      commentOnBlogPost(post.id, comment);
+      commentOnPost(post.id, comment);
       setComment('');
-      toast.success("Comment added successfully!");
     }
   };
   
@@ -83,7 +122,7 @@ const BlogPost: React.FC = () => {
     if (currentUser.giftInventory && currentUser.giftInventory[giftType] > 0) {
       // This is a simplified implementation since the UserContext doesn't have a direct 
       // method to send gifts to posts, but this would be the logical place to add it
-      commentOnBlogPost(post.id, `I sent you a ${giftType}! 💝`);
+      commentOnPost(post.id, `I sent you a ${giftType}! 💝`);
       toast.success(`You sent a ${giftType}!`);
       // In a real implementation, you would update the gift count for the post
       // For now, we'll just add a comment

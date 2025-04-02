@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,27 +9,11 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useUser } from '@/context/UserContext';
+import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { FilePen, FileText, Heart, MessageSquare, Plus, Share, Send, Trash, Edit } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from "sonner";
-
-type BlogPostType = {
-  id: string;
-  userId: string;
-  title: string;
-  content: string;
-  createdAt: Date;
-  likes: number;
-  comments: {
-    id: string;
-    postId: string;
-    userId: string;
-    userName: string;
-    content: string;
-    createdAt: Date;
-  }[];
-  tags: string[];
-};
+import { BlogPostType } from '@/types/user';
 
 interface BlogPostProps {
   post: BlogPostType;
@@ -352,29 +335,61 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({
 };
 
 const Blog: React.FC = () => {
-  const { currentUser, createBlogPost, updateBlogPost, deleteBlogPost, likeBlogPost, commentOnBlogPost, getUserPosts } = useUser();
+  const { currentUser } = useUser();
+  const { 
+    allPosts, 
+    createPost, 
+    updatePost, 
+    deletePost, 
+    likePost, 
+    commentOnPost, 
+    fetchUserPosts
+  } = useBlogPosts();
+  
+  const [userPosts, setUserPosts] = useState<BlogPostType[]>([]);
   const [editingPost, setEditingPost] = useState<{
     id: string;
     title: string;
     content: string;
     tags: string[];
   } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    const loadUserPosts = async () => {
+      if (currentUser) {
+        setIsLoading(true);
+        try {
+          const posts = await fetchUserPosts(currentUser.id);
+          setUserPosts(posts);
+        } catch (error) {
+          console.error("Error loading user posts:", error);
+          toast.error("Failed to load your posts");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    loadUserPosts();
+  }, [currentUser, fetchUserPosts]);
   
   if (!currentUser) return null;
   
-  const userPosts = getUserPosts(currentUser.id);
-  
   const handleCreatePost = (title: string, content: string, tags: string[]) => {
-    createBlogPost(title, content, tags);
-    toast.success("Post created successfully!");
+    createPost({
+      title,
+      content,
+      tags,
+      userId: currentUser.id
+    });
   };
   
   const handleUpdatePost = (title: string, content: string, tags: string[]) => {
     if (editingPost) {
-      updateBlogPost(editingPost.id, { title, content, tags });
+      updatePost(editingPost.id, { title, content, tags });
       setEditingPost(null);
-      toast.success("Post updated successfully!");
     }
   };
   
@@ -391,23 +406,24 @@ const Blog: React.FC = () => {
   };
   
   const handleDeletePost = (postId: string) => {
-    deleteBlogPost(postId);
-    toast.success("Post deleted successfully!");
+    deletePost(postId);
   };
   
   const handleLikePost = (postId: string) => {
-    likeBlogPost(postId, currentUser.id);
-    toast.success("You liked this post!");
+    likePost(postId);
   };
   
   const handleCommentPost = (postId: string, comment: string) => {
-    commentOnBlogPost(postId, comment);
-    toast.success("Comment added successfully!");
+    commentOnPost(postId, comment);
   };
   
-  const handleViewPost = (postId: string) => {
-    navigate(`/blog/${postId}`);
-  };
+  if (isLoading) {
+    return (
+      <div className="p-4 text-center">
+        <p>Loading your posts...</p>
+      </div>
+    );
+  }
   
   return (
     <div>

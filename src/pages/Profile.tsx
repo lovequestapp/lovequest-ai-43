@@ -22,27 +22,40 @@ import {
 const Profile = () => {
   const { userId } = useParams();
   const { currentUser, getProfileById, sendGift } = useUser();
-  const [profileUser, setProfileUser] = useState(currentUser);
+  const [profileUser, setProfileUser] = useState<typeof currentUser>(currentUser);
   const [isOwnProfile, setIsOwnProfile] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     // If userId is provided and it's not the current user's ID, fetch that user's profile
-    if (userId && currentUser && userId !== currentUser.id) {
-      const otherUser = getProfileById(userId);
-      if (otherUser) {
-        setProfileUser(otherUser);
-        setIsOwnProfile(false);
+    const fetchProfile = async () => {
+      if (userId && currentUser && userId !== currentUser.id) {
+        setIsLoading(true);
+        try {
+          const otherUser = await getProfileById(userId);
+          if (otherUser) {
+            setProfileUser(otherUser);
+            setIsOwnProfile(false);
+          } else {
+            // Handle case where user is not found
+            toast.error("User not found");
+            navigate("/discover");
+          }
+        } catch (error) {
+          console.error("Error fetching profile:", error);
+          toast.error("Could not load profile");
+        } finally {
+          setIsLoading(false);
+        }
       } else {
-        // Handle case where user is not found
-        toast.error("User not found");
-        navigate("/discover");
+        setProfileUser(currentUser);
+        setIsOwnProfile(true);
       }
-    } else {
-      setProfileUser(currentUser);
-      setIsOwnProfile(true);
-    }
+    };
+    
+    fetchProfile();
   }, [userId, currentUser, getProfileById, navigate]);
 
   const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
@@ -52,11 +65,24 @@ const Profile = () => {
     toast.success(`Sent a ${giftType} to ${profileUser.name}!`);
   };
 
-  if (!profileUser || !currentUser) {
+  if (isLoading) {
     return (
       <MobileContainer>
         <div className="flex items-center justify-center h-full">
           <div className="animate-pulse">Loading profile...</div>
+        </div>
+      </MobileContainer>
+    );
+  }
+
+  if (!profileUser || !currentUser) {
+    return (
+      <MobileContainer>
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <p className="mb-4">Profile not found</p>
+            <Button onClick={() => navigate(-1)}>Go Back</Button>
+          </div>
         </div>
       </MobileContainer>
     );

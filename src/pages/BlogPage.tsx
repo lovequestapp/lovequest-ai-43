@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -7,34 +7,43 @@ import MobileContainer from '@/components/MobileContainer';
 import Blog from '@/components/Blog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from '@/context/UserContext';
+import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { BlogPostType } from '@/types/user';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FileText, Users, Zap } from 'lucide-react';
 
 const BlogPage = () => {
-  const { currentUser, getAllPosts, getFilteredPosts } = useUser();
+  const { currentUser } = useUser();
+  const { allPosts, fetchFilteredPosts, isLoadingPosts } = useBlogPosts();
   const [activeTab, setActiveTab] = useState('my-posts');
+  const [filteredPosts, setFilteredPosts] = useState<BlogPostType[]>([]);
+  const [popularPosts, setPopularPosts] = useState<BlogPostType[]>([]);
   const navigate = useNavigate();
 
-  if (!currentUser) return null;
+  useEffect(() => {
+    const loadFilteredPosts = async () => {
+      const posts = await fetchFilteredPosts('');
+      setFilteredPosts(posts);
+    };
+    
+    loadFilteredPosts();
+  }, [fetchFilteredPosts]);
 
-  const allPosts = getAllPosts();
-  const filteredPosts = getFilteredPosts();
-  
-  // Sort posts by creation date (newest first)
-  const sortedAllPosts = [...allPosts].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-  
-  // Find popular posts (posts with most likes and comments)
-  const popularPosts = [...allPosts]
-    .sort((a, b) => {
-      const aEngagement = a.likes + a.comments.length;
-      const bEngagement = b.likes + b.comments.length;
-      return bEngagement - aEngagement;
-    })
-    .slice(0, 5);
+  useEffect(() => {
+    // Find popular posts (posts with most likes and comments)
+    if (allPosts.length > 0) {
+      const sorted = [...allPosts]
+        .sort((a, b) => {
+          const aEngagement = a.likes + a.comments.length;
+          const bEngagement = b.likes + b.comments.length;
+          return bEngagement - aEngagement;
+        })
+        .slice(0, 5);
+      
+      setPopularPosts(sorted);
+    }
+  }, [allPosts]);
   
   // Find potential matches based on blog interactions
   const findPotentialMatches = () => {
@@ -42,9 +51,9 @@ const BlogPage = () => {
     
     // Count interactions with other users' posts
     allPosts.forEach(post => {
-      if (post.userId !== currentUser.id) {
+      if (post.userId !== currentUser?.id) {
         // Check if current user liked or commented on this post
-        const hasCommented = post.comments.some(comment => comment.userId === currentUser.id);
+        const hasCommented = post.comments.some(comment => comment.userId === currentUser?.id);
         
         if (hasCommented) {
           const count = userInteractions.get(post.userId) || 0;
@@ -61,6 +70,8 @@ const BlogPage = () => {
   };
   
   const potentialMatchIds = findPotentialMatches();
+
+  if (!currentUser) return null;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -97,8 +108,12 @@ const BlogPage = () => {
               
               <TabsContent value="explore" className="focus-visible:outline-none focus-visible:ring-0">
                 <div className="space-y-6">
-                  {sortedAllPosts.length > 0 ? (
-                    sortedAllPosts.map(post => (
+                  {isLoadingPosts ? (
+                    <div className="text-center py-10">
+                      <p className="text-muted-foreground">Loading posts...</p>
+                    </div>
+                  ) : allPosts.length > 0 ? (
+                    allPosts.map(post => (
                       <PostCard 
                         key={post.id} 
                         post={post} 
@@ -115,7 +130,11 @@ const BlogPage = () => {
               
               <TabsContent value="for-you" className="focus-visible:outline-none focus-visible:ring-0">
                 <div className="space-y-6">
-                  {filteredPosts.length > 0 ? (
+                  {isLoadingPosts ? (
+                    <div className="text-center py-10">
+                      <p className="text-muted-foreground">Loading personalized posts...</p>
+                    </div>
+                  ) : filteredPosts.length > 0 ? (
                     filteredPosts.map(post => (
                       <PostCard 
                         key={post.id} 

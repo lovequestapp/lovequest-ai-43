@@ -1,6 +1,6 @@
 
 import { useUser } from '@/context/UserContext';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 import { BlogPostType, BlogComment } from '@/types/user';
 import { useAsyncQuery } from './useAsyncQuery';
@@ -20,54 +20,79 @@ export const useBlogPosts = () => {
     getFilteredPosts 
   } = useUser();
   
+  const [allBlogPosts, setAllBlogPosts] = useState<BlogPostType[]>([]);
+  const [userBlogPosts, setUserBlogPosts] = useState<BlogPostType[]>([]);
+  const [filteredBlogPosts, setFilteredBlogPosts] = useState<BlogPostType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Fetch all posts
   const fetchAllPosts = useCallback(async () => {
     try {
-      return await getAllPosts();
+      setIsLoading(true);
+      const posts = await getAllPosts();
+      setAllBlogPosts(posts);
+      return posts;
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast.error('Failed to load blog posts');
+      setError('Failed to load blog posts');
       return [];
+    } finally {
+      setIsLoading(false);
     }
   }, [getAllPosts]);
   
-  const { 
-    data: allPosts, 
-    isLoading: isLoadingPosts, 
-    error: postsError,
-    refetch: refetchPosts
-  } = useAsyncQuery(fetchAllPosts, [], []);
+  // Initial data fetch
+  useEffect(() => {
+    fetchAllPosts();
+  }, [fetchAllPosts]);
   
+  // Fetch posts by user
   const fetchPostsByUser = useCallback(async (userId: string) => {
     try {
-      return await getUserPosts(userId);
+      setIsLoading(true);
+      const posts = await getUserPosts(userId);
+      setUserBlogPosts(posts);
+      return posts;
     } catch (error) {
       console.error('Error fetching user posts:', error);
       toast.error('Failed to load user posts');
       return [];
+    } finally {
+      setIsLoading(false);
     }
   }, [getUserPosts]);
   
+  // Fetch filtered posts
   const fetchPostsByFilter = useCallback(async (filter: string) => {
     try {
-      return await getFilteredPosts(filter);
+      setIsLoading(true);
+      const posts = await getFilteredPosts(filter);
+      setFilteredBlogPosts(posts);
+      return posts;
     } catch (error) {
       console.error('Error fetching filtered posts:', error);
       toast.error('Failed to load filtered posts');
       return [];
+    } finally {
+      setIsLoading(false);
     }
   }, [getFilteredPosts]);
   
+  // Find post by ID
   const findPostById = useCallback(async (postId: string) => {
     const posts = await fetchAllPosts();
     return posts.find(post => post.id === postId) || null;
   }, [fetchAllPosts]);
   
+  // Create post
   const handleCreatePost = async (post: Omit<BlogPostType, 'id' | 'createdAt' | 'updatedAt' | 'likes' | 'comments'>) => {
     try {
       const success = await createBlogPost(post);
       if (success) {
         toast.success('Post created successfully');
-        refetchPosts();
+        fetchAllPosts();
         return true;
       } else {
         throw new Error('Failed to create post');
@@ -79,12 +104,13 @@ export const useBlogPosts = () => {
     }
   };
   
+  // Update post
   const handleUpdatePost = async (postId: string, data: Partial<BlogPostType>) => {
     try {
       const success = await updateBlogPost(postId, data);
       if (success) {
         toast.success('Post updated successfully');
-        refetchPosts();
+        fetchAllPosts();
         return true;
       } else {
         throw new Error('Failed to update post');
@@ -96,12 +122,13 @@ export const useBlogPosts = () => {
     }
   };
   
+  // Delete post
   const handleDeletePost = async (postId: string) => {
     try {
       const success = await deleteBlogPost(postId);
       if (success) {
         toast.success('Post deleted successfully');
-        refetchPosts();
+        fetchAllPosts();
         return true;
       } else {
         throw new Error('Failed to delete post');
@@ -113,12 +140,13 @@ export const useBlogPosts = () => {
     }
   };
   
+  // Like post
   const handleLikePost = async (postId: string) => {
     try {
       const success = await likeBlogPost(postId);
       if (success) {
         toast.success('Post liked');
-        refetchPosts();
+        fetchAllPosts();
         return true;
       } else {
         throw new Error('Failed to like post');
@@ -130,12 +158,13 @@ export const useBlogPosts = () => {
     }
   };
   
+  // Comment on post
   const handleCommentOnPost = async (postId: string, comment: string) => {
     try {
       const success = await commentOnBlogPost(postId, comment);
       if (success) {
         toast.success('Comment added');
-        refetchPosts();
+        fetchAllPosts();
         return true;
       } else {
         throw new Error('Failed to add comment');
@@ -148,9 +177,9 @@ export const useBlogPosts = () => {
   };
   
   return {
-    allPosts,
-    isLoadingPosts,
-    postsError,
+    allPosts: allBlogPosts,
+    isLoadingPosts: isLoading,
+    postsError: error,
     fetchUserPosts: fetchPostsByUser,
     fetchFilteredPosts: fetchPostsByFilter,
     findPostById,
@@ -159,6 +188,6 @@ export const useBlogPosts = () => {
     deletePost: handleDeletePost,
     likePost: handleLikePost,
     commentOnPost: handleCommentOnPost,
-    refetchPosts
+    refetchPosts: fetchAllPosts
   };
 };
