@@ -48,7 +48,20 @@ export const useGifts = () => {
       }
       
       if (data?.gift_inventory) {
-        setInventory(data.gift_inventory as GiftInventory);
+        // Type assertion to ensure we're safely converting the JSON to our expected type
+        const giftInventory = data.gift_inventory as unknown as GiftInventory;
+        
+        // Validate the structure before setting it
+        if (
+          typeof giftInventory === 'object' && 
+          ('rose' in giftInventory) && 
+          ('heart' in giftInventory) && 
+          ('teddy' in giftInventory)
+        ) {
+          setInventory(giftInventory);
+        } else {
+          console.error('Invalid gift inventory structure:', giftInventory);
+        }
       }
     } catch (err) {
       console.error('Failed to update inventory:', err);
@@ -58,7 +71,18 @@ export const useGifts = () => {
   // Initialize inventory from currentUser
   useEffect(() => {
     if (currentUser?.giftInventory) {
-      setInventory(currentUser.giftInventory as GiftInventory);
+      // Type assertion to ensure we're safely converting the giftInventory to our expected type
+      const giftInventory = currentUser.giftInventory as unknown as GiftInventory;
+      
+      // Validate the structure before setting it
+      if (
+        typeof giftInventory === 'object' && 
+        ('rose' in giftInventory) && 
+        ('heart' in giftInventory) && 
+        ('teddy' in giftInventory)
+      ) {
+        setInventory(giftInventory);
+      }
     }
   }, [currentUser?.giftInventory]);
   

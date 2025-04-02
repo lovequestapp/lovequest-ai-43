@@ -71,11 +71,20 @@ const GiftTransactionHistory = () => {
             }
           }
           
+          // Ensure gift_type is one of the allowed values
+          const validGiftType = (transaction.gift_type === 'rose' || 
+                                transaction.gift_type === 'heart' || 
+                                transaction.gift_type === 'teddy') 
+                                ? transaction.gift_type as 'rose' | 'heart' | 'teddy' 
+                                : 'rose'; // Default to 'rose' if invalid
+          
           return {
             ...transaction,
             sender_name: senderName,
             recipient_name: recipientName,
-          };
+            gift_type: validGiftType,
+            transaction_type: transaction.transaction_type as 'purchase' | 'gift'
+          } as Transaction;
         }));
         
         setTransactions(processedData);
