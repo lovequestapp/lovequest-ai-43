@@ -1,68 +1,79 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { useUser } from '@/context/UserContext';
+import { Video, PhoneOff } from 'lucide-react';
 import { toast } from 'sonner';
-import { Video } from 'lucide-react';
-import VideoCall from '@/components/VideoCall';
+import { useVideoCall } from '@/hooks/useVideoCall';
 
 interface VideoCallActionProps {
   recipientId: string;
+  recipientName: string;
 }
 
-const VideoCallAction: React.FC<VideoCallActionProps> = ({ recipientId }) => {
-  const { currentUser, initiateVideoCall } = useUser();
-  const [isCallActive, setIsCallActive] = useState(false);
-  const [callId, setCallId] = useState<string>("");
+const VideoCallAction: React.FC<VideoCallActionProps> = ({ recipientId, recipientName }) => {
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+  const { isCallActive, startCall, stopCall } = useVideoCall();
   
   const handleStartCall = async () => {
-    if (!currentUser) {
-      toast.error("You must be logged in to start a video call");
-      return;
-    }
-    
-    try {
-      const newCallId = await initiateVideoCall(recipientId);
-      if (newCallId) {
-        setCallId(newCallId);
-        setIsCallActive(true);
-      }
-    } catch (error) {
-      console.error("Error starting video call:", error);
-      toast.error("Failed to start video call");
+    setIsCallModalOpen(true);
+    const success = await startCall(recipientId);
+    if (!success) {
+      setIsCallModalOpen(false);
     }
   };
   
-  const handleCloseCall = () => {
-    setIsCallActive(false);
-    setCallId("");
+  const handleEndCall = () => {
+    stopCall();
+    setIsCallModalOpen(false);
   };
   
   return (
-    <>
-      <Button 
-        variant="ghost" 
-        size="icon"
-        onClick={handleStartCall}
-        className="rounded-full h-10 w-10"
-      >
-        <Video className="h-5 w-5" />
-      </Button>
+    <div className="mt-2">
+      {!isCallActive ? (
+        <Button 
+          variant="outline" 
+          className="w-full flex items-center justify-center gap-2"
+          onClick={handleStartCall}
+        >
+          <Video size={16} />
+          <span>Start Video Call</span>
+        </Button>
+      ) : (
+        <Button 
+          variant="destructive" 
+          className="w-full flex items-center justify-center gap-2"
+          onClick={handleEndCall}
+        >
+          <PhoneOff size={16} />
+          <span>End Call</span>
+        </Button>
+      )}
       
-      <Dialog open={isCallActive} onOpenChange={(open) => !open && handleCloseCall()}>
-        <DialogContent className="p-0 max-w-full h-[100dvh] md:h-auto md:max-h-[90vh] md:max-w-[90vw] md:w-auto">
-          {callId && (
-            <VideoCall 
-              callId={callId}
-              recipientId={recipientId}
-              initiator={true}
-              onClose={handleCloseCall}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+      {isCallModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg w-full max-w-md">
+            <h3 className="text-xl font-semibold mb-4">
+              {isCallActive ? `Video Call with ${recipientName}` : 'Connecting...'}
+            </h3>
+            <div className="aspect-video bg-muted rounded-md mb-4 flex items-center justify-center">
+              {isCallActive ? (
+                <video className="w-full h-full object-cover rounded-md" autoPlay muted />
+              ) : (
+                <div className="animate-pulse">Connecting to video call...</div>
+              )}
+            </div>
+            <Button 
+              variant="destructive" 
+              className="w-full" 
+              onClick={handleEndCall}
+            >
+              <PhoneOff className="mr-2 h-4 w-4" />
+              End Call
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

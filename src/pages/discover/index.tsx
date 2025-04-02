@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/context/UserContext';
-import { toast } from 'sonner'; // Added missing import
+import { toast } from 'sonner';
 import { User, UserWithCoordinates } from '@/types/user';
 import useMatchProcessing from './hooks/useMatchProcessing';
 import ProfileCard from '@/components/ProfileCard';
@@ -26,31 +27,55 @@ const Discover = () => {
     currentUser
   );
   const [showFilters, setShowFilters] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (allUsers && currentUser) {
-      // Mock setting coordinates for all users
-      const usersWithCoordinates = allUsers.map(user => ({
-        ...user,
-        coordinates: {
-          latitude: 40.7128, // Example latitude for New York
-          longitude: -74.0060, // Example longitude for New York
-        }
-      })) as UserWithCoordinates[];
-      setProfiles(usersWithCoordinates);
+      setIsLoading(true);
+      try {
+        // Mock setting coordinates for all users
+        const usersWithCoordinates = allUsers.map(user => ({
+          ...user,
+          coordinates: {
+            latitude: 40.7128, // Example latitude for New York
+            longitude: -74.0060, // Example longitude for New York
+          }
+        })) as UserWithCoordinates[];
+        setProfiles(usersWithCoordinates);
+      } catch (err) {
+        setError('Failed to load profiles');
+        toast.error('Failed to load profiles');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
     }
   }, [allUsers, currentUser]);
 
   useEffect(() => {
-    applyFilters();
+    setIsLoading(true);
+    try {
+      applyFilters();
+    } catch (err) {
+      setError('Failed to apply filters');
+      toast.error('Failed to apply filters');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   }, [applyFilters]);
 
-  const handleBoostProfile = (userId: string, level: 'local' | 'international') => {
-    boostProfile(userId, level);
-    toast({
-      title: "Profile Boosted!",
-      description: `Your profile is now boosted ${level}ly!`,
-    });
+  const handleBoostProfile = (userId: string) => {
+    try {
+      boostProfile(userId, 'local');
+      toast.success("Profile Boosted!", {
+        description: "Your profile is now boosted locally!",
+      });
+    } catch (err) {
+      toast.error("Failed to boost profile");
+      console.error(err);
+    }
   };
 
   return (
@@ -115,13 +140,29 @@ const Discover = () => {
             )}
 
             <TabsContent value="recommended" className="space-y-4">
-              {filteredUsers.length > 0 ? (
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading profiles...</p>
+                </div>
+              ) : error ? (
+                <div className="text-center py-12 text-red-500">
+                  <p>{error}</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => applyFilters()} 
+                    className="mt-4"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ) : filteredUsers.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredUsers.map((profile) => (
                     <ProfileCard
                       key={profile.id}
                       profile={profile}
-                      onBoost={() => handleBoostProfile(profile.id, 'local')}
+                      onBoost={() => handleBoostProfile(profile.id)}
                     />
                   ))}
                 </div>
