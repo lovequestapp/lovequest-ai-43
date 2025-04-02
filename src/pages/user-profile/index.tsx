@@ -26,25 +26,37 @@ const UserProfile = () => {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const refreshUserProfile = async () => {
-      if (!currentUser) return;
+      if (!currentUser?.id) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
+        setError(null);
+        
+        console.log('Fetching profile data for user ID:', currentUser.id);
         const userProfile = await fetchUserProfile(currentUser.id);
           
         if (userProfile) {
+          console.log('Profile data loaded successfully:', userProfile);
           setProfileData(userProfile);
           setCurrentUser(userProfile);
         } else {
+          console.error('Failed to load profile data - no data returned');
+          setError('Failed to load profile data');
           toast.error('Failed to load profile data');
         }
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         console.error('Error in profile fetch:', err);
-        toast.error('Error refreshing profile data');
+        setError(errorMessage);
+        toast.error(`Error loading profile: ${errorMessage}`);
       } finally {
         setLoading(false);
       }
@@ -53,8 +65,9 @@ const UserProfile = () => {
     refreshUserProfile();
   }, [currentUser?.id, setCurrentUser]);
 
-  if (!currentUser) {
-    return null; // ProtectedRoute will handle redirecting
+  if (!currentUser && !loading) {
+    navigate('/login');
+    return null;
   }
 
   const getRoleBadge = () => {
@@ -135,6 +148,21 @@ const UserProfile = () => {
               Edit Profile
             </Button>
           </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-800">
+              <p className="font-medium">Error loading profile</p>
+              <p className="text-sm">{error}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2" 
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </Button>
+            </div>
+          )}
 
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid grid-cols-4 mb-8">

@@ -29,7 +29,16 @@ export const useProtectedRoute = ({
         setIsLoading(true);
         
         // Check if we have a session
-        const { data } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session error:", error);
+          if (requireAuth) {
+            navigate(redirectPath);
+          }
+          return;
+        }
+        
         const isAuthenticated = !!data.session;
         
         if (requireAuth && !isAuthenticated) {
@@ -58,11 +67,16 @@ export const useProtectedRoute = ({
             }
           } else {
             // Fetch user profile if currentUser is not available
-            const { data: profileData } = await supabase
+            const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('role, premium_status')
               .eq('id', data.session?.user.id)
               .single();
+              
+            if (profileError) {
+              console.error("Profile fetch error:", profileError);
+              return;
+            }
               
             if (profileData) {
               setUserRole(profileData.role);

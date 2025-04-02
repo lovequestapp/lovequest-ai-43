@@ -24,6 +24,10 @@ export const useUserProfile = () => {
     setUpdateError(null);
     
     try {
+      if (!currentUser?.id) {
+        throw new Error('User not authenticated');
+      }
+      
       const success = await updateProfile(data);
       if (success) {
         toast.success('Profile updated successfully');
@@ -33,6 +37,7 @@ export const useUserProfile = () => {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      console.error('Profile update error:', error);
       setUpdateError(errorMessage);
       toast.error(`Error updating profile: ${errorMessage}`);
       return false;
@@ -46,6 +51,10 @@ export const useUserProfile = () => {
     setUpdateError(null);
     
     try {
+      if (!currentUser?.id) {
+        throw new Error('User not authenticated');
+      }
+      
       const success = await updateProfileField(field, value);
       if (success) {
         toast.success(`Updated ${field.toString()}`);
@@ -55,6 +64,7 @@ export const useUserProfile = () => {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      console.error('Field update error:', error);
       setUpdateError(errorMessage);
       toast.error(errorMessage);
       return false;
@@ -68,11 +78,16 @@ export const useUserProfile = () => {
     setUpdateError(null);
     
     try {
+      if (!currentUser?.id) {
+        throw new Error('User not authenticated');
+      }
+      
       const photoUrl = await uploadProfilePhoto(file);
       toast.success('Photo uploaded successfully');
       return photoUrl;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to upload photo';
+      console.error('Photo upload error:', error);
       setUpdateError(errorMessage);
       toast.error(errorMessage);
       throw error;
@@ -86,6 +101,10 @@ export const useUserProfile = () => {
     setUpdateError(null);
     
     try {
+      if (!currentUser?.id) {
+        throw new Error('User not authenticated');
+      }
+      
       const success = await deleteProfilePhoto(photoUrl);
       if (success) {
         toast.success('Photo deleted successfully');
@@ -95,6 +114,7 @@ export const useUserProfile = () => {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      console.error('Photo delete error:', error);
       setUpdateError(errorMessage);
       toast.error(errorMessage);
       return false;

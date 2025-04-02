@@ -16,7 +16,21 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   const userData = profile || currentUser;
 
   if (!userData) {
-    return <div>Loading profile...</div>;
+    return (
+      <div className="p-6 text-center">
+        <div className="animate-pulse space-y-4">
+          <div className="flex justify-center">
+            <div className="h-20 w-20 rounded-full bg-gray-200"></div>
+          </div>
+          <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Safe function to calculate total gifts
@@ -40,7 +54,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
         
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-2xl font-semibold">{userData.name}</h2>
+            <h2 className="text-2xl font-semibold">{userData.name || 'No Name'}</h2>
             <Badge variant="outline" className="bg-love-50 text-love-700">
               {userData.premiumStatus?.charAt(0).toUpperCase() + userData.premiumStatus?.slice(1) || 'Basic'}
             </Badge>
@@ -51,7 +65,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
             )}
           </div>
           
-          <p className="text-gray-600">{userData.email}</p>
+          <p className="text-gray-600">{userData.email || 'No email'}</p>
           <p className="text-gray-600">{userData.location || 'No location set'}</p>
         </div>
       </div>
