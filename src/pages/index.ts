@@ -1,3 +1,4 @@
+
 import Home from './home';
 import Register from './register';
 import Login from './Login';
@@ -13,8 +14,8 @@ import BlogPage from './BlogPage';
 import BlogPost from './BlogPost';
 import Explore from './Explore';
 import Preferences from '@/pages/Preferences';
-import Verification from './verification';
-import EmailConfirmation from './email-confirmation';
+import Verification from './Verification';
+import EmailConfirmation from './EmailConfirmation';
 import EmailConfirmSuccess from './auth/confirm-email';
 
 export {
