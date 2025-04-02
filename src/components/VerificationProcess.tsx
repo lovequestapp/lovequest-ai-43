@@ -25,13 +25,14 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
   const handleStartVerification = () => {
     setShowVerification(true);
     setStep(2);
+    setProgress(10); // Initialize progress
   };
   
   const handleProgressUpdate = (progress: number) => {
     setProgress(progress);
   };
   
-  const handleVerificationComplete = async (success: boolean, verificationId?: string) => {
+  const handleVerificationComplete = async (success: boolean, verificationId?: string, selfieUrl?: string, documentUrl?: string) => {
     if (!success || !verificationId || !currentUser) {
       toast.error("Verification failed. Please try again later.");
       return;
@@ -40,6 +41,23 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
     setIsProcessing(true);
     
     try {
+      // Generate a biometric score (simulated in this case)
+      const biometricScore = 0.85 + (Math.random() * 0.1); // Simulated score between 0.85 and 0.95
+      
+      // Create verification request record
+      const { error: requestError } = await supabase
+        .from('verification_requests')
+        .insert({
+          user_id: currentUser.id,
+          verification_id: verificationId,
+          selfie_url: selfieUrl,
+          document_url: documentUrl,
+          biometric_match_score: biometricScore,
+          verification_status: 'pending'
+        });
+        
+      if (requestError) throw requestError;
+      
       // Update user's verification status
       const { error: updateError } = await supabase
         .from('profiles')
@@ -51,17 +69,24 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
       if (updateError) throw updateError;
       
       // Notify admin of new verification request
-      const { data: verificationData } = await supabase
+      const { data: verificationData, error: notifyError } = await supabase
         .functions.invoke('account-verification', {
           body: {
             action: 'notify_admin',
             userId: currentUser.id,
             verificationId,
-            biometricScore: 0.85 + (Math.random() * 0.1) // Simulated score between 0.85 and 0.95
+            selfieUrl,
+            documentUrl,
+            biometricScore
           }
         });
       
-      console.log('Verification notification sent:', verificationData);
+      if (notifyError) {
+        console.error('Verification notification error:', notifyError);
+        // Continue anyway since the verification data is saved
+      } else {
+        console.log('Verification notification sent:', verificationData);
+      }
       
       // Update local user state
       setCurrentUser({
@@ -70,10 +95,11 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
       });
       
       setStep(3);
+      setProgress(100);
       toast.success("Verification submitted successfully!");
     } catch (error) {
       console.error('Error during verification process:', error);
-      toast.error("There was a problem submitting your verification.");
+      toast.error("There was a problem submitting your verification. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -148,6 +174,7 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
             <IdentityVerification 
               onVerificationComplete={handleVerificationComplete}
               onProgressUpdate={handleProgressUpdate}
+              isProcessing={isProcessing}
             />
           </div>
         );

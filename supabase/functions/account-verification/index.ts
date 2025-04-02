@@ -66,11 +66,20 @@ serve(async (req) => {
       console.log(`Subject: ${emailSubject}`)
       console.log(`Body: ${emailBody}`)
 
-      // Update notification status
-      await supabase
+      // Create or update notification record
+      const { error: notificationError } = await supabase
         .from('verification_notifications')
-        .update({ status: 'notified' })
-        .eq('verification_id', verificationId)
+        .upsert({ 
+          user_id: userId,
+          verification_id: verificationId,
+          email: profile.email,
+          name: profile.name,
+          status: 'notified'
+        })
+
+      if (notificationError) {
+        console.error('Error creating notification record:', notificationError)
+      }
 
       return new Response(
         JSON.stringify({ success: true, message: 'Admin notified' }),
@@ -88,6 +97,52 @@ serve(async (req) => {
           Location: redirectUrl,
         }
       })
+    }
+
+    // For verification approval
+    if (action === 'approve_verification') {
+      if (!verificationId) {
+        return new Response(
+          JSON.stringify({ error: 'Missing verification ID' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Update verification request
+      const { data: verificationData, error: verificationError } = await supabase
+        .from('verification_requests')
+        .update({ 
+          verification_status: 'approved',
+          verified_at: new Date().toISOString(),
+          admin_notes: body.notes || 'Approved'
+        })
+        .eq('verification_id', verificationId)
+        .select('user_id')
+        .single()
+
+      if (verificationError || !verificationData) {
+        console.error('Error updating verification request:', verificationError)
+        throw new Error('Failed to update verification request')
+      }
+
+      // Update user profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ 
+          verification_status: 'verified',
+          is_verified: true
+        })
+        .eq('id', verificationData.user_id)
+
+      if (profileError) {
+        console.error('Error updating user profile:', profileError)
+        throw new Error('Failed to update user profile')
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, message: 'Verification approved' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     return new Response(

@@ -3,22 +3,23 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Camera, CheckCircle, Upload, Fingerprint } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface IdentityVerificationProps {
-  onVerificationComplete: (success: boolean, verificationId?: string) => void;
+  onVerificationComplete: (success: boolean, verificationId?: string, selfieUrl?: string, documentUrl?: string) => void;
   onProgressUpdate: (progress: number) => void;
+  isProcessing?: boolean;
 }
 
 const IdentityVerification: React.FC<IdentityVerificationProps> = ({ 
   onVerificationComplete,
-  onProgressUpdate
+  onProgressUpdate,
+  isProcessing = false
 }) => {
-  const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [selfieCapture, setSelfieCapture] = useState<string | null>(null);
   const [documentCapture, setDocumentCapture] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -36,10 +37,8 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
       }
     } catch (error) {
       console.error("Error accessing camera:", error);
-      toast({
-        title: "Camera Access Error",
-        description: "We couldn't access your camera. Please make sure you've granted camera permissions.",
-        variant: "destructive"
+      toast.error("Camera Access Error", {
+        description: "We couldn't access your camera. Please make sure you've granted camera permissions."
       });
     }
   };
@@ -54,6 +53,7 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
   };
   
   const captureSelfie = () => {
+    setIsCapturing(true);
     if (canvasRef.current && videoRef.current) {
       const context = canvasRef.current.getContext('2d');
       if (context) {
@@ -65,6 +65,8 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
         setSelfieCapture(dataUrl);
         stopCamera();
         setStep(2);
+        onProgressUpdate(40);
+        setIsCapturing(false);
       }
     }
   };
@@ -76,13 +78,14 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
       reader.onload = (event) => {
         setDocumentCapture(event.target?.result as string);
         setStep(3);
+        onProgressUpdate(70);
       };
       reader.readAsDataURL(file);
     }
   };
   
   const simulateVerification = () => {
-    setIsProcessing(true);
+    setIsCapturing(true);
     
     // Simulate a multi-step verification process
     const totalSteps = 5;
@@ -90,7 +93,7 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
     
     const interval = setInterval(() => {
       currentStep++;
-      const progress = Math.floor((currentStep / totalSteps) * 100);
+      const progress = Math.floor(70 + (currentStep / totalSteps) * 30);
       onProgressUpdate(progress);
       
       const messages = [
@@ -102,26 +105,18 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
       ];
       
       if (currentStep <= totalSteps) {
-        toast({
-          title: "Verification in Progress",
-          description: messages[currentStep - 1],
-        });
+        toast.info(messages[currentStep - 1]);
       }
       
       if (currentStep === totalSteps) {
         clearInterval(interval);
-        setIsProcessing(false);
+        setIsCapturing(false);
         
         // Generate a fake verification ID that looks realistic
         const verificationId = `VID-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${Date.now().toString().substring(6)}`;
         
-        // Call the completion callback
-        onVerificationComplete(true, verificationId);
-        
-        toast({
-          title: "Verification Complete",
-          description: "Your identity has been successfully verified!",
-        });
+        // Call the completion callback with the captures
+        onVerificationComplete(true, verificationId, selfieCapture || undefined, documentCapture || undefined);
       }
     }, 1200);
   };
@@ -130,8 +125,8 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
     setSelfieCapture(null);
     setDocumentCapture(null);
     setStep(1);
-    setIsProcessing(false);
-    onProgressUpdate(0);
+    setIsCapturing(false);
+    onProgressUpdate(10);
   };
   
   // Clean up camera resources when component unmounts
@@ -154,6 +149,7 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
             <Button 
               onClick={startCamera} 
               className="w-full flex items-center justify-center gap-2"
+              disabled={isProcessing || isCapturing}
             >
               <Camera size={18} />
               Access Camera
@@ -175,14 +171,16 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
                   variant="secondary" 
                   onClick={stopCamera} 
                   className="flex-1"
+                  disabled={isProcessing || isCapturing}
                 >
                   Cancel
                 </Button>
                 <Button 
                   onClick={captureSelfie} 
                   className="flex-1"
+                  disabled={isProcessing || isCapturing}
                 >
-                  Take Photo
+                  {isCapturing ? 'Processing...' : 'Take Photo'}
                 </Button>
               </div>
               
@@ -223,10 +221,12 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
               className="hidden"
               accept="image/*"
               onChange={handleDocumentUpload}
+              disabled={isProcessing || isCapturing}
             />
             <Button
               onClick={() => document.getElementById('document-upload')?.click()}
               variant="outline"
+              disabled={isProcessing || isCapturing}
             >
               Select Document
             </Button>
@@ -275,17 +275,17 @@ const IdentityVerification: React.FC<IdentityVerificationProps> = ({
           
           <Button
             onClick={simulateVerification}
-            disabled={isProcessing}
+            disabled={isProcessing || isCapturing}
             className="w-full flex items-center justify-center gap-2"
           >
             <Fingerprint size={18} />
-            {isProcessing ? "Verifying..." : "Complete Verification"}
+            {isCapturing ? "Verifying..." : "Complete Verification"}
           </Button>
           
           <Button
             variant="outline"
             onClick={resetVerification}
-            disabled={isProcessing}
+            disabled={isProcessing || isCapturing}
             className="w-full mt-2"
           >
             Start Over
