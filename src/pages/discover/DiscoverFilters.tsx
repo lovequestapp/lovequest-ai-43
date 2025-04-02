@@ -142,17 +142,7 @@ const DiscoverFilters: React.FC<DiscoverFiltersProps> = ({
                 />
               </div>
               
-              <div>
-                <Label className="text-xs">Age: {preferences.matchingPriorities?.age || 5}</Label>
-                <Slider
-                  defaultValue={[preferences.matchingPriorities?.age || 5]}
-                  min={1}
-                  max={10}
-                  step={1}
-                  onValueChange={(value) => handlePriorityChange(value, 'age')}
-                  className="mt-1"
-                />
-              </div>
+              {/* Removed the duplicate age slider from here */}
             </div>
           </div>
 
