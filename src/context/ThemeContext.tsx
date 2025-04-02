@@ -20,7 +20,7 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
     // Save theme preference
@@ -32,9 +32,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     document.documentElement.style.removeProperty('--accent');
     document.documentElement.style.removeProperty('--sidebar-accent');
   }, [theme]);
-
-  // Since we're removing dark mode, setTheme is a no-op function
-  const setTheme = () => {};
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
