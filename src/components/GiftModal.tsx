@@ -49,3 +49,5 @@ export const GiftModal: React.FC<GiftModalProps> = ({ isOpen, onClose, onSendGif
     </Dialog>
   );
 };
+
+export default GiftModal;

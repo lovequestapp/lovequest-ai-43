@@ -17,7 +17,7 @@ export interface UserPreferences {
     app: boolean;
   };
   preferredLocations?: string[];
-  matchingPriorities?: {
+  matchingPriorities: {
     distance: number;
     interests: number;
     personality: number;

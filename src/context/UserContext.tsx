@@ -1,64 +1,60 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast } from "sonner";
-import { supabase } from '@/integrations/supabase/client';
-import { User, Message, BlogPostType, GiftInventory, BoostLevelType, UserWithCoordinates, UserPreferences, BlogComment } from '@/types/user';
-import { updateProfileData, uploadProfilePhoto, fetchUserProfile } from '@/services/profileService';
+import { toast } from 'sonner';
+import { User, Message, UserPreferences } from '@/types/user';
+import { calculateCompatibilityScore } from '@/utils/matchingAlgorithm';
 
-interface UserContextType {
+// Define the shape of our context
+export interface UserContextType {
   currentUser: User | null;
   setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
   login: (email: string, password: string) => Promise<boolean>;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<boolean>;
-  uploadProfilePhoto: (file: File) => Promise<string | null>;
-  likeProfile: (profileId: string) => void;
-  passProfile: (profileId: string) => void;
-  getCompatibilityScore: (user1: User, user2: User) => number;
-  boostProfile: (boostType: 'local' | 'international') => boolean;
-  getProfileById: (id: string) => User | null;
-  sendGift: (recipientId: string, giftType: 'rose' | 'heart' | 'teddy') => boolean;
-  getMatches: () => User[];
-  getUserPosts: (userId: string) => BlogPostType[];
-  createBlogPost: (title: string, content: string, tags: string[]) => void;
-  updateBlogPost: (postId: string, updates: Partial<BlogPostType>) => void;
-  deleteBlogPost: (postId: string) => void;
-  likeBlogPost: (postId: string, userId: string) => void;
-  commentOnBlogPost: (postId: string, content: string) => void;
-  initiateVideoCall: (userId: string) => Promise<string>;
-  acceptVideoCall: (callId: string) => Promise<boolean>;
-  rejectVideoCall: (callId: string) => void;
-  endVideoCall: (callId: string) => void;
+  updateProfileField: <K extends keyof User>(field: K, value: User[K]) => Promise<boolean>;
   isAuthenticated: boolean;
+  isLookingFor: (gender: 'male' | 'female' | 'non-binary') => boolean;
+  activateAccount: (activationCode: string) => Promise<boolean>;
+  isAdmin: boolean;
+  isModerator: boolean;
+  isVIP: boolean;
+  getCompatibilityScore: (user1: User, user2: User) => number;
+  likeProfile: (userId: string) => void;
+  passProfile: (userId: string) => void;
+  allUsers: User[];
+  likeUser: (userId: string) => void;
+  passUser: (userId: string) => void;
   potentialMatches: User[];
   matches: User[];
   messages: Message[];
   sendMessage: (recipientId: string, content: string) => void;
   markMessagesAsRead: (messageIds: string[]) => void;
-  updateUserProfile: (userId: string, data: Partial<User>) => Promise<boolean>;
-  getGiftBenefits: () => any;
-  allUsers: User[];
-  addUser: (user: User) => void;
-  deleteUser: (userId: string) => void;
-  updateUserData: (userId: string, data: Partial<User>) => void;
-  getAllPosts: () => BlogPostType[];
-  getFilteredPosts: () => BlogPostType[];
-  likeUser: (userId: string) => void;
-  passUser: (userId: string) => void;
-  boostedProfiles: User[];
-  getGiftInventory: () => GiftInventory;
-  purchaseGifts: (gifts: { type: 'rose' | 'heart' | 'teddy', quantity: number }[]) => Promise<boolean>;
-  getGiftMonetizationDetails: () => any;
-  initiateWithdrawal: (amount: number) => Promise<boolean>;
-  updateBankDetails: (details: User['bankDetails']) => Promise<boolean>;
-  getWithdrawalHistory: () => any[];
-  getPendingWithdrawal: () => any;
+  updateUserProfile: (data: Partial<User>) => Promise<boolean>;
+  getGiftBenefits: () => Record<string, number>;
+  resetPassword: (email: string) => Promise<boolean>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<boolean>;
+  sendGift: (recipientId: string, giftType: 'rose' | 'heart' | 'teddy') => Promise<boolean>;
+  uploadVoiceIntro: (audioBlob: Blob) => Promise<string>;
+  getVoiceIntro: (userId: string) => Promise<string | null>;
+  boostProfile: (level: 'local' | 'international' | 'super') => boolean;
+  uploadProfilePhoto: (file: File) => Promise<string>;
+  deleteProfilePhoto: (photoUrl: string) => Promise<boolean>;
+  updateLocation: (lat: number, lng: number) => Promise<boolean>;
+  reportUser: (userId: string, reason: string) => Promise<boolean>;
+  blockUser: (userId: string) => Promise<boolean>;
+  unblockUser: (userId: string) => Promise<boolean>;
+  sendVerificationRequest: () => Promise<boolean>;
+  withdrawBalance: (amount: number, bankDetails: User['bankDetails']) => Promise<boolean>;
+  getBalance: () => number;
+  getWithdrawalHistory: () => Array<{ amount: number; date: Date; status: string }>;
+  getPendingWithdrawal: () => { amount: number; date: Date } | null;
   updatePreferences: (preferences: Partial<UserPreferences>) => Promise<boolean>;
   getUser: (userId: string) => Promise<User | null>;
   allMessages: Message[];
 }
 
+// Create the context with a default value (can be null or a default object)
 const UserContext = createContext<UserContextType>({
   currentUser: null,
   setCurrentUser: () => {},
@@ -66,25 +62,19 @@ const UserContext = createContext<UserContextType>({
   register: async () => false,
   logout: async () => {},
   updateProfile: async () => false,
-  uploadProfilePhoto: async () => null,
+  updateProfileField: async () => false,
+  isAuthenticated: false,
+  isLookingFor: () => false,
+  activateAccount: async () => false,
+  isAdmin: false,
+  isModerator: false,
+  isVIP: false,
+  getCompatibilityScore: () => 0,
   likeProfile: () => {},
   passProfile: () => {},
-  getCompatibilityScore: () => 0,
-  boostProfile: () => false,
-  getProfileById: () => null,
-  sendGift: () => false,
-  getMatches: () => [],
-  getUserPosts: () => [],
-  createBlogPost: () => {},
-  updateBlogPost: () => {},
-  deleteBlogPost: () => {},
-  likeBlogPost: () => {},
-  commentOnBlogPost: () => {},
-  initiateVideoCall: async () => "",
-  acceptVideoCall: async () => false,
-  rejectVideoCall: () => {},
-  endVideoCall: () => {},
-  isAuthenticated: false,
+  allUsers: [],
+  likeUser: () => {},
+  passUser: () => {},
   potentialMatches: [],
   matches: [],
   messages: [],
@@ -92,20 +82,21 @@ const UserContext = createContext<UserContextType>({
   markMessagesAsRead: () => {},
   updateUserProfile: async () => false,
   getGiftBenefits: () => ({}),
-  allUsers: [],
-  addUser: () => {},
-  deleteUser: () => {},
-  updateUserData: () => {},
-  getAllPosts: () => [],
-  getFilteredPosts: () => [],
-  likeUser: () => {},
-  passUser: () => {},
-  boostedProfiles: [],
-  getGiftInventory: () => ({ rose: 0, heart: 0, teddy: 0 }),
-  purchaseGifts: async () => false,
-  getGiftMonetizationDetails: () => ({}),
-  initiateWithdrawal: async () => false,
-  updateBankDetails: async () => false,
+  resetPassword: async () => false,
+  changePassword: async () => false,
+  sendGift: async () => false,
+  uploadVoiceIntro: async () => '',
+  getVoiceIntro: async () => null,
+  boostProfile: () => false,
+  uploadProfilePhoto: async () => '',
+  deleteProfilePhoto: async () => false,
+  updateLocation: async () => false,
+  reportUser: async () => false,
+  blockUser: async () => false,
+  unblockUser: async () => false,
+  sendVerificationRequest: async () => false,
+  withdrawBalance: async () => false,
+  getBalance: () => 0,
   getWithdrawalHistory: () => [],
   getPendingWithdrawal: () => null,
   updatePreferences: async () => false,
@@ -113,44 +104,181 @@ const UserContext = createContext<UserContextType>({
   allMessages: [],
 });
 
+// Create a custom hook to use the context
+export const useUser = () => useContext(UserContext);
+
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [likedProfiles, setLikedProfiles] = useState<Set<string>>(new Set());
-  const [passedProfiles, setPassedProfiles] = useState<Set<string>>(new Set());
-  const [blogPosts, setBlogPosts] = useState<BlogPostType[]>([]);
-  const [activeVideoCalls, setActiveVideoCalls] = useState<Record<string, {
-    callId: string,
-    userId: string,
-    status: 'pending' | 'active' | 'ended' | 'rejected'
-  }>>({});
+  const [allUsers, setAllUsers] = useState<User[]>([
+    {
+      id: '1',
+      name: 'Alice',
+      email: 'alice@example.com',
+      age: 28,
+      bio: 'Software Engineer',
+      location: 'New York',
+      interests: ['coding', 'hiking', 'reading'],
+      photos: ['https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80'],
+      gender: 'female',
+      interestedIn: ['male', 'non-binary'],
+      popularityPoints: 150,
+      premiumStatus: 'basic',
+      giftInventory: { rose: 0, heart: 0, teddy: 0 },
+      receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+      compatibilityScore: 0,
+      personalityTraits: ['kind', 'funny'],
+      role: 'subscriber',
+      isBanned: false,
+      verificationStatus: 'verified',
+      lastMessage: '',
+      lastMessageTime: new Date(),
+      status: 'online',
+      favoriteMusic: [],
+      voiceIntro: '',
+      bankDetails: {
+        accountName: '',
+        accountNumber: '',
+        bankName: '',
+        routingNumber: '',
+        accountType: ''
+      }
+    },
+    {
+      id: '2',
+      name: 'Bob',
+      email: 'bob@example.com',
+      age: 32,
+      bio: 'Data Scientist',
+      location: 'Los Angeles',
+      interests: ['data', 'movies', 'travel'],
+      photos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80'],
+      gender: 'male',
+      interestedIn: ['female'],
+      popularityPoints: 200,
+      premiumStatus: 'premium',
+      giftInventory: { rose: 0, heart: 0, teddy: 0 },
+      receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+      compatibilityScore: 0,
+      personalityTraits: ['smart', 'adventurous'],
+      role: 'subscriber',
+      isBanned: false,
+      verificationStatus: 'unverified',
+      lastMessage: '',
+      lastMessageTime: new Date(),
+      status: 'offline',
+      favoriteMusic: [],
+      voiceIntro: '',
+      bankDetails: {
+        accountName: '',
+        accountNumber: '',
+        bankName: '',
+        routingNumber: '',
+        accountType: ''
+      }
+    },
+    {
+      id: '3',
+      name: 'Charlie',
+      email: 'charlie@example.com',
+      age: 25,
+      bio: 'UX Designer',
+      location: 'San Francisco',
+      interests: ['design', 'music', 'yoga'],
+      photos: ['https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?w=400&q=80'],
+      gender: 'non-binary',
+      interestedIn: ['male', 'female', 'non-binary'],
+      popularityPoints: 120,
+      premiumStatus: 'vip',
+      giftInventory: { rose: 0, heart: 0, teddy: 0 },
+      receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+      compatibilityScore: 0,
+      personalityTraits: ['creative', 'friendly'],
+      role: 'subscriber',
+      isBanned: false,
+      verificationStatus: 'pending',
+      lastMessage: '',
+      lastMessageTime: new Date(),
+      status: 'away',
+      favoriteMusic: [],
+      voiceIntro: '',
+      bankDetails: {
+        accountName: '',
+        accountNumber: '',
+        bankName: '',
+        routingNumber: '',
+        accountType: ''
+      }
+    },
+  ]);
   const [messages, setMessages] = useState<Message[]>([]);
   const navigate = useNavigate();
-  
-  const isAuthenticated = currentUser !== null;
-  
+
+  useEffect(() => {
+    // Mock authentication check
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    if (isLoggedIn === 'true') {
+      // Mock user data
+      setCurrentUser({
+        id: 'mock-user-id',
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        age: 30,
+        bio: 'Software Engineer',
+        location: 'New York',
+        interests: ['coding', 'hiking', 'reading'],
+        photos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80'],
+        gender: 'male',
+        interestedIn: ['female'],
+        popularityPoints: 100,
+        premiumStatus: 'basic',
+        giftInventory: { rose: 0, heart: 0, teddy: 0 },
+        receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+        compatibilityScore: 0,
+        personalityTraits: ['kind', 'funny'],
+        role: 'subscriber',
+        isBanned: false,
+        verificationStatus: 'unverified',
+        lastMessage: '',
+        lastMessageTime: new Date(),
+        status: 'online',
+        favoriteMusic: [],
+        voiceIntro: '',
+        bankDetails: {
+          accountName: '',
+          accountNumber: '',
+          bankName: '',
+          routingNumber: '',
+          accountType: ''
+        }
+      });
+    }
+  }, []);
+
   const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      if (email === "hunainm.qureshi@gmail.com" && password === "LoveQuest14") {
-        const adminUser: User = {
-          id: "admin-special-id",
-          name: "Admin",
-          email: "hunainm.qureshi@gmail.com",
+    // Mock login
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        localStorage.setItem('isLoggedIn', 'true');
+        setCurrentUser({
+          id: 'mock-user-id',
+          name: 'John Doe',
+          email: 'john.doe@example.com',
           age: 30,
-          bio: "System Administrator",
-          location: "System",
-          interests: ["administration", "management"],
-          photos: [],
-          gender: 'non-binary',
-          interestedIn: ['male', 'female', 'non-binary'],
+          bio: 'Software Engineer',
+          location: 'New York',
+          interests: ['coding', 'hiking', 'reading'],
+          photos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80'],
+          gender: 'male',
+          interestedIn: ['female'],
           popularityPoints: 100,
-          premiumStatus: 'vip',
-          giftInventory: { rose: 999, heart: 999, teddy: 999 },
+          premiumStatus: 'basic',
+          giftInventory: { rose: 0, heart: 0, teddy: 0 },
           receivedGifts: { rose: 0, heart: 0, teddy: 0 },
           compatibilityScore: 0,
-          personalityTraits: ["organized", "detail-oriented"],
-          role: 'admin',
+          personalityTraits: ['kind', 'funny'],
+          role: 'subscriber',
           isBanned: false,
-          verificationStatus: 'verified',
+          verificationStatus: 'unverified',
           lastMessage: '',
           lastMessageTime: new Date(),
           status: 'online',
@@ -163,568 +291,331 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
             routingNumber: '',
             accountType: ''
           }
-        };
-        
-        setCurrentUser(adminUser);
-        toast.success("Admin login successful!");
-        return true;
-      }
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) {
-        toast.error("Login failed", {
-          description: error.message
         });
-        return false;
-      }
-      
-      if (data.user) {
-        toast.success("Login successful!");
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error("Login failed", {
-        description: "An unexpected error occurred"
-      });
-      return false;
-    }
+        toast.success('Login successful!');
+        navigate('/discover');
+        resolve(true);
+      }, 1000);
+    });
   };
-  
+
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
+    // Mock register
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        localStorage.setItem('isLoggedIn', 'true');
+        setCurrentUser({
+          id: 'mock-user-id',
+          name: name,
+          email: email,
+          age: 30,
+          bio: 'Software Engineer',
+          location: 'New York',
+          interests: ['coding', 'hiking', 'reading'],
+          photos: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80'],
+          gender: 'male',
+          interestedIn: ['female'],
+          popularityPoints: 100,
+          premiumStatus: 'basic',
+          giftInventory: { rose: 0, heart: 0, teddy: 0 },
+          receivedGifts: { rose: 0, heart: 0, teddy: 0 },
+          compatibilityScore: 0,
+          personalityTraits: ['kind', 'funny'],
+          role: 'subscriber',
+          isBanned: false,
+          verificationStatus: 'unverified',
+          lastMessage: '',
+          lastMessageTime: new Date(),
+          status: 'online',
+          favoriteMusic: [],
+          voiceIntro: '',
+          bankDetails: {
+            accountName: '',
+            accountNumber: '',
+            bankName: '',
+            routingNumber: '',
+            accountType: ''
           }
-        }
-      });
-      
-      if (error) {
-        toast.error("Registration failed", {
-          description: error.message
         });
-        return false;
-      }
-      
-      if (data.user) {
-        const { error: profileError } = await (supabase
-          .from('profiles') as any)
-          .insert([
-            { 
-              id: data.user.id,
-              name,
-              email,
-              created_at: new Date().toISOString(),
-            }
-          ]);
-          
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          toast.error("Failed to create profile", {
-            description: profileError.message
-          });
-          return false;
-        }
-        
-        toast.success("Registration successful!");
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error('Registration error:', error);
-      toast.error("Registration failed", {
-        description: "An unexpected error occurred"
-      });
-      return false;
-    }
+        toast.success('Registration successful!');
+        navigate('/discover');
+        resolve(true);
+      }, 1000);
+    });
   };
-  
+
   const logout = async (): Promise<void> => {
-    try {
-      await supabase.auth.signOut();
-      setCurrentUser(null);
-      toast.success("Logged out successfully");
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error("Logout failed", {
-        description: "An unexpected error occurred"
-      });
-    }
+    // Mock logout
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        localStorage.removeItem('isLoggedIn');
+        setCurrentUser(null);
+        toast.success('Logout successful!');
+        navigate('/login');
+        resolve();
+      }, 500);
+    });
   };
-  
+
   const updateProfile = async (data: Partial<User>): Promise<boolean> => {
-    try {
-      if (!currentUser) {
-        toast.error("You must be logged in to update your profile");
-        return false;
-      }
-      
-      const success = await updateProfileData(currentUser.id, data);
-      
-      if (success) {
-        setCurrentUser(prev => {
-          if (prev) {
-            return { ...prev, ...data };
-          }
-          return prev;
-        });
-        
-        toast.success("Profile updated successfully!");
-        return true;
-      } else {
-        toast.error("Failed to update profile");
-        return false;
-      }
-    } catch (error: any) {
-      console.error('Update profile error:', error);
-      toast.error("Failed to update profile", {
-        description: "An unexpected error occurred"
-      });
-      return false;
-    }
+    // Mock update profile
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        setCurrentUser((prev) => prev ? { ...prev, ...data } : null);
+        toast.success('Profile updated successfully!');
+        resolve(true);
+      }, 500);
+    });
   };
-  
-  const uploadProfilePhotoHandler = async (file: File): Promise<string | null> => {
-    try {
-      if (!currentUser) {
-        toast.error("You must be logged in to upload a photo");
-        return null;
-      }
-      
-      const photoUrl = await uploadProfilePhoto(currentUser.id, file);
-      
-      if (photoUrl) {
-        const newPhotos = [...(currentUser.photos || []), photoUrl];
-        
-        await updateProfileData(currentUser.id, { photos: newPhotos });
-        
-        setCurrentUser(prev => {
-          if (prev) {
-            return { ...prev, photos: newPhotos };
-          }
-          return prev;
-        });
-        
-        toast.success("Photo uploaded successfully!");
-        return photoUrl;
-      }
-      
-      return null;
-    } catch (error: any) {
-      console.error('Upload photo error:', error);
-      toast.error("Failed to upload photo", {
-        description: "An unexpected error occurred"
-      });
-      return null;
-    }
+
+  const updateProfileField = async <K extends keyof User>(field: K, value: User[K]): Promise<boolean> => {
+    // Mock update profile field
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        setCurrentUser((prev) => prev ? { ...prev, [field]: value } : null);
+        toast.success('Profile updated successfully!');
+        resolve(true);
+      }, 500);
+    });
   };
-  
-  const likeProfile = (profileId: string) => {
-    setLikedProfiles(prev => new Set(prev).add(profileId));
+
+  const isAuthenticated = !!currentUser;
+
+  const isLookingFor = (gender: 'male' | 'female' | 'non-binary'): boolean => {
+    return currentUser?.interestedIn?.includes(gender) || false;
   };
-  
-  const passProfile = (profileId: string) => {
-    setPassedProfiles(prev => new Set(prev).add(profileId));
+
+  const activateAccount = async (activationCode: string): Promise<boolean> => {
+    // Mock activate account
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('Account activated with code:', activationCode);
+        toast.success('Account activated successfully!');
+        resolve(true);
+      }, 500);
+    });
   };
-  
+
+  const isAdmin = currentUser?.role === 'admin';
+  const isModerator = currentUser?.role === 'moderator';
+  const isVIP = currentUser?.premiumStatus === 'vip';
+
   const getCompatibilityScore = (user1: User, user2: User): number => {
-    if (!user1 || !user2) return 0;
-    
-    let score = 0;
-    let totalFactors = 0;
-    
-    if (user1.interestedIn.includes(user2.gender) && user2.interestedIn.includes(user1.gender)) {
-      score += 25;
-    } else {
-      return Math.floor(Math.random() * 20) + 5;
-    }
-    totalFactors += 25;
-    
-    const sharedInterests = user1.interests.filter(interest => 
-      user2.interests.includes(interest)
-    ).length;
-    
-    const interestScore = Math.min(25, (sharedInterests / Math.max(1, Math.min(user1.interests.length, user2.interests.length))) * 25);
-    score += interestScore;
-    totalFactors += 25;
-    
-    const sharedTraits = user1.personalityTraits.filter(trait => 
-      user2.personalityTraits.includes(trait)
-    ).length;
-    
-    const traitScore = Math.min(25, (sharedTraits / Math.max(1, Math.min(user1.personalityTraits.length, user2.personalityTraits.length))) * 25);
-    score += traitScore;
-    totalFactors += 25;
-    
-    const ageDifference = Math.abs(user1.age - user2.age);
-    const ageScore = Math.max(0, 25 - (ageDifference * 2));
-    score += ageScore;
-    totalFactors += 25;
-    
-    const finalScore = Math.round((score / totalFactors) * 100);
-    
-    const randomFactor = Math.floor(Math.random() * 10) - 5;
-    
-    return Math.max(0, Math.min(100, finalScore + randomFactor));
+    return calculateCompatibilityScore(user1, user2);
   };
-  
-  const boostProfile = (boostType: 'local' | 'international'): boolean => {
-    toast.success(`Profile boosted! Your profile will appear at the top for the next 24 hours`, {
-      description: boostType === 'local' ? 'Local boost activated' : 'International boost activated'
+
+  const likeProfile = (userId: string): void => {
+    // Mock like profile
+    console.log('Liked profile with ID:', userId);
+    toast.success('Profile liked!');
+  };
+
+  const passProfile = (userId: string): void => {
+    // Mock pass profile
+    console.log('Passed profile with ID:', userId);
+    toast.success('Profile passed!');
+  };
+
+  const likeUser = (userId: string): void => {
+    console.log('Liked user with ID:', userId);
+  };
+
+  const passUser = (userId: string): void => {
+    console.log('Passed user with ID:', userId);
+  };
+
+  const potentialMatches = allUsers.filter(user => user.id !== currentUser?.id);
+  const matches = allUsers.filter(user => user.id !== currentUser?.id).slice(0, 3);
+
+  const updateUserProfile = async (data: Partial<User>): Promise<boolean> => {
+    // Mock update user profile
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        setCurrentUser((prev) => prev ? { ...prev, ...data } : null);
+        toast.success('Profile updated successfully!');
+        resolve(true);
+      }, 500);
     });
-    
+  };
+
+  const resetPassword = async (email: string): Promise<boolean> => {
+    // Mock reset password
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('Password reset email sent to:', email);
+        toast.success('Password reset email sent!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const changePassword = async (oldPassword: string, newPassword: string): Promise<boolean> => {
+    // Mock change password
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('Password changed successfully!');
+        toast.success('Password changed successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const sendGift = async (recipientId: string, giftType: 'rose' | 'heart' | 'teddy'): Promise<boolean> => {
+    // Mock send gift
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Gift ${giftType} sent to user with ID: ${recipientId}`);
+        toast.success(`Gift ${giftType} sent successfully!`);
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const uploadVoiceIntro = async (audioBlob: Blob): Promise<string> => {
+    // Mock upload voice intro
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const url = 'https://example.com/voice-intro.mp3';
+        console.log('Voice intro uploaded successfully!');
+        toast.success('Voice intro uploaded successfully!');
+        resolve(url);
+      }, 500);
+    });
+  };
+
+  const getVoiceIntro = async (userId: string): Promise<string | null> => {
+    // Mock get voice intro
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('Voice intro retrieved for user with ID:', userId);
+        resolve('https://example.com/voice-intro.mp3');
+      }, 500);
+    });
+  };
+
+  const boostProfile = (level: 'local' | 'international' | 'super'): boolean => {
+    // Mock boost profile
+    console.log('Profile boosted with level:', level);
+    toast.success(`Profile boosted with ${level} level!`);
     return true;
   };
-  
-  const getProfileById = (id: string): User | null => {
-    if (currentUser && currentUser.id === id) {
-      return currentUser;
-    }
-    
-    return null;
-  };
-  
-  const sendGift = (recipientId: string, giftType: 'rose' | 'heart' | 'teddy'): boolean => {
-    if (!currentUser) {
-      toast.error("You must be logged in to send gifts");
-      return false;
-    }
-    
-    if (currentUser.giftInventory[giftType] <= 0) {
-      toast.error(`You don't have any ${giftType}s to send`);
-      return false;
-    }
-    
-    setCurrentUser(prev => {
-      if (prev) {
-        const updatedInventory = { ...prev.giftInventory };
-        updatedInventory[giftType] -= 1;
-        
-        return {
-          ...prev,
-          giftInventory: updatedInventory
-        };
-      }
-      return prev;
-    });
-    
-    toast.success(`Gift sent successfully!`);
-    return true;
-  };
-  
-  const getMatches = (): User[] => {
-    return [];
-  };
-  
-  const getUserPosts = (userId: string): BlogPostType[] => {
-    return blogPosts.filter(post => post.userId === userId);
-  };
-  
-  const createBlogPost = (title: string, content: string, tags: string[]) => {
-    if (!currentUser) {
-      toast.error("You must be logged in to create a post");
-      return;
-    }
-    
-    const newPost: BlogPostType = {
-      id: `post-${Date.now()}-${Math.random().toString(36).substring(2)}`,
-      userId: currentUser.id,
-      title,
-      content,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      likes: 0,
-      comments: [],
-      tags
-    };
-    
-    setBlogPosts(prev => [newPost, ...prev]);
-    
-    setCurrentUser(prev => {
-      if (prev) {
-        return {
-          ...prev,
-          popularityPoints: Math.min(100, prev.popularityPoints + 5)
-        };
-      }
-      return prev;
-    });
-    
-    toast.success("Post created! +5 popularity points");
-  };
-  
-  const updateBlogPost = (postId: string, updates: Partial<BlogPostType>) => {
-    setBlogPosts(prev => prev.map(post => {
-      if (post.id === postId) {
-        return { ...post, ...updates };
-      }
-      return post;
-    }));
-  };
-  
-  const deleteBlogPost = (postId: string) => {
-    setBlogPosts(prev => prev.filter(post => post.id !== postId));
-  };
-  
-  const likeBlogPost = (postId: string, userId: string) => {
-    setBlogPosts(prev => prev.map(post => {
-      if (post.id === postId) {
-        const alreadyLiked = post.likes > 0;
-        
-        if (post.userId !== currentUser?.id && !alreadyLiked) {
-          toast.success("The post creator earned popularity points!");
-        }
-        
-        return { ...post, likes: alreadyLiked ? post.likes : post.likes + 1 };
-      }
-      return post;
-    }));
-  };
-  
-  const commentOnBlogPost = (postId: string, content: string) => {
-    if (!currentUser) {
-      toast.error("You must be logged in to comment");
-      return;
-    }
-    
-    setBlogPosts(prev => prev.map(post => {
-      if (post.id === postId) {
-        const newComment: BlogComment = {
-          id: `comment-${Date.now()}-${Math.random().toString(36).substring(2)}`,
-          postId,
-          userId: currentUser.id,
-          userName: currentUser.name,
-          content,
-          createdAt: new Date()
-        };
-        
-        return {
-          ...post,
-          comments: [...post.comments, newComment]
-        };
-      }
-      return post;
-    }));
-  };
-  
-  const initiateVideoCall = async (userId: string): Promise<string> => {
-    if (!currentUser) {
-      toast.error("You must be logged in to start a video call");
-      return "";
-    }
-    
-    const callId = `call-${Date.now()}-${Math.random().toString(36).substring(2)}`;
-    
-    setActiveVideoCalls(prev => ({
-      ...prev,
-      [callId]: {
-        callId,
-        userId,
-        status: 'pending'
-      }
-    }));
-    
-    setTimeout(() => {
-      setActiveVideoCalls(prev => ({
-        ...prev,
-        [callId]: {
-          ...prev[callId],
-          status: 'active'
-        }
-      }));
-      
-      toast.success("Call connected!");
-      
-    }, 2000);
-    
-    toast.success("Calling user...");
-    return callId;
-  };
-  
-  const acceptVideoCall = async (callId: string): Promise<boolean> => {
-    if (!currentUser) {
-      toast.error("You must be logged in to accept a video call");
-      return false;
-    }
-    
-    if (!activeVideoCalls[callId]) {
-      toast.error("Call not found or has ended");
-      return false;
-    }
-    
-    setActiveVideoCalls(prev => ({
-      ...prev,
-      [callId]: {
-        ...prev[callId],
-        status: 'active'
-      }
-    }));
-    
-    toast.success("Call connected!");
-    return true;
-  };
-  
-  const rejectVideoCall = (callId: string) => {
-    if (!activeVideoCalls[callId]) {
-      return;
-    }
-    
-    setActiveVideoCalls(prev => ({
-      ...prev,
-      [callId]: {
-        ...prev[callId],
-        status: 'rejected'
-      }
-    }));
-    
-    toast.info("Call rejected");
-    
-    setTimeout(() => {
-      setActiveVideoCalls(prev => {
-        const newCalls = { ...prev };
-        delete newCalls[callId];
-        return newCalls;
-      });
-    }, 2000);
-  };
-  
-  const endVideoCall = (callId: string) => {
-    if (!activeVideoCalls[callId]) {
-      return;
-    }
-    
-    setActiveVideoCalls(prev => ({
-      ...prev,
-      [callId]: {
-        ...prev[callId],
-        status: 'ended'
-      }
-    }));
-    
-    toast.info("Call ended");
-    
-    setTimeout(() => {
-      setActiveVideoCalls(prev => {
-        const newCalls = { ...prev };
-        delete newCalls[callId];
-        return newCalls;
-      });
-    }, 2000);
-  };
-  
-  const updateUserProfile = async (userId: string, data: Partial<User>): Promise<boolean> => {
-    try {
-      if (!currentUser) {
-        toast.error("You must be logged in to update a profile");
-        return false;
-      }
-      
-      if (currentUser.id !== userId && currentUser.role !== 'admin') {
-        toast.error("You don't have permission to update this profile");
-        return false;
-      }
-      
-      const success = await updateProfileData(userId, data);
-      
-      if (success) {
-        if (userId === currentUser.id) {
-          setCurrentUser(prev => {
-            if (prev) {
-              return { ...prev, ...data };
-            }
-            return prev;
-          });
-        }
-        
-        toast.success("Profile updated successfully!");
-        return true;
-      } else {
-        toast.error("Failed to update profile");
-        return false;
-      }
-    } catch (error: any) {
-      console.error('Update profile error:', error);
-      toast.error("Failed to update profile", {
-        description: "An unexpected error occurred"
-      });
-      return false;
-    }
-  };
-  
-  const potentialMatches: User[] = [];
-  
-  const matches: User[] = [];
-  
-  const likeUser = (userId: string) => {
-    likeProfile(userId);
-  };
-  
-  const passUser = (userId: string) => {
-    passProfile(userId);
-  };
-  
-  const boostedProfiles: User[] = [];
-  
-  const getAllPosts = () => {
-    return blogPosts;
-  };
-  
-  const getFilteredPosts = () => {
-    if (!currentUser) return [];
-    return blogPosts.filter(post => {
-      return post.tags.some(tag => currentUser.interests.includes(tag));
+
+  const uploadProfilePhoto = async (file: File): Promise<string> => {
+    // Mock upload profile photo
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const url = 'https://example.com/profile-photo.jpg';
+        console.log('Profile photo uploaded successfully!');
+        toast.success('Profile photo uploaded successfully!');
+        resolve(url);
+      }, 500);
     });
   };
-  
-  const allUsers: User[] = [];
-  
-  const addUser = (user: User) => {
-    toast.success("User added successfully!");
+
+  const deleteProfilePhoto = async (photoUrl: string): Promise<boolean> => {
+    // Mock delete profile photo
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('Profile photo deleted successfully!');
+        toast.success('Profile photo deleted successfully!');
+        resolve(true);
+      }, 500);
+    });
   };
-  
-  const deleteUser = (userId: string) => {
-    toast.success("User deleted successfully!");
+
+  const updateLocation = async (lat: number, lng: number): Promise<boolean> => {
+    // Mock update location
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('Location updated successfully!');
+        toast.success('Location updated successfully!');
+        resolve(true);
+      }, 500);
+    });
   };
-  
-  const updateUserData = (userId: string, data: Partial<User>) => {
-    toast.success("User updated successfully!");
+
+  const reportUser = async (userId: string, reason: string): Promise<boolean> => {
+    // Mock report user
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`User with ID ${userId} reported for reason: ${reason}`);
+        toast.success('User reported successfully!');
+        resolve(true);
+      }, 500);
+    });
   };
-  
+
+  const blockUser = async (userId: string): Promise<boolean> => {
+    // Mock block user
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('User blocked successfully!');
+        toast.success('User blocked successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const unblockUser = async (userId: string): Promise<boolean> => {
+    // Mock unblock user
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('User unblocked successfully!');
+        toast.success('User unblocked successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const sendVerificationRequest = async (): Promise<boolean> => {
+    // Mock send verification request
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('Verification request sent successfully!');
+        toast.success('Verification request sent successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const withdrawBalance = async (amount: number, bankDetails: User['bankDetails']): Promise<boolean> => {
+    // Mock withdraw balance
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Withdrawal request sent for amount: ${amount}`);
+        toast.success('Withdrawal request sent successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const getBalance = (): number => {
+    // Mock get balance
+    return 100;
+  };
+
+  const getWithdrawalHistory = (): Array<{ amount: number; date: Date; status: string }> => {
+    // Mock get withdrawal history
+    return [
+      { amount: 50, date: new Date(), status: 'pending' },
+      { amount: 20, date: new Date(), status: 'completed' },
+    ];
+  };
+
+  const getPendingWithdrawal = (): { amount: number; date: Date } | null => {
+    // Mock get pending withdrawal
+    return { amount: 50, date: new Date() };
+  };
+
   const updatePreferences = async (preferences: Partial<UserPreferences>): Promise<boolean> => {
-    try {
-      if (!currentUser) {
-        toast.error("You must be logged in to update your preferences");
-        return false;
-      }
-      
-      const updatedPreferences = {
-        ...(currentUser.preferences || {}),
-        ...preferences
-      };
-      
-      return await updateProfile({
-        preferences: updatedPreferences as UserPreferences
-      });
-      
-    } catch (error) {
-      console.error('Update preferences error:', error);
-      toast.error("Failed to update preferences", {
-        description: "An unexpected error occurred"
-      });
-      return false;
-    }
+    // Mock update preferences
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        setCurrentUser((prev) => prev && { ...prev, preferences: { ...prev.preferences, ...preferences } });
+        toast.success('Preferences updated successfully!');
+        resolve(true);
+      }, 500);
+    });
   };
   
   const getUser = async (userId: string): Promise<User | null> => {
@@ -761,25 +652,19 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     register,
     logout,
     updateProfile,
-    uploadProfilePhoto: uploadProfilePhotoHandler,
+    updateProfileField,
+    isAuthenticated,
+    isLookingFor,
+    activateAccount,
+    isAdmin,
+    isModerator,
+    isVIP,
+    getCompatibilityScore,
     likeProfile,
     passProfile,
-    getCompatibilityScore,
-    boostProfile,
-    getProfileById,
-    sendGift,
-    getMatches,
-    getUserPosts,
-    createBlogPost,
-    updateBlogPost,
-    deleteBlogPost,
-    likeBlogPost,
-    commentOnBlogPost,
-    initiateVideoCall,
-    acceptVideoCall,
-    rejectVideoCall,
-    endVideoCall,
-    isAuthenticated,
+    allUsers,
+    likeUser,
+    passUser,
     potentialMatches,
     matches,
     messages,
@@ -792,40 +677,21 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     },
     updateUserProfile,
     getGiftBenefits: () => ({}),
-    allUsers,
-    addUser,
-    deleteUser,
-    updateUserData,
-    getAllPosts,
-    getFilteredPosts,
-    likeUser,
-    passUser,
-    boostedProfiles,
-    getGiftInventory: () => currentUser?.giftInventory || { rose: 0, heart: 0, teddy: 0 },
-    purchaseGifts: async (gifts) => {
-      toast.success("Gifts purchased successfully!");
-      return true;
-    },
-    getGiftMonetizationDetails: () => ({
-      totalEarnings: 0,
-      pendingWithdrawal: 0,
-      availableBalance: 0
-    }),
-    initiateWithdrawal: async (amount) => {
-      toast.success(`Withdrawal of $${amount} initiated!`);
-      return true;
-    },
-    updateBankDetails: async (details) => {
-      if (!currentUser) return false;
-      setCurrentUser(prev => {
-        if (prev) {
-          return { ...prev, bankDetails: details };
-        }
-        return prev;
-      });
-      toast.success("Bank details updated successfully!");
-      return true;
-    },
+    resetPassword,
+    changePassword,
+    sendGift,
+    uploadVoiceIntro,
+    getVoiceIntro,
+    boostProfile,
+    uploadProfilePhoto,
+    deleteProfilePhoto,
+    updateLocation,
+    reportUser,
+    blockUser,
+    unblockUser,
+    sendVerificationRequest,
+    withdrawBalance,
+    getBalance,
     getWithdrawalHistory: () => [],
     getPendingWithdrawal: () => null,
     updatePreferences,
@@ -840,5 +706,4 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-export const useUser = () => useContext(UserContext);
-export type { User, Message, GiftInventory, BoostLevelType, UserWithCoordinates, UserPreferences };
+// Export the custom hook

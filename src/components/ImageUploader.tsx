@@ -1,84 +1,112 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ImageIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Upload, ImagePlus, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useUser } from '@/context/UserContext';
 
 interface ImageUploaderProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSendImage: (imageUrl: string) => void;
+  onImageUploaded?: (url: string) => void;
+  maxSize?: number; // in MB
+  className?: string;
 }
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ isOpen, onClose, onSendImage }) => {
-  const [imageUrl, setImageUrl] = useState('');
-  const [previewUrl, setPreviewUrl] = useState('');
-  
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
+const ImageUploader: React.FC<ImageUploaderProps> = ({ 
+  onImageUploaded,
+  maxSize = 2,
+  className
+}) => {
+  const [uploading, setUploading] = useState(false);
+  const { currentUser } = useUser();
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const files = event.target.files;
+      if (!files || files.length === 0) {
+        return;
+      }
+
+      const file = files[0];
+      const fileSize = file.size / 1024 / 1024; // size in MB
       
-      reader.onload = (event) => {
-        if (event.target && typeof event.target.result === 'string') {
-          setPreviewUrl(event.target.result);
-          // In a real app, you would upload the image to a server here
-          // and set the returned URL. For demo purposes, we use the local URL.
-          setImageUrl(event.target.result);
+      // Validate file size
+      if (fileSize > maxSize) {
+        toast.error(`File too large`, { 
+          description: `Please upload an image smaller than ${maxSize}MB` 
+        });
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.match('image.*')) {
+        toast.error("Invalid file type", { 
+          description: "Please upload an image file" 
+        });
+        return;
+      }
+
+      setUploading(true);
+
+      // Mock image upload - in a real app, this would upload to your storage
+      setTimeout(() => {
+        // Create a URL for the image
+        const imageUrl = URL.createObjectURL(file);
+        if (onImageUploaded) {
+          onImageUploaded(imageUrl);
         }
-      };
-      
-      reader.readAsDataURL(file);
+        toast.success("Image uploaded successfully");
+        setUploading(false);
+      }, 1500);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error("Upload failed", { 
+        description: "There was a problem uploading your image" 
+      });
+      setUploading(false);
     }
   };
-  
-  const handleSend = () => {
-    if (imageUrl) {
-      onSendImage(imageUrl);
-      setImageUrl('');
-      setPreviewUrl('');
-    }
-  };
-  
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Send an Image</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <Label htmlFor="image-upload" className="cursor-pointer">
-            {previewUrl ? (
-              <div className="relative w-full aspect-video rounded-md overflow-hidden">
-                <img 
-                  src={previewUrl} 
-                  alt="Preview" 
-                  className="w-full h-full object-cover"
-                />
+    <Card className={`p-4 border-dashed border-2 hover:border-primary/50 transition-all ${className}`}>
+      <label className="flex flex-col items-center justify-center cursor-pointer">
+        <div className="flex flex-col items-center justify-center gap-2">
+          {uploading ? (
+            <>
+              <Loader2 className="h-10 w-10 text-muted-foreground animate-spin" />
+              <span className="text-sm text-muted-foreground">Uploading image...</span>
+            </>
+          ) : (
+            <>
+              <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center">
+                <ImagePlus className="h-10 w-10 text-muted-foreground" />
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-md text-gray-400">
-                <ImageIcon className="w-8 h-8 mb-2" />
-                <span>Click to upload an image</span>
+              <div className="mt-2 text-center">
+                <p className="text-sm font-medium">Click to upload image</p>
+                <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, GIF up to {maxSize}MB</p>
               </div>
-            )}
-          </Label>
-          <Input 
-            id="image-upload"
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            className="hidden"
-          />
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                className="mt-2"
+                disabled={!currentUser}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Select Image
+              </Button>
+            </>
+          )}
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSend} disabled={!imageUrl}>Send</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <input 
+          type="file" 
+          className="hidden" 
+          accept="image/*"
+          onChange={handleImageUpload}
+          disabled={uploading || !currentUser}
+        />
+      </label>
+    </Card>
   );
 };
 

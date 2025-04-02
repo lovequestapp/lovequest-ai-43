@@ -19,3 +19,5 @@ export const VerifiedMark: React.FC = () => {
     </TooltipProvider>
   );
 };
+
+export default VerifiedMark;

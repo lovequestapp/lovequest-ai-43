@@ -1,169 +1,185 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { User, UserWithCoordinates, BoostLevelType } from '@/types/user';
 import { calculateDistance } from '@/utils/matching/distance';
 import { BOOST_MULTIPLIERS } from '@/utils/matching/filtering';
-import type { UserWithCoordinates, BoostLevelType } from '@/types/user';
+import { calculateCompatibilityScore } from '@/utils/matching/compatibility';
 
-interface Coordinates {
-  latitude: number;
-  longitude: number;
-}
+export const calculateDistances = (
+  users: UserWithCoordinates[],
+  currentUser: UserWithCoordinates | null
+): UserWithCoordinates[] => {
+  if (!currentUser || !currentUser.coordinates) {
+    return users;
+  }
 
-interface FilterOptions {
-  ageRange: [number, number];
-  distance: number;
-  genderPreference: string;
-  interests: string[];
-  searchTerm: string;
-  currentUser: any;
-}
+  return users.map(user => {
+    if (!user.coordinates) {
+      return { ...user, distance: undefined };
+    }
 
-export const sortByDistance = (a: UserWithCoordinates, b: UserWithCoordinates) => {
-  const distA = a.distance !== undefined ? a.distance : Infinity;
-  const distB = b.distance !== undefined ? b.distance : Infinity;
-  return distA - distB;
-};
-
-export const sortByScore = (a: UserWithCoordinates, b: UserWithCoordinates) => {
-  return (b.finalScore || 0) - (a.finalScore || 0);
-};
-
-export const calculateDistances = (profiles: UserWithCoordinates[], userLocation: Coordinates): UserWithCoordinates[] => {
-  return profiles.map(profile => {
     const distance = calculateDistance(
-      userLocation.latitude,
-      userLocation.longitude,
-      profile.coordinates?.latitude || 0,
-      profile.coordinates?.longitude || 0
+      currentUser.coordinates.latitude,
+      currentUser.coordinates.longitude,
+      user.coordinates.latitude,
+      user.coordinates.longitude
     );
-    return { ...profile, distance };
+
+    return { ...user, distance };
   });
 };
 
-export const boostProfile = (profile: UserWithCoordinates): UserWithCoordinates => {
-  // Create a new object to avoid mutating the original
-  const boostedProfile = { ...profile };
-  
-  // Give some users boost
-  const shouldBoost = Math.random() > 0.7;
-  if (shouldBoost) {
-    boostedProfile.isBoosted = true;
-    
-    // Determine boost level
-    const boostRoll = Math.random();
-    if (boostRoll > 0.9) {
-      boostedProfile.boostLevel = 'super';
-    } else if (boostRoll > 0.7) {
-      boostedProfile.boostLevel = 'international';
-    } else {
-      boostedProfile.boostLevel = 'local';
-    }
-  } else {
-    boostedProfile.isBoosted = false;
-    boostedProfile.boostLevel = 'none';
-  }
-  
-  return boostedProfile;
-};
+export const filterProfiles = (
+  profiles: UserWithCoordinates[],
+  currentUser: User | null,
+  maxDistance?: number,
+  minAge?: number,
+  maxAge?: number,
+  verifiedOnly?: boolean
+): UserWithCoordinates[] => {
+  if (!currentUser) return profiles;
 
-export const calculateFinalScore = (profile: UserWithCoordinates): number => {
-  let baseScore = Math.floor(Math.random() * 50) + 50; // Random score between 50-99
-  if (profile.isBoosted) {
-    baseScore += baseScore * (BOOST_MULTIPLIERS[profile.boostLevel || 'none'] / 10);
-  }
-  return baseScore;
-};
-
-export const filterProfiles = (profiles: UserWithCoordinates[], options: FilterOptions): UserWithCoordinates[] => {
   return profiles.filter(profile => {
-    // Filter by age range
-    if (profile.age < options.ageRange[0] || profile.age > options.ageRange[1]) {
+    // Skip filtering the current user
+    if (profile.id === currentUser.id) return false;
+
+    // Filter by distance if specified
+    if (maxDistance && profile.distance !== undefined && profile.distance > maxDistance) {
       return false;
     }
-    
-    // Filter by gender if not "all"
-    if (options.genderPreference !== 'all' && profile.gender !== options.genderPreference) {
+
+    // Filter by age range if specified
+    if (minAge && profile.age < minAge) return false;
+    if (maxAge && profile.age > maxAge) return false;
+
+    // Filter by verification status if required
+    if (verifiedOnly && profile.verificationStatus !== 'verified') {
       return false;
     }
-    
-    // Filter by interests if any are selected
-    if (options.interests.length > 0) {
-      const hasMatchingInterest = profile.interests.some(interest => 
-        options.interests.includes(interest)
-      );
-      if (!hasMatchingInterest) {
-        return false;
-      }
-    }
-    
-    // Filter by search term
-    if (options.searchTerm) {
-      const searchLower = options.searchTerm.toLowerCase();
-      const nameMatch = profile.name.toLowerCase().includes(searchLower);
-      const bioMatch = profile.bio.toLowerCase().includes(searchLower);
-      const locationMatch = profile.location.toLowerCase().includes(searchLower);
-      const interestsMatch = profile.interests.some(interest => 
-        interest.toLowerCase().includes(searchLower)
-      );
-      
-      if (!(nameMatch || bioMatch || locationMatch || interestsMatch)) {
-        return false;
-      }
-    }
-    
+
     return true;
   });
 };
 
-export const sortProfiles = (a: UserWithCoordinates, b: UserWithCoordinates) => {
-  // First sort by boost level
-  if (a.isBoosted && !b.isBoosted) return -1;
-  if (!a.isBoosted && b.isBoosted) return 1;
-  
-  // Then by score
-  return (b.finalScore || 0) - (a.finalScore || 0);
+export const sortProfiles = (
+  profiles: UserWithCoordinates[],
+  currentUser: User | null,
+  sortBy: 'compatibility' | 'distance' | 'popularity' | 'recent' = 'compatibility'
+): UserWithCoordinates[] => {
+  if (!profiles.length || !currentUser) return profiles;
+
+  const sortedProfiles = [...profiles];
+
+  switch (sortBy) {
+    case 'compatibility':
+      sortedProfiles.sort((a, b) => {
+        const scoreA = a.finalScore !== undefined ? a.finalScore : calculateCompatibilityScore(currentUser, a);
+        const scoreB = b.finalScore !== undefined ? b.finalScore : calculateCompatibilityScore(currentUser, b);
+        
+        // Apply boost multiplier
+        const boostA = a.isBoosted && a.boostLevel ? BOOST_MULTIPLIERS[a.boostLevel] : 1;
+        const boostB = b.isBoosted && b.boostLevel ? BOOST_MULTIPLIERS[b.boostLevel] : 1;
+        
+        return (scoreB * boostB) - (scoreA * boostA);
+      });
+      break;
+      
+    case 'distance':
+      sortedProfiles.sort((a, b) => {
+        // Put profiles with distance at top
+        if (a.distance === undefined && b.distance !== undefined) return 1;
+        if (a.distance !== undefined && b.distance === undefined) return -1;
+        if (a.distance === undefined && b.distance === undefined) return 0;
+        
+        // Apply boost for closer profiles
+        const distanceA = (a.distance || 0) / (a.isBoosted && a.boostLevel ? BOOST_MULTIPLIERS[a.boostLevel] : 1);
+        const distanceB = (b.distance || 0) / (b.isBoosted && b.boostLevel ? BOOST_MULTIPLIERS[b.boostLevel] : 1);
+        
+        return distanceA - distanceB;
+      });
+      break;
+      
+    case 'popularity':
+      sortedProfiles.sort((a, b) => {
+        const popularityA = a.popularityPoints * (a.isBoosted && a.boostLevel ? BOOST_MULTIPLIERS[a.boostLevel] : 1);
+        const popularityB = b.popularityPoints * (b.isBoosted && b.boostLevel ? BOOST_MULTIPLIERS[b.boostLevel] : 1);
+        return popularityB - popularityA;
+      });
+      break;
+      
+    case 'recent':
+      // This would require a createdAt or lastActive field
+      // For now, just randomize
+      for (let i = sortedProfiles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [sortedProfiles[i], sortedProfiles[j]] = [sortedProfiles[j], sortedProfiles[i]];
+      }
+      break;
+  }
+
+  return sortedProfiles;
 };
 
-const useMatchProcessing = (
+export const boostProfile = (
+  userId: string,
   profiles: UserWithCoordinates[],
-  userLocation: Coordinates | null
-) => {
-  const [processedMatches, setProcessedMatches] = useState<UserWithCoordinates[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (profiles.length === 0 || userLocation === null) {
-      setLoading(false);
-      return;
-    }
-
-    const processMatches = async () => {
-      setLoading(true);
-
-      // Calculate Distances
-      const distancedProfiles = calculateDistances(profiles, userLocation);
-
-      // Apply Boosting
-      const boostedProfiles = distancedProfiles.map(profile => boostProfile(profile));
-
-      // Calculate Final Score
-      const scoredProfiles = boostedProfiles.map(profile => ({
+  boostLevel: 'local' | 'international'
+): UserWithCoordinates[] => {
+  return profiles.map(profile => {
+    if (profile.id === userId) {
+      return {
         ...profile,
-        finalScore: calculateFinalScore(profile)
-      }));
+        isBoosted: true,
+        boostLevel
+      };
+    }
+    return profile;
+  });
+};
 
-      // Sort Profiles
-      const sortedProfiles = [...scoredProfiles].sort(sortProfiles);
+export const useMatchProcessing = (
+  allUsers: UserWithCoordinates[],
+  currentUser: User | null
+) => {
+  const [filteredUsers, setFilteredUsers] = useState<UserWithCoordinates[]>([]);
+  const [maxDistance, setMaxDistance] = useState<number | undefined>(undefined);
+  const [ageRange, setAgeRange] = useState<[number, number] | undefined>(undefined);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<'compatibility' | 'distance' | 'popularity' | 'recent'>('compatibility');
 
-      setProcessedMatches(sortedProfiles);
-      setLoading(false);
-    };
+  const usersWithDistances = useMemo(() => {
+    return calculateDistances(allUsers, currentUser as UserWithCoordinates);
+  }, [allUsers, currentUser]);
 
-    processMatches();
+  const applyFilters = useCallback(() => {
+    const filtered = filterProfiles(
+      usersWithDistances,
+      currentUser,
+      maxDistance,
+      ageRange?.[0],
+      ageRange?.[1],
+      verifiedOnly
+    );
+    
+    const sorted = sortProfiles(filtered, currentUser, sortBy);
+    setFilteredUsers(sorted);
+  }, [usersWithDistances, currentUser, maxDistance, ageRange, verifiedOnly, sortBy]);
 
-  }, [profiles, userLocation]);
+  const boostUserProfile = useCallback((userId: string, level: 'local' | 'international') => {
+    const updated = boostProfile(userId, usersWithDistances, level);
+    applyFilters();
+    return true;
+  }, [usersWithDistances, applyFilters]);
 
-  return { processedMatches, loading };
+  return {
+    filteredUsers,
+    applyFilters,
+    setMaxDistance,
+    setAgeRange,
+    setVerifiedOnly,
+    setSortBy,
+    boostProfile: boostUserProfile
+  };
 };
 
 export default useMatchProcessing;
