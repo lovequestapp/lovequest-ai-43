@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -26,7 +27,7 @@ import Explore from './pages/Explore';
 import Preferences from '@/pages/Preferences';
 import Verification from './pages/Verification';
 import EmailConfirmation from './pages/EmailConfirmation';
-import EmailConfirmSuccess from './pages/EmailConfirmSuccess';
+import EmailConfirmSuccess from './pages/auth/confirm-email';
 
 const App = () => {
   return (

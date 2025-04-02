@@ -44,7 +44,7 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
       const { error: updateError } = await supabase
         .from('profiles')
         .update({ 
-          verification_status: 'pending',
+          verification_status: 'pending'
         })
         .eq('id', currentUser.id);
         

@@ -48,7 +48,9 @@ const UserCard: React.FC<UserCardProps> = ({ user, onViewProfile, isDemo }) => {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center text-lg">
             {user.name}
-            {user.verificationStatus === 'verified' && <VerifiedMark />}
+            {user.verificationStatus === 'verified' && (
+              <VerifiedMark status="verified" showTooltip={true} size="sm" />
+            )}
           </CardTitle>
           {user.distance !== undefined && (
             <Badge variant="outline" className="text-xs font-normal">

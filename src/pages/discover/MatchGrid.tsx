@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -49,7 +50,7 @@ const MatchGrid: React.FC<MatchGridProps> = ({ user, onViewProfile, onLike, isDe
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center">
             {user.name}
-            {user.verificationStatus === 'verified' && <VerifiedMark />}
+            {user.verificationStatus === 'verified' && <VerifiedMark status="verified" showTooltip={true} size="sm" />}
           </CardTitle>
         </div>
         <CardDescription>{user.bio.substring(0, 80)}...</CardDescription>

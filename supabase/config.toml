@@ -44,9 +44,6 @@ additional_redirect_urls = ["https://example.com"]
 jwt_expiry = 3600
 # Allow/disallow new user signups to your project.
 enable_signup = true
-# If disabled, new users will not be able to sign up via any method. Defaults to true.
-# Enable email confirmations during sign ups
-enable_confirmations = true
 
 [auth.email]
 # Allow/disallow sign in with email/password. (Default: true)
