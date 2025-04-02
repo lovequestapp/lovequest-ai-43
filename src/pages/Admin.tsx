@@ -1,291 +1,144 @@
 
 import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
-import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AdminMobileContainer from '@/components/AdminMobileContainer';
+import AdminDashboard from '@/components/admin/AdminDashboard';
 import UserManagement from '@/components/admin/UserManagement';
-import SubscriptionPlans from '@/components/admin/SubscriptionPlans';
-import Analytics from '@/components/admin/Analytics';
-import AppSettings from '@/components/admin/AppSettings';
 import ContentModeration from '@/components/admin/ContentModeration';
-import { Activity, ArrowLeft, Crown, Shield, User as UserIcon, Users, BarChart2, Settings, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import AnalyticsPanel from '@/components/admin/AnalyticsPanel';
+import SettingsPanel from '@/components/admin/SettingsPanel';
+import { CalendarDays, UserCog, Flag, Activity, Settings } from 'lucide-react';
+import { toast } from 'sonner';
 
-const Admin = () => {
+const AdminPage = () => {
   const { currentUser } = useUser();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("users");
-  const [stats, setStats] = useState({
-    activeUsers: '0',
-    matches: '0',
-    messages: '0',
-    newSignups: '0',
+  const [userData, setUserData] = useState({
+    totalUsers: 0,
+    newUsers: 0,
+    premiumUsers: 0,
+    flaggedContent: 0
   });
-
+  
   useEffect(() => {
-    // Check if user has admin access
-    if (currentUser) {
+    const checkAdminStatus = async () => {
+      if (!currentUser) {
+        toast.error("You need to be logged in to access the admin panel");
+        navigate('/login');
+        return;
+      }
+      
       if (currentUser.role !== 'admin') {
-        toast.error("Access Denied", {
-          description: "You don't have admin privileges to access this page."
-        });
-        navigate('/discover');
-      } else {
-        fetchAdminStats();
+        toast.error("You don't have permission to access the admin panel");
+        navigate('/');
+        return;
       }
-    }
+      
+      // Admin confirmed, load data
+      fetchAdminData();
+    };
     
-    setLoading(false);
+    checkAdminStatus();
   }, [currentUser, navigate]);
-
-  // Fetch basic stats for the admin dashboard
-  const fetchAdminStats = async () => {
+  
+  const fetchAdminData = async () => {
     try {
-      // In a real implementation, these would come from Supabase
-      // For now, we'll use mock data
-      const { data: usersData, error: usersError } = await supabase
+      setLoading(true);
+      
+      // Get users count
+      const { count: userCount, error: userError } = await supabase
         .from('profiles')
-        .select('id')
-        .eq('is_banned', false);
+        .select('*', { count: 'exact', head: true });
       
-      const { data: matchesData, error: matchesError } = await supabase
-        .from('matches')
-        .select('id');
-      
-      const { data: messagesData, error: messagesError } = await supabase
+      // Get flagged messages count
+      const { count: flaggedCount, error: flaggedError } = await supabase
         .from('messages')
-        .select('id');
+        .select('*', { count: 'exact', head: true })
+        .eq('is_flagged', true);
       
-      const { data: newUsersData, error: newUsersError } = await supabase
-        .from('profiles')
-        .select('id')
-        .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+      // We won't query the matches table since it doesn't exist yet
+      // Instead let's just use a fixed number for demo purposes
+      const matchesCount = 0;
       
-      setStats({
-        activeUsers: usersData?.length?.toString() || '1,245',
-        matches: matchesData?.length?.toString() || '843',
-        messages: messagesData?.length ? 
-          messagesData.length > 1000 ? 
-            `${(messagesData.length / 1000).toFixed(1)}k` : 
-            messagesData.length.toString() 
-          : '15.3k',
-        newSignups: newUsersData?.length?.toString() || '127',
+      if (userError) throw userError;
+      if (flaggedError) throw flaggedError;
+      
+      setUserData({
+        totalUsers: userCount || 0,
+        newUsers: Math.floor(Math.random() * 20), // Demo data
+        premiumUsers: Math.floor((userCount || 0) * 0.2), // Demo: assume 20% are premium
+        flaggedContent: flaggedCount || 0
       });
-    } catch (error) {
-      console.error("Error fetching admin stats:", error);
-      // Fallback to mock data on error
-      setStats({
-        activeUsers: '1,245',
-        matches: '843',
-        messages: '15.3k',
-        newSignups: '127',
-      });
+      
+    } catch (error: any) {
+      console.error('Error fetching admin data:', error.message);
+      toast.error('Failed to load admin data');
+    } finally {
+      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    // Listen for tab change events from the AdminMobileContainer
-    const handleTabChange = (event: CustomEvent<string>) => {
-      if (event.detail) {
-        setActiveTab(event.detail);
-      }
-    };
-    
-    window.addEventListener('setAdminTab', handleTabChange as EventListener);
-    return () => {
-      window.removeEventListener('setAdminTab', handleTabChange as EventListener);
-    };
-  }, []);
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
-
-  const exitAdminDashboard = () => {
-    navigate('/discover');
-    toast.success("Exited admin mode");
-  };
-
+  
+  if (loading) {
+    return <div className="container mx-auto p-4 text-center">Loading admin panel...</div>;
+  }
+  
   return (
-    <AdminMobileContainer>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl md:text-2xl font-bold bg-gradient-love text-transparent bg-clip-text">Admin Dashboard</h1>
-            <div className="bg-love-50 p-1 rounded-full">
-              <Crown className="h-5 w-5 text-love-600" />
-            </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="ml-2 bg-white border-love-200 text-love-700 shadow-sm hover:bg-love-50"
-              onClick={exitAdminDashboard}
-            >
-              <ArrowLeft className="h-3.5 w-3.5 mr-1" />
-              Exit Admin
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-r from-love-100 to-love-200 rounded-full px-3 py-1 text-sm font-medium flex items-center shadow-sm">
-              <div className="w-2 h-2 rounded-full bg-love-500 animate-pulse mr-2"></div>
-              <span className="text-love-800">{currentUser?.role === 'admin' ? 'Admin Access' : 'Limited Access'}</span>
-              <Shield className="h-3.5 w-3.5 ml-2 text-love-500" />
-            </div>
-            
-            <div className="bg-gradient-to-r from-love-50 to-passion-50 rounded-full px-3 py-1 text-sm shadow-sm">
-              <span className="text-love-700 font-medium flex items-center">
-                <Activity className="h-3.5 w-3.5 mr-1.5" /> 
-                Live
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mb-6">
-          <StatCard 
-            icon={<Users className="h-6 w-6 text-love-500" />} 
-            title="Active Users" 
-            value={stats.activeUsers} 
-            trend="+5.2%"
-            trendUp={true}
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'users' }));
-            }}
-          />
-          <StatCard 
-            icon={<Activity className="h-6 w-6 text-love-500" />} 
-            title="Matches" 
-            value={stats.matches}
-            trend="+12.8%"
-            trendUp={true}
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'analytics' }));
-            }}
-          />
-          <StatCard 
-            icon={<FileText className="h-6 w-6 text-love-500" />} 
-            title="Messages" 
-            value={stats.messages}
-            trend="+8.7%"
-            trendUp={true}
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'moderation' }));
-            }}
-          />
-          <StatCard 
-            icon={<UserIcon className="h-6 w-6 text-love-500" />} 
-            title="New Signups" 
-            value={stats.newSignups}
-            trend="+3.2%"
-            trendUp={true}
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent('setAdminTab', { detail: 'users' }));
-            }}
-          />
-        </div>
-
-        <Tabs 
-          value={activeTab} 
-          onValueChange={handleTabChange} 
-          className="w-full"
-        >
-          <div className="overflow-x-auto pb-2">
-            <TabsList className="grid grid-cols-2 md:grid-cols-5 w-full mb-5 p-1 bg-gradient-to-r from-muted/80 to-muted/30 backdrop-blur-sm">
-              <TabsTrigger 
-                value="users" 
-                className="data-[state=active]:bg-white data-[state=active]:text-love-700 data-[state=active]:shadow-md transition-all duration-200"
-              >
-                Users
-              </TabsTrigger>
-              <TabsTrigger 
-                value="subscriptions"
-                className="data-[state=active]:bg-white data-[state=active]:text-love-700 data-[state=active]:shadow-md transition-all duration-200"
-              >
-                Subscriptions
-              </TabsTrigger>
-              <TabsTrigger 
-                value="analytics"
-                className="data-[state=active]:bg-white data-[state=active]:text-love-700 data-[state=active]:shadow-md transition-all duration-200"
-              >
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger 
-                value="moderation"
-                className="data-[state=active]:bg-white data-[state=active]:text-love-700 data-[state=active]:shadow-md transition-all duration-200"
-              >
-                Moderation
-              </TabsTrigger>
-              <TabsTrigger 
-                value="settings"
-                className="data-[state=active]:bg-white data-[state=active]:text-love-700 data-[state=active]:shadow-md transition-all duration-200"
-              >
-                Settings
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          
-          <div className="animate-fade-in">
-            {loading ? (
-              <div className="flex justify-center items-center min-h-[400px]">
-                <div className="h-12 w-12 rounded-full border-4 border-love-200 border-t-love-500 animate-spin"></div>
-              </div>
-            ) : (
-              <>
-                <TabsContent value="users" className="focus-visible:outline-none focus-visible:ring-0">
-                  <UserManagement />
-                </TabsContent>
-                
-                <TabsContent value="subscriptions" className="focus-visible:outline-none focus-visible:ring-0">
-                  <SubscriptionPlans />
-                </TabsContent>
-                
-                <TabsContent value="analytics" className="focus-visible:outline-none focus-visible:ring-0">
-                  <Analytics />
-                </TabsContent>
-                
-                <TabsContent value="moderation" className="focus-visible:outline-none focus-visible:ring-0">
-                  <ContentModeration />
-                </TabsContent>
-                
-                <TabsContent value="settings" className="focus-visible:outline-none focus-visible:ring-0">
-                  <AppSettings />
-                </TabsContent>
-              </>
-            )}
-          </div>
-        </Tabs>
+    <div className="container mx-auto p-4 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Admin Panel</h1>
       </div>
-    </AdminMobileContainer>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-5 mb-6">
+          <TabsTrigger value="dashboard" className="flex items-center gap-1">
+            <CalendarDays className="h-4 w-4" />
+            <span className="hidden sm:inline">Dashboard</span>
+          </TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center gap-1">
+            <UserCog className="h-4 w-4" />
+            <span className="hidden sm:inline">Users</span>
+          </TabsTrigger>
+          <TabsTrigger value="moderation" className="flex items-center gap-1">
+            <Flag className="h-4 w-4" />
+            <span className="hidden sm:inline">Moderation</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-1">
+            <Activity className="h-4 w-4" />
+            <span className="hidden sm:inline">Analytics</span>
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-1">
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">Settings</span>
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="dashboard">
+          <AdminDashboard data={userData} />
+        </TabsContent>
+        
+        <TabsContent value="users">
+          <UserManagement />
+        </TabsContent>
+        
+        <TabsContent value="moderation">
+          <ContentModeration />
+        </TabsContent>
+        
+        <TabsContent value="analytics">
+          <AnalyticsPanel />
+        </TabsContent>
+        
+        <TabsContent value="settings">
+          <SettingsPanel />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
-// Improved stat card with better layout and styling
-const StatCard = ({ icon, title, value, trend, trendUp = true, onClick }) => (
-  <div 
-    className="luxury-card p-3 flex items-center gap-3 cursor-pointer hover:translate-y-[-2px] transition-all duration-300"
-    onClick={onClick}
-  >
-    <div className="p-2 rounded-full bg-love-50 text-love-700">{icon}</div>
-    <div className="flex-1">
-      <p className="text-sm font-medium text-love-700 truncate-text">{title}</p>
-      <div className="flex items-baseline gap-2">
-        <p className="text-lg font-bold text-love-900 truncate-text">{value}</p>
-        {trend && (
-          <div className={`text-xs font-medium ${trendUp ? "text-green-600" : "text-red-600"} flex items-center`}>
-            <span>{trend}</span>
-            <span className={trendUp ? "rotate-0 ml-0.5" : "rotate-180 ml-0.5"}>↑</span>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-);
-
-export default Admin;
+export default AdminPage;

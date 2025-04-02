@@ -1,260 +1,284 @@
-import { supabase } from '@/lib/supabase';
 
-// Get Stripe key from environment variable
-const stripePublishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
-export interface SubscriptionPlan {
+// Types
+export interface PaymentMethod {
   id: string;
-  name: string;
-  description: string;
-  price: number;
-  interval: 'month' | 'year';
-  features: string[];
+  type: 'card' | 'paypal' | 'bank';
+  last4?: string;
+  expiryMonth?: number;
+  expiryYear?: number;
+  brand?: string;
+  isDefault: boolean;
 }
 
-export const subscriptionPlans: SubscriptionPlan[] = [
-  {
-    id: 'basic',
-    name: 'Basic',
-    description: 'Essential features for casual dating',
-    price: 9.99,
-    interval: 'month',
-    features: [
-      '10 likes per day',
-      'Basic matching algorithm',
-      'Message up to 10 matches',
-      'View who liked you'
-    ]
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    description: 'Enhanced features for serious daters',
-    price: 19.99,
-    interval: 'month',
-    features: [
-      'Unlimited likes',
-      'Advanced AI matching',
-      'Message unlimited matches',
-      'See who liked you',
-      '1 Boost per month',
-      'Advanced filters'
-    ]
-  },
-  {
-    id: 'vip',
-    name: 'VIP',
-    description: 'Ultimate dating experience',
-    price: 29.99,
-    interval: 'month',
-    features: [
-      'All Premium features',
-      'Priority in discovery',
-      '5 Boosts per month',
-      'International matching',
-      'Read receipts',
-      'VIP support'
-    ]
-  }
-];
-
-export interface BoostProduct {
+export interface Subscription {
   id: string;
-  name: string;
-  description: string;
+  userId: string;
+  plan: 'basic' | 'premium' | 'vip' | 'trial';
+  startDate: Date;
+  endDate: Date | null;
+  isActive: boolean;
+  autoRenew: boolean;
   price: number;
-  boostAmount: number;
 }
 
-export const boostProducts: BoostProduct[] = [
-  {
-    id: 'boost-1',
-    name: 'Single Boost',
-    description: 'Get 1 profile boost',
-    price: 3.99,
-    boostAmount: 1
-  },
-  {
-    id: 'boost-5',
-    name: 'Boost Pack',
-    description: 'Get 5 profile boosts',
-    price: 14.99,
-    boostAmount: 5
-  },
-  {
-    id: 'boost-10',
-    name: 'Super Boost Pack',
-    description: 'Get 10 profile boosts',
-    price: 24.99,
-    boostAmount: 10
-  }
-];
-
-const isStripeConfigured = !!stripePublishableKey && stripePublishableKey !== 'YOUR_STRIPE_PUBLISHABLE_KEY';
-
-// Type definition for window.Stripe
-interface Window {
-  Stripe?: (key: string) => any;
+export interface Transaction {
+  id: string;
+  userId: string;
+  amount: number;
+  currency: string;
+  type: 'subscription' | 'gift' | 'withdrawal' | 'refund';
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  timestamp: Date;
+  description: string;
+  paymentMethod?: string;
 }
 
-export const paymentService = {
-  /**
-   * Check if Stripe is properly configured
-   */
-  isConfigured: () => isStripeConfigured,
-  
-  /**
-   * Initialize Stripe with your publishable key
-   */
-  initializeStripe: async () => {
-    if (!isStripeConfigured) {
-      console.warn('Stripe is not configured. Please set VITE_STRIPE_PUBLISHABLE_KEY in your environment.');
+// Function to get subscription tiers
+export const getSubscriptionTiers = () => {
+  return [
+    {
+      id: 'basic',
+      name: 'Basic',
+      price: 0,
+      features: [
+        'Limited matches per day',
+        'Basic profile visibility',
+        'Standard support'
+      ],
+      isPopular: false
+    },
+    {
+      id: 'premium',
+      name: 'Premium',
+      price: 9.99,
+      features: [
+        'Unlimited matches',
+        'See who liked you',
+        'Priority profile visibility',
+        'Premium support',
+        '5 Boosts per month'
+      ],
+      isPopular: true
+    },
+    {
+      id: 'vip',
+      name: 'VIP',
+      price: 19.99,
+      features: [
+        'All Premium features',
+        'VIP profile badge',
+        'Read receipts',
+        'Unlimited Boosts',
+        'Concierge service',
+        'Access to exclusive events'
+      ],
+      isPopular: false
+    }
+  ];
+};
+
+// Function to get user's current subscription
+export const getUserSubscription = async (userId: string): Promise<Subscription | null> => {
+  try {
+    // For now, we'll get the premium_status from the profiles table
+    // since we don't have a separate subscriptions table yet
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('premium_status, trial_end_date')
+      .eq('id', userId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching subscription:', error);
       return null;
     }
     
-    try {
-      // Fix: Add proper type checking for window.Stripe
-      if (!(window as any).Stripe) {
-        // Load Stripe.js dynamically if not already available
-        const script = document.createElement('script');
-        script.src = 'https://js.stripe.com/v3/';
-        script.async = true;
-        document.body.appendChild(script);
-        
-        return new Promise((resolve) => {
-          script.onload = () => {
-            // Use type assertion to access Stripe
-            const stripe = (window as any).Stripe(stripePublishableKey);
-            resolve(stripe);
-          };
-        });
-      } else {
-        // Use type assertion to access Stripe
-        return (window as any).Stripe(stripePublishableKey);
+    if (!data) {
+      return null;
+    }
+
+    const now = new Date();
+    const trialEndDate = data.trial_end_date ? new Date(data.trial_end_date) : null;
+    const isActive = trialEndDate ? now < trialEndDate : true;
+    
+    // Create a subscription object based on the premium_status
+    const subscription: Subscription = {
+      id: `sub-${userId}`, // Fake ID
+      userId,
+      plan: data.premium_status as 'basic' | 'premium' | 'vip' | 'trial',
+      startDate: new Date(new Date().setDate(new Date().getDate() - 30)), // Fake start date (30 days ago)
+      endDate: trialEndDate,
+      isActive,
+      autoRenew: data.premium_status !== 'basic' && data.premium_status !== 'trial',
+      price: data.premium_status === 'premium' ? 9.99 : data.premium_status === 'vip' ? 19.99 : 0
+    };
+    
+    return subscription;
+  } catch (error) {
+    console.error('Error in getUserSubscription:', error);
+    return null;
+  }
+};
+
+// Function to toggle auto-renew status
+export const toggleAutoRenew = async (userId: string): Promise<boolean> => {
+  try {
+    const subscription = await getUserSubscription(userId);
+    
+    if (!subscription) {
+      toast.error('No active subscription found');
+      return false;
+    }
+    
+    // In a real app, this would update the subscription in the database
+    // For now, we'll just show a toast message
+    const newStatus = !subscription.autoRenew;
+    
+    toast.success(`Auto-renew has been ${newStatus ? 'enabled' : 'disabled'}`);
+    return true;
+  } catch (error) {
+    console.error('Error toggling auto-renew:', error);
+    toast.error('Failed to update auto-renew settings');
+    return false;
+  }
+};
+
+// Function to cancel subscription
+export const cancelSubscription = async (userId: string): Promise<boolean> => {
+  try {
+    const subscription = await getUserSubscription(userId);
+    
+    if (!subscription) {
+      toast.error('No active subscription found');
+      return false;
+    }
+    
+    // In a real app, this would update the subscription in the database
+    // For now, we'll update the premium_status to 'basic'
+    const { error } = await supabase
+      .from('profiles')
+      .update({ premium_status: 'basic' })
+      .eq('id', userId);
+      
+    if (error) {
+      throw error;
+    }
+    
+    toast.success('Your subscription has been canceled');
+    return true;
+  } catch (error) {
+    console.error('Error canceling subscription:', error);
+    toast.error('Failed to cancel subscription');
+    return false;
+  }
+};
+
+// Function to upgrade subscription
+export const upgradeSubscription = async (userId: string, newPlan: 'premium' | 'vip'): Promise<boolean> => {
+  try {
+    // In a real app, this would update the subscription in the database
+    // after processing payment
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        premium_status: newPlan,
+        trial_end_date: null // Remove trial end date if upgrading
+      })
+      .eq('id', userId);
+      
+    if (error) {
+      throw error;
+    }
+    
+    toast.success(`Your subscription has been upgraded to ${newPlan}`);
+    return true;
+  } catch (error) {
+    console.error('Error upgrading subscription:', error);
+    toast.error('Failed to upgrade subscription');
+    return false;
+  }
+};
+
+// Function to get payment history
+export const getPaymentHistory = async (userId: string): Promise<Transaction[]> => {
+  try {
+    // Since we don't have a real subscriptions or transactions table yet, 
+    // we'll return mock data
+    const mockTransactions: Transaction[] = [
+      {
+        id: `txn-${Date.now()}-1`,
+        userId,
+        amount: 9.99,
+        currency: 'USD',
+        type: 'subscription',
+        status: 'completed',
+        timestamp: new Date(new Date().setDate(new Date().getDate() - 30)),
+        description: 'Premium Subscription - Monthly'
+      },
+      {
+        id: `txn-${Date.now()}-2`,
+        userId,
+        amount: 4.99,
+        currency: 'USD',
+        type: 'gift',
+        status: 'completed',
+        timestamp: new Date(new Date().setDate(new Date().getDate() - 15)),
+        description: 'Gift Pack Purchase - 5 Roses'
       }
-    } catch (error) {
-      console.error('Error initializing Stripe:', error);
-      return null;
-    }
-  },
+    ];
+    
+    return mockTransactions;
+  } catch (error) {
+    console.error('Error fetching payment history:', error);
+    return [];
+  }
+};
 
-  
-  /**
-   * Create a checkout session for subscription
-   */
-  createCheckoutSession: async (planId: string, userId: string): Promise<string | null> => {
-    if (!isStripeConfigured) {
-      console.warn('Stripe is not configured. Using mock implementation.');
-      // Return a mock checkout URL for development
-      return `https://checkout.stripe.com/mock-checkout/${planId}/${userId}`;
-    }
-    
-    try {
-      // In a real implementation, this would call a serverless function or API endpoint
-      // that creates a Stripe checkout session server-side
-      
-      // For now, we'll simulate this with a direct call to Supabase edge functions
-      // (When you have a real Supabase setup with edge functions)
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: { planId, userId }
-      });
-      
-      if (error) throw error;
-      return data.url;
-    } catch (error) {
-      console.error('Error creating checkout session:', error);
-      return null;
-    }
-  },
+// Function to add payment method
+export const addPaymentMethod = async (userId: string, paymentMethod: Omit<PaymentMethod, 'id' | 'isDefault'>): Promise<boolean> => {
+  try {
+    // In a real app, this would add the payment method to the database
+    // For now, we'll just show a toast message
+    toast.success('Payment method added successfully');
+    return true;
+  } catch (error) {
+    console.error('Error adding payment method:', error);
+    toast.error('Failed to add payment method');
+    return false;
+  }
+};
 
-  /**
-   * Process a subscription payment
-   */
-  processSubscription: async (planId: string, paymentMethodId: string, userId: string): Promise<boolean> => {
-    if (!isStripeConfigured) {
-      console.warn('Stripe is not configured. Using mock implementation.');
-      // Simulate successful payment processing
-      console.log(`Processing subscription for plan ${planId} with payment method ${paymentMethodId}`);
-      return true;
-    }
-    
-    try {
-      // In a real implementation, this would call a serverless function or API endpoint
-      // that processes the subscription server-side
-      
-      // For now, we'll simulate this with a direct call to Supabase edge functions
-      const { data, error } = await supabase.functions.invoke('process-subscription', {
-        body: { planId, paymentMethodId, userId }
-      });
-      
-      if (error) throw error;
-      return data.success;
-    } catch (error) {
-      console.error('Error processing subscription:', error);
-      return false;
-    }
-  },
-  
-  /**
-   * Get user's current subscription
-   */
-  getCurrentSubscription: async (userId: string) => {
-    if (!userId) return null;
-    
-    try {
-      // In production, you would query Supabase for the user's subscription
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      console.error('Error getting subscription:', error);
-      return null;
-    }
-  },
-  
-  /**
-   * Purchase boosts
-   */
-  purchaseBoosts: async (boostId: string, userId: string): Promise<boolean> => {
-    if (!isStripeConfigured) {
-      console.warn('Stripe is not configured. Using mock implementation.');
-      // Simulate successful boost purchase
-      console.log(`Processing boost purchase for ${boostId} by user ${userId}`);
-      return true;
-    }
-    
-    try {
-      // In a real implementation, this would create a one-time checkout session
-      const { data, error } = await supabase.functions.invoke('purchase-boost', {
-        body: { boostId, userId }
-      });
-      
-      if (error) throw error;
-      return data.success;
-    } catch (error) {
-      console.error('Error purchasing boosts:', error);
-      return false;
-    }
-  },
-  
-  /**
-   * Get all available subscription plans
-   */
-  getSubscriptionPlans: () => {
-    return subscriptionPlans;
-  },
-  
-  /**
-   * Get all available boost products
-   */
-  getBoostProducts: () => {
-    return boostProducts;
+// Function to get current billing information
+export const getBillingInfo = async (userId: string): Promise<any> => {
+  try {
+    // Mock billing info
+    return {
+      name: 'John Doe',
+      email: 'john.doe@example.com',
+      address: {
+        line1: '123 Main St',
+        city: 'Anytown',
+        state: 'CA',
+        postalCode: '12345',
+        country: 'US'
+      },
+      paymentMethods: [
+        {
+          id: 'pm-1',
+          type: 'card',
+          last4: '4242',
+          expiryMonth: 12,
+          expiryYear: 2024,
+          brand: 'Visa',
+          isDefault: true
+        }
+      ]
+    };
+  } catch (error) {
+    console.error('Error fetching billing info:', error);
+    return null;
   }
 };

@@ -20,6 +20,13 @@ ON public.profiles
 FOR SELECT
 USING (true);
 
+-- Create policy to allow users to update their own bank details
+CREATE POLICY "Users can update their own bank details"
+ON public.profiles
+FOR UPDATE
+USING (auth.uid() = id)
+WITH CHECK (auth.uid() = id);
+
 -- Enable Row Level Security on the messages table
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 

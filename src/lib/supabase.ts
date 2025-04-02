@@ -56,5 +56,5 @@ export const refreshSession = async () => {
 // Get supabase status (for backward compatibility)
 export const getSupabaseStatus = () => ({
   isConfigured: true,
-  url: supabase.getUrl()
+  url: process.env.VITE_SUPABASE_URL || supabase?.supabaseUrl || "https://jhfzugtgazuagqfpsuku.supabase.co"
 });
