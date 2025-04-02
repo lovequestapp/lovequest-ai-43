@@ -61,7 +61,7 @@ const AdminPage = () => {
         .select('*', { count: 'exact', head: true })
         .eq('is_flagged', true);
       
-      // We won't query the matches table since it doesn't exist yet
+      // We won't query the matches since it doesn't exist in our schema yet
       // Instead let's just use a fixed number for demo purposes
       const matchesCount = 0;
       
