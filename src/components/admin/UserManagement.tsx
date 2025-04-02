@@ -369,7 +369,7 @@ const UserManagement = () => {
                             size="sm" 
                             className={`${user.isBanned ? "text-red-500" : "text-love-600"}`}
                             onClick={() => handleBanUser(user.id, !user.isBanned)}
-                            disabled={user.isDemo}
+                            disabled={!!user.isDemo}
                           >
                             {user.isBanned ? (
                               <>
@@ -390,7 +390,7 @@ const UserManagement = () => {
                               size="sm" 
                               className="text-green-600"
                               onClick={() => handleVerifyUser(user.id, "verified")}
-                              disabled={user.isDemo}
+                              disabled={!!user.isDemo}
                             >
                               <Shield className="h-3.5 w-3.5 mr-1" /> Verify
                             </Button>
@@ -401,7 +401,7 @@ const UserManagement = () => {
                             size="sm" 
                             className="text-red-500"
                             onClick={() => handleDeleteUser(user.id)}
-                            disabled={user.isDemo}
+                            disabled={!!user.isDemo}
                           >
                             <Trash className="h-3.5 w-3.5" />
                           </Button>

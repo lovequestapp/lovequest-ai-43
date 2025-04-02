@@ -1,145 +1,302 @@
-import React, { useState, useEffect } from 'react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import DiscoverContent from './DiscoverContent';
-import { UserWithCoordinates } from '@/types/user';
-import { toast } from 'sonner';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { useUser } from '@/context/UserContext';
 import { useTestMode } from '@/context/TestModeContext';
+import { Layout } from '@/components/layout';
+import UserCard from '@/components/UserCard';
+import { calculateDistance } from '@/utils/matching/distance';
+import { UserWithCoordinates } from '@/types/user';
+import { useDebounce } from '@/hooks/use-debounce';
+import {
+  boostProfile,
+  filterProfiles,
+  sortProfiles,
+  calculateDistances as calculateDistancesUtil
+} from './hooks/useMatchProcessing';
+import { Separator } from '@/components/ui/separator';
+import { Filter, MapPin, Users, Search } from 'lucide-react';
+import DiscoverFilters from './DiscoverFilters';
 
-const Discover = () => {
+interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
+
+const DiscoverPage = () => {
+  const { allUsers, currentUser } = useUser();
+  const { toast } = useToast();
   const { isTestMode, demoProfiles } = useTestMode();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [profiles, setProfiles] = useState<UserWithCoordinates[]>([]);
+  const [filteredProfiles, setFilteredProfiles] = useState<UserWithCoordinates[]>([]);
+  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+  const [loadingLocation, setLoadingLocation] = useState(true);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   
-  // Mock data for testing
-  const [regularProfiles, setRegularProfiles] = useState<UserWithCoordinates[]>([
-    {
-      id: "1",
-      name: "Sophie",
-      email: "sophie@example.com",
-      age: 28,
-      bio: "Adventure seeker and coffee enthusiast",
-      location: "New York",
-      interests: ["hiking", "photography", "travel"],
-      photos: ["https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80"],
-      gender: "female",
-      interestedIn: ["male"],
-      popularityPoints: 85,
-      premiumStatus: "basic",
-      giftInventory: { rose: 0, heart: 0, teddy: 0 },
-      receivedGifts: { rose: 0, heart: 0, teddy: 0 },
-      compatibilityScore: 87,
-      personalityTraits: ["outgoing", "creative", "spontaneous"],
-      role: "subscriber",
-      isBanned: false,
-      verificationStatus: "verified",
-      voiceIntro: "",
-      favoriteMusic: [],
-      lastMessage: "",
-      lastMessageTime: new Date(),
-      status: "online",
-      coordinates: { latitude: 40.7128, longitude: -74.0060 },
-      distance: 2.5,
-      bankDetails: {
-        accountName: "",
-        accountNumber: "",
-        bankName: "",
-        routingNumber: "",
-        accountType: ""
-      }
-    },
-    {
-      id: "2",
-      name: "James",
-      email: "james@example.com",
-      age: 32,
-      bio: "Tech enthusiast and foodie. Looking for someone to explore new restaurants with.",
-      location: "San Francisco",
-      interests: ["technology", "food", "music"],
-      photos: ["https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80"],
-      gender: "male",
-      interestedIn: ["female"],
-      popularityPoints: 72,
-      premiumStatus: "premium",
-      giftInventory: { rose: 0, heart: 0, teddy: 0 },
-      receivedGifts: { rose: 0, heart: 0, teddy: 0 },
-      compatibilityScore: 78,
-      personalityTraits: ["analytical", "curious", "ambitious"],
-      role: "subscriber",
-      isBanned: false,
-      verificationStatus: "verified",
-      voiceIntro: "",
-      favoriteMusic: [],
-      lastMessage: "",
-      lastMessageTime: new Date(),
-      status: "online",
-      coordinates: { latitude: 37.7749, longitude: -122.4194 },
-      distance: 5.8,
-      bankDetails: {
-        accountName: "",
-        accountNumber: "",
-        bankName: "",
-        routingNumber: "",
-        accountType: ""
-      }
-    },
-  ]);
+  // Filter states
+  const [ageRange, setAgeRange] = useState<[number, number]>([18, 60]);
+  const [distance, setDistance] = useState<number>(50);
+  const [genderPreference, setGenderPreference] = useState<string>('all');
+  const [interests, setInterests] = useState<string[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   
-  // Combine regular profiles with demo profiles when in test mode
-  const profiles = isTestMode 
-    ? [...regularProfiles, ...demoProfiles.map(profile => ({
-        ...profile,
-        coordinates: { latitude: 37.7749, longitude: -122.4194 },
-        distance: Math.floor(Math.random() * 20) + 1,
-        isDemo: true
-      }))]
-    : regularProfiles;
-
-  const handleSwipe = (id: string, direction: 'left' | 'right') => {
-    // If it's a demo profile in test mode, just show the toast but don't remove it
-    const isDemo = profiles.find(profile => profile.id === id)?.isDemo;
+  const [activeRegion, setActiveRegion] = useState('');
+  
+  const displayProfiles = isTestMode ? [...demoProfiles, ...allUsers] : allUsers;
+  
+  // Load filters from URL
+  useEffect(() => {
+    const initialAgeRange = searchParams.get('ageRange');
+    const initialDistance = searchParams.get('distance');
+    const initialGender = searchParams.get('gender');
     
-    if (isDemo) {
-      if (direction === 'right') {
-        toast.success("You liked this demo profile!", {
-          description: "In test mode, demo profiles will remain available.",
-        });
+    if (initialAgeRange) {
+      const [min, max] = initialAgeRange.split(',').map(Number);
+      setAgeRange([min, max]);
+    }
+    if (initialDistance) {
+      setDistance(Number(initialDistance));
+    }
+    if (initialGender) {
+      setGenderPreference(initialGender);
+    }
+  }, [searchParams]);
+  
+  // Update URL on filter change
+  const updateSearchParams = useCallback(() => {
+    const newParams = new URLSearchParams();
+    newParams.set('ageRange', ageRange.join(','));
+    newParams.set('distance', String(distance));
+    newParams.set('gender', genderPreference);
+    setSearchParams(newParams);
+  }, [ageRange, distance, genderPreference, setSearchParams]);
+  
+  // Load user location
+  useEffect(() => {
+    const getLocation = () => {
+      setLoadingLocation(true);
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            setUserLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+            setLoadingLocation(false);
+          },
+          error => {
+            console.error("Error getting location:", error);
+            toast({
+              title: "Error",
+              description: "Unable to retrieve your location.",
+              variant: "destructive"
+            });
+            setLoadingLocation(false);
+          }
+        );
       } else {
-        toast.info("Demo profile skipped", {
-          description: "In test mode, demo profiles will remain available.",
+        toast({
+          title: "Error",
+          description: "Geolocation is not supported by this browser.",
+          variant: "destructive"
         });
+        setLoadingLocation(false);
       }
-      // For demo profiles, we'll just keep them in the list
-      return;
-    }
+    };
     
-    // For regular profiles, remove them as usual
-    setRegularProfiles(regularProfiles.filter(profile => profile.id !== id));
+    getLocation();
+  }, [toast]);
+  
+  // Load profiles
+  useEffect(() => {
+    if (!currentUser) return;
     
-    // Show feedback based on swipe direction
-    if (direction === 'right') {
-      toast.success("You liked this profile!", {
-        description: "We'll notify you if it's a match!",
-      });
+    setLoadingProfiles(true);
+    
+    // Filter out the current user
+    let availableProfiles = displayProfiles.filter(user => user.id !== currentUser.id) as UserWithCoordinates[];
+    
+    // Apply initial filters
+    availableProfiles = filterProfiles(availableProfiles, {
+      ageRange,
+      distance,
+      genderPreference,
+      interests,
+      searchTerm: debouncedSearchTerm,
+      currentUser
+    });
+    
+    // Calculate distances if location is available
+    if (userLocation) {
+      availableProfiles = calculateDistancesUtil(availableProfiles, userLocation);
     } else {
-      toast.info("Profile skipped", {
-        description: "We won't show this profile again",
+      availableProfiles.forEach(profile => {
+        profile.distance = undefined;
       });
     }
+    
+    // Boost profiles
+    availableProfiles = availableProfiles.map(profile => boostProfile(profile));
+    
+    // Sort profiles
+    availableProfiles.sort(sortProfiles);
+    
+    setProfiles(availableProfiles);
+    setFilteredProfiles(availableProfiles);
+    setLoadingProfiles(false);
+    
+    try {
+      fetch('https://ipapi.co/json/')
+        .then(response => response.json())
+        .then(data => {
+          setActiveRegion(data.city || data.region || data.country_name || 'Your Region');
+        })
+        .catch(error => {
+          console.error('Error detecting location:', error);
+          setActiveRegion('Your Region');
+        });
+    } catch (error) {
+      console.error('Error detecting location:', error);
+      setActiveRegion('Your Region');
+    }
+  }, [currentUser, displayProfiles, userLocation, ageRange, distance, genderPreference, interests, debouncedSearchTerm]);
+  
+  const handleViewProfile = (profileId: string) => {
+    console.log(`View profile ${profileId}`);
   };
-
+  
+  const calculateDistances = (profiles: UserWithCoordinates[], userLocation: Coordinates): UserWithCoordinates[] => {
+    return profiles.map(profile => {
+      // Create a new object to avoid mutation
+      const updatedProfile = { ...profile };
+      
+      if (profile.coordinates) {
+        const distance = calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          profile.coordinates.latitude,
+          profile.coordinates.longitude
+        );
+        updatedProfile.distance = distance;
+      }
+      
+      return updatedProfile;
+    });
+  };
+  
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1 container mx-auto p-4 pb-32">
-        {isTestMode && (
-          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-md p-3 text-amber-800 text-sm">
-            <strong>Test Mode Active:</strong> Demo profiles are being displayed. These profiles will not be removed when swiped.
+    <Layout>
+      <div className="container max-w-7xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-semibold tracking-tight">Discover</h1>
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsFilterOpen(!isFilterOpen)} 
+                className="flex items-center gap-1"
+              >
+                <Filter size={16} />
+                <span className="hidden sm:inline">Filters</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-1 text-love-500"
+              >
+                <MapPin size={16} />
+                <span className="hidden sm:inline">{activeRegion || 'All Regions'}</span>
+              </Button>
+            </div>
           </div>
-        )}
-        <DiscoverContent profiles={profiles} onSwipe={handleSwipe} />
-      </main>
-      <Footer className="mt-auto" />
-    </div>
+          
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+            <Users size={16} />
+            <span>Explore new connections and find your perfect match</span>
+          </div>
+          
+          <div className="relative flex items-center">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-love-500" />
+            <Input
+              placeholder="Search profiles..."
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <Separator className="my-4" />
+          
+          {isFilterOpen && (
+            <DiscoverFilters
+              ageRange={ageRange}
+              setAgeRange={setAgeRange}
+              distance={distance}
+              setDistance={setDistance}
+              genderPreference={genderPreference}
+              setGenderPreference={setGenderPreference}
+              interests={interests}
+              setInterests={setInterests}
+              onApplyFilters={updateSearchParams}
+              onClose={() => setIsFilterOpen(false)}
+            />
+          )}
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {loadingProfiles ? (
+              // Skeleton cards while loading
+              [...Array(8)].map((_, i) => (
+                <Card key={i} className="h-64 animate-pulse bg-muted"></Card>
+              ))
+            ) : profiles.length === 0 ? (
+              // No profiles message
+              <div className="text-center py-12 col-span-full">
+                <h3 className="text-xl font-medium mb-2">No profiles found</h3>
+                <p className="text-muted-foreground mb-6">Try adjusting your filters or expanding your search criteria</p>
+                <Button onClick={() => {
+                  setAgeRange([18, 60]);
+                  setDistance(50);
+                  setGenderPreference('all');
+                  setInterests([]);
+                  setSearchTerm('');
+                  updateSearchParams();
+                }}>
+                  Reset Filters
+                </Button>
+              </div>
+            ) : (
+              // User cards
+              demoProfiles.map(profile => {
+                // Add the distance property to each profile
+                const profileWithDistance = { 
+                  ...profile, 
+                  distance: Math.floor(Math.random() * 20) + 1 
+                };
+                
+                return (
+                  <UserCard 
+                    key={profile.id} 
+                    user={profileWithDistance} 
+                    onViewProfile={() => handleViewProfile(profile.id)} 
+                    isDemo={!!profile.isDemo}
+                  />
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    </Layout>
   );
 };
 
-export default Discover;
+export default DiscoverPage;

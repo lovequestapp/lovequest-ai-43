@@ -21,7 +21,7 @@ const Preferences = () => {
   const [ageRange, setAgeRange] = useState<number[]>([18, 45]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [messagePreview, setMessagePreview] = useState(true);
-  const [theme, setTheme] = useState("light");
+  const [theme, setTheme] = useState<"light" | "dark" | "system">("light");
   const [language, setLanguage] = useState("english");
   
   useEffect(() => {
@@ -33,12 +33,12 @@ const Preferences = () => {
     // Load user preferences
     setDistanceRange([currentUser?.preferences?.maxDistance || 50]);
     setAgeRange([
-      currentUser?.preferences?.ageRange?.[0] || 18, 
-      currentUser?.preferences?.ageRange?.[1] || 45
+      currentUser?.preferences?.ageRange?.min || 18, 
+      currentUser?.preferences?.ageRange?.max || 45
     ]);
     setNotificationsEnabled(currentUser?.preferences?.notificationsEnabled !== false);
     setMessagePreview(currentUser?.preferences?.messagePreview !== false);
-    setTheme(currentUser?.preferences?.theme || 'light');
+    setTheme(currentUser?.preferences?.theme || 'light' as "light" | "dark" | "system");
     setLanguage(currentUser?.preferences?.language || 'english');
   }, [currentUser, navigate]);
   
@@ -49,7 +49,10 @@ const Preferences = () => {
     try {
       await updatePreferences({
         maxDistance: distanceRange[0],
-        ageRange: [ageRange[0], ageRange[1]],
+        ageRange: {
+          min: ageRange[0],
+          max: ageRange[1]
+        },
         notificationsEnabled,
         messagePreview,
         theme,
@@ -137,7 +140,7 @@ const Preferences = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="theme" className="font-medium">Theme</Label>
-                <Select value={theme} onValueChange={setTheme}>
+                <Select value={theme} onValueChange={(value: "light" | "dark" | "system") => setTheme(value)}>
                   <SelectTrigger id="theme">
                     <SelectValue placeholder="Select theme" />
                   </SelectTrigger>

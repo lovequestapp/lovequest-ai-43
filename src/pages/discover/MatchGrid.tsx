@@ -1,115 +1,79 @@
 import React from 'react';
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Sparkles,
-  MapPin,
-  Globe,
-  Crown,
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { VerifiedMark } from "@/components/VerifiedMark";
 import { UserWithCoordinates } from '@/types/user';
+import { Heart, MessageSquare, Eye } from "lucide-react";
 
 interface MatchGridProps {
-  matches: UserWithCoordinates[];
-  onViewProfile: (userId: string) => void;
+  user: UserWithCoordinates;
+  onViewProfile: () => void;
+  onLike: () => void;
+  isDemo?: boolean;
 }
 
-const MatchGrid: React.FC<MatchGridProps> = ({ matches, onViewProfile }) => {
-  const navigate = useNavigate();
-  
+const MatchGrid: React.FC<MatchGridProps> = ({ user, onViewProfile, onLike, isDemo }) => {
+
+  const renderBoostBadge = (user: UserWithCoordinates) => {
+    if (!user.isBoosted) return null;
+    
+    let badgeText: string;
+    let badgeClass: string;
+    
+    if (user.boostLevel === 'local') {
+      badgeText = 'Local Boost';
+      badgeClass = 'bg-blue-500';
+    } else if (user.boostLevel === 'international') {
+      badgeText = 'International';
+      badgeClass = 'bg-purple-500';
+    } else if (user.boostLevel === 'super') {
+      badgeText = 'Super Boost';
+      badgeClass = 'bg-gradient-to-r from-pink-500 to-orange-500';
+    } else {
+      // Default or 'none'
+      return null;
+    }
+    
+    return (
+      <div className={`absolute top-2 right-2 ${badgeClass} text-white text-xs font-semibold px-2 py-1 rounded-full z-10`}>
+        {badgeText}
+      </div>
+    );
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {matches.map(match => (
-        <Card 
-          key={match.id} 
-          className="overflow-hidden hover:shadow-md transition-shadow"
-          onClick={() => onViewProfile(match.id)}
-        >
-          <div className="aspect-[3/4] relative">
-            <img 
-              src={match.photos[0]} 
-              alt={match.name} 
-              className="w-full h-full object-cover"
-            />
-            
-            {match.isBoosted && (
-              <div className="absolute top-3 right-3 z-10">
-                <Badge className={`py-1 px-3 flex items-center gap-1 ${
-                  match.boostLevel === 'super' 
-                    ? 'bg-amber-500 text-amber-950 border-amber-600' 
-                    : match.boostLevel === 'international'
-                      ? 'bg-purple-500 text-white'
-                      : match.boostLevel === 'local'
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gradient-love text-white'
-                }`}>
-                  {match.boostLevel === 'super' ? (
-                    <Crown size={14} className="mr-1" />
-                  ) : match.boostLevel === 'international' ? (
-                    <Globe size={14} className="mr-1" />
-                  ) : match.boostLevel === 'local' ? (
-                    <MapPin size={14} className="mr-1" />
-                  ) : (
-                    <Sparkles size={14} className="mr-1" />
-                  )}
-                </Badge>
-              </div>
-            )}
-            
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-              <h3 className="text-xl font-semibold text-white">
-                {match.name}, {match.age}
-              </h3>
-              
-              <div className="flex items-center text-white/80">
-                <MapPin size={14} className="mr-1" />
-                <span className="text-sm">{match.location}</span>
-              </div>
-            </div>
-          </div>
-          
-          <CardContent className="p-4">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-1 text-sm">
-                <Sparkles size={14} className="text-love-500" />
-                <span className="font-medium">Match: {match.compatibilityScore}%</span>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="rounded-full h-8 px-3"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/messages/${match.id}`);
-                }}
-              >
-                Message
-              </Button>
-            </div>
-            
-            <div className="flex flex-wrap gap-1">
-              {match.interests.slice(0, 3).map((interest: string, idx: number) => (
-                <Badge 
-                  key={idx} 
-                  variant="secondary" 
-                  className="bg-love-50 text-love-700"
-                >
-                  {interest}
-                </Badge>
-              ))}
-              {match.interests.length > 3 && (
-                <Badge variant="outline">
-                  +{match.interests.length - 3}
-                </Badge>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+    <Card className="relative">
+      {renderBoostBadge(user)}
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center">
+            {user.name}
+            {user.verificationStatus === 'verified' && <VerifiedMark />}
+          </CardTitle>
+        </div>
+        <CardDescription>{user.bio.substring(0, 80)}...</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-center justify-center">
+        <Avatar className="w-32 h-32">
+          <AvatarImage src={user.photos && user.photos.length > 0 ? user.photos[0] : undefined} alt={`Profile picture of ${user.name}`} />
+          <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        <div className="mt-4 text-center">
+          <p className="text-sm text-muted-foreground">{user.location}</p>
+        </div>
+      </CardContent>
+      <div className="flex justify-between items-center p-4">
+        <Button variant="outline" onClick={onViewProfile} disabled={isDemo}>
+          <Eye className="w-4 h-4 mr-2" />
+          View Profile
+        </Button>
+        <Button onClick={onLike} disabled={isDemo}>
+          <Heart className="w-4 h-4 mr-2" />
+          Like
+        </Button>
+      </div>
+    </Card>
   );
 };
 

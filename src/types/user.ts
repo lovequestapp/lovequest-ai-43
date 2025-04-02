@@ -1,11 +1,28 @@
 // Add this only if it doesn't already exist in the file, otherwise keep everything as is
 export interface UserPreferences {
   maxDistance?: number;
-  ageRange?: [number, number];
+  ageRange?: {
+    min: number;
+    max: number;
+  };
   notificationsEnabled?: boolean;
   messagePreview?: boolean;
   theme?: 'light' | 'dark' | 'system';
   language?: string;
+  showMeToUsers?: boolean;
+  notificationPreferences?: {
+    messages: boolean;
+    matches: boolean;
+    likes: boolean;
+    app: boolean;
+  };
+  preferredLocations?: string[];
+  matchingPriorities?: {
+    distance: number;
+    interests: number;
+    personality: number;
+    age: number;
+  };
 }
 
 // Make sure User interface includes preferences
@@ -28,7 +45,7 @@ export interface User {
   personalityTraits: string[];
   role: 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial';
   isBanned: boolean;
-  verificationStatus: 'verified' | 'unverified' | 'pending';
+  verificationStatus: 'verified' | 'unverified' | 'pending' | 'rejected';
   lastMessage: string;
   lastMessageTime: Date;
   status: 'online' | 'offline' | 'away';
@@ -42,6 +59,8 @@ export interface User {
     accountType: string;
   };
   preferences?: UserPreferences;
+  isDemo?: boolean; // Add this for demo users
+  finalScore?: number; // For compatibility scoring
 }
 
 export interface GiftInventory {
@@ -53,7 +72,7 @@ export interface GiftInventory {
 export interface Message {
   id: string;
   senderId: string;
-  recipientId: string;
+  recipientId: string; // Keeping this as recipientId to match the existing code
   content: string;
   timestamp: Date;
   isRead: boolean;
@@ -81,11 +100,14 @@ export interface BlogComment {
   createdAt: Date;
 }
 
-export type BoostLevelType = 'none' | 'local' | 'international';
+export type BoostLevelType = 'none' | 'local' | 'international' | 'super';
 
 export interface UserWithCoordinates extends User {
   coordinates?: {
     latitude: number;
     longitude: number;
   };
+  distance?: number;
+  isBoosted?: boolean;
+  boostLevel?: BoostLevelType;
 }

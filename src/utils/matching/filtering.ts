@@ -1,93 +1,56 @@
+import type { User, UserWithCoordinates, UserPreferences } from '@/types/user';
 
-import type { UserWithCoordinates, UserPreferences } from '@/types/user';
-import { calculateDistance } from './distance';
-
-// Filter users by preferences
-export const filterUsersByPreferences = (
-  currentUser: UserWithCoordinates,
-  potentialMatches: UserWithCoordinates[]
-): UserWithCoordinates[] => {
-  if (!currentUser || !potentialMatches.length) return [];
-  
-  const preferences = currentUser.preferences;
-  
-  return potentialMatches.filter(user => {
-    // Skip if user doesn't want to be shown to others
-    if (user.preferences?.showMeToUsers === false) {
-      return false;
-    }
-    
-    // Check gender preference
-    if (!currentUser.interestedIn.includes(user.gender)) {
-      return false;
-    }
-    
-    // Check age range if specified
-    if (preferences?.ageRange) {
-      if (user.age < preferences.ageRange.min || user.age > preferences.ageRange.max) {
-        return false;
-      }
-    }
-    
-    // Check distance if coordinates available and max distance specified
-    if (currentUser.coordinates && user.coordinates && preferences?.maxDistance) {
-      const distance = calculateDistance(
-        currentUser.coordinates.latitude,
-        currentUser.coordinates.longitude,
-        user.coordinates.latitude,
-        user.coordinates.longitude
-      );
-      
-      if (distance > preferences.maxDistance) {
-        return false;
-      }
-    }
-    
-    return true;
-  });
+export const isUserVisible = (user: User): boolean => {
+  if (!user.preferences) return true;
+  return user.preferences.showMeToUsers !== false;
 };
 
-// BOOST_PRIORITY mapping for sorting boosted profiles
-export const BOOST_PRIORITY: Record<BoostLevelType, number> = {
-  'super': 1,
-  'international': 2,
+export const isWithinDistance = (
+  userCoordinates: { latitude: number; longitude: number } | undefined,
+  targetCoordinates: { latitude: number; longitude: number } | undefined,
+  maxDistance: number
+): boolean => {
+  if (!userCoordinates || !targetCoordinates) return true;
+
+  const distance = calculateDistance(
+    userCoordinates.latitude,
+    userCoordinates.longitude,
+    targetCoordinates.latitude,
+    targetCoordinates.longitude
+  );
+
+  return distance <= maxDistance;
+};
+
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 3958.8; // Radius of the earth in miles
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) *
+    Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  const distance = R * c;
+
+  return distance;
+};
+
+export const isWithinAgeRange = (user: User, targetUser: User): boolean => {
+  if (!user.preferences?.ageRange) return true;
+  
+  const { min, max } = user.preferences.ageRange;
+  return targetUser.age >= min && targetUser.age <= max;
+};
+
+import { BoostLevelType } from '@/types/user';
+
+export const BOOST_MULTIPLIERS: Record<BoostLevelType, number> = {
+  'none': 1,
   'local': 3,
-  'basic': 4,
-  'premium': 5,
-  'ultra': 6,
-  'none': 7
+  'international': 5,
+  'super': 10
 };
-
-// Function to determine if a profile should be boosted based on popularity
-export const shouldBoostProfile = (popularityScore: number): boolean => {
-  // Boost profiles with popularity over 70
-  return popularityScore > 70;
-};
-
-// Enhanced matching algorithm using simulated AI features
-export const getAiEnhancedMatches = (
-  currentUser: UserWithCoordinates,
-  potentialMatches: UserWithCoordinates[]
-): UserWithCoordinates[] => {
-  // Apply compatibility scoring
-  const scoredMatches = potentialMatches.map(match => {
-    // Import here to avoid circular dependencies
-    const { calculateCompatibilityScore } = require('./compatibility');
-    
-    // Calculate compatibility score
-    const compatibilityScore = calculateCompatibilityScore(currentUser, match);
-    
-    return {
-      ...match,
-      compatibilityScore
-    };
-  });
-  
-  // Apply more advanced sorting by multiple factors
-  return scoredMatches.sort((a, b) => {
-    // Sort primarily by compatibility score
-    return (b.compatibilityScore || 0) - (a.compatibilityScore || 0);
-  });
-};
-
-import type { BoostLevelType } from '@/types/user';

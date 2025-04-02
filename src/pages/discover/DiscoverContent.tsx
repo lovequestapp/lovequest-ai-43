@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import SwipeableCard from '@/components/card/SwipeableCard';
 import { UserWithCoordinates } from '@/types/user'; 
@@ -77,7 +76,7 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
                 <div className="flex items-center gap-1 mt-0.5">
                   <Sparkles size={14} className="text-amber-400" />
                   <span className="text-sm text-white/80">
-                    {Math.round(profile.distance)} miles away
+                    {displayDistance(profile)}
                   </span>
                 </div>
               )}
@@ -183,3 +182,10 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
 };
 
 export default DiscoverContent;
+
+const displayDistance = (user: UserWithCoordinates) => {
+  if (user.distance === undefined) return "Unknown distance";
+  
+  const dist = Math.round(user.distance);
+  return `${dist} ${dist === 1 ? 'mile' : 'miles'} away`;
+};

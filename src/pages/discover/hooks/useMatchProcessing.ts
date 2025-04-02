@@ -1,200 +1,122 @@
 import { useState, useEffect } from 'react';
-import { toast } from "sonner";
-import { 
-  UserWithCoordinates, 
-  BoostLevelType,
-  getAiEnhancedMatches, 
-  shouldBoostProfile, 
-  getNearbyUsers,
-  BOOST_PRIORITY
-} from '@/utils/matchingAlgorithm';
-import { UserWithCoordinates as UserWithCoordinatesType } from '@/types/user';
+import { calculateDistance } from '@/utils/matching/distance';
+import { BOOST_MULTIPLIERS } from '@/utils/matching/filtering';
+import type { UserWithCoordinates, BoostLevelType } from '@/types/user';
 
-interface UseMatchProcessingProps {
-  currentUser: UserWithCoordinates | null;
-  potentialMatches: UserWithCoordinates[];
-  boostedProfiles: any[];
-  userCoordinates: {latitude: number, longitude: number} | null;
-  isNearbyFilterActive: boolean;
-  proximityRadius: number;
-  isLocationFiltering: boolean;
-  selectedRegions: string[];
-  isFiltering: boolean;
+interface Coordinates {
+  latitude: number;
+  longitude: number;
 }
 
-const useMatchProcessing = ({
-  currentUser,
-  potentialMatches,
-  boostedProfiles,
-  userCoordinates,
-  isNearbyFilterActive,
-  proximityRadius,
-  isLocationFiltering,
-  selectedRegions,
-  isFiltering
-}: UseMatchProcessingProps) => {
-  const [enhancedMatches, setEnhancedMatches] = useState<UserWithCoordinates[]>([]);
-  const [filteredMatches, setFilteredMatches] = useState<UserWithCoordinates[]>([]);
-  
+const sortByDistance = (a: UserWithCoordinates, b: UserWithCoordinates) => {
+  const distA = a.distance !== undefined ? a.distance : Infinity;
+  const distB = b.distance !== undefined ? b.distance : Infinity;
+  return distA - distB;
+};
+
+const sortByScore = (a: UserWithCoordinates, b: UserWithCoordinates) => {
+  return (b.finalScore || 0) - (a.finalScore || 0);
+};
+
+const useMatchProcessing = (
+  profiles: UserWithCoordinates[],
+  userLocation: Coordinates | null
+) => {
+  const [processedMatches, setProcessedMatches] = useState<UserWithCoordinates[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    console.log("Running match processing effect with:", {
-      hasCurrentUser: !!currentUser,
-      potentialMatchesCount: potentialMatches.length,
-      boostedProfilesCount: boostedProfiles?.length || 0,
-      userCoordinates,
-      isNearbyFilterActive
-    });
-    
-    if (!currentUser) {
-      console.log("No current user, skipping match processing");
+    if (profiles.length === 0 || userLocation === null) {
+      setLoading(false);
       return;
     }
-    
-    if (!potentialMatches || potentialMatches.length === 0) {
-      console.log("No potential matches, skipping processing");
-      return;
-    }
-    
-    try {
-      console.log("Processing matches...");
-      
-      let processedMatches = [...potentialMatches] as UserWithCoordinates[];
-      
-      if (userCoordinates && isNearbyFilterActive) {
-        console.log(`Filtering by proximity: ${proximityRadius}km radius`);
-        const currentUserWithCoords: UserWithCoordinates = {
-          ...(currentUser as UserWithCoordinates),
-          coordinates: userCoordinates
-        };
-        
-        processedMatches = getNearbyUsers(
-          currentUserWithCoords,
-          processedMatches,
-          proximityRadius
-        );
-        
-        processedMatches.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-      }
-      
-      if (isLocationFiltering && selectedRegions.length > 0) {
-        console.log(`Filtering by regions: ${selectedRegions.join(', ')}`);
-        processedMatches = processedMatches.filter(match => {
-          if (!match.location) return false;
-          const matchRegion = match.location.split(',')[1]?.trim();
-          return selectedRegions.includes(matchRegion);
+
+    const processMatches = async () => {
+      setLoading(true);
+
+      // 1. Calculate Distances
+      const calculateDistances = (profiles: UserWithCoordinates[], userLocation: Coordinates): UserWithCoordinates[] => {
+        return profiles.map(profile => {
+          const distance = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            profile.coordinates?.latitude || 0,
+            profile.coordinates?.longitude || 0
+          );
+          return { ...profile, distance };
         });
-      }
-      
-      const currentUserWithCoords: UserWithCoordinates = userCoordinates 
-        ? { ...(currentUser as UserWithCoordinates), coordinates: userCoordinates }
-        : currentUser as UserWithCoordinates;
-      
-      console.log("Applying AI enhancement to matches");  
-      const sortedMatches = getAiEnhancedMatches(
-        currentUserWithCoords,
-        processedMatches
-      );
-      
-      console.log("Identifying boosted profiles");
-      const safeBootedProfiles = boostedProfiles || [];
-      
-      const matchesWithBoostInfo = sortedMatches.map(match => {
-        if (!match || !match.id) {
-          console.warn("Invalid match object:", match);
-          return {
-            ...match,
-            isBoosted: false,
-            boostLevel: 'none' as BoostLevelType
-          };
-        }
+      };
+
+      const distancedProfiles = calculateDistances(profiles, userLocation);
+
+      // 2. Apply Boosting
+      const boostProfile = (profile: UserWithCoordinates): UserWithCoordinates => {
+        // Create a new object to avoid mutating the original
+        const boostedProfile = { ...profile };
         
-        const isBoostedProfile = safeBootedProfiles.some(p => p && p.userId === match.id);
-        
-        const isInternationalBoosted = safeBootedProfiles.some(
-          p => p && p.userId === match.id && p.boostType === 'international'
-        );
-        
-        const popularityScore = match.popularityPoints || 0;
-        const isBoosted = shouldBoostProfile(popularityScore) || Boolean(isBoostedProfile);
-        
-        let boostLevel: BoostLevelType = 'none';
-        
-        if (popularityScore >= 100) {
-          boostLevel = 'super';
-        } else if (popularityScore >= 70) {
-          boostLevel = 'local';
-        }
-        
-        if (isBoostedProfile) {
-          boostLevel = isInternationalBoosted ? 'international' : 'local';
-        }
-        
-        const activityScore = Math.random() * 100;
-        
-        return {
-          ...match,
-          isBoosted,
-          boostLevel: isBoosted ? boostLevel : 'none' as BoostLevelType,
-          activityScore: Math.round(activityScore),
-          finalScore: (match.compatibilityScore || 0) * 0.7 + activityScore * 0.3
-        };
-      });
-      
-      const boostedMatches = matchesWithBoostInfo.filter(m => m.isBoosted);
-      const normalMatches = matchesWithBoostInfo.filter(m => !m.isBoosted);
-      
-      const sortedBoostedMatches = boostedMatches.sort((a, b) => {
-        const boostComparison = BOOST_PRIORITY[a.boostLevel as BoostLevelType] - 
-                                BOOST_PRIORITY[b.boostLevel as BoostLevelType];
-        
-        if (boostComparison !== 0) return boostComparison;
-        
-        return (b.compatibilityScore || 0) - (a.compatibilityScore || 0);
-      });
-      
-      const sortedNormalMatches = normalMatches.sort((a, b) => 
-        (b.finalScore || 0) - (a.finalScore || 0)
-      );
-      
-      const finalMatches = [...sortedBoostedMatches, ...sortedNormalMatches];
-      console.log(`Final matches: ${finalMatches.length} (${boostedMatches.length} boosted)`);
-      setEnhancedMatches(finalMatches);
-      
-      const boostedCount = boostedMatches.length;
-      if (boostedCount > 0) {
-        toast(`${boostedCount} Boosted ${boostedCount === 1 ? 'Profile' : 'Profiles'}`,
-          {
-            description: "Boosted profiles are highlighted and ranked higher",
+        // Give some users boost
+        const shouldBoost = Math.random() > 0.7;
+        if (shouldBoost) {
+          boostedProfile.isBoosted = true;
+          
+          // Determine boost level
+          const boostRoll = Math.random();
+          if (boostRoll > 0.9) {
+            boostedProfile.boostLevel = 'super';
+          } else if (boostRoll > 0.7) {
+            boostedProfile.boostLevel = 'international';
+          } else {
+            boostedProfile.boostLevel = 'local';
           }
-        );
-      }
-    } catch (error) {
-      console.error("Error processing matches:", error);
-      toast.error("There was an error processing your matches", {
-        description: "Please try refreshing the page"
-      });
-    }
-  }, [
-    currentUser, 
-    potentialMatches, 
-    selectedRegions, 
-    isLocationFiltering, 
-    isNearbyFilterActive, 
-    proximityRadius, 
-    userCoordinates,
-    boostedProfiles
-  ]);
-  
-  useEffect(() => {
-    setFilteredMatches(isFiltering
-      ? enhancedMatches.filter(match => match.isBoosted)
-      : enhancedMatches);
-  }, [enhancedMatches, isFiltering]);
-  
-  return {
-    enhancedMatches,
-    filteredMatches
-  };
+        } else {
+          boostedProfile.isBoosted = false;
+          boostedProfile.boostLevel = 'none';
+        }
+        
+        return boostedProfile;
+      };
+
+      const boostedProfiles = distancedProfiles.map(profile => boostProfile(profile));
+
+      // 3. Calculate Final Score (Placeholder - replace with actual logic)
+      const calculateFinalScore = (profile: UserWithCoordinates): number => {
+        let baseScore = Math.floor(Math.random() * 50) + 50; // Random score between 50-99
+        if (profile.isBoosted) {
+          baseScore += baseScore * (BOOST_MULTIPLIERS[profile.boostLevel || 'none'] / 10);
+        }
+        return baseScore;
+      };
+
+      const scoredProfiles = boostedProfiles.map(profile => ({
+        ...profile,
+        finalScore: calculateFinalScore(profile)
+      }));
+
+      // 4. Sort Profiles
+      const sortProfiles = (a: UserWithCoordinates, b: UserWithCoordinates) => {
+        // Add finalScore property if it doesn't exist
+        const scoreA = (a as any).finalScore || 0;
+        const scoreB = (b as any).finalScore || 0;
+        
+        // First sort by boost level
+        if (a.isBoosted && !b.isBoosted) return -1;
+        if (!a.isBoosted && b.isBoosted) return 1;
+        
+        // Then by score
+        return scoreB - scoreA;
+      };
+
+      const sortedProfiles = [...scoredProfiles].sort(sortProfiles);
+
+      setProcessedMatches(sortedProfiles);
+      setLoading(false);
+    };
+
+    processMatches();
+
+  }, [profiles, userLocation]);
+
+  return { processedMatches, loading };
 };
 
 export default useMatchProcessing;

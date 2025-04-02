@@ -21,7 +21,10 @@ const UserPreferences = () => {
   // Default preferences
   const defaultPreferences: UserPreferencesType = {
     maxDistance: 50,
-    ageRange: { min: 18, max: 50 },
+    ageRange: {
+      min: 18,
+      max: 50
+    },
     showMeToUsers: true,
     notificationPreferences: {
       messages: true,
@@ -74,21 +77,21 @@ const UserPreferences = () => {
     });
   };
   
-  const handleNotificationChange = (key: keyof UserPreferencesType['notificationPreferences'], value: boolean) => {
+  const handleNotificationChange = (key: keyof typeof defaultPreferences.notificationPreferences, value: boolean) => {
     setPreferences({
       ...preferences,
       notificationPreferences: {
-        ...preferences.notificationPreferences,
+        ...preferences.notificationPreferences!,
         [key]: value
       }
     });
   };
   
   const handleAddLocation = () => {
-    if (locationInput.trim() && !preferences.preferredLocations.includes(locationInput.trim())) {
+    if (locationInput.trim() && !preferences.preferredLocations?.includes(locationInput.trim())) {
       setPreferences({
         ...preferences,
-        preferredLocations: [...preferences.preferredLocations, locationInput.trim()]
+        preferredLocations: [...(preferences.preferredLocations || []), locationInput.trim()]
       });
       setLocationInput('');
     }
@@ -97,12 +100,12 @@ const UserPreferences = () => {
   const handleRemoveLocation = (location: string) => {
     setPreferences({
       ...preferences,
-      preferredLocations: preferences.preferredLocations.filter(loc => loc !== location)
+      preferredLocations: preferences.preferredLocations?.filter(loc => loc !== location) || []
     });
   };
   
   const handlePriorityChange = (key: string, value: number) => {
-    const updatedPriorities = { ...preferences.matchingPriorities, [key]: value };
+    const updatedPriorities = { ...(preferences.matchingPriorities || {}), [key]: value };
     
     setPreferences({
       ...preferences,
@@ -121,10 +124,10 @@ const UserPreferences = () => {
         notificationPreferences: preferences.notificationPreferences,
         preferredLocations: preferences.preferredLocations,
         matchingPriorities: {
-          distance: preferences.matchingPriorities.distance,
-          interests: preferences.matchingPriorities.interests,
-          personality: preferences.matchingPriorities.personality,
-          age: preferences.matchingPriorities.age
+          distance: preferences.matchingPriorities?.distance || 5,
+          interests: preferences.matchingPriorities?.interests || 5,
+          personality: preferences.matchingPriorities?.personality || 5,
+          age: preferences.matchingPriorities?.age || 5
         }
       });
       
@@ -162,7 +165,7 @@ const UserPreferences = () => {
                   min={5} 
                   max={100} 
                   step={5} 
-                  value={[preferences.maxDistance]} 
+                  value={[preferences.maxDistance || 50]} 
                   onValueChange={handleDistanceChange}
                 />
               </div>
@@ -171,7 +174,7 @@ const UserPreferences = () => {
                 <div className="flex justify-between">
                   <Label htmlFor="age-range">Age Range</Label>
                   <span className="text-sm text-muted-foreground">
-                    {preferences.ageRange.min} - {preferences.ageRange.max}
+                    {preferences.ageRange?.min || 18} - {preferences.ageRange?.max || 50}
                   </span>
                 </div>
                 <Slider 
@@ -179,7 +182,10 @@ const UserPreferences = () => {
                   min={18} 
                   max={80} 
                   step={1} 
-                  value={[preferences.ageRange.min, preferences.ageRange.max]} 
+                  value={[
+                    preferences.ageRange?.min || 18, 
+                    preferences.ageRange?.max || 50
+                  ]} 
                   onValueChange={handleAgeRangeChange}
                 />
               </div>
@@ -227,7 +233,7 @@ const UserPreferences = () => {
               </div>
               
               <div className="flex flex-wrap gap-2 mt-4">
-                {preferences.preferredLocations.length > 0 ? (
+                {preferences.preferredLocations && preferences.preferredLocations.length > 0 ? (
                   preferences.preferredLocations.map((location, index) => (
                     <Badge 
                       key={index} 
@@ -267,7 +273,7 @@ const UserPreferences = () => {
                   <Label htmlFor="notify-messages">New Messages</Label>
                   <Switch 
                     id="notify-messages" 
-                    checked={preferences.notificationPreferences.messages}
+                    checked={preferences.notificationPreferences?.messages}
                     onCheckedChange={(value) => handleNotificationChange('messages', value)}
                   />
                 </div>
@@ -276,7 +282,7 @@ const UserPreferences = () => {
                   <Label htmlFor="notify-matches">New Matches</Label>
                   <Switch 
                     id="notify-matches" 
-                    checked={preferences.notificationPreferences.matches}
+                    checked={preferences.notificationPreferences?.matches}
                     onCheckedChange={(value) => handleNotificationChange('matches', value)}
                   />
                 </div>
@@ -285,7 +291,7 @@ const UserPreferences = () => {
                   <Label htmlFor="notify-likes">Profile Likes</Label>
                   <Switch 
                     id="notify-likes" 
-                    checked={preferences.notificationPreferences.likes}
+                    checked={preferences.notificationPreferences?.likes}
                     onCheckedChange={(value) => handleNotificationChange('likes', value)}
                   />
                 </div>
@@ -294,7 +300,7 @@ const UserPreferences = () => {
                   <Label htmlFor="notify-app">App Updates</Label>
                   <Switch 
                     id="notify-app" 
-                    checked={preferences.notificationPreferences.app}
+                    checked={preferences.notificationPreferences?.app}
                     onCheckedChange={(value) => handleNotificationChange('app', value)}
                   />
                 </div>
@@ -313,14 +319,14 @@ const UserPreferences = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <Label htmlFor="distance-priority">Distance</Label>
-                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities.distance}</span>
+                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities?.distance || 5}</span>
                   </div>
                   <Slider 
                     id="distance-priority"
                     min={1} 
                     max={10} 
                     step={1} 
-                    value={[preferences.matchingPriorities.distance]} 
+                    value={[preferences.matchingPriorities?.distance || 5]} 
                     onValueChange={(values) => handlePriorityChange('distance', values[0])}
                   />
                 </div>
@@ -328,14 +334,14 @@ const UserPreferences = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <Label htmlFor="interests-priority">Shared Interests</Label>
-                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities.interests}</span>
+                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities?.interests || 5}</span>
                   </div>
                   <Slider 
                     id="interests-priority"
                     min={1} 
                     max={10} 
                     step={1} 
-                    value={[preferences.matchingPriorities.interests]} 
+                    value={[preferences.matchingPriorities?.interests || 5]} 
                     onValueChange={(values) => handlePriorityChange('interests', values[0])}
                   />
                 </div>
@@ -343,14 +349,14 @@ const UserPreferences = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <Label htmlFor="personality-priority">Personality Match</Label>
-                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities.personality}</span>
+                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities?.personality || 5}</span>
                   </div>
                   <Slider 
                     id="personality-priority"
                     min={1} 
                     max={10} 
                     step={1} 
-                    value={[preferences.matchingPriorities.personality]} 
+                    value={[preferences.matchingPriorities?.personality || 5]} 
                     onValueChange={(values) => handlePriorityChange('personality', values[0])}
                   />
                 </div>
@@ -358,14 +364,14 @@ const UserPreferences = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <Label htmlFor="age-priority">Age Similarity</Label>
-                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities.age}</span>
+                    <span className="text-sm text-muted-foreground">{preferences.matchingPriorities?.age || 5}</span>
                   </div>
                   <Slider 
                     id="age-priority"
                     min={1} 
                     max={10} 
                     step={1} 
-                    value={[preferences.matchingPriorities.age]} 
+                    value={[preferences.matchingPriorities?.age || 5]} 
                     onValueChange={(values) => handlePriorityChange('age', values[0])}
                   />
                 </div>
