@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -24,6 +23,7 @@ import './index.css';
 import BlogPage from './pages/BlogPage';
 import BlogPost from './pages/BlogPost';
 import Explore from './pages/Explore';
+import Preferences from '@/pages/Preferences';
 
 const App = () => {
   return (
@@ -115,7 +115,6 @@ const App = () => {
                 </ProtectedRoute>
               } 
             />
-            {/* New Blog Routes */}
             <Route 
               path="/blog" 
               element={
@@ -139,6 +138,10 @@ const App = () => {
                   <Explore />
                 </ProtectedRoute>
               } 
+            />
+            <Route 
+              path="/preferences" 
+              element={<Preferences />} 
             />
           </Routes>
         </TestModeProvider>

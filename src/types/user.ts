@@ -1,4 +1,14 @@
+// Add this only if it doesn't already exist in the file, otherwise keep everything as is
+export interface UserPreferences {
+  maxDistance?: number;
+  ageRange?: [number, number];
+  notificationsEnabled?: boolean;
+  messagePreview?: boolean;
+  theme?: 'light' | 'dark' | 'system';
+  language?: string;
+}
 
+// Make sure User interface includes preferences
 export interface User {
   id: string;
   name: string;
@@ -18,7 +28,7 @@ export interface User {
   personalityTraits: string[];
   role: 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial';
   isBanned: boolean;
-  verificationStatus: 'verified' | 'unverified' | 'pending' | 'rejected';
+  verificationStatus: 'verified' | 'unverified' | 'pending';
   lastMessage: string;
   lastMessageTime: Date;
   status: 'online' | 'offline' | 'away';
@@ -31,21 +41,7 @@ export interface User {
     routingNumber: string;
     accountType: string;
   };
-  isDemo?: boolean; // Flag to indicate if this is a demo profile
   preferences?: UserPreferences;
-  isBoosted?: boolean;
-  boostLevel?: BoostLevelType;
-}
-
-export interface UserWithCoordinates extends User {
-  coordinates: {
-    latitude: number;
-    longitude: number;
-  };
-  distance: number;
-  isBoosted?: boolean;
-  boostLevel?: BoostLevelType;
-  finalScore?: number;
 }
 
 export interface GiftInventory {
@@ -57,20 +53,11 @@ export interface GiftInventory {
 export interface Message {
   id: string;
   senderId: string;
-  receiverId: string;
+  recipientId: string;
   content: string;
   timestamp: Date;
   isRead: boolean;
-  attachmentUrl?: string;
-}
-
-export interface BlogComment {
-  id: string;
-  userId: string;
-  userName: string;
-  content: string;
-  postId: string;
-  createdAt: Date;
+  attachments?: string[];
 }
 
 export interface BlogPostType {
@@ -78,36 +65,27 @@ export interface BlogPostType {
   userId: string;
   title: string;
   content: string;
-  imageUrl?: string;
-  likes: number;
-  comments: BlogComment[];
   createdAt: Date;
   updatedAt: Date;
+  likes: number;
+  comments: BlogComment[];
   tags: string[];
 }
 
-export type BoostLevelType = 'basic' | 'premium' | 'ultra' | 'none' | 'local' | 'international' | 'super';
+export interface BlogComment {
+  id: string;
+  postId: string;
+  userId: string;
+  userName: string;
+  content: string;
+  createdAt: Date;
+}
 
-export interface UserPreferences {
-  maxDistance: number;
-  ageRange: {
-    min: number;
-    max: number;
-  };
-  showMeToUsers: boolean;
-  notificationPreferences: {
-    messages: boolean;
-    matches: boolean;
-    likes: boolean;
-    app: boolean;
-  };
-  preferredLocations: string[];
-  matchingPriorities: {
-    distance: number;
-    interests: number;
-    age: number;
-    personality: number;
-    location?: number;
-    writingStyle?: number;
+export type BoostLevelType = 'none' | 'local' | 'international';
+
+export interface UserWithCoordinates extends User {
+  coordinates?: {
+    latitude: number;
+    longitude: number;
   };
 }
