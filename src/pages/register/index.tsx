@@ -143,7 +143,10 @@ const Register = () => {
       
       if (result.requiresEmailConfirmation) {
         toast.success("Registration successful!", {
-          description: "Please check your email to confirm your account"
+          description: "Please check your email to confirm your account. You'll be redirected to verify your identity after confirmation."
+        });
+        navigate('/email-confirmation', { 
+          state: { email }
         });
       } else {
         if (selectedPlan === 'free') {
@@ -152,7 +155,7 @@ const Register = () => {
           toast.success(`Your ${selectedPlan} subscription has been activated with a 3-day free trial!`);
         }
         
-        navigate('/profile-setup');
+        navigate('/verification');
       }
     } catch (error: any) {
       console.error("Registration error:", error);

@@ -146,6 +146,12 @@ export const useSessionManager = () => {
             // Session data is updated, check it
             checkSession();
           }
+        } else if (event === 'USER_UPDATED') {
+          // User has confirmed their email
+          if (session && window.location.pathname.includes('/verify-email')) {
+            // Redirect to verification page
+            window.location.href = '/auth/confirm-email?success=true';
+          }
         }
       }
     );

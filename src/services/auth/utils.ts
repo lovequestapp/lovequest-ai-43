@@ -1,98 +1,7 @@
 
 import { User } from '@/types/user';
 
-// Convert profile data into a normalized User object
-export const mapProfileToUser = (
-  profile: any, 
-  userId: string, 
-  userEmail: string
-): User => {
-  const gender = profile?.gender || 'non-binary';
-  const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary')
-    ? gender as 'male' | 'female' | 'non-binary'
-    : 'non-binary' as const;
-
-  const interestedIn = profile?.interested_in || [];
-  const validInterestedIn = Array.isArray(interestedIn)
-    ? interestedIn.filter((gender: string) => 
-        ['male', 'female', 'non-binary'].includes(gender)
-      ) as ('male' | 'female' | 'non-binary')[]
-    : [] as ('male' | 'female' | 'non-binary')[];
-
-  const premiumStatus = profile?.premium_status || 'basic';
-  const validPremiumStatus = ['basic', 'premium', 'vip', 'trial'].includes(premiumStatus)
-    ? premiumStatus as 'basic' | 'premium' | 'vip' | 'trial'
-    : 'basic' as const;
-
-  const role = profile?.role || 'subscriber';
-  const validRole = ['admin', 'moderator', 'subscriber', 'vip', 'trial'].includes(role)
-    ? role as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial'
-    : 'subscriber' as const;
-    
-  const isVerified = profile?.is_verified || false;
-  const validVerificationStatus = isVerified ? 'verified' as const : 'unverified' as const;
-
-  return {
-    id: userId,
-    name: profile?.name || userEmail?.split('@')[0] || 'User',
-    email: userEmail || '',
-    age: profile?.age || 18,
-    bio: profile?.bio || '',
-    location: profile?.location || '',
-    interests: profile?.interests || [],
-    photos: profile?.photos || [],
-    gender: validGender,
-    interestedIn: validInterestedIn,
-    popularityPoints: profile?.popularity_points || 0,
-    premiumStatus: validPremiumStatus,
-    giftInventory: profile?.gift_inventory || { rose: 0, heart: 0, teddy: 0 },
-    receivedGifts: profile?.received_gifts || { rose: 0, heart: 0, teddy: 0 },
-    compatibilityScore: 0,
-    personalityTraits: profile?.personality_traits || [],
-    role: validRole,
-    isBanned: profile?.is_banned || false,
-    verificationStatus: validVerificationStatus,
-    lastMessage: '',
-    lastMessageTime: new Date(),
-    status: 'online',
-    favoriteMusic: [],
-    voiceIntro: '',
-    bankDetails: {
-      accountName: '',
-      accountNumber: '',
-      bankName: '',
-      routingNumber: '',
-      accountType: ''
-    }
-  };
-};
-
-// Check if a trial subscription has expired
-export const checkTrialExpiration = async (
-  trialEndDate: string | undefined, 
-  userId: string, 
-  updateProfileFn: (id: string, data: any) => Promise<any>
-): Promise<boolean> => {
-  if (!trialEndDate) return false;
-  
-  const endDate = new Date(trialEndDate);
-  const now = new Date();
-  
-  if (now > endDate) {
-    // Trial has expired, update to basic
-    try {
-      await updateProfileFn(userId, { premium_status: 'basic' });
-      return true;
-    } catch (error) {
-      console.error("Error updating expired trial:", error);
-      return false;
-    }
-  }
-  
-  return false;
-};
-
-// Create admin user object
+// Helper function to create an admin user
 export const createAdminUser = (): User => {
   return {
     id: "admin-special-id",
@@ -129,7 +38,115 @@ export const createAdminUser = (): User => {
   };
 };
 
-// Check for admin credentials
+// Check if the admin credentials are provided
 export const isAdminCredentials = (email: string, password: string): boolean => {
   return email === "hunainm.qureshi@gmail.com" && password === "LoveQuest14";
+};
+
+// Map database profile to User object
+export const mapProfileToUser = (profile: any, userId: string, email: string): User => {
+  // Handle type-safe gender
+  const gender = profile?.gender || 'non-binary';
+  const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary') 
+    ? gender as 'male' | 'female' | 'non-binary'
+    : 'non-binary' as const;
+    
+  // Handle type-safe interestedIn
+  const interestedIn = profile?.interested_in || [];
+  const validInterestedIn = Array.isArray(interestedIn) ? 
+    interestedIn.filter((interest: string) => 
+      interest === 'male' || interest === 'female' || interest === 'non-binary'
+    ) as ('male' | 'female' | 'non-binary')[] :
+    [] as ('male' | 'female' | 'non-binary')[];
+    
+  // Handle type-safe premiumStatus
+  const premiumStatus = profile?.premium_status || 'basic';
+  const validPremiumStatus = (
+    premiumStatus === 'basic' || 
+    premiumStatus === 'premium' || 
+    premiumStatus === 'vip' || 
+    premiumStatus === 'trial'
+  )
+    ? premiumStatus as 'basic' | 'premium' | 'vip' | 'trial'
+    : 'basic' as const;
+    
+  // Handle type-safe role
+  const role = profile?.role || 'subscriber';
+  const validRole = (
+    role === 'admin' || 
+    role === 'moderator' || 
+    role === 'subscriber' || 
+    role === 'vip' || 
+    role === 'trial'
+  )
+    ? role as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial'
+    : 'subscriber' as const;
+    
+  // Handle type-safe verification status
+  const verificationStatus = profile?.verification_status || 'unverified';
+  const validVerificationStatus = (
+    verificationStatus === 'verified' || 
+    verificationStatus === 'unverified' || 
+    verificationStatus === 'pending' || 
+    verificationStatus === 'rejected'
+  )
+    ? verificationStatus as 'verified' | 'unverified' | 'pending' | 'rejected'
+    : 'unverified' as const;
+
+  return {
+    id: userId,
+    name: profile?.name || email?.split('@')[0] || 'User',
+    email: email || '',
+    age: profile?.age || 18,
+    bio: profile?.bio || '',
+    location: profile?.location || '',
+    interests: profile?.interests || [],
+    photos: profile?.photos || [],
+    gender: validGender,
+    interestedIn: validInterestedIn,
+    popularityPoints: profile?.popularity_points || 0,
+    premiumStatus: validPremiumStatus,
+    giftInventory: profile?.gift_inventory || { rose: 0, heart: 0, teddy: 0 },
+    receivedGifts: profile?.received_gifts || { rose: 0, heart: 0, teddy: 0 },
+    compatibilityScore: 0,
+    personalityTraits: profile?.personality_traits || [],
+    role: validRole,
+    isBanned: profile?.is_banned || false,
+    verificationStatus: validVerificationStatus,
+    lastMessage: '',
+    lastMessageTime: new Date(),
+    status: 'offline',
+    favoriteMusic: profile?.favorite_music || [],
+    voiceIntro: profile?.voice_intro || '',
+    bankDetails: {
+      accountName: '',
+      accountNumber: '',
+      bankName: '',
+      routingNumber: '',
+      accountType: ''
+    }
+  };
+};
+
+// Check if trial has expired and update if needed
+export const checkTrialExpiration = async (
+  trialEndDate: string, 
+  userId: string,
+  updateProfileFn: (userId: string, data: any) => Promise<any>
+): Promise<boolean> => {
+  const endDate = new Date(trialEndDate);
+  const now = new Date();
+  
+  if (now > endDate) {
+    // Trial has expired, update to basic
+    try {
+      await updateProfileFn(userId, { premium_status: 'basic' });
+      return true;
+    } catch (error) {
+      console.error('Error updating expired trial status:', error);
+      return true; // Still return true as the trial has expired
+    }
+  }
+  
+  return false;
 };

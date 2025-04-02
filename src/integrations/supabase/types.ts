@@ -66,6 +66,7 @@ export type Database = {
           role: string | null
           trial_end_date: string | null
           updated_at: string | null
+          verification_status: string
           voice_intro: string | null
         }
         Insert: {
@@ -91,6 +92,7 @@ export type Database = {
           role?: string | null
           trial_end_date?: string | null
           updated_at?: string | null
+          verification_status?: string
           voice_intro?: string | null
         }
         Update: {
@@ -116,7 +118,83 @@ export type Database = {
           role?: string | null
           trial_end_date?: string | null
           updated_at?: string | null
+          verification_status?: string
           voice_intro?: string | null
+        }
+        Relationships: []
+      }
+      verification_notifications: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string | null
+          status: string
+          user_id: string
+          verification_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name?: string | null
+          status?: string
+          user_id: string
+          verification_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          status?: string
+          user_id?: string
+          verification_id?: string | null
+        }
+        Relationships: []
+      }
+      verification_requests: {
+        Row: {
+          admin_notes: string | null
+          biometric_match_score: number | null
+          created_at: string | null
+          document_url: string | null
+          id: string
+          selfie_url: string | null
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string
+          verification_id: string | null
+          verification_status: string
+          verified_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          biometric_match_score?: number | null
+          created_at?: string | null
+          document_url?: string | null
+          id?: string
+          selfie_url?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id: string
+          verification_id?: string | null
+          verification_status?: string
+          verified_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          biometric_match_score?: number | null
+          created_at?: string | null
+          document_url?: string | null
+          id?: string
+          selfie_url?: string | null
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+          verification_id?: string | null
+          verification_status?: string
+          verified_at?: string | null
         }
         Relationships: []
       }

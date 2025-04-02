@@ -24,6 +24,9 @@ import BlogPage from './pages/BlogPage';
 import BlogPost from './pages/BlogPost';
 import Explore from './pages/Explore';
 import Preferences from '@/pages/Preferences';
+import Verification from './pages/Verification';
+import EmailConfirmation from './pages/EmailConfirmation';
+import EmailConfirmSuccess from './pages/EmailConfirmSuccess';
 
 const App = () => {
   return (
@@ -143,6 +146,9 @@ const App = () => {
               path="/preferences" 
               element={<Preferences />} 
             />
+            <Route path="/verification" element={<Verification />} />
+            <Route path="/email-confirmation" element={<EmailConfirmation />} />
+            <Route path="/auth/confirm-email" element={<EmailConfirmSuccess />} />
           </Routes>
         </TestModeProvider>
       </UserProvider>
