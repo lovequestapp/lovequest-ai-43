@@ -1,19 +1,26 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Sun } from 'lucide-react';
+import { Moon, Sun } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
 
 const ThemeToggle = () => {
-  // Since the app is using light mode only, this is purely decorative
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <Button
       variant="ghost"
       size="sm"
       className="flex items-center justify-center"
-      aria-label="Theme"
+      onClick={toggleTheme}
+      aria-label={theme === 'light' ? 'Dark Mode' : 'Light Mode'}
     >
-      <Sun className="h-5 w-5 text-love-500" />
-      <span className="sr-only">Light Mode</span>
+      {theme === 'light' ? (
+        <Moon className="h-5 w-5 text-love-500" />
+      ) : (
+        <Sun className="h-5 w-5 text-love-500" />
+      )}
+      <span className="sr-only">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
     </Button>
   );
 };

@@ -14,14 +14,15 @@ import { User, UserWithCoordinates } from '@/types/user';
 import useMatchProcessing from './hooks/useMatchProcessing';
 import ProfileCard from '@/components/ProfileCard';
 import DiscoverFilters from './DiscoverFilters';
-import { MapPin, Sparkles, Search, Filter } from 'lucide-react';
+import { MapPin, Sparkles, Search, Filter, Loader2 } from 'lucide-react';
 
 const Discover = () => {
   const { currentUser, allUsers } = useUser();
   const [activeTab, setActiveTab] = useState('recommended');
-  const [location, setLocation] = useState('New York, USA');
+  const [location, setLocation] = useState('Determining location...');
   const [searchTerm, setSearchTerm] = useState('');
   const [profiles, setProfiles] = useState<UserWithCoordinates[]>([]);
+  const [loadingLocation, setLoadingLocation] = useState(true);
   const { filteredUsers, applyFilters, setMaxDistance, setAgeRange, setVerifiedOnly, setSortBy, boostProfile } = useMatchProcessing(
     allUsers as UserWithCoordinates[],
     currentUser
@@ -29,19 +30,88 @@ const Discover = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userCoordinates, setUserCoordinates] = useState<{latitude: number, longitude: number} | null>(null);
+
+  // Get user's geolocation
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        // Success handler
+        (position) => {
+          const coords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          };
+          setUserCoordinates(coords);
+          
+          // Attempt to get location name via reverse geocoding
+          fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.longitude},${coords.latitude}.json?access_token=${localStorage.getItem('mapbox_token') || ''}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.features && data.features.length > 0) {
+                // Extract city and country
+                const placeName = data.features[0].place_name;
+                setLocation(placeName);
+              }
+            })
+            .catch(err => {
+              console.error("Error getting location name:", err);
+            })
+            .finally(() => {
+              setLoadingLocation(false);
+            });
+        },
+        // Error handler
+        (error) => {
+          console.error("Error getting location:", error);
+          setLocation("Location unavailable");
+          setLoadingLocation(false);
+          toast.error("Couldn't get your location", {
+            description: "Location services may be disabled."
+          });
+        },
+        // Options
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    } else {
+      setLocation("Geolocation not supported");
+      setLoadingLocation(false);
+      toast.error("Geolocation is not supported by your browser");
+    }
+  }, []);
 
   useEffect(() => {
-    if (allUsers && currentUser) {
+    if (allUsers && currentUser && userCoordinates) {
       setIsLoading(true);
       try {
-        // Mock setting coordinates for all users
-        const usersWithCoordinates = allUsers.map(user => ({
-          ...user,
-          coordinates: {
-            latitude: 40.7128, // Example latitude for New York
-            longitude: -74.0060, // Example longitude for New York
+        // Add real coordinates to users
+        const usersWithCoordinates = allUsers.map(user => {
+          // For current user, use actual coordinates
+          if (user.id === currentUser.id && userCoordinates) {
+            return {
+              ...user,
+              coordinates: userCoordinates
+            };
           }
-        })) as UserWithCoordinates[];
+          
+          // For demo users, generate realistic coordinates near the user
+          // This simulates users being at various distances
+          const randomDistance = Math.random() * 50; // Random distance up to 50 miles
+          const randomAngle = Math.random() * 2 * Math.PI; // Random angle in radians
+          
+          // Approximate 1 degree of latitude = 69 miles, 1 degree longitude = 55 miles at 40° latitude
+          const latOffset = (randomDistance * Math.cos(randomAngle)) / 69;
+          const lngOffset = (randomDistance * Math.sin(randomAngle)) / 55;
+          
+          return {
+            ...user,
+            coordinates: {
+              latitude: userCoordinates.latitude + latOffset,
+              longitude: userCoordinates.longitude + lngOffset,
+            }
+          };
+        }) as UserWithCoordinates[];
+        
         setProfiles(usersWithCoordinates);
       } catch (err) {
         setError('Failed to load profiles');
@@ -51,20 +121,22 @@ const Discover = () => {
         setIsLoading(false);
       }
     }
-  }, [allUsers, currentUser]);
+  }, [allUsers, currentUser, userCoordinates]);
 
   useEffect(() => {
-    setIsLoading(true);
-    try {
-      applyFilters();
-    } catch (err) {
-      setError('Failed to apply filters');
-      toast.error('Failed to apply filters');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
+    if (profiles.length > 0) {
+      setIsLoading(true);
+      try {
+        applyFilters();
+      } catch (err) {
+        setError('Failed to apply filters');
+        toast.error('Failed to apply filters');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }, [applyFilters]);
+  }, [applyFilters, profiles]);
 
   const handleBoostProfile = (userId: string) => {
     try {
@@ -96,7 +168,16 @@ const Discover = () => {
               </Button>
               <Button variant="outline" size="sm" className="flex items-center gap-1">
                 <MapPin size={16} />
-                <span className="hidden sm:inline">{location || 'All Regions'}</span>
+                <span className="hidden sm:inline">
+                  {loadingLocation ? (
+                    <span className="flex items-center gap-1">
+                      <Loader2 size={12} className="animate-spin" />
+                      Locating...
+                    </span>
+                  ) : (
+                    location
+                  )}
+                </span>
               </Button>
             </div>
           </div>

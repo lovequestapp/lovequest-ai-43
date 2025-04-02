@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Message, User } from '@/types/user';
 import { useUser } from '@/context/UserContext';
@@ -12,13 +12,17 @@ export const useRealtimeChat = (chatWithUserId?: string) => {
   const { currentUser, sendMessage: contextSendMessage, markMessagesAsRead } = useUser();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [typingStatus, setTypingStatus] = useState<{isTyping: boolean, username: string | null}>(
+    {isTyping: false, username: null}
+  );
+  const typingTimeoutRef = useRef<number | null>(null);
   
   // Subscribe to real-time updates
   useEffect(() => {
     if (!currentUser?.id || !chatWithUserId) return;
     
-    // Create a real-time subscription
-    const channel = supabase
+    // Create a real-time subscription for new messages
+    const messageChannel = supabase
       .channel('messages-changes')
       .on(
         'postgres_changes',
@@ -34,29 +38,114 @@ export const useRealtimeChat = (chatWithUserId?: string) => {
           
           // Mark message as read if it's from the current chat
           if (payload.new && payload.new.sender_id === chatWithUserId) {
-            // In a real implementation, we would update the message in the database
-            // For now, we'll use our mock implementation
             markMessagesAsRead([payload.new.id]);
           }
           
           // Show notification if the message is from someone else
           if (payload.new && payload.new.sender_id !== chatWithUserId) {
-            // Get the sender's name
-            const senderName = 'Someone'; // In a real app, this would come from the database
-            toast.info(`New message from ${senderName}`);
+            // Get the sender's name from context if available
+            const sender = payload.new.sender_id;
+            const senderUser = sender 
+              ? 'Someone' // fallback
+              : 'Someone';
+            toast.info(`New message from ${senderUser}`);
           }
         }
       )
       .subscribe();
+      
+    // Real-time subscription for typing indicators using presence
+    const typingChannel = supabase
+      .channel(`typing:${currentUser.id}:${chatWithUserId}`)
+      .on('presence', { event: 'sync' }, () => {
+        // Check if the other user is typing
+        const state = typingChannel.presenceState();
+        const otherUserState = Object.values(state)
+          .flat()
+          .find((user: any) => user.user_id === chatWithUserId);
+          
+        if (otherUserState && otherUserState.isTyping) {
+          setTypingStatus({
+            isTyping: true,
+            username: otherUserState.username || 'Someone'
+          });
+        } else {
+          setTypingStatus({
+            isTyping: false,
+            username: null
+          });
+        }
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        // When a user joins with typing status
+        const newUser = newPresences.find((user: any) => user.user_id === chatWithUserId);
+        if (newUser && newUser.isTyping) {
+          setTypingStatus({
+            isTyping: true,
+            username: newUser.username || 'Someone'
+          });
+        }
+      })
+      .on('presence', { event: 'leave' }, () => {
+        // When a user leaves, reset typing status
+        setTypingStatus({
+          isTyping: false,
+          username: null
+        });
+      })
+      .subscribe();
     
     setIsSubscribed(true);
     
-    // Clean up the subscription when unmounting
+    // Clean up the subscriptions when unmounting
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messageChannel);
+      supabase.removeChannel(typingChannel);
       setIsSubscribed(false);
     };
   }, [currentUser?.id, chatWithUserId, markMessagesAsRead]);
+  
+  // Function to broadcast typing status
+  const setTyping = useCallback((isTyping: boolean) => {
+    if (!currentUser?.id || !chatWithUserId) return;
+    
+    const channel = supabase.channel(`typing:${chatWithUserId}:${currentUser.id}`);
+    
+    if (isTyping) {
+      // Send typing status and setup timeout to reset
+      channel.track({
+        user_id: currentUser.id,
+        username: currentUser.name,
+        isTyping: true
+      });
+      
+      // Clear previous timeout if exists
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Set new timeout to stop typing after 3 seconds
+      typingTimeoutRef.current = window.setTimeout(() => {
+        channel.track({
+          user_id: currentUser.id,
+          username: currentUser.name,
+          isTyping: false
+        });
+      }, 3000);
+    } else {
+      // Clear timeout and send not typing
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+      
+      channel.track({
+        user_id: currentUser.id,
+        username: currentUser.name,
+        isTyping: false
+      });
+    }
+  }, [currentUser, chatWithUserId]);
   
   // Send a message
   const sendMessage = useCallback(
@@ -67,7 +156,11 @@ export const useRealtimeChat = (chatWithUserId?: string) => {
       }
       
       try {
-        contextSendMessage(chatWithUserId, content);
+        // Reset typing indicator when sending a message
+        setTyping(false);
+        
+        // Send the message using the context function
+        await contextSendMessage(chatWithUserId, content);
         return true;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
@@ -76,7 +169,7 @@ export const useRealtimeChat = (chatWithUserId?: string) => {
         return false;
       }
     },
-    [currentUser?.id, chatWithUserId, contextSendMessage]
+    [currentUser?.id, chatWithUserId, contextSendMessage, setTyping]
   );
   
   // Mark all messages from a user as read
@@ -99,6 +192,8 @@ export const useRealtimeChat = (chatWithUserId?: string) => {
     sendMessage,
     markAllAsRead,
     isSubscribed,
-    error
+    error,
+    typingStatus,
+    setTyping
   };
 };
