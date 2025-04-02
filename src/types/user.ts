@@ -61,6 +61,9 @@ export interface User {
   preferences?: UserPreferences;
   isDemo?: boolean; // Add this for demo users
   finalScore?: number; // For compatibility scoring
+  distance?: number; // For filtering based on location
+  isBoosted?: boolean; // For boosted profiles
+  boostLevel?: BoostLevelType; // For boosted profiles
 }
 
 export interface GiftInventory {
@@ -77,6 +80,9 @@ export interface Message {
   timestamp: Date;
   isRead: boolean;
   attachments?: string[];
+  type?: 'text' | 'voice' | 'image' | 'gift' | 'video-request' | 'video-accepted' | 'video-declined';
+  mediaUrl?: string;
+  giftType?: 'rose' | 'heart' | 'teddy';
 }
 
 export interface BlogPostType {
@@ -110,4 +116,5 @@ export interface UserWithCoordinates extends User {
   distance?: number;
   isBoosted?: boolean;
   boostLevel?: BoostLevelType;
+  finalScore?: number;
 }

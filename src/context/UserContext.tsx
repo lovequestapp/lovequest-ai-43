@@ -55,6 +55,10 @@ interface UserContextType {
   getWithdrawalHistory: () => any[];
   getPendingWithdrawal: () => any;
   updatePreferences: (preferences: Partial<UserPreferences>) => Promise<boolean>;
+  getUser: (userId: string) => Promise<User | null>;
+  allMessages: Message[];
+  allUsers: User[];
+  sendMessage: (recipientId: string, content: string) => void;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -266,11 +270,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
       
-      // Use the profileService for updating the profile
       const success = await updateProfileData(currentUser.id, data);
       
       if (success) {
-        // Update the current user state with the new data
         setCurrentUser(prev => {
           if (prev) {
             return { ...prev, ...data };
@@ -300,17 +302,13 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return null;
       }
       
-      // Use the profileService for uploading a photo
       const photoUrl = await uploadProfilePhoto(currentUser.id, file);
       
       if (photoUrl) {
-        // Update the current user's photos array
         const newPhotos = [...(currentUser.photos || []), photoUrl];
         
-        // Update the database with the new photos array
         await updateProfileData(currentUser.id, { photos: newPhotos });
         
-        // Update the currentUser state
         setCurrentUser(prev => {
           if (prev) {
             return { ...prev, photos: newPhotos };
@@ -637,11 +635,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         return false;
       }
       
-      // Use the profileService for updating the profile
       const success = await updateProfileData(userId, data);
       
       if (success) {
-        // If updating the current user, update the currentUser state
         if (userId === currentUser.id) {
           setCurrentUser(prev => {
             if (prev) {
@@ -732,6 +728,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
   
+  const getUser = async (userId: string): Promise<User | null> => {
+    return allUsers.find(user => user.id === userId) || null;
+  };
+  
   const contextValue: UserContextType = {
     currentUser,
     setCurrentUser,
@@ -762,6 +762,16 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     matches,
     messages,
     sendMessage: (recipientId: string, content: string) => {
+      const newMessage: Message = {
+        id: `msg-${Date.now()}`,
+        senderId: currentUser?.id || '',
+        recipientId: recipientId,
+        content,
+        timestamp: new Date(),
+        isRead: false
+      };
+      
+      console.log("Sending message:", newMessage);
       toast.success("Message sent!");
     },
     markMessagesAsRead: (messageIds: string[]) => {

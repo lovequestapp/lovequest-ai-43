@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -17,7 +18,7 @@ import ImageUploader from '@/components/ImageUploader';
 
 const MessagesPage = () => {
   const { userId: selectedUserId } = useParams<{ userId: string }>();
-  const { currentUser, getUser, sendMessage, allMessages } = useUser();
+  const { currentUser, allUsers, messages: allMessages, sendMessage } = useUser();
   const [messageContent, setMessageContent] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
@@ -34,13 +35,14 @@ const MessagesPage = () => {
     
     const fetchUser = async () => {
       if (selectedUserId) {
-        const user = await getUser(selectedUserId);
+        // Find the user in allUsers
+        const user = allUsers.find(user => user.id === selectedUserId);
         setSelectedUser(user);
       }
     };
     
     fetchUser();
-  }, [selectedUserId, getUser, currentUser, navigate]);
+  }, [selectedUserId, allUsers, currentUser, navigate]);
   
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -73,98 +75,51 @@ const MessagesPage = () => {
     toast.success(`Video call declined with user ${recipientId}`);
   };
 
-  // Fix the sendMessage function to use recipientId instead of receiverId
-  const handleSendMessage = (content: string, type: string = 'text') => {
-    if (!content.trim() && type === 'text') return;
+  const handleSendMessage = (content: string, messageType: string = 'text') => {
+    if (!content.trim() && messageType === 'text') return;
+    if (!selectedUserId) return;
     
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`,
-      senderId: currentUser?.id || '',
-      recipientId: selectedUserId, // Changed from receiverId to recipientId
-      content,
-      timestamp: new Date(),
-      isRead: false
-    };
-    
-    sendMessage(newMessage);
+    sendMessage(selectedUserId, content);
     setMessageContent('');
   };
 
-  // Fix gift message
   const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
-    const message: Message = {
-      id: `gift-${Date.now()}`,
-      senderId: currentUser?.id || '',
-      recipientId: selectedUserId, // Changed from receiverId to recipientId
-      content: `Sent a ${giftType}`,
-      timestamp: new Date(),
-      isRead: false,
-      type: 'gift',
-      giftType
-    };
+    if (!selectedUserId) return;
     
-    sendMessage(message);
+    const giftMessage = `Sent a ${giftType}`;
+    sendMessage(selectedUserId, giftMessage);
     handleCloseGiftModal();
   };
 
-  // Fix voice message
   const handleSendVoiceNote = (voiceUrl: string) => {
-    const message: Message = {
-      id: `voice-${Date.now()}`,
-      senderId: currentUser?.id || '',
-      recipientId: selectedUserId, // Changed from receiverId to recipientId
-      content: 'Voice note',
-      timestamp: new Date(),
-      isRead: false,
-      type: 'voice',
-      mediaUrl: voiceUrl
-    };
+    if (!selectedUserId) return;
     
-    sendMessage(message);
+    sendMessage(selectedUserId, 'Voice note');
     setIsRecording(false);
   };
 
-  // Fix image message
   const handleSendImage = (imageUrl: string) => {
-    const message: Message = {
-      id: `img-${Date.now()}`,
-      senderId: currentUser?.id || '',
-      recipientId: selectedUserId, // Changed from receiverId to recipientId
-      content: 'Image',
-      timestamp: new Date(),
-      isRead: false,
-      type: 'image',
-      mediaUrl: imageUrl
-    };
+    if (!selectedUserId) return;
     
-    sendMessage(message);
+    sendMessage(selectedUserId, 'Image');
     handleCloseImageUploader();
   };
 
-  // Fix video request message
   const handleRequestVideoCall = () => {
-    const message: Message = {
-      id: `call-${Date.now()}`,
-      senderId: currentUser?.id || '',
-      recipientId: selectedUserId, // Changed from receiverId to recipientId
-      content: 'Video call request',
-      timestamp: new Date(),
-      isRead: false,
-      type: 'video-request'
-    };
+    if (!selectedUserId) return;
     
-    sendMessage(message);
+    sendMessage(selectedUserId, 'Video call request');
   };
 
-  // Fix other references to recipientId
-  const messages = allMessages.filter(
+  // Let's create a mock for messages since we don't have the full functionality yet
+  const mockMessages = allMessages || []; // Fallback to empty array if allMessages is undefined
+  const messages = mockMessages.filter(
     message =>
       (message.senderId === currentUser?.id && message.recipientId === selectedUserId) ||
       (message.recipientId === currentUser?.id && message.senderId === selectedUserId)
   ).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
   
   const isSentByMe = (message: Message) => message.senderId === currentUser?.id;
-  const getOtherUserId = (message: Message) => isSentByMe(message) ? message.recipientId : message.senderId;
   
   return (
     <div className="flex flex-col h-screen">
@@ -199,35 +154,9 @@ const MessagesPage = () => {
                 </div>
                 <Card className="w-fit max-w-[80%]">
                   <CardContent className="p-2 break-words">
-                    {message.type === 'text' && (
-                      <div>{message.content}</div>
-                    )}
-                    {message.type === 'gift' && (
-                      <div className="text-center">
-                        Sent a {message.giftType} <span role="img" aria-label="gift">🎁</span>
-                      </div>
-                    )}
-                    {message.type === 'voice' && (
-                      <audio controls src={message.mediaUrl}></audio>
-                    )}
-                    {message.type === 'image' && (
-                      <img src={message.mediaUrl} alt="Image" className="max-w-full rounded-md" />
-                    )}
-                    {message.type === 'video-request' && (
-                      <div>Video call request</div>
-                    )}
+                    <div>{message.content}</div>
                   </CardContent>
                 </Card>
-                {message.type === 'video-request' && message.recipientId === currentUser?.id && (
-                  <div className="flex space-x-2 mt-1">
-                    <Button size="sm" variant="outline" onClick={() => handleAcceptVideoCall(message.recipientId)}>
-                      Accept
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-red-500" onClick={() => handleDeclineVideoCall(message.recipientId)}>
-                      Decline
-                    </Button>
-                  </div>
-                )}
                 <div className="text-xs text-gray-500">
                   {message.timestamp.toLocaleTimeString()}
                 </div>

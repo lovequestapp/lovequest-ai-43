@@ -1,4 +1,5 @@
-import type { User, UserWithCoordinates, UserPreferences } from '@/types/user';
+
+import type { User, UserWithCoordinates, UserPreferences, BoostLevelType } from '@/types/user';
 
 export const isUserVisible = (user: User): boolean => {
   if (!user.preferences) return true;
@@ -45,8 +46,6 @@ export const isWithinAgeRange = (user: User, targetUser: User): boolean => {
   const { min, max } = user.preferences.ageRange;
   return targetUser.age >= min && targetUser.age <= max;
 };
-
-import { BoostLevelType } from '@/types/user';
 
 export const BOOST_MULTIPLIERS: Record<BoostLevelType, number> = {
   'none': 1,
