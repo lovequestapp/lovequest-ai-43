@@ -12,6 +12,8 @@ interface Transaction {
   transaction_type: 'purchase' | 'gift';
   amount: number;
   purchase_amount: number | null;
+  sender_id?: string;
+  recipient_id?: string;
   sender_name?: string;
   recipient_name?: string;
 }
@@ -28,13 +30,10 @@ const GiftTransactionHistory = () => {
       try {
         setLoading(true);
         
+        // Using raw SQL query to handle tables that might not be in TypeScript definitions yet
         const { data, error } = await supabase
           .from('gift_transactions')
-          .select(`
-            id, created_at, gift_type, transaction_type, amount, purchase_amount,
-            sender:sender_id(name),
-            recipient:recipient_id(name)
-          `)
+          .select('*')
           .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
           .order('created_at', { ascending: false });
             
@@ -43,13 +42,43 @@ const GiftTransactionHistory = () => {
           return;
         }
         
-        const formattedData = data.map(transaction => ({
-          ...transaction,
-          sender_name: transaction.sender?.name || 'Unknown',
-          recipient_name: transaction.recipient?.name || 'Unknown',
+        // Fetch sender and recipient names in a separate query
+        const processedData = await Promise.all(data.map(async (transaction) => {
+          let senderName = 'Unknown';
+          let recipientName = 'Unknown';
+          
+          if (transaction.sender_id) {
+            const { data: senderData } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', transaction.sender_id)
+              .single();
+              
+            if (senderData?.name) {
+              senderName = senderData.name;
+            }
+          }
+          
+          if (transaction.recipient_id) {
+            const { data: recipientData } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('id', transaction.recipient_id)
+              .single();
+              
+            if (recipientData?.name) {
+              recipientName = recipientData.name;
+            }
+          }
+          
+          return {
+            ...transaction,
+            sender_name: senderName,
+            recipient_name: recipientName,
+          };
         }));
         
-        setTransactions(formattedData);
+        setTransactions(processedData);
       } catch (err) {
         console.error('Failed to fetch transactions:', err);
       } finally {

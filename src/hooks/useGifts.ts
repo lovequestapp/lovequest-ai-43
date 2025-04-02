@@ -35,6 +35,7 @@ export const useGifts = () => {
     if (!currentUser?.id) return;
     
     try {
+      // Using a more direct query approach for tables that might not be in TypeScript definitions yet
       const { data, error } = await supabase
         .from('profiles')
         .select('gift_inventory')
@@ -47,7 +48,7 @@ export const useGifts = () => {
       }
       
       if (data?.gift_inventory) {
-        setInventory(data.gift_inventory);
+        setInventory(data.gift_inventory as GiftInventory);
       }
     } catch (err) {
       console.error('Failed to update inventory:', err);
@@ -55,9 +56,9 @@ export const useGifts = () => {
   }, [currentUser?.id]);
   
   // Initialize inventory from currentUser
-  useCallback(() => {
+  useEffect(() => {
     if (currentUser?.giftInventory) {
-      setInventory(currentUser.giftInventory as any);
+      setInventory(currentUser.giftInventory as GiftInventory);
     }
   }, [currentUser?.giftInventory]);
   
@@ -80,7 +81,7 @@ export const useGifts = () => {
           throw new Error(`You don't have any ${giftType}s to send`);
         }
         
-        // Add a transaction record
+        // Add a transaction record using a more direct approach
         const { error } = await supabase
           .from('gift_transactions')
           .insert({
@@ -134,7 +135,7 @@ export const useGifts = () => {
       };
       
       try {
-        // Record the purchase transaction
+        // Record the purchase transaction using a more direct approach
         const { error } = await supabase
           .from('gift_transactions')
           .insert({
