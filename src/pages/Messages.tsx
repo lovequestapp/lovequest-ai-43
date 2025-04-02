@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -199,7 +198,7 @@ const MessagesPage = () => {
       <GiftModal isOpen={isGiftModalOpen} onClose={handleCloseGiftModal} onSendGift={handleSendGift} />
       
       {/* Image Uploader Modal */}
-      <ImageUploader isOpen={isImageUploaderOpen} onClose={handleCloseImageUploader} onSendImage={handleSendImage} />
+      <ImageUploader onImageUploaded={handleSendImage} maxSize={5} className="w-full" />
     </div>
   );
 };

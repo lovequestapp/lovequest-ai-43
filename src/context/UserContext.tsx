@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { User, Message, UserPreferences } from '@/types/user';
+import { User, Message, UserPreferences, BlogPostType, BlogComment } from '@/types/user';
 import { calculateCompatibilityScore } from '@/utils/matchingAlgorithm';
 
-// Define the shape of our context
 export interface UserContextType {
   currentUser: User | null;
   setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
@@ -52,9 +51,24 @@ export interface UserContextType {
   updatePreferences: (preferences: Partial<UserPreferences>) => Promise<boolean>;
   getUser: (userId: string) => Promise<User | null>;
   allMessages: Message[];
+  updateUserData: (userId: string, data: Partial<User>) => Promise<boolean>;
+  createBlogPost: (post: Omit<BlogPostType, 'id' | 'createdAt' | 'updatedAt' | 'likes' | 'comments'>) => Promise<boolean>;
+  updateBlogPost: (postId: string, data: Partial<BlogPostType>) => Promise<boolean>;
+  deleteBlogPost: (postId: string) => Promise<boolean>;
+  likeBlogPost: (postId: string) => Promise<boolean>;
+  commentOnBlogPost: (postId: string, comment: string) => Promise<boolean>;
+  getUserPosts: (userId: string) => Promise<BlogPostType[]>;
+  getAllPosts: () => Promise<BlogPostType[]>;
+  getFilteredPosts: (filter: string) => Promise<BlogPostType[]>;
+  getGiftInventory: () => { rose: number; heart: number; teddy: number };
+  purchaseGifts: (giftType: 'rose' | 'heart' | 'teddy', quantity: number) => Promise<boolean>;
+  initiateVideoCall: (userId: string) => Promise<boolean>;
+  endVideoCall: () => void;
+  addUser: (user: Omit<User, 'id'>) => Promise<boolean>;
+  deleteUser: (userId: string) => Promise<boolean>;
+  getProfileById: (userId: string) => Promise<User | null>;
 }
 
-// Create the context with a default value (can be null or a default object)
 const UserContext = createContext<UserContextType>({
   currentUser: null,
   setCurrentUser: () => {},
@@ -102,9 +116,24 @@ const UserContext = createContext<UserContextType>({
   updatePreferences: async () => false,
   getUser: async () => null,
   allMessages: [],
+  updateUserData: async () => false,
+  createBlogPost: async () => false,
+  updateBlogPost: async () => false,
+  deleteBlogPost: async () => false,
+  likeBlogPost: async () => false,
+  commentOnBlogPost: async () => false,
+  getUserPosts: async () => [],
+  getAllPosts: async () => [],
+  getFilteredPosts: async () => [],
+  getGiftInventory: () => ({ rose: 0, heart: 0, teddy: 0 }),
+  purchaseGifts: async () => false,
+  initiateVideoCall: async () => false,
+  endVideoCall: () => {},
+  addUser: async () => false,
+  deleteUser: async () => false,
+  getProfileById: async () => null,
 });
 
-// Create a custom hook to use the context
 export const useUser = () => useContext(UserContext);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
@@ -214,10 +243,8 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Mock authentication check
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     if (isLoggedIn === 'true') {
-      // Mock user data
       setCurrentUser({
         id: 'mock-user-id',
         name: 'John Doe',
@@ -255,7 +282,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Mock login
     return new Promise((resolve) => {
       setTimeout(() => {
         localStorage.setItem('isLoggedIn', 'true');
@@ -300,7 +326,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
-    // Mock register
     return new Promise((resolve) => {
       setTimeout(() => {
         localStorage.setItem('isLoggedIn', 'true');
@@ -345,7 +370,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async (): Promise<void> => {
-    // Mock logout
     return new Promise((resolve) => {
       setTimeout(() => {
         localStorage.removeItem('isLoggedIn');
@@ -358,7 +382,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateProfile = async (data: Partial<User>): Promise<boolean> => {
-    // Mock update profile
     return new Promise((resolve) => {
       setTimeout(() => {
         setCurrentUser((prev) => prev ? { ...prev, ...data } : null);
@@ -369,7 +392,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateProfileField = async <K extends keyof User>(field: K, value: User[K]): Promise<boolean> => {
-    // Mock update profile field
     return new Promise((resolve) => {
       setTimeout(() => {
         setCurrentUser((prev) => prev ? { ...prev, [field]: value } : null);
@@ -386,7 +408,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const activateAccount = async (activationCode: string): Promise<boolean> => {
-    // Mock activate account
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log('Account activated with code:', activationCode);
@@ -405,13 +426,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const likeProfile = (userId: string): void => {
-    // Mock like profile
     console.log('Liked profile with ID:', userId);
     toast.success('Profile liked!');
   };
 
   const passProfile = (userId: string): void => {
-    // Mock pass profile
     console.log('Passed profile with ID:', userId);
     toast.success('Profile passed!');
   };
@@ -428,7 +447,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const matches = allUsers.filter(user => user.id !== currentUser?.id).slice(0, 3);
 
   const updateUserProfile = async (data: Partial<User>): Promise<boolean> => {
-    // Mock update user profile
     return new Promise((resolve) => {
       setTimeout(() => {
         setCurrentUser((prev) => prev ? { ...prev, ...data } : null);
@@ -439,7 +457,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const resetPassword = async (email: string): Promise<boolean> => {
-    // Mock reset password
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log('Password reset email sent to:', email);
@@ -450,7 +467,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const changePassword = async (oldPassword: string, newPassword: string): Promise<boolean> => {
-    // Mock change password
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log('Password changed successfully!');
@@ -461,7 +477,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const sendGift = async (recipientId: string, giftType: 'rose' | 'heart' | 'teddy'): Promise<boolean> => {
-    // Mock send gift
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log(`Gift ${giftType} sent to user with ID: ${recipientId}`);
@@ -472,7 +487,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const uploadVoiceIntro = async (audioBlob: Blob): Promise<string> => {
-    // Mock upload voice intro
     return new Promise((resolve) => {
       setTimeout(() => {
         const url = 'https://example.com/voice-intro.mp3';
@@ -484,7 +498,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const getVoiceIntro = async (userId: string): Promise<string | null> => {
-    // Mock get voice intro
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log('Voice intro retrieved for user with ID:', userId);
@@ -494,14 +507,12 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const boostProfile = (level: 'local' | 'international' | 'super'): boolean => {
-    // Mock boost profile
     console.log('Profile boosted with level:', level);
     toast.success(`Profile boosted with ${level} level!`);
     return true;
   };
 
   const uploadProfilePhoto = async (file: File): Promise<string> => {
-    // Mock upload profile photo
     return new Promise((resolve) => {
       setTimeout(() => {
         const url = 'https://example.com/profile-photo.jpg';
@@ -513,7 +524,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const deleteProfilePhoto = async (photoUrl: string): Promise<boolean> => {
-    // Mock delete profile photo
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log('Profile photo deleted successfully!');
@@ -524,7 +534,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const updateLocation = async (lat: number, lng: number): Promise<boolean> => {
-    // Mock update location
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log('Location updated successfully!');
@@ -535,7 +544,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const reportUser = async (userId: string, reason: string): Promise<boolean> => {
-    // Mock report user
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log(`User with ID ${userId} reported for reason: ${reason}`);
@@ -546,7 +554,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const blockUser = async (userId: string): Promise<boolean> => {
-    // Mock block user
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log('User blocked successfully!');
@@ -557,7 +564,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const unblockUser = async (userId: string): Promise<boolean> => {
-    // Mock unblock user
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log('User unblocked successfully!');
@@ -568,7 +574,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const sendVerificationRequest = async (): Promise<boolean> => {
-    // Mock send verification request
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log('Verification request sent successfully!');
@@ -579,7 +584,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const withdrawBalance = async (amount: number, bankDetails: User['bankDetails']): Promise<boolean> => {
-    // Mock withdraw balance
     return new Promise((resolve) => {
       setTimeout(() => {
         console.log(`Withdrawal request sent for amount: ${amount}`);
@@ -590,12 +594,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const getBalance = (): number => {
-    // Mock get balance
     return 100;
   };
 
   const getWithdrawalHistory = (): Array<{ amount: number; date: Date; status: string }> => {
-    // Mock get withdrawal history
     return [
       { amount: 50, date: new Date(), status: 'pending' },
       { amount: 20, date: new Date(), status: 'completed' },
@@ -603,12 +605,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const getPendingWithdrawal = (): { amount: number; date: Date } | null => {
-    // Mock get pending withdrawal
     return { amount: 50, date: new Date() };
   };
 
   const updatePreferences = async (preferences: Partial<UserPreferences>): Promise<boolean> => {
-    // Mock update preferences
     return new Promise((resolve) => {
       setTimeout(() => {
         setCurrentUser((prev) => prev && { ...prev, preferences: { ...prev.preferences, ...preferences } });
@@ -617,7 +617,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       }, 500);
     });
   };
-  
+
   const getUser = async (userId: string): Promise<User | null> => {
     if (currentUser && currentUser.id === userId) {
       return currentUser;
@@ -626,9 +626,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     const foundUser = allUsers.find(user => user.id === userId);
     return foundUser || null;
   };
-  
+
   const allMessages: Message[] = messages;
-  
+
   const sendMessage = (recipientId: string, content: string) => {
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
@@ -644,7 +644,155 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     console.log("Sending message:", newMessage);
     toast.success("Message sent!");
   };
-  
+
+  const updateUserData = async (userId: string, data: Partial<User>): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Updating user ${userId} with data:`, data);
+        if (userId === currentUser?.id) {
+          setCurrentUser(prev => prev ? { ...prev, ...data } : null);
+        }
+        toast.success('User data updated successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const createBlogPost = async (post: Omit<BlogPostType, 'id' | 'createdAt' | 'updatedAt' | 'likes' | 'comments'>): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('Creating blog post:', post);
+        toast.success('Blog post created successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const updateBlogPost = async (postId: string, data: Partial<BlogPostType>): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Updating blog post ${postId} with data:`, data);
+        toast.success('Blog post updated successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const deleteBlogPost = async (postId: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Deleting blog post ${postId}`);
+        toast.success('Blog post deleted successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const likeBlogPost = async (postId: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Liking blog post ${postId}`);
+        toast.success('Blog post liked!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const commentOnBlogPost = async (postId: string, comment: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Adding comment to blog post ${postId}:`, comment);
+        toast.success('Comment added successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const getUserPosts = async (userId: string): Promise<BlogPostType[]> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Getting posts for user ${userId}`);
+        resolve([]);
+      }, 500);
+    });
+  };
+
+  const getAllPosts = async (): Promise<BlogPostType[]> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('Getting all blog posts');
+        resolve([]);
+      }, 500);
+    });
+  };
+
+  const getFilteredPosts = async (filter: string): Promise<BlogPostType[]> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Getting blog posts with filter: ${filter}`);
+        resolve([]);
+      }, 500);
+    });
+  };
+
+  const getGiftInventory = () => {
+    return currentUser?.giftInventory || { rose: 0, heart: 0, teddy: 0 };
+  };
+
+  const purchaseGifts = async (giftType: 'rose' | 'heart' | 'teddy', quantity: number): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Purchasing ${quantity} ${giftType}(s)`);
+        toast.success(`${quantity} ${giftType}(s) purchased successfully!`);
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const initiateVideoCall = async (userId: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Initiating video call with user ${userId}`);
+        toast.success('Video call initiated!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const endVideoCall = () => {
+    console.log('Ending video call');
+    toast.success('Video call ended');
+  };
+
+  const addUser = async (user: Omit<User, 'id'>): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('Adding new user:', user);
+        toast.success('User added successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const deleteUser = async (userId: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log(`Deleting user ${userId}`);
+        toast.success('User deleted successfully!');
+        resolve(true);
+      }, 500);
+    });
+  };
+
+  const getProfileById = async (userId: string): Promise<User | null> => {
+    if (currentUser && currentUser.id === userId) {
+      return currentUser;
+    }
+
+    const foundUser = allUsers.find(user => user.id === userId);
+    return foundUser || null;
+  };
+
   const contextValue: UserContextType = {
     currentUser,
     setCurrentUser,
@@ -692,18 +840,32 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     sendVerificationRequest,
     withdrawBalance,
     getBalance,
-    getWithdrawalHistory: () => [],
-    getPendingWithdrawal: () => null,
+    getWithdrawalHistory,
+    getPendingWithdrawal,
     updatePreferences,
     getUser,
     allMessages,
+    updateUserData,
+    createBlogPost,
+    updateBlogPost,
+    deleteBlogPost,
+    likeBlogPost,
+    commentOnBlogPost,
+    getUserPosts,
+    getAllPosts,
+    getFilteredPosts,
+    getGiftInventory,
+    purchaseGifts,
+    initiateVideoCall,
+    endVideoCall,
+    addUser,
+    deleteUser,
+    getProfileById,
   };
-  
+
   return (
     <UserContext.Provider value={contextValue}>
       {children}
     </UserContext.Provider>
   );
 };
-
-// Export the custom hook

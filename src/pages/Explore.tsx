@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -22,7 +21,7 @@ import { toast } from 'sonner';
 const Explore = () => {
   const { currentUser, getAllPosts, getFilteredPosts, likeUser, boostProfile, sendGift } = useUser();
   const [activeTab, setActiveTab] = useState('trending');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchText, setSearchText] = useState('');
   const navigate = useNavigate();
   
   if (!currentUser) return null;
@@ -45,11 +44,11 @@ const Explore = () => {
     .slice(0, 8);
   
   // Filter by search query if provided
-  const filteredPosts = searchQuery
+  const filteredPosts = searchText
     ? allPosts.filter(post => 
-        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        post.title.toLowerCase().includes(searchText.toLowerCase()) ||
+        post.content.toLowerCase().includes(searchText.toLowerCase()) ||
+        post.tags.some(tag => tag.toLowerCase().includes(searchText.toLowerCase()))
       )
     : [];
   
@@ -103,8 +102,8 @@ const Explore = () => {
           <Input
             className="pl-10 bg-background"
             placeholder="Search for posts, topics, or interests..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value as string)}
           />
         </div>
         
@@ -129,7 +128,7 @@ const Explore = () => {
           </TabsList>
           
           {/* Search Results */}
-          {searchQuery && (
+          {searchText && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4">Search Results</h2>
               
@@ -162,7 +161,7 @@ const Explore = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">No results found for "{searchQuery}"</p>
+                  <p className="text-muted-foreground">No results found for "{searchText}"</p>
                 </div>
               )}
             </div>
@@ -295,7 +294,7 @@ const Explore = () => {
                         variant="secondary"
                         className="cursor-pointer hover:bg-secondary/80"
                         onClick={() => {
-                          setSearchQuery(tag);
+                          setSearchText(tag);
                           setActiveTab('trending');
                         }}
                       >
