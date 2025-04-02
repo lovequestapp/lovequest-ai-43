@@ -137,7 +137,7 @@ export const useSessionManager = () => {
       async (event, session) => {
         console.log('Auth state changed:', event);
         
-        if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        if (event === 'SIGNED_OUT') {
           setCurrentUser(null);
           setIsSessionValid(false);
           setSessionExpiresAt(null);

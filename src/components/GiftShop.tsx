@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Heart, Gift, Diamond, Rose } from 'lucide-react';
+import { Heart, Gift, Diamond, Flower } from 'lucide-react';
 import { 
   Dialog, 
   DialogContent, 
@@ -115,7 +115,7 @@ const GiftShop: React.FC = () => {
               {GIFT_ITEMS.map((gift) => (
                 <Card key={gift.id} className="overflow-hidden">
                   <div className="aspect-square bg-love-50 flex items-center justify-center p-6">
-                    {gift.type === 'rose' && <Rose className="h-16 w-16 text-red-500" />}
+                    {gift.type === 'rose' && <Flower className="h-16 w-16 text-red-500" />}
                     {gift.type === 'heart' && <Heart className="h-16 w-16 text-love-500" />}
                     {gift.type === 'teddy' && <Diamond className="h-16 w-16 text-amber-500" />}
                   </div>
@@ -156,7 +156,7 @@ const GiftShop: React.FC = () => {
                     return (
                       <Card key={`inventory-${type}`} className="overflow-hidden">
                         <div className="aspect-square bg-love-50 flex items-center justify-center p-6">
-                          {type === 'rose' && <Rose className="h-16 w-16 text-red-500" />}
+                          {type === 'rose' && <Flower className="h-16 w-16 text-red-500" />}
                           {type === 'heart' && <Heart className="h-16 w-16 text-love-500" />}
                           {type === 'teddy' && <Diamond className="h-16 w-16 text-amber-500" />}
                         </div>
@@ -216,7 +216,7 @@ const GiftShop: React.FC = () => {
           {selectedGift && (
             <div className="flex items-center gap-4 py-4">
               <div className="h-16 w-16 bg-love-50 rounded-lg flex items-center justify-center">
-                {selectedGift.type === 'rose' && <Rose className="h-8 w-8 text-red-500" />}
+                {selectedGift.type === 'rose' && <Flower className="h-8 w-8 text-red-500" />}
                 {selectedGift.type === 'heart' && <Heart className="h-8 w-8 text-love-500" />}
                 {selectedGift.type === 'teddy' && <Diamond className="h-8 w-8 text-amber-500" />}
               </div>

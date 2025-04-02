@@ -34,7 +34,7 @@ export const useRealTimeMessages = (userId: string | undefined) => {
       const formattedMessages: Message[] = data.map(msg => ({
         id: msg.id,
         senderId: msg.sender_id,
-        receiverId: msg.receiver_id,
+        recipientId: msg.receiver_id, // Changed from receiverId to recipientId
         content: msg.content,
         timestamp: new Date(msg.timestamp),
         isRead: msg.is_read,
@@ -52,7 +52,7 @@ export const useRealTimeMessages = (userId: string | undefined) => {
   }, [userId]);
 
   // Send a message
-  const sendMessage = useCallback(async (receiverId: string, content: string): Promise<boolean> => {
+  const sendMessage = useCallback(async (recipientId: string, content: string): Promise<boolean> => {
     if (!userId) {
       toast.error('You must be logged in to send messages');
       return false;
@@ -63,7 +63,7 @@ export const useRealTimeMessages = (userId: string | undefined) => {
         .from('messages')
         .insert({
           sender_id: userId,
-          receiver_id: receiverId,
+          receiver_id: recipientId,
           content,
           timestamp: new Date().toISOString(),
           is_read: false,
@@ -134,7 +134,7 @@ export const useRealTimeMessages = (userId: string | undefined) => {
         const newMessage: Message = {
           id: payload.new.id,
           senderId: payload.new.sender_id,
-          receiverId: payload.new.receiver_id,
+          recipientId: payload.new.receiver_id, // Changed from receiverId to recipientId
           content: payload.new.content,
           timestamp: new Date(payload.new.timestamp),
           isRead: payload.new.is_read,
