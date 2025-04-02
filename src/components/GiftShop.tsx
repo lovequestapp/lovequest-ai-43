@@ -49,7 +49,7 @@ const giftItems: GiftItem[] = [
 ];
 
 const GiftShop: React.FC = () => {
-  const { currentUser, purchaseGift } = useUser();
+  const { currentUser, purchaseGifts } = useUser();
   const [selectedGift, setSelectedGift] = useState<GiftItem | null>(null);
   const [purchaseDialogOpen, setPurchaseDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('available');
@@ -60,8 +60,8 @@ const GiftShop: React.FC = () => {
     if (!selectedGift) return;
     
     try {
-      // Call the purchaseGift function with the gift type
-      const success = await purchaseGift(selectedGift.type);
+      // Call the purchaseGifts function with the gift type and quantity
+      const success = await purchaseGifts(selectedGift.type, 1);
       
       if (success) {
         toast.success(`You purchased a ${selectedGift.name}!`);

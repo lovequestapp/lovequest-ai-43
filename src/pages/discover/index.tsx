@@ -162,6 +162,8 @@ const Discover = () => {
                     <ProfileCard
                       key={profile.id}
                       profile={profile}
+                      currentUser={currentUser}
+                      showActions={true}
                       onBoost={() => handleBoostProfile(profile.id)}
                     />
                   ))}

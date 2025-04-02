@@ -3,18 +3,19 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, X, MessageCircle, Star, Shield } from 'lucide-react';
+import { Heart, X, MessageCircle, Star, Shield, Rocket } from 'lucide-react';
 import { User } from '@/types/user';
 import { useNavigate } from 'react-router-dom';
 
 export interface ProfileCardProps {
   profile: User;
-  currentUser: User | null;
+  currentUser?: User | null;
   showActions?: boolean;
   isMatch?: boolean;
   alreadyLiked?: boolean;
   onLike?: (profileId: string) => void;
   onPass?: (profileId: string) => void;
+  onBoost?: (profileId: string) => void;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ 
@@ -24,7 +25,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   isMatch = false,
   alreadyLiked = false,
   onLike,
-  onPass
+  onPass,
+  onBoost
 }) => {
   const navigate = useNavigate();
   
@@ -40,6 +42,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   const handlePass = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onPass) onPass(profile.id);
+  };
+  
+  const handleBoost = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onBoost) onBoost(profile.id);
   };
   
   return (
@@ -101,6 +108,16 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             >
               <MessageCircle className="h-4 w-4" />
             </Button>
+            {onBoost && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={handleBoost}
+              >
+                <Rocket className="h-4 w-4" />
+              </Button>
+            )}
             <Button 
               variant="outline" 
               size="sm" 
