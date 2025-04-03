@@ -180,6 +180,8 @@ export const useAuth = () => {
         
         // Clear auth timestamp
         localStorage.removeItem('lovequestLastAuth');
+        localStorage.removeItem('admin_email');
+        localStorage.removeItem('sb-' + (supabase.projectRef || 'jhfzugtgazuagqfpsuku') + '-auth-token');
         
         // Navigate to login page
         navigate('/login');

@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/context/ThemeContext';
+import { Link, useLocation } from 'react-router-dom';
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
@@ -50,20 +51,25 @@ interface SidebarItemProps extends React.HTMLAttributes<HTMLDivElement> {
   icon?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
+  to?: string;
 }
 
-const SidebarItem = ({ active, icon, className, children, ...props }: SidebarItemProps) => {
+const SidebarItem = ({ active, icon, className, children, to, ...props }: SidebarItemProps) => {
   const { theme } = useTheme();
-
-  return (
+  const location = useLocation();
+  
+  // If the "to" prop is provided, determine if this item is active based on the current route
+  const isActive = active || (to && location.pathname === to);
+  
+  const itemContent = (
     <div
       className={cn(
-        "flex items-center px-3 py-2 rounded-md text-sm transition-colors cursor-pointer",
-        active 
+        "flex items-center px-3 py-2 rounded-md text-sm transition-colors",
+        isActive 
           ? theme === 'dark'
             ? "bg-accent/80 text-accent-foreground font-medium"
             : "bg-accent text-accent-foreground font-medium"
-          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground cursor-pointer",
         className
       )}
       {...props}
@@ -72,6 +78,17 @@ const SidebarItem = ({ active, icon, className, children, ...props }: SidebarIte
       {children}
     </div>
   );
+  
+  // If "to" prop is provided, wrap with Link component
+  if (to) {
+    return (
+      <Link to={to} className="block no-underline">
+        {itemContent}
+      </Link>
+    );
+  }
+  
+  return itemContent;
 };
 
 Sidebar.Section = SidebarSection;

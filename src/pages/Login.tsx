@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Login = () => {
@@ -79,7 +79,11 @@ const Login = () => {
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
         <Card className="max-w-lg mx-auto">
-          <CardHeader>
+          <CardHeader className="text-center">
+            <div className="flex justify-center items-center mb-4">
+              <Heart className="h-8 w-8 text-love-500 mr-2" />
+              <h1 className="text-3xl font-display font-bold text-love-500">LoveQuest</h1>
+            </div>
             <CardTitle className="text-2xl font-display">Login</CardTitle>
             <CardDescription>Enter your credentials to access your account</CardDescription>
           </CardHeader>
@@ -117,13 +121,18 @@ const Login = () => {
                   </Button>
                 </div>
               </div>
-              <Button disabled={isLoading} className="w-full mt-4" type="submit">
+              <Button disabled={isLoading} className="w-full mt-4 bg-love-500 hover:bg-love-600" type="submit">
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </CardContent>
-          <CardFooter className="text-sm text-muted-foreground">
-            Don't have an account? <Link to="/register" className="text-love-500 hover:underline ml-1">Sign up</Link>
+          <CardFooter className="flex flex-col space-y-2">
+            <div className="text-sm text-muted-foreground text-center w-full">
+              Don't have an account? <Link to="/register" className="text-love-500 hover:underline">Sign up</Link>
+            </div>
+            <div className="text-xs text-muted-foreground text-center w-full">
+              <Link to="/" className="hover:underline">Back to Home</Link>
+            </div>
           </CardFooter>
         </Card>
       </main>

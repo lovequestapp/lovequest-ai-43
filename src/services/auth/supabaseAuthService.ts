@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User } from '@/types/user';
@@ -176,20 +175,27 @@ export class SupabaseAuthService implements AuthService {
 
   async signOut(): Promise<{ success: boolean; error?: string }> {
     try {
-      // Clear admin marker and auth timestamp
+      // Clear admin marker, auth timestamp, and all related session data
       localStorage.removeItem('admin_email');
       localStorage.removeItem('lovequestLastAuth');
+      sessionStorage.clear(); // Clear any session storage as well
       
+      // Sign out from supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
+        console.error("Sign out error:", error);
         toast.error("Logout failed", { description: error.message });
         return { success: false, error: error.message };
       }
       
+      // Force clear any supabase specific storage items
+      localStorage.removeItem('sb-' + supabase.projectRef + '-auth-token');
+      
       toast.success("Logged out successfully");
       return { success: true };
     } catch (error: any) {
+      console.error("Sign out error:", error);
       toast.error("Logout failed", { description: error.message });
       return { success: false, error: error.message };
     }
@@ -200,6 +206,19 @@ export class SupabaseAuthService implements AuthService {
       // Check for admin user
       const adminEmail = localStorage.getItem('admin_email');
       if (adminEmail === 'hunainm.qureshi@gmail.com') {
+        // Double check if we want to be using admin or if it's a stale value
+        // If the last auth was more than 24 hours ago, clear it
+        const lastAuth = localStorage.getItem('lovequestLastAuth');
+        if (lastAuth) {
+          const lastAuthDate = new Date(lastAuth);
+          const now = new Date();
+          if (now.getTime() - lastAuthDate.getTime() > 24 * 60 * 60 * 1000) {
+            // Clear stale admin session
+            localStorage.removeItem('admin_email');
+            localStorage.removeItem('lovequestLastAuth');
+            return null;
+          }
+        }
         return createAdminUser();
       }
       

@@ -24,40 +24,43 @@ import {
 } from '@/pages';
 import { Toaster } from 'sonner';
 import { UserProvider } from '@/context/UserContext';
-import { ProtectedRouteProvider } from '@/context/ProtectedRouteContext';
+import ProtectedRoute from '@/components/protected-route';
 import NotFound from '@/components/404';
 
 const App = () => {
   return (
-    <ProtectedRouteProvider>
-      <UserProvider>
-        <Toaster position="top-right" richColors />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/profile-setup" element={<ProfileSetup />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/messages/:userId" element={<Messages />} />
-          <Route path="/edit-profile" element={<EditProfile />} />
-          <Route path="/discover" element={<Discover />} />
-          <Route path="/matches" element={<Matches />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/user-profile" element={<UserProfile />} />
-          <Route path="/profile/:userId" element={<UserProfile />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/blog/:postId" element={<BlogPost />} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/preferences" element={<Preferences />} />
-          <Route path="/verification" element={<Verification />} />
-          <Route path="/email-confirmation" element={<EmailConfirmation />} />
-          <Route path="/auth/confirm-email" element={<EmailConfirmSuccess />} />
-          <Route path="/shop" element={<Shop />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </UserProvider>
-    </ProtectedRouteProvider>
+    <UserProvider>
+      <Toaster position="top-right" richColors />
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<Home />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/email-confirmation" element={<EmailConfirmation />} />
+        <Route path="/auth/confirm-email" element={<EmailConfirmSuccess />} />
+        
+        {/* Protected routes */}
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/profile-setup" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
+        <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+        <Route path="/messages/:userId" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+        <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
+        <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
+        <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
+        <Route path="/profile/:userId" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+        <Route path="/user-profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
+        <Route path="/preferences" element={<ProtectedRoute><Preferences /></ProtectedRoute>} />
+        <Route path="/verification" element={<ProtectedRoute><Verification /></ProtectedRoute>} />
+        <Route path="/shop" element={<ProtectedRoute><Shop /></ProtectedRoute>} />
+        
+        {/* Admin routes */}
+        <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
+        
+        {/* Catch-all for 404 */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </UserProvider>
   );
 };
 
