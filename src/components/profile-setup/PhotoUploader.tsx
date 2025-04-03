@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Camera, X, Loader2 } from 'lucide-react';
+import { Camera, X, Loader2, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface PhotoUploaderProps {
   photos: string[];
@@ -17,22 +18,67 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   removePhoto,
   minRequiredPhotos = 1
 }) => {
+  // Max file size in MB
+  const MAX_FILE_SIZE = 5;
+
+  // Handle file validation before passing to the parent
+  const validateAndUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!e.target.files || e.target.files.length === 0) return;
+      
+      const file = e.target.files[0];
+      
+      // Check file size
+      const fileSizeInMB = file.size / (1024 * 1024);
+      if (fileSizeInMB > MAX_FILE_SIZE) {
+        toast.error(`File too large`, {
+          description: `Please upload an image smaller than ${MAX_FILE_SIZE}MB`
+        });
+        // Reset the input
+        e.target.value = '';
+        return;
+      }
+      
+      // Validate file type
+      if (!file.type.match('image.*')) {
+        toast.error("Invalid file type", {
+          description: "Please upload a valid image file (JPEG, PNG, etc.)"
+        });
+        // Reset the input
+        e.target.value = '';
+        return;
+      }
+      
+      // If validation passes, call the parent handler
+      handlePhotoUpload(e);
+    } catch (error) {
+      console.error('Error validating file:', error);
+      toast.error("File validation error", {
+        description: "Please try uploading a different image"
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted-foreground">Upload up to 6 photos for your profile (at least {minRequiredPhotos} required)</p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">Upload up to 6 photos for your LoveQuest profile (at least {minRequiredPhotos} required)</p>
+        <span className="text-sm font-medium">{photos.length}/6</span>
+      </div>
       
       <div className="grid grid-cols-3 gap-3">
         {photos.map((photo, index) => (
           <div key={index} className="relative group aspect-square">
             <img 
               src={photo} 
-              alt={`Profile photo ${index + 1}`} 
+              alt={`LoveQuest profile photo ${index + 1}`} 
               className="w-full h-full object-cover rounded-md"
             />
             <button
               type="button"
               className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
               onClick={() => removePhoto(index)}
+              aria-label="Remove photo"
             >
               <X size={16} />
             </button>
@@ -45,7 +91,7 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={handlePhotoUpload}
+              onChange={validateAndUpload}
               disabled={uploadingPhoto}
             />
             {uploadingPhoto ? (
@@ -54,7 +100,7 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               <>
                 <Camera size={24} className="text-gray-400" />
                 <span className="text-sm text-gray-500 mt-1">Add Photo</span>
-                <span className="text-xs text-gray-400 mt-1">{photos.length}/6</span>
+                <span className="text-xs text-gray-400 mt-1">Max {MAX_FILE_SIZE}MB</span>
               </>
             )}
           </label>
@@ -62,7 +108,10 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
       </div>
       
       {photos.length < minRequiredPhotos && (
-        <p className="text-xs text-amber-600">Please upload at least {minRequiredPhotos} {minRequiredPhotos === 1 ? 'photo' : 'photos'} to continue.</p>
+        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-md">
+          <AlertTriangle size={16} />
+          <p className="text-xs">Please upload at least {minRequiredPhotos} {minRequiredPhotos === 1 ? 'photo' : 'photos'} to continue with your LoveQuest profile.</p>
+        </div>
       )}
     </div>
   );

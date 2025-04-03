@@ -67,13 +67,14 @@ export const uploadProfilePhoto = async (userId: string, file: File): Promise<st
       return null;
     }
     
+    // Generate a unique file name to avoid collisions
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
     const filePath = `profiles/${userId}/${fileName}`;
     
     console.log('Uploading photo to path:', filePath);
     
-    // Upload the file
+    // Upload the file to Supabase storage
     const { data, error } = await supabase.storage
       .from('profile-photos')
       .upload(filePath, file, {
@@ -89,7 +90,7 @@ export const uploadProfilePhoto = async (userId: string, file: File): Promise<st
       return null;
     }
     
-    // Get the public URL
+    // Get the public URL for the uploaded file
     const { data: { publicUrl } } = supabase.storage
       .from('profile-photos')
       .getPublicUrl(data.path);
@@ -99,7 +100,7 @@ export const uploadProfilePhoto = async (userId: string, file: File): Promise<st
   } catch (error: any) {
     console.error('Upload photo error:', error);
     toast.error("Failed to upload photo to LoveQuest", {
-      description: "An unexpected error occurred"
+      description: error.message || "An unexpected error occurred"
     });
     return null;
   }
