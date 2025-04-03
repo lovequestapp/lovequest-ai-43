@@ -1,4 +1,3 @@
-
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
 import { toast } from 'sonner';
@@ -31,11 +30,11 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
       ...(profileData.voiceIntro !== undefined ? { voice_intro: profileData.voiceIntro } : {})
     };
 
-    const { error, data } = await supabase
+    // Update profile with direct call avoiding recursion
+    const { error } = await supabase
       .from('profiles')
       .update(updateData)
-      .eq('id', userId)
-      .select();
+      .eq('id', userId);
     
     if (error) {
       console.error('Error updating profile:', error);
@@ -45,7 +44,7 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
       return false;
     }
     
-    console.log('LoveQuest profile updated successfully:', data);
+    console.log('LoveQuest profile updated successfully');
     toast.success("LoveQuest profile updated successfully");
     return true;
   } catch (error: any) {
@@ -155,11 +154,12 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
       return null;
     }
 
+    // Use maybeSingle to avoid errors if no results found
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error("Error fetching profile:", error);

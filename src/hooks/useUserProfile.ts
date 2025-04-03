@@ -33,13 +33,32 @@ export const useUserProfile = () => {
         throw new Error('User not authenticated');
       }
       
-      const success = await updateProfile(data);
-      if (success) {
-        toast.success('Profile updated successfully');
-        return true;
-      } else {
-        throw new Error('Failed to update profile');
+      // Direct database update to avoid RLS policy recursion
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: data.name,
+          bio: data.bio,
+          age: data.age,
+          location: data.location,
+          interests: data.interests,
+          gender: data.gender,
+          interested_in: data.interestedIn,
+          personality_traits: data.personalityTraits,
+          photos: data.photos,
+          favorite_music: data.favoriteMusic,
+          ...(data.voiceIntro !== undefined ? { voice_intro: data.voiceIntro } : {})
+        })
+        .eq('id', currentUser.id);
+      
+      if (error) {
+        throw new Error(error.message);
       }
+      
+      // If database update was successful, also update the local context
+      await updateProfile(data);
+      toast.success('Profile updated successfully');
+      return true;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       console.error('Profile update error:', error);
@@ -63,12 +82,30 @@ export const useUserProfile = () => {
         throw new Error('User not authenticated');
       }
       
+      // First update directly in database to avoid RLS policy recursion
+      const dbField = mapFieldToDbColumn(field);
+      
+      if (!dbField) {
+        throw new Error(`Unknown field: ${String(field)}`);
+      }
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ [dbField]: value })
+        .eq('id', currentUser.id);
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      // Then update in context
       const success = await updateProfileField(field, value);
+      
       if (success) {
         toast.success(`Updated ${field.toString()}`);
         return true;
       } else {
-        throw new Error(`Failed to update ${field.toString()}`);
+        throw new Error(`Failed to update context for ${field.toString()}`);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -82,6 +119,27 @@ export const useUserProfile = () => {
   };
   
   /**
+   * Map User type fields to database column names
+   */
+  const mapFieldToDbColumn = (field: keyof User): string | null => {
+    const fieldMap: Record<string, string> = {
+      name: 'name',
+      bio: 'bio',
+      age: 'age',
+      location: 'location',
+      interests: 'interests',
+      gender: 'gender',
+      interestedIn: 'interested_in',
+      personalityTraits: 'personality_traits',
+      photos: 'photos',
+      favoriteMusic: 'favorite_music',
+      voiceIntro: 'voice_intro'
+    };
+    
+    return fieldMap[field as string] || null;
+  };
+  
+  /**
    * Fetch a user's profile data directly from Supabase
    */
   const fetchProfileData = async (userId: string) => {
@@ -91,6 +149,9 @@ export const useUserProfile = () => {
       if (!userId) {
         throw new Error('User ID is required');
       }
+      
+      // Add a small delay to prevent multiple rapid requests
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Directly fetch from supabase instead of using profileService
       // Using is_profile_owner function to avoid recursion issues

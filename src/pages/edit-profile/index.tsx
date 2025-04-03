@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -18,45 +18,57 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 
 const EditProfile = () => {
   const { currentUser } = useUser();
-  const { fetchProfileData, isLoading } = useUserProfile();
+  const { fetchProfileData, isLoading: isProfileLoading } = useUserProfile();
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
+  const [fetchAttempts, setFetchAttempts] = useState(0);
+  const [fetchError, setFetchError] = useState(null);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  useEffect(() => {
-    const loadProfileData = async () => {
-      if (!currentUser) {
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        setLoading(true);
-        const userProfile = await fetchProfileData(currentUser.id);
-          
-        if (userProfile) {
-          console.log('Successfully loaded profile data:', userProfile);
-          setProfileData(userProfile);
-        } else {
-          console.log('No profile data returned, using currentUser from context');
-          // Fall back to currentUser from context if no profile data found
-          setProfileData(currentUser);
-          toast.info('Using profile data from your current session');
-        }
-      } catch (err) {
-        console.error('Error loading profile data:', err);
-        // Continue with currentUser data even if profile fetch fails
-        setProfileData(currentUser);
-        toast.info('Using local profile data from your current session');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadProfileData = useCallback(async () => {
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
     
+    try {
+      setLoading(true);
+      setFetchError(null);
+      
+      console.log(`Attempting to fetch profile data (attempt ${fetchAttempts + 1})...`);
+      const userProfile = await fetchProfileData(currentUser.id);
+        
+      if (userProfile) {
+        console.log('Successfully loaded profile data');
+        setProfileData(userProfile);
+      } else {
+        console.log('No profile data returned, using currentUser from context');
+        // Fall back to currentUser from context if no profile data found
+        setProfileData(currentUser);
+        toast.info('Using profile data from your current session');
+      }
+    } catch (err) {
+      console.error('Error loading profile data:', err);
+      setFetchError(err);
+      
+      // Continue with currentUser data even if profile fetch fails
+      setProfileData(currentUser);
+      
+      // Only show toast on first error to avoid multiple notifications
+      if (fetchAttempts === 0) {
+        toast.info('Using local profile data from your current session');
+      }
+    } finally {
+      setLoading(false);
+      setFetchAttempts(prev => prev + 1);
+    }
+  }, [currentUser, fetchProfileData, fetchAttempts]);
+  
+  useEffect(() => {
     loadProfileData();
-  }, [currentUser, fetchProfileData]);
+  }, [loadProfileData]);
 
   const renderContent = () => {
     if (loading) {
@@ -68,7 +80,16 @@ const EditProfile = () => {
     }
     
     if (activeTab === 'profile') {
-      return <ProfileEditor initialData={profileData || currentUser} />;
+      return (
+        <>
+          {fetchError && (
+            <div className="mb-4 p-3 bg-amber-50 text-amber-700 rounded-md text-sm">
+              <p>There was an issue loading your profile data from the server. You're seeing local data from your current session.</p>
+            </div>
+          )}
+          <ProfileEditor initialData={profileData || currentUser} />
+        </>
+      );
     } else {
       return <MobileMonetization />;
     }
@@ -130,7 +151,14 @@ const EditProfile = () => {
                   <div className="h-8 w-8 rounded-full border-2 border-t-love-500 border-love-200 animate-spin"></div>
                 </div>
               ) : (
-                <ProfileEditor initialData={profileData || currentUser} />
+                <>
+                  {fetchError && (
+                    <div className="mb-4 p-3 bg-amber-50 text-amber-700 rounded-md text-sm">
+                      <p>There was an issue loading your profile data from the server. You're seeing local data from your current session.</p>
+                    </div>
+                  )}
+                  <ProfileEditor initialData={profileData || currentUser} />
+                </>
               )}
             </CardContent>
           </Card>
