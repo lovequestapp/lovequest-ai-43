@@ -1,24 +1,25 @@
 
 import React from 'react';
-import { Camera, X } from 'lucide-react';
-import { Button } from "@/components/ui/button";
+import { Camera, X, Loader2 } from 'lucide-react';
 
 interface PhotoUploaderProps {
   photos: string[];
   uploadingPhoto: boolean;
   handlePhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   removePhoto: (index: number) => void;
+  minRequiredPhotos?: number;
 }
 
 const PhotoUploader: React.FC<PhotoUploaderProps> = ({
   photos,
   uploadingPhoto,
   handlePhotoUpload,
-  removePhoto
+  removePhoto,
+  minRequiredPhotos = 1
 }) => {
   return (
     <div className="space-y-6">
-      <p className="text-sm text-muted-foreground">Upload up to 6 photos for your profile (at least 1 required)</p>
+      <p className="text-sm text-muted-foreground">Upload up to 6 photos for your profile (at least {minRequiredPhotos} required)</p>
       
       <div className="grid grid-cols-3 gap-3">
         {photos.map((photo, index) => (
@@ -48,7 +49,7 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
               disabled={uploadingPhoto}
             />
             {uploadingPhoto ? (
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <Loader2 size={24} className="text-love-500 animate-spin" />
             ) : (
               <>
                 <Camera size={24} className="text-gray-400" />
@@ -60,8 +61,8 @@ const PhotoUploader: React.FC<PhotoUploaderProps> = ({
         )}
       </div>
       
-      {photos.length === 0 && (
-        <p className="text-xs text-amber-600">Please upload at least one photo to continue.</p>
+      {photos.length < minRequiredPhotos && (
+        <p className="text-xs text-amber-600">Please upload at least {minRequiredPhotos} {minRequiredPhotos === 1 ? 'photo' : 'photos'} to continue.</p>
       )}
     </div>
   );

@@ -4,7 +4,6 @@ import { useUser } from '@/context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, UserCircle, MapPin, Mic, Image, Check } from 'lucide-react';
 import BasicInfoForm from '@/components/profile-setup/BasicInfoForm';
 import AboutYouForm from '@/components/profile-setup/AboutYouForm';
@@ -175,7 +174,7 @@ const ProfileSetupPage = () => {
       return;
     }
     
-    if (step === 4 && photos.length === 0) {
+    if (step === 4 && photos.length < 1) {
       toast.error("Please upload at least one photo");
       return;
     }
@@ -222,14 +221,14 @@ const ProfileSetupPage = () => {
         // Update local user context
         await updateUserProfile(updateData);
         
-        toast.success("Profile setup complete!");
+        toast.success("LoveQuest profile setup complete!");
         
         // Redirect to biometric verification
         navigate('/verification');
       }
     } catch (error) {
       console.error('Profile setup error:', error);
-      toast.error("Failed to complete profile setup");
+      toast.error("Failed to complete LoveQuest profile setup");
     } finally {
       setIsSubmitting(false);
     }
@@ -274,6 +273,7 @@ const ProfileSetupPage = () => {
             uploadingPhoto={uploadingPhoto}
             handlePhotoUpload={handlePhotoUpload}
             removePhoto={removePhoto}
+            minRequiredPhotos={1}
           />
         );
       case 5:
@@ -295,7 +295,11 @@ const ProfileSetupPage = () => {
   return (
     <div className="min-h-[100svh] bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-950 pb-20">
       <div className="container px-4 py-8 md:py-12 mx-auto max-w-md">
-        <ProfileSetupProgress currentStep={step} totalSteps={totalSteps} />
+        <h1 className="text-2xl font-bold text-center mb-6">LoveQuest Profile Setup</h1>
+        <ProfileSetupProgress 
+          currentStep={step} 
+          totalSteps={totalSteps} 
+        />
         
         <Card className="w-full mt-4 shadow-sm dark:bg-gray-800/50 backdrop-blur-sm border-gray-100 dark:border-gray-700">
           <CardContent className="pt-6">

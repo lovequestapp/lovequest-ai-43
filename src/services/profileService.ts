@@ -39,18 +39,18 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
     
     if (error) {
       console.error('Error updating profile:', error);
-      toast.error("Failed to update profile", {
+      toast.error("Failed to update LoveQuest profile", {
         description: error.message
       });
       return false;
     }
     
-    console.log('Profile updated successfully:', data);
-    toast.success("Profile updated successfully");
+    console.log('LoveQuest profile updated successfully:', data);
+    toast.success("LoveQuest profile updated successfully");
     return true;
   } catch (error: any) {
     console.error('Profile update error:', error.message);
-    toast.error("Failed to update profile", {
+    toast.error("Failed to update LoveQuest profile", {
       description: error.message || "An unexpected error occurred"
     });
     return false;
@@ -63,7 +63,7 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
 export const uploadProfilePhoto = async (userId: string, file: File): Promise<string | null> => {
   try {
     if (!userId) {
-      toast.error('You must be logged in to upload a photo');
+      toast.error('You must be logged in to upload a photo to LoveQuest');
       return null;
     }
     
@@ -83,7 +83,7 @@ export const uploadProfilePhoto = async (userId: string, file: File): Promise<st
       
     if (error) {
       console.error("Error uploading photo:", error);
-      toast.error("Failed to upload photo", {
+      toast.error("Failed to upload photo to LoveQuest", {
         description: error.message
       });
       return null;
@@ -94,11 +94,11 @@ export const uploadProfilePhoto = async (userId: string, file: File): Promise<st
       .from('profile-photos')
       .getPublicUrl(data.path);
     
-    console.log('Photo uploaded successfully:', publicUrl);
+    console.log('Photo uploaded successfully to LoveQuest:', publicUrl);
     return publicUrl;
   } catch (error: any) {
     console.error('Upload photo error:', error);
-    toast.error("Failed to upload photo", {
+    toast.error("Failed to upload photo to LoveQuest", {
       description: "An unexpected error occurred"
     });
     return null;
