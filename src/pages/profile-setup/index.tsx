@@ -15,6 +15,7 @@ import ProfileSetupFooter from '@/components/profile-setup/ProfileSetupFooter';
 import LocationSelector from '@/components/profile-setup/LocationSelector';
 import InterestsForm from '@/components/profile-setup/InterestsForm';
 import { updateProfileData, uploadProfilePhoto, saveVoiceIntro } from '@/services/profileService';
+import { User } from '@/types/user';
 
 const ProfileSetupPage = () => {
   const { currentUser, updateUserProfile } = useUser();
@@ -29,8 +30,8 @@ const ProfileSetupPage = () => {
     name: currentUser?.name || '',
     bio: currentUser?.bio || '',
     location: currentUser?.location || '',
-    gender: currentUser?.gender || '',
-    interestedIn: currentUser?.interestedIn || [],
+    gender: currentUser?.gender || '' as 'male' | 'female' | 'non-binary' | '',
+    interestedIn: currentUser?.interestedIn || [] as ('male' | 'female' | 'non-binary')[],
     age: currentUser?.age || 18,
     personalityTraits: currentUser?.personalityTraits || [],
     interests: currentUser?.interests || [],
@@ -202,9 +203,10 @@ const ProfileSetupPage = () => {
         return;
       }
       
-      // Prepare update data
-      const updateData = {
+      // Prepare update data with correct type casting
+      const updateData: Partial<User> = {
         ...profileData,
+        gender: profileData.gender as 'male' | 'female' | 'non-binary',
         photos
       };
       

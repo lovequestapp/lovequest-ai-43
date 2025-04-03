@@ -61,12 +61,16 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
     
     loadGoogleMapsScript(() => {
       try {
-        autocompleteService.current = new google.maps.places.AutocompleteService();
-        sessionToken.current = new google.maps.places.AutocompleteSessionToken();
-        
-        // Create a dummy element for PlacesService (required)
-        const dummyElement = document.createElement('div');
-        placesService.current = new google.maps.places.PlacesService(dummyElement);
+        if (window.google && window.google.maps && window.google.maps.places) {
+          autocompleteService.current = new google.maps.places.AutocompleteService();
+          sessionToken.current = new google.maps.places.AutocompleteSessionToken();
+          
+          // Create a dummy element for PlacesService (required)
+          const dummyElement = document.createElement('div');
+          placesService.current = new google.maps.places.PlacesService(dummyElement);
+        } else {
+          console.error("Google Maps Places API not available");
+        }
       } catch (error) {
         console.error('Error initializing Google Places API:', error);
       }
@@ -165,13 +169,17 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
     // Initialize Google Maps after setting API key
     loadGoogleMapsScript(() => {
       try {
-        autocompleteService.current = new google.maps.places.AutocompleteService();
-        sessionToken.current = new google.maps.places.AutocompleteSessionToken();
-        
-        const dummyElement = document.createElement('div');
-        placesService.current = new google.maps.places.PlacesService(dummyElement);
-        
-        toast.success('API key saved successfully');
+        if (window.google && window.google.maps && window.google.maps.places) {
+          autocompleteService.current = new google.maps.places.AutocompleteService();
+          sessionToken.current = new google.maps.places.AutocompleteSessionToken();
+          
+          const dummyElement = document.createElement('div');
+          placesService.current = new google.maps.places.PlacesService(dummyElement);
+          
+          toast.success('API key saved successfully');
+        } else {
+          throw new Error("Google Maps Places API not available");
+        }
       } catch (error) {
         console.error('Error initializing Google Places API:', error);
         toast.error('Error initializing Google API');

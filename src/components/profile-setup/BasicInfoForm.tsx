@@ -4,15 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type GenderType = 'male' | 'female' | 'non-binary';
-
 interface BasicInfoFormProps {
   profileData: {
     name: string;
     age: number;
     location: string;
-    gender: string;
-    interestedIn: string[];
+    gender: 'male' | 'female' | 'non-binary' | '';
+    interestedIn: ('male' | 'female' | 'non-binary')[];
   };
   handleProfileDataChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   handleGenderInterestChange: (interest: 'male' | 'female' | 'non-binary') => void;
@@ -87,12 +85,12 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({
         <div className="space-y-2">
           <Label>Interested In (select all that apply)</Label>
           <div className="flex flex-wrap gap-2">
-            {['male', 'female', 'non-binary'].map((gender) => (
+            {(['male', 'female', 'non-binary'] as const).map((gender) => (
               <Button
                 key={gender}
                 type="button"
-                variant={profileData.interestedIn.includes(gender as any) ? "default" : "outline"}
-                onClick={() => handleGenderInterestChange(gender as 'male' | 'female' | 'non-binary')}
+                variant={profileData.interestedIn.includes(gender) ? "default" : "outline"}
+                onClick={() => handleGenderInterestChange(gender)}
                 className="capitalize"
               >
                 {gender}
