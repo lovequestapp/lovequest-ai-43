@@ -8,16 +8,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from '@/context/UserContext';
 import ProfileEditor from '@/components/profile-editor/ProfileEditor';
 import ProtectedRoute from '@/components/protected-route';
-import { fetchUserProfile } from '@/services/profileService';
 import { toast } from 'sonner';
 import MobileContainer from '@/components/MobileContainer';
 import MobileToolbar from '@/components/MobileToolbar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileMonetization from '@/components/monetization/MobileMonetization';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 const EditProfile = () => {
   const { currentUser } = useUser();
+  const { fetchProfileData } = useUserProfile();
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
@@ -30,7 +31,8 @@ const EditProfile = () => {
       
       try {
         setLoading(true);
-        const userProfile = await fetchUserProfile(currentUser.id);
+        // Use our improved hook method that bypasses the RLS recursion issue
+        const userProfile = await fetchProfileData(currentUser.id);
           
         if (userProfile) {
           setProfileData(userProfile);
@@ -39,14 +41,16 @@ const EditProfile = () => {
         }
       } catch (err) {
         console.error('Error loading profile data:', err);
-        toast.error('Error loading profile data');
+        // Continue with currentUser data even if profile fetch fails
+        setProfileData(currentUser);
+        toast.error('Using local profile data due to server error');
       } finally {
         setLoading(false);
       }
     };
     
     loadProfileData();
-  }, [currentUser]);
+  }, [currentUser, fetchProfileData]);
 
   const renderContent = () => {
     if (loading) {

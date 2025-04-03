@@ -3,6 +3,7 @@ import { useUser } from '@/context/UserContext';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { User } from '@/types/user';
+import { supabase } from '@/lib/supabase';
 
 /**
  * A custom hook for handling user profile operations
@@ -73,6 +74,35 @@ export const useUserProfile = () => {
     }
   };
   
+  const fetchProfileData = async (userId: string) => {
+    try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      
+      // Directly fetch from supabase instead of using profileService to bypass the recursion issue
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching profile data:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('No profile data found');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+      throw error;
+    }
+  };
+  
   const handleUploadPhoto = async (file: File) => {
     setIsUpdating(true);
     setUpdateError(null);
@@ -129,6 +159,7 @@ export const useUserProfile = () => {
     updateField,
     uploadPhoto: handleUploadPhoto,
     deletePhoto: handleDeletePhoto,
+    fetchProfileData,
     isUpdating,
     updateError
   };
