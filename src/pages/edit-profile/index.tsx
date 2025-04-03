@@ -1,11 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from '@/context/UserContext';
+import ProfileEditor from '@/components/profile-editor/ProfileEditor';
 import ProtectedRoute from '@/components/protected-route';
 import { toast } from 'sonner';
 import MobileContainer from '@/components/MobileContainer';
@@ -13,7 +14,8 @@ import MobileToolbar from '@/components/MobileToolbar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileMonetization from '@/components/monetization/MobileMonetization';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
@@ -233,16 +235,16 @@ const EditProfilePage = () => {
                     <TabsTrigger value="profile" className="text-sm">Profile</TabsTrigger>
                     <TabsTrigger value="monetization" className="text-sm">Earnings</TabsTrigger>
                   </TabsList>
+                
+                  <TabsContent value="profile" className="pb-20 px-4 pt-4">
+                    {renderContent()}
+                  </TabsContent>
+                  
+                  <TabsContent value="monetization" className="pb-20">
+                    <MobileMonetization />
+                  </TabsContent>
                 </Tabs>
               </div>
-              
-              <TabsContent value="profile" className="pb-20 px-4 pt-4">
-                {renderContent()}
-              </TabsContent>
-              
-              <TabsContent value="monetization" className="pb-20">
-                <MobileMonetization />
-              </TabsContent>
               
               <div className="fixed bottom-16 left-0 right-0 p-4 bg-white border-t z-10">
                 <Button variant="outline" onClick={() => navigate('/user-profile')} className="w-full">
