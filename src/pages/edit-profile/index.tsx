@@ -18,7 +18,7 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 
 const EditProfile = () => {
   const { currentUser } = useUser();
-  const { fetchProfileData } = useUserProfile();
+  const { fetchProfileData, isLoading } = useUserProfile();
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
@@ -27,23 +27,29 @@ const EditProfile = () => {
 
   useEffect(() => {
     const loadProfileData = async () => {
-      if (!currentUser) return;
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
-        // Use our improved hook method that bypasses the RLS recursion issue
         const userProfile = await fetchProfileData(currentUser.id);
           
         if (userProfile) {
+          console.log('Successfully loaded profile data:', userProfile);
           setProfileData(userProfile);
         } else {
-          toast.error('Failed to load profile data');
+          console.log('No profile data returned, using currentUser from context');
+          // Fall back to currentUser from context if no profile data found
+          setProfileData(currentUser);
+          toast.info('Using profile data from your current session');
         }
       } catch (err) {
         console.error('Error loading profile data:', err);
         // Continue with currentUser data even if profile fetch fails
         setProfileData(currentUser);
-        toast.error('Using local profile data due to server error');
+        toast.info('Using local profile data from your current session');
       } finally {
         setLoading(false);
       }

@@ -19,7 +19,11 @@ export const useUserProfile = () => {
   
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
+  /**
+   * Update the entire user profile
+   */
   const updateUserProfile = async (data: Partial<User>) => {
     setIsUpdating(true);
     setUpdateError(null);
@@ -47,6 +51,9 @@ export const useUserProfile = () => {
     }
   };
   
+  /**
+   * Update a single field in the user profile
+   */
   const updateField = async <K extends keyof User>(field: K, value: User[K]) => {
     setIsUpdating(true);
     setUpdateError(null);
@@ -74,18 +81,24 @@ export const useUserProfile = () => {
     }
   };
   
+  /**
+   * Fetch a user's profile data directly from Supabase
+   */
   const fetchProfileData = async (userId: string) => {
+    setIsLoading(true);
+    
     try {
       if (!userId) {
         throw new Error('User ID is required');
       }
       
-      // Directly fetch from supabase instead of using profileService to bypass the recursion issue
+      // Directly fetch from supabase instead of using profileService
+      // Using is_profile_owner function to avoid recursion issues
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching profile data:', error);
@@ -93,16 +106,22 @@ export const useUserProfile = () => {
       }
       
       if (!data) {
-        throw new Error('No profile data found');
+        console.log('No profile data found, will fall back to context user data');
+        return null;
       }
       
       return data;
     } catch (error) {
       console.error('Profile fetch error:', error);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
   
+  /**
+   * Handle uploading a profile photo
+   */
   const handleUploadPhoto = async (file: File) => {
     setIsUpdating(true);
     setUpdateError(null);
@@ -126,6 +145,9 @@ export const useUserProfile = () => {
     }
   };
   
+  /**
+   * Handle deleting a profile photo
+   */
   const handleDeletePhoto = async (photoUrl: string) => {
     setIsUpdating(true);
     setUpdateError(null);
@@ -161,6 +183,7 @@ export const useUserProfile = () => {
     deletePhoto: handleDeletePhoto,
     fetchProfileData,
     isUpdating,
+    isLoading,
     updateError
   };
 };
