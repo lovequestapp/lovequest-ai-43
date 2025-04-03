@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Calendar, LayoutDashboard, LogOut, LogIn, User } from 'lucide-react';
+import { Heart, MessageCircle, Calendar, LayoutDashboard, LogOut, LogIn, User, Home, Compass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/context/UserContext';
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,12 @@ const MobileToolbar = () => {
   };
   
   const isActive = (path: string) => {
+    if (path === '/' && currentPath === '/') {
+      return true;
+    }
+    if (path === '/discover' && (currentPath === '/discover' || currentPath.startsWith('/discover'))) {
+      return true;
+    }
     if (path === '/matches' && (currentPath === '/matches' || currentPath.startsWith('/profile'))) {
       return true;
     }
@@ -48,6 +54,32 @@ const MobileToolbar = () => {
           // Authenticated user navigation
           <>
             <Link 
+              to="/" 
+              className={cn(
+                "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
+                isActive('/') 
+                  ? "text-love-500" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Home size={22} className={cn(isActive('/') ? "fill-love-500" : "")} />
+              <span className="text-xs mt-1 font-medium">Home</span>
+            </Link>
+            
+            <Link 
+              to="/discover" 
+              className={cn(
+                "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
+                isActive('/discover') 
+                  ? "text-love-500" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Compass size={22} className={cn(isActive('/discover') ? "fill-love-500" : "")} />
+              <span className="text-xs mt-1 font-medium">Discover</span>
+            </Link>
+            
+            <Link 
               to="/matches" 
               className={cn(
                 "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
@@ -71,19 +103,6 @@ const MobileToolbar = () => {
             >
               <MessageCircle size={22} className={cn(isActive('/messages') ? "fill-love-500" : "")} />
               <span className="text-xs mt-1 font-medium">Messages</span>
-            </Link>
-            
-            <Link 
-              to="/dates" 
-              className={cn(
-                "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
-                isActive('/dates') 
-                  ? "text-love-500" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Calendar size={22} className={cn(isActive('/dates') ? "fill-love-500" : "")} />
-              <span className="text-xs mt-1 font-medium">Dates</span>
             </Link>
             
             <Link 
@@ -126,8 +145,21 @@ const MobileToolbar = () => {
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Heart size={22} className={cn(isActive('/') ? "fill-love-500" : "")} />
+              <Home size={22} className={cn(isActive('/') ? "fill-love-500" : "")} />
               <span className="text-xs mt-1 font-medium">Home</span>
+            </Link>
+            
+            <Link 
+              to="/discover" 
+              className={cn(
+                "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
+                isActive('/discover') 
+                  ? "text-love-500" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Compass size={22} className={cn(isActive('/discover') ? "fill-love-500" : "")} />
+              <span className="text-xs mt-1 font-medium">Discover</span>
             </Link>
             
             <Link 

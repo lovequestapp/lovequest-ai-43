@@ -15,6 +15,7 @@ import { useMessages } from '@/hooks/useMessages';
 import { useRealtimeChat } from '@/hooks/useRealtimeChat';
 import ProtectedRoute from '@/components/protected-route';
 import { Message } from '@/types/user';
+import { Layout } from '@/components/layout';
 
 const MessagesPage = () => {
   const { userId: selectedUserId } = useParams<{ userId: string }>();
@@ -125,8 +126,8 @@ const MessagesPage = () => {
   };
   
   return (
-    <ProtectedRoute>
-      <div className="flex flex-col h-screen">
+    <Layout>
+      <div className="flex flex-col h-[calc(100vh-8rem)]">
         {/* Header */}
         <MessageHeader 
           selectedUser={selectedUser} 
@@ -173,7 +174,7 @@ const MessagesPage = () => {
           className="w-full" 
         />
       </div>
-    </ProtectedRoute>
+    </Layout>
   );
 };
 
