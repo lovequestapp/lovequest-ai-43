@@ -16,6 +16,7 @@ export interface ProfileCardProps {
   onLike?: (profileId: string) => void;
   onPass?: (profileId: string) => void;
   onBoost?: (profileId: string) => void;
+  onUnmatch?: (profileId: string) => void;
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ 
@@ -26,7 +27,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   alreadyLiked = false,
   onLike,
   onPass,
-  onBoost
+  onBoost,
+  onUnmatch
 }) => {
   const navigate = useNavigate();
   
@@ -47,6 +49,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   const handleBoost = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onBoost) onBoost(profile.id);
+  };
+  
+  const handleUnmatch = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onUnmatch) onUnmatch(profile.id);
   };
   
   return (
@@ -111,7 +118,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               <MessageCircle className="h-4 w-4" />
             </Button>
             
-            {onBoost && (
+            {!isMatch && onBoost && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -122,15 +129,26 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
               </Button>
             )}
             
-            {onPass && (
+            {isMatch && onUnmatch ? (
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1"
-                onClick={handlePass}
+                className="flex-1 text-red-500 hover:text-red-700"
+                onClick={handleUnmatch}
               >
                 <X className="h-4 w-4" />
               </Button>
+            ) : (
+              !isMatch && onPass && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={handlePass}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )
             )}
           </div>
         </CardContent>

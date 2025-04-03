@@ -3,12 +3,11 @@ import React from 'react';
 import SwipeableCard from '@/components/card/SwipeableCard';
 import { UserWithCoordinates } from '@/types/user'; 
 import NoMatchesCard from './NoMatchesCard';
-import { Button } from '@/components/ui/button';
-import { Heart, X, Info, MapPin, Sparkles, Camera, Verified } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
 import ActionButtons from '@/components/card/ActionButtons';
+import { useNavigate } from 'react-router-dom';
+import { Camera, MapPin, Sparkles, Verified } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { motion } from 'framer-motion';
 
 interface DiscoverContentProps {
   profiles: UserWithCoordinates[];
@@ -82,17 +81,6 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
                 </div>
               )}
             </div>
-            
-            <motion.div 
-              whileHover={{ scale: 1.1 }}
-              className="bg-white/20 backdrop-blur-sm h-10 w-10 rounded-full flex items-center justify-center cursor-pointer card-action-button shadow-lg"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/profile/${profile.id}`);
-              }}
-            >
-              <Info size={20} className="text-white" />
-            </motion.div>
           </div>
           
           {/* Personality traits */}
