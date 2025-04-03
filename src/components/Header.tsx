@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser } from '@/context/UserContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Popover,
   PopoverContent,
@@ -33,18 +34,29 @@ import {
   BookOpen,
   ShoppingBag,
   Moon,
-  Sun
+  Sun,
+  Home
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import ThemeToggle from './ThemeToggle';
 
 const Header = () => {
   const { currentUser, logout, isAuthenticated } = useUser();
   const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -55,17 +67,37 @@ const Header = () => {
     navigate('/login');
   };
 
-  const NAV_ITEMS = [
+  // Menu items for all visitors (logged in or not)
+  const PUBLIC_NAV_ITEMS = [
+    { name: 'Home', path: '/', icon: <Home className="h-4 w-4 mr-2" /> },
+    { name: 'About', path: '/about', icon: <Users className="h-4 w-4 mr-2" /> },
+    { name: 'Blog', path: '/blog', icon: <BookOpen className="h-4 w-4 mr-2" /> },
+  ];
+
+  // Menu items for authenticated users only
+  const AUTH_NAV_ITEMS = [
     { name: 'Discover', path: '/discover', icon: <Compass className="h-4 w-4 mr-2" /> },
     { name: 'Matches', path: '/matches', icon: <Heart className="h-4 w-4 mr-2" /> },
     { name: 'Messages', path: '/messages', icon: <MessageSquare className="h-4 w-4 mr-2" /> },
-    { name: 'Explore', path: '/explore', icon: <Users className="h-4 w-4 mr-2" /> },
-    { name: 'Blog', path: '/blog', icon: <BookOpen className="h-4 w-4 mr-2" /> },
     { name: 'Shop', path: '/shop', icon: <ShoppingBag className="h-4 w-4 mr-2" /> }
   ];
 
+  // Dynamic nav items based on authentication status
+  const NAV_ITEMS = isAuthenticated 
+    ? [...AUTH_NAV_ITEMS] 
+    : [...PUBLIC_NAV_ITEMS];
+
+  const closeDrawer = () => {
+    setDrawerOpen(false);
+  };
+
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    closeDrawer();
+  };
+
   return (
-    <header className="border-b py-3 px-4 bg-love-50/50 backdrop-blur-sm sticky top-0 z-50 dark:bg-slate-900/90 dark:border-slate-800">
+    <header className="border-b py-3 px-4 bg-white shadow-sm sticky top-0 z-50 dark:bg-slate-900/90 dark:border-slate-800">
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="flex items-center">
           <Heart className="h-6 w-6 text-love-500 mr-2" />
@@ -74,25 +106,17 @@ const Header = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-1">
-          {isAuthenticated && (
-            <NavigationMenu>
-              <NavigationMenuList>
-                {NAV_ITEMS.map((item) => (
-                  <NavigationMenuItem key={item.path}>
-                    <Link to={item.path}>
-                      <Button 
-                        variant={location.pathname === item.path ? "default" : "ghost"} 
-                        className={`flex items-center ${location.pathname === item.path ? 'bg-love-500 hover:bg-love-600 dark:bg-love-600 dark:hover:bg-love-700' : 'dark:text-slate-200'}`}
-                      >
-                        {item.icon}
-                        {item.name}
-                      </Button>
-                    </Link>
-                  </NavigationMenuItem>
-                ))}
-              </NavigationMenuList>
-            </NavigationMenu>
-          )}
+          {NAV_ITEMS.map((item) => (
+            <Button 
+              key={item.path}
+              variant={location.pathname === item.path ? "default" : "ghost"} 
+              className={`flex items-center ${location.pathname === item.path ? 'bg-love-500 hover:bg-love-600 dark:bg-love-600 dark:hover:bg-love-700' : 'dark:text-slate-200'}`}
+              onClick={() => navigate(item.path)}
+            >
+              {item.icon}
+              {item.name}
+            </Button>
+          ))}
         </nav>
 
         <div className="flex items-center gap-2">
@@ -199,129 +223,124 @@ const Header = () => {
             </>
           ) : (
             <div className="flex items-center gap-2">
-              <Button variant="ghost" onClick={() => navigate('/login')}>
+              <Button variant="ghost" className="hover:bg-love-50" onClick={() => navigate('/login')}>
                 Log In
               </Button>
-              <Button onClick={() => navigate('/register')}>
+              <Button className="bg-love-500 hover:bg-love-600" onClick={() => navigate('/register')}>
                 Sign Up
               </Button>
             </div>
           )}
 
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="md:hidden ml-2"
-            onClick={toggleMenu}
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </Button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      <div className={cn(
-        "fixed inset-0 bg-white dark:bg-slate-900 z-40 flex flex-col p-4 md:hidden transform transition-transform",
-        isMenuOpen ? "translate-x-0" : "translate-x-full"
-      )}>
-        <div className="flex justify-between items-center mb-8 pt-2">
-          <h2 className="text-lg font-bold text-love-600 dark:text-love-400">Menu</h2>
-          <Button variant="ghost" size="icon" onClick={toggleMenu}>
-            <X size={24} />
-          </Button>
-        </div>
-
-        <nav className="flex flex-col gap-2">
-          {isAuthenticated && NAV_ITEMS.map(item => (
-            <Button
-              key={item.path}
-              variant={location.pathname === item.path ? "default" : "ghost"}
-              className={`justify-start h-12 ${location.pathname === item.path ? 'bg-love-500 hover:bg-love-600 dark:bg-love-600 dark:hover:bg-love-700' : ''}`}
-              onClick={() => {
-                navigate(item.path);
-                setIsMenuOpen(false);
-              }}
-            >
-              {item.icon}
-              {item.name}
-            </Button>
-          ))}
-
-          {isAuthenticated ? (
-            <>
-              <div className="border-t my-4 dark:border-slate-700"></div>
-              <Button
-                variant="ghost"
-                className="justify-start h-12"
-                onClick={() => {
-                  navigate('/user-profile');
-                  setIsMenuOpen(false);
-                }}
+          {/* Mobile Menu Button */}
+          <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+            <DrawerTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="md:hidden ml-2"
               >
-                <User className="h-4 w-4 mr-2" />
-                Your Profile
+                <Menu size={24} />
               </Button>
-              <Button
-                variant="ghost"
-                className="justify-start h-12"
-                onClick={() => {
-                  navigate('/preferences');
-                  setIsMenuOpen(false);
-                }}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Preferences
-              </Button>
-              {(currentUser?.role === 'admin' || currentUser?.role === 'moderator') && (
-                <Button
-                  variant="ghost"
-                  className="justify-start h-12"
-                  onClick={() => {
-                    navigate('/admin');
-                    setIsMenuOpen(false);
-                  }}
-                >
-                  <span className="mr-2 h-4 w-4 text-love-500 font-bold">A</span>
-                  Admin Panel
+            </DrawerTrigger>
+            <DrawerContent className="bg-white dark:bg-slate-900">
+              <DrawerHeader className="border-b border-love-100 dark:border-slate-800">
+                <DrawerTitle className="font-display text-love-600 dark:text-love-400 flex items-center">
+                  <Heart className="h-5 w-5 text-love-500 mr-2" />
+                  LoveQuest Menu
+                </DrawerTitle>
+              </DrawerHeader>
+              <div className="px-4 py-3">
+                <div className="space-y-2">
+                  {PUBLIC_NAV_ITEMS.map((item) => (
+                    <Button
+                      key={item.path}
+                      variant={location.pathname === item.path ? "default" : "ghost"}
+                      className={`w-full justify-start ${location.pathname === item.path ? 'bg-love-500 hover:bg-love-600' : 'hover:bg-love-50'}`}
+                      onClick={() => handleNavigation(item.path)}
+                    >
+                      {item.icon}
+                      {item.name}
+                    </Button>
+                  ))}
+                  
+                  {!isAuthenticated && (
+                    <div className="pt-4 mt-4 border-t border-love-100 dark:border-slate-800 space-y-2">
+                      <Button 
+                        className="w-full bg-love-500 hover:bg-love-600"
+                        onClick={() => handleNavigation('/register')}
+                      >
+                        Sign Up
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        className="w-full border-love-200"
+                        onClick={() => handleNavigation('/login')}
+                      >
+                        Log In
+                      </Button>
+                    </div>
+                  )}
+
+                  {isAuthenticated && (
+                    <>
+                      <div className="pt-2 mt-2 border-t border-love-100 dark:border-slate-800">
+                        {AUTH_NAV_ITEMS.map((item) => (
+                          <Button
+                            key={item.path}
+                            variant={location.pathname === item.path ? "default" : "ghost"}
+                            className={`w-full justify-start mt-2 ${location.pathname === item.path ? 'bg-love-500 hover:bg-love-600' : 'hover:bg-love-50'}`}
+                            onClick={() => handleNavigation(item.path)}
+                          >
+                            {item.icon}
+                            {item.name}
+                          </Button>
+                        ))}
+                      </div>
+
+                      <div className="pt-4 mt-4 border-t border-love-100 dark:border-slate-800">
+                        <Button
+                          variant="ghost" 
+                          className="w-full justify-start"
+                          onClick={() => handleNavigation('/user-profile')}
+                        >
+                          <User className="mr-2 h-4 w-4" />
+                          Profile
+                        </Button>
+                        
+                        <Button
+                          variant="ghost" 
+                          className="w-full justify-start"
+                          onClick={() => handleNavigation('/preferences')}
+                        >
+                          <Settings className="mr-2 h-4 w-4" />
+                          Settings
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          className="w-full justify-start text-rose-500"
+                          onClick={() => {
+                            handleLogout();
+                            closeDrawer();
+                          }}
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Log Out
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+              <DrawerClose className="absolute top-4 right-4">
+                <Button variant="ghost" size="icon">
+                  <X className="h-4 w-4" />
                 </Button>
-              )}
-              <Button
-                variant="ghost"
-                className="justify-start h-12 text-rose-500"
-                onClick={() => {
-                  handleLogout();
-                  setIsMenuOpen(false);
-                }}
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Log Out
-              </Button>
-            </>
-          ) : (
-            <>
-              <div className="border-t my-4 dark:border-slate-700"></div>
-              <Button
-                variant="outline"
-                className="justify-center h-12 mb-2"
-                onClick={() => {
-                  navigate('/login');
-                  setIsMenuOpen(false);
-                }}
-              >
-                Log In
-              </Button>
-              <Button
-                className="justify-center h-12"
-                onClick={() => {
-                  navigate('/register');
-                  setIsMenuOpen(false);
-                }}
-              >
-                Sign Up
-              </Button>
-            </>
-          )}
-        </nav>
+              </DrawerClose>
+            </DrawerContent>
+          </Drawer>
+        </div>
       </div>
     </header>
   );

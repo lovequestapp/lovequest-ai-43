@@ -75,12 +75,12 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
       <main className="flex-grow container mx-auto px-4 py-8">
-        <Card className="max-w-lg mx-auto">
+        <Card className="max-w-lg mx-auto shadow-md border-love-100">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-display">Login</CardTitle>
+            <CardTitle className="text-2xl font-display text-love-600">Login</CardTitle>
             <CardDescription>Enter your credentials to access your account</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -93,6 +93,7 @@ const Login = () => {
                   placeholder="Enter your email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="bg-white border-love-100"
                 />
               </div>
               <div className="space-y-2">
@@ -104,6 +105,7 @@ const Login = () => {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    className="bg-white border-love-100"
                   />
                   <Button
                     type="button"
