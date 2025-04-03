@@ -30,7 +30,7 @@ export const useMessages = (conversationUserId?: string) => {
         .from('messages')
         .select('*')
         .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${conversationUserId}),and(sender_id.eq.${conversationUserId},receiver_id.eq.${currentUser.id})`)
-        .order('created_at', { ascending: false })
+        .order('timestamp', { ascending: false })
         .range((pageNumber - 1) * messagesPerPage, pageNumber * messagesPerPage - 1);
 
       if (fetchError) throw fetchError;
@@ -43,10 +43,11 @@ export const useMessages = (conversationUserId?: string) => {
         id: msg.id,
         senderId: msg.sender_id,
         recipientId: msg.receiver_id,
-        content: msg.content,
-        timestamp: new Date(msg.created_at),
-        type: msg.type || 'text',
-        isRead: msg.is_read,
+        content: msg.content || '',
+        timestamp: new Date(msg.timestamp || new Date()),
+        // Use status field for type if available, otherwise default to 'text'
+        type: (msg.status as Message['type']) || 'text', 
+        isRead: msg.is_read || false,
       }));
 
       // Append or replace messages based on page
@@ -84,7 +85,7 @@ export const useMessages = (conversationUserId?: string) => {
   }, [hasMore, isLoading]);
 
   // Send a message
-  const sendMessage = useCallback(async (content: string, type: string = 'text'): Promise<boolean> => {
+  const sendMessage = useCallback(async (content: string, type: Message['type'] = 'text'): Promise<boolean> => {
     if (!conversationUserId || !currentUser?.id || !content.trim()) {
       toast.error('Cannot send message', {
         description: 'Missing recipient or content'
@@ -115,7 +116,7 @@ export const useMessages = (conversationUserId?: string) => {
           sender_id: currentUser.id,
           receiver_id: conversationUserId,
           content,
-          type,
+          status: type, // Store the message type in the status field
           is_read: false,
         })
         .select()
@@ -130,10 +131,10 @@ export const useMessages = (conversationUserId?: string) => {
               id: data.id,
               senderId: data.sender_id,
               recipientId: data.receiver_id,
-              content: data.content,
-              timestamp: new Date(data.created_at),
-              type: data.type || 'text',
-              isRead: data.is_read,
+              content: data.content || '',
+              timestamp: new Date(data.timestamp || new Date()),
+              type: (data.status as Message['type']) || 'text',
+              isRead: data.is_read || false,
             }
           : msg
       ));
@@ -198,10 +199,10 @@ export const useMessages = (conversationUserId?: string) => {
           id: payload.new.id,
           senderId: payload.new.sender_id,
           recipientId: payload.new.receiver_id,
-          content: payload.new.content,
-          timestamp: new Date(payload.new.created_at),
-          type: payload.new.type || 'text',
-          isRead: payload.new.is_read,
+          content: payload.new.content || '',
+          timestamp: new Date(payload.new.timestamp || new Date()),
+          type: (payload.new.status as Message['type']) || 'text',
+          isRead: payload.new.is_read || false,
         };
         
         setMessages(prev => [newMessage, ...prev.filter(msg => msg.id !== newMessage.id)]);
