@@ -32,10 +32,7 @@ import {
   Compass,
   Users,
   BookOpen,
-  ShoppingBag,
-  Moon,
-  Sun,
-  Home
+  Home,
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
@@ -52,40 +49,29 @@ import ThemeToggle from './ThemeToggle';
 const Header = () => {
   const { currentUser, logout, isAuthenticated } = useUser();
   const { theme, toggleTheme } = useTheme();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
-
-  // Menu items for all visitors (logged in or not)
-  const PUBLIC_NAV_ITEMS = [
+  // Common navigation items for all users
+  const COMMON_NAV_ITEMS = [
     { name: 'Home', path: '/', icon: <Home className="h-4 w-4 mr-2" /> },
-    { name: 'About', path: '/about', icon: <Users className="h-4 w-4 mr-2" /> },
-    { name: 'Blog', path: '/blog', icon: <BookOpen className="h-4 w-4 mr-2" /> },
   ];
 
-  // Menu items for authenticated users only
+  // Navigation items for authenticated users
   const AUTH_NAV_ITEMS = [
     { name: 'Discover', path: '/discover', icon: <Compass className="h-4 w-4 mr-2" /> },
-    { name: 'Matches', path: '/matches', icon: <Heart className="h-4 w-4 mr-2" /> },
     { name: 'Messages', path: '/messages', icon: <MessageSquare className="h-4 w-4 mr-2" /> },
-    { name: 'Shop', path: '/shop', icon: <ShoppingBag className="h-4 w-4 mr-2" /> }
+    { name: 'Matches', path: '/matches', icon: <Users className="h-4 w-4 mr-2" /> },
+    { name: 'Profile', path: '/user-profile', icon: <User className="h-4 w-4 mr-2" /> },
   ];
 
   // Dynamic nav items based on authentication status
-  const NAV_ITEMS = isAuthenticated 
-    ? [...AUTH_NAV_ITEMS] 
-    : [...PUBLIC_NAV_ITEMS];
+  const NAV_ITEMS = [
+    ...COMMON_NAV_ITEMS,
+    ...(isAuthenticated ? AUTH_NAV_ITEMS : [])
+  ];
 
   const closeDrawer = () => {
     setDrawerOpen(false);
@@ -93,6 +79,12 @@ const Header = () => {
 
   const handleNavigation = (path: string) => {
     navigate(path);
+    closeDrawer();
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
     closeDrawer();
   };
 
@@ -184,14 +176,6 @@ const Header = () => {
                     <Button 
                       variant="ghost" 
                       className="flex justify-start items-center h-10"
-                      onClick={() => navigate('/shop')}
-                    >
-                      <ShoppingBag className="mr-2 h-4 w-4" />
-                      <span>Gift Shop</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      className="flex justify-start items-center h-10"
                       onClick={() => navigate('/preferences')}
                     >
                       <Settings className="mr-2 h-4 w-4" />
@@ -222,7 +206,7 @@ const Header = () => {
               </Popover>
             </>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               <Button variant="ghost" className="hover:bg-love-50" onClick={() => navigate('/login')}>
                 Log In
               </Button>
@@ -252,7 +236,21 @@ const Header = () => {
               </DrawerHeader>
               <div className="px-4 py-3">
                 <div className="space-y-2">
-                  {PUBLIC_NAV_ITEMS.map((item) => (
+                  {/* Common navigation items */}
+                  {COMMON_NAV_ITEMS.map((item) => (
+                    <Button
+                      key={item.path}
+                      variant={location.pathname === item.path ? "default" : "ghost"}
+                      className={`w-full justify-start ${location.pathname === item.path ? 'bg-love-500 hover:bg-love-600' : 'hover:bg-love-50'}`}
+                      onClick={() => handleNavigation(item.path)}
+                    >
+                      {item.icon}
+                      {item.name}
+                    </Button>
+                  ))}
+                  
+                  {/* Only show auth-specific nav items to authenticated users */}
+                  {isAuthenticated && AUTH_NAV_ITEMS.map((item) => (
                     <Button
                       key={item.path}
                       variant={location.pathname === item.path ? "default" : "ghost"}
@@ -283,53 +281,16 @@ const Header = () => {
                   )}
 
                   {isAuthenticated && (
-                    <>
-                      <div className="pt-2 mt-2 border-t border-love-100 dark:border-slate-800">
-                        {AUTH_NAV_ITEMS.map((item) => (
-                          <Button
-                            key={item.path}
-                            variant={location.pathname === item.path ? "default" : "ghost"}
-                            className={`w-full justify-start mt-2 ${location.pathname === item.path ? 'bg-love-500 hover:bg-love-600' : 'hover:bg-love-50'}`}
-                            onClick={() => handleNavigation(item.path)}
-                          >
-                            {item.icon}
-                            {item.name}
-                          </Button>
-                        ))}
-                      </div>
-
-                      <div className="pt-4 mt-4 border-t border-love-100 dark:border-slate-800">
-                        <Button
-                          variant="ghost" 
-                          className="w-full justify-start"
-                          onClick={() => handleNavigation('/user-profile')}
-                        >
-                          <User className="mr-2 h-4 w-4" />
-                          Profile
-                        </Button>
-                        
-                        <Button
-                          variant="ghost" 
-                          className="w-full justify-start"
-                          onClick={() => handleNavigation('/preferences')}
-                        >
-                          <Settings className="mr-2 h-4 w-4" />
-                          Settings
-                        </Button>
-                        
-                        <Button 
-                          variant="ghost" 
-                          className="w-full justify-start text-rose-500"
-                          onClick={() => {
-                            handleLogout();
-                            closeDrawer();
-                          }}
-                        >
-                          <LogOut className="mr-2 h-4 w-4" />
-                          Log Out
-                        </Button>
-                      </div>
-                    </>
+                    <div className="pt-4 mt-4 border-t border-love-100 dark:border-slate-800">
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-start text-rose-500"
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Log Out
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>

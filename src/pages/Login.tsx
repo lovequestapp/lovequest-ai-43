@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+import { Layout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -75,9 +74,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <Header />
-      <main className="flex-grow container mx-auto px-4 py-8">
+    <Layout>
+      <div className="container mx-auto px-4 py-8">
         <Card className="max-w-lg mx-auto shadow-md border-love-100">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-display text-love-600">Login</CardTitle>
@@ -133,9 +131,8 @@ const Login = () => {
             </div>
           </CardFooter>
         </Card>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </Layout>
   );
 };
 
