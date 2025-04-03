@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,14 +18,24 @@ const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { loading, authenticated, user } = useAuth();
   const location = useLocation();
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    // Short timeout to ensure auth state is fully initialized
+    const timer = setTimeout(() => {
+      setIsChecking(false);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [loading]);
 
   // Show loading state
-  if (loading) {
+  if (loading || isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">Verifying your login...</p>
         </div>
       </div>
     );
@@ -32,6 +43,13 @@ const ProtectedRoute = ({
 
   // User is not authenticated
   if (!authenticated) {
+    // Only show toast on initial page load, not on redirects
+    if (!location.pathname.includes('login')) {
+      toast.error('Please login to continue', {
+        description: 'You need to be logged in to access this page'
+      });
+    }
+    
     return (
       <Navigate 
         to={`/login?returnTo=${encodeURIComponent(location.pathname)}`} 
@@ -42,6 +60,10 @@ const ProtectedRoute = ({
 
   // Check for admin-only routes
   if (adminOnly && user?.role !== 'admin') {
+    toast.error('Access denied', {
+      description: 'You need administrator privileges to access this page'
+    });
+    
     return (
       <Navigate 
         to="/discover" 
@@ -52,6 +74,10 @@ const ProtectedRoute = ({
 
   // Check for moderator-only routes
   if (moderatorOnly && user?.role !== 'admin' && user?.role !== 'moderator') {
+    toast.error('Access denied', {
+      description: 'You need moderator privileges to access this page'
+    });
+    
     return (
       <Navigate 
         to="/discover" 

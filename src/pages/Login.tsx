@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
@@ -9,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -23,7 +25,7 @@ const Login = () => {
     authenticatedRedirectPath: '/discover'
   });
 
-  const signIn = useAuth().signIn;
+  const { signIn } = useAuth();
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -33,27 +35,40 @@ const Login = () => {
     e.preventDefault();
     
     if (!email || !password) {
+      toast.error("Please enter your email and password");
       return;
     }
     
     setIsLoading(true);
     
     try {
+      console.log("Attempting login with:", email);
       const result = await signIn(email, password);
       
       if (result.success) {
+        console.log("Login successful");
         // Check if profile is incomplete and redirect to profile setup if needed
         if (result.isProfileIncomplete) {
+          console.log("Profile incomplete, redirecting to profile setup");
           navigate('/profile-setup');
         } else {
           // Get the return URL or default to /discover
           const params = new URLSearchParams(location.search);
           const returnTo = params.get('returnTo') || '/discover';
+          console.log("Redirecting to:", returnTo);
           navigate(returnTo);
         }
+      } else {
+        console.log("Login failed:", result.error);
+        toast.error("Login failed", {
+          description: result.error || "Please check your credentials and try again"
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
+      toast.error("Login error", {
+        description: error.message || "An unexpected error occurred"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -102,13 +117,13 @@ const Login = () => {
                   </Button>
                 </div>
               </div>
-              <Button disabled={isLoading} className="w-full" type="submit">
+              <Button disabled={isLoading} className="w-full mt-4" type="submit">
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </CardContent>
           <CardFooter className="text-sm text-muted-foreground">
-            Don't have an account? <Link to="/register" className="text-love-500 hover:underline">Sign up</Link>
+            Don't have an account? <Link to="/register" className="text-love-500 hover:underline ml-1">Sign up</Link>
           </CardFooter>
         </Card>
       </main>
