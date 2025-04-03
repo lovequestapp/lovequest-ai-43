@@ -5,6 +5,14 @@ import { Message, User } from '@/types/user';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
 
+// Define interface for the typing presence data
+interface TypingPresence {
+  presence_ref: string;
+  user_id: string;
+  username: string;
+  isTyping: boolean;
+}
+
 /**
  * A custom hook for real-time chat functionality
  */
@@ -62,7 +70,7 @@ export const useRealtimeChat = (chatWithUserId?: string) => {
         const state = typingChannel.presenceState();
         const otherUserState = Object.values(state)
           .flat()
-          .find((user: any) => user.user_id === chatWithUserId);
+          .find((user: any) => (user as TypingPresence).user_id === chatWithUserId) as TypingPresence | undefined;
           
         if (otherUserState && otherUserState.isTyping) {
           setTypingStatus({
@@ -78,7 +86,10 @@ export const useRealtimeChat = (chatWithUserId?: string) => {
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         // When a user joins with typing status
-        const newUser = newPresences.find((user: any) => user.user_id === chatWithUserId);
+        const newUser = newPresences.find((user: any) => 
+          (user as TypingPresence).user_id === chatWithUserId
+        ) as TypingPresence | undefined;
+        
         if (newUser && newUser.isTyping) {
           setTypingStatus({
             isTyping: true,
