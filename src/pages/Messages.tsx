@@ -96,14 +96,18 @@ const MessagesPage = () => {
   const handleSendVoiceNote = (voiceUrl: string) => {
     if (!selectedUserId) return;
     
-    sendMessageHandler('Voice note', 'voice');
+    // Pass the actual voice URL data to the sendMessageHandler
+    sendMessageHandler(voiceUrl, 'voice');
+    toast.success('Voice note sent');
   };
 
   const handleSendImage = (imageUrl: string) => {
     if (!selectedUserId) return;
     
-    sendMessageHandler('Image', 'image');
+    // Pass the actual image URL data to the sendMessageHandler
+    sendMessageHandler(imageUrl, 'image');
     handleCloseImageUploader();
+    toast.success('Image sent');
   };
 
   // Handle typing indicator for real-time feedback

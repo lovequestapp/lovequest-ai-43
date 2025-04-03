@@ -4,6 +4,7 @@ import { Message, User } from '@/types/user';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format } from 'date-fns';
 import TypingIndicator from './TypingIndicator';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MessageListProps {
   messages: Message[];
@@ -24,6 +25,7 @@ const MessageList: React.FC<MessageListProps> = ({
   typingStatus = { isTyping: false, username: null } 
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -31,7 +33,7 @@ const MessageList: React.FC<MessageListProps> = ({
     }
   }, [messages, typingStatus.isTyping]);
   
-  if (isLoading) {
+  if (isLoading && messages.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto p-4 flex justify-center items-center">
         <div className="animate-pulse flex flex-col space-y-4 w-full max-w-md">
@@ -57,7 +59,11 @@ const MessageList: React.FC<MessageListProps> = ({
   if (!selectedUser) {
     return (
       <div className="flex-1 overflow-y-auto p-4 flex justify-center items-center text-slate-500 dark:text-slate-400">
-        Select a conversation to start messaging
+        <div className="text-center">
+          <div className="mb-4 text-5xl">💬</div>
+          <h3 className="text-lg font-medium mb-2">Select a conversation</h3>
+          <p className="text-sm">Choose someone from your matches to start messaging</p>
+        </div>
       </div>
     );
   }
@@ -65,13 +71,17 @@ const MessageList: React.FC<MessageListProps> = ({
   if (messages.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto p-4 flex justify-center items-center text-slate-500 dark:text-slate-400">
-        No messages yet. Start the conversation!
+        <div className="text-center">
+          <div className="mb-4 text-5xl">👋</div>
+          <h3 className="text-lg font-medium mb-2">No messages yet</h3>
+          <p className="text-sm">Say hello to {selectedUser.name} to start the conversation!</p>
+        </div>
       </div>
     );
   }
   
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${isMobile ? 'pb-20' : ''}`}>
       {messages.map((message) => {
         const isCurrentUser = message.senderId === currentUser?.id;
         const sender = isCurrentUser ? currentUser : selectedUser;
@@ -103,16 +113,27 @@ const MessageList: React.FC<MessageListProps> = ({
                 }`}
               >
                 {message.type === 'image' ? (
-                  <img src={message.content} alt="Shared image" className="rounded-lg max-w-full h-auto" />
+                  <img 
+                    src={message.content} 
+                    alt="Shared image" 
+                    className="rounded-lg max-w-full h-auto" 
+                    loading="lazy"
+                  />
                 ) : message.type === 'gift' ? (
                   <div className="flex flex-col items-center">
                     <span className="text-3xl mb-1">🎁</span>
                     <p>{message.content}</p>
                   </div>
                 ) : message.type === 'voice' ? (
-                  <div className="flex items-center">
-                    <span className="mr-2">🎤</span>
-                    <p>{message.content}</p>
+                  <div className="flex flex-col items-center p-2">
+                    <div className="w-full mb-2">
+                      <p className="text-xs mb-1 opacity-75">Voice message</p>
+                      <audio 
+                        src={message.content} 
+                        controls 
+                        className={`h-10 ${isMobile ? 'w-full' : 'w-56'} max-w-full`}
+                      />
+                    </div>
                   </div>
                 ) : (
                   <p>{message.content}</p>
@@ -137,7 +158,7 @@ const MessageList: React.FC<MessageListProps> = ({
       
       <TypingIndicator isTyping={typingStatus.isTyping} username={typingStatus.username} />
       
-      <div ref={messagesEndRef} />
+      <div ref={messagesEndRef} aria-hidden="true" />
     </div>
   );
 };
