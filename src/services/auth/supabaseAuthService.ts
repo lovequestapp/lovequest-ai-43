@@ -189,8 +189,10 @@ export class SupabaseAuthService implements AuthService {
         return { success: false, error: error.message };
       }
       
-      // Force clear any supabase specific storage items
-      localStorage.removeItem('sb-' + supabase.projectRef + '-auth-token');
+      // Force clear any supabase specific storage items using the fixed project ID
+      // instead of projectRef which doesn't exist in the type
+      const supabaseProjectId = 'jhfzugtgazuagqfpsuku';
+      localStorage.removeItem(`sb-${supabaseProjectId}-auth-token`);
       
       toast.success("Logged out successfully");
       return { success: true };
