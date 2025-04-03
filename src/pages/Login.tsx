@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Heart } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Login = () => {
@@ -80,10 +80,6 @@ const Login = () => {
       <main className="flex-grow container mx-auto px-4 py-8">
         <Card className="max-w-lg mx-auto">
           <CardHeader className="text-center">
-            <div className="flex justify-center items-center mb-4">
-              <Heart className="h-8 w-8 text-love-500 mr-2" />
-              <h1 className="text-3xl font-display font-bold text-love-500">LoveQuest</h1>
-            </div>
             <CardTitle className="text-2xl font-display">Login</CardTitle>
             <CardDescription>Enter your credentials to access your account</CardDescription>
           </CardHeader>
