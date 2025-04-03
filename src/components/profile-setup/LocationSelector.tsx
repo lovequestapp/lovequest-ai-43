@@ -98,7 +98,8 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
       (predictions, status) => {
         setLoading(false);
         
-        if (status !== google.maps.places.PlacesServiceStatus.OK || !predictions) {
+        // Using string comparison instead of enum
+        if (status !== "OK" || !predictions) {
           setSuggestions([]);
           return;
         }
@@ -123,7 +124,8 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
           sessionToken: sessionToken.current
         },
         (place, status) => {
-          if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+          // Using string comparison instead of enum
+          if (status === "OK" && place) {
             // Use place details if needed (coordinates, etc.)
             console.log('Place details:', place);
           }
