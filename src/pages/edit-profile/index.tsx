@@ -18,11 +18,10 @@ import { useUserProfile } from '@/hooks/useUserProfile';
 
 const EditProfile = () => {
   const { currentUser } = useUser();
-  const { fetchProfileData, isLoading: isProfileLoading } = useUserProfile();
+  const { fetchProfileData } = useUserProfile();
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
-  const [fetchAttempts, setFetchAttempts] = useState(0);
   const [fetchError, setFetchError] = useState(null);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -37,34 +36,26 @@ const EditProfile = () => {
       setLoading(true);
       setFetchError(null);
       
-      console.log(`Attempting to fetch profile data (attempt ${fetchAttempts + 1})...`);
+      console.log('Attempting to fetch profile data...');
       const userProfile = await fetchProfileData(currentUser.id);
-        
+      
       if (userProfile) {
         console.log('Successfully loaded profile data');
         setProfileData(userProfile);
       } else {
         console.log('No profile data returned, using currentUser from context');
-        // Fall back to currentUser from context if no profile data found
         setProfileData(currentUser);
         toast.info('Using profile data from your current session');
       }
     } catch (err) {
       console.error('Error loading profile data:', err);
       setFetchError(err);
-      
-      // Continue with currentUser data even if profile fetch fails
       setProfileData(currentUser);
-      
-      // Only show toast on first error to avoid multiple notifications
-      if (fetchAttempts === 0) {
-        toast.info('Using local profile data from your current session');
-      }
+      toast.info('Using local profile data from your current session');
     } finally {
       setLoading(false);
-      setFetchAttempts(prev => prev + 1);
     }
-  }, [currentUser, fetchProfileData, fetchAttempts]);
+  }, [currentUser, fetchProfileData]);
   
   useEffect(() => {
     loadProfileData();
@@ -79,20 +70,16 @@ const EditProfile = () => {
       );
     }
     
-    if (activeTab === 'profile') {
-      return (
-        <>
-          {fetchError && (
-            <div className="mb-4 p-3 bg-amber-50 text-amber-700 rounded-md text-sm">
-              <p>There was an issue loading your profile data from the server. You're seeing local data from your current session.</p>
-            </div>
-          )}
-          <ProfileEditor initialData={profileData || currentUser} />
-        </>
-      );
-    } else {
-      return <MobileMonetization />;
-    }
+    return (
+      <>
+        {fetchError && (
+          <div className="mb-4 p-3 bg-amber-50 text-amber-700 rounded-md text-sm">
+            <p>There was an issue loading your profile data from the server. You're seeing local data from your current session.</p>
+          </div>
+        )}
+        <ProfileEditor initialData={profileData || currentUser} />
+      </>
+    );
   };
 
   if (isMobile) {
@@ -111,19 +98,13 @@ const EditProfile = () => {
                     <TabsTrigger value="profile" className="text-sm">Profile</TabsTrigger>
                     <TabsTrigger value="monetization" className="text-sm">Earnings</TabsTrigger>
                   </TabsList>
+                  <TabsContent value="profile">{renderContent()}</TabsContent>
+                  <TabsContent value="monetization"><MobileMonetization /></TabsContent>
                 </Tabs>
               </div>
-
-              <div className="pb-20">
-                {renderContent()}
-              </div>
-              
+              <div className="pb-20">{renderContent()}</div>
               <div className="fixed bottom-16 left-0 right-0 p-4 bg-white border-t z-10">
-                <Button 
-                  variant="outline" 
-                  onClick={() => navigate('/user-profile')}
-                  className="w-full"
-                >
+                <Button variant="outline" onClick={() => navigate('/user-profile')} className="w-full">
                   Back to Profile
                 </Button>
               </div>
@@ -135,7 +116,6 @@ const EditProfile = () => {
     );
   }
 
-  // Fallback for non-mobile
   return (
     <ProtectedRoute>
       <div className="min-h-screen flex flex-col">
@@ -146,28 +126,11 @@ const EditProfile = () => {
               <CardTitle className="text-2xl font-display">Edit Your Profile</CardTitle>
             </CardHeader>
             <CardContent className="pb-6">
-              {loading ? (
-                <div className="h-64 flex items-center justify-center">
-                  <div className="h-8 w-8 rounded-full border-2 border-t-love-500 border-love-200 animate-spin"></div>
-                </div>
-              ) : (
-                <>
-                  {fetchError && (
-                    <div className="mb-4 p-3 bg-amber-50 text-amber-700 rounded-md text-sm">
-                      <p>There was an issue loading your profile data from the server. You're seeing local data from your current session.</p>
-                    </div>
-                  )}
-                  <ProfileEditor initialData={profileData || currentUser} />
-                </>
-              )}
+              {renderContent()}
             </CardContent>
           </Card>
-
           <div className="flex justify-center mt-6 gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/user-profile')}
-            >
+            <Button variant="outline" onClick={() => navigate('/user-profile')}>
               Back to Profile
             </Button>
           </div>
