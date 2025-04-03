@@ -1,29 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
 import { Layout } from '@/components/layout';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
 import { User, UserWithCoordinates } from '@/types/user';
 import useMatchProcessing from './hooks/useMatchProcessing';
-import ProfileCard from '@/components/ProfileCard';
+import { Filter, MapPin, Loader2, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DiscoverFilters from './DiscoverFilters';
-import { MapPin, Sparkles, Search, Filter, Loader2 } from 'lucide-react';
+import NoMatchesCard from './NoMatchesCard';
+import DiscoverContent from './DiscoverContent';
 
 const Discover = () => {
-  const { currentUser, allUsers } = useUser();
+  const { currentUser, allUsers, likeUser, passUser } = useUser();
   const [activeTab, setActiveTab] = useState('recommended');
   const [location, setLocation] = useState('Determining location...');
-  const [searchTerm, setSearchTerm] = useState('');
   const [profiles, setProfiles] = useState<UserWithCoordinates[]>([]);
   const [loadingLocation, setLoadingLocation] = useState(true);
-  const { filteredUsers, applyFilters, setMaxDistance, setAgeRange, setVerifiedOnly, setSortBy, boostProfile } = useMatchProcessing(
+  const { filteredUsers, applyFilters, setMaxDistance, setAgeRange, setVerifiedOnly, setSortBy } = useMatchProcessing(
     allUsers as UserWithCoordinates[],
     currentUser
   );
@@ -138,16 +133,32 @@ const Discover = () => {
     }
   }, [applyFilters, profiles]);
 
-  const handleBoostProfile = (userId: string) => {
-    try {
-      boostProfile(userId, 'local');
-      toast.success("Profile Boosted!", {
-        description: "Your profile is now boosted locally!",
-      });
-    } catch (err) {
-      toast.error("Failed to boost profile");
-      console.error(err);
+  const handleSwipe = (profileId: string, direction: 'left' | 'right') => {
+    if (direction === 'right') {
+      likeUser(profileId);
+      toast.success("You liked this profile!");
+      
+      // Random match chance (30%)
+      if (Math.random() > 0.7) {
+        const matchedProfile = filteredUsers.find(p => p.id === profileId);
+        if (matchedProfile) {
+          toast("It's a match! 💕", {
+            description: `You and ${matchedProfile.name} like each other!`,
+            duration: 5000,
+          });
+        }
+      }
+    } else {
+      passUser(profileId);
     }
+    
+    // Remove the profile from the filtered list
+    const newFilteredUsers = filteredUsers.filter(profile => profile.id !== profileId);
+    // We're not setting the filtered users directly as that's managed by the hook,
+    // but we'll force a filter reapplication which will update the list
+    setTimeout(() => {
+      applyFilters();
+    }, 300);
   };
 
   return (
@@ -197,10 +208,6 @@ const Discover = () => {
                 <MapPin size={16} className="text-blue-500" />
                 <span>Nearby</span>
               </TabsTrigger>
-              <TabsTrigger value="search" className="flex gap-1">
-                <Search size={16} className="text-gray-500" />
-                <span>Search</span>
-              </TabsTrigger>
             </TabsList>
 
             {showFilters && (
@@ -237,73 +244,33 @@ const Discover = () => {
                     Retry
                   </Button>
                 </div>
-              ) : filteredUsers.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredUsers.map((profile) => (
-                    <ProfileCard
-                      key={profile.id}
-                      profile={profile}
-                      currentUser={currentUser}
-                      showActions={true}
-                      onBoost={() => handleBoostProfile(profile.id)}
-                    />
-                  ))}
-                </div>
               ) : (
-                <div className="text-center py-12">
-                  <h3 className="text-xl font-medium mb-2">No profiles found</h3>
-                  <p className="text-muted-foreground mb-6">Try adjusting your filters or expanding your search criteria</p>
-                  <Button onClick={() => {
-                    setMaxDistance(undefined);
-                    setAgeRange(undefined);
-                    setVerifiedOnly(false);
-                    applyFilters();
-                  }}>
-                    Reset Filters
-                  </Button>
+                <div className="flex justify-center">
+                  <DiscoverContent 
+                    profiles={filteredUsers} 
+                    onSwipe={handleSwipe} 
+                  />
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="nearby" className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {profiles.map((profile) => (
-                  <Card key={profile.id}>
-                    <CardContent className="p-4">
-                      <h3 className="text-lg font-semibold">{profile.name}</h3>
-                      <p className="text-sm text-muted-foreground">{profile.location}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="search" className="space-y-4">
-              <div className="flex items-center space-x-2 mb-4">
-                <Input
-                  type="text"
-                  placeholder="Search profiles..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <Button>Search</Button>
-              </div>
-              <Separator />
-              {profiles.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {profiles.map((profile) => (
-                    <Card key={profile.id}>
-                      <CardContent className="p-4">
-                        <h3 className="text-lg font-semibold">{profile.name}</h3>
-                        <p className="text-sm text-muted-foreground">{profile.location}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Loading nearby profiles...</p>
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <h3 className="text-xl font-medium mb-2">No profiles found</h3>
-                  <p className="text-muted-foreground">Please try a different search term.</p>
+                <div className="flex justify-center">
+                  <DiscoverContent 
+                    profiles={filteredUsers.sort((a, b) => {
+                      // Sort by distance
+                      if (!a.distance) return 1;
+                      if (!b.distance) return -1;
+                      return a.distance - b.distance;
+                    })} 
+                    onSwipe={handleSwipe} 
+                  />
                 </div>
               )}
             </TabsContent>

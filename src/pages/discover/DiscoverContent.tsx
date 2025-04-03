@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+
+import React from 'react';
 import SwipeableCard from '@/components/card/SwipeableCard';
 import { UserWithCoordinates } from '@/types/user'; 
 import NoMatchesCard from './NoMatchesCard';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Heart, X, Info, MapPin, Sparkles, Camera, Verified, Music } from 'lucide-react';
+import { Heart, X, Info, MapPin, Sparkles, Camera, Verified } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import ActionButtons from '@/components/card/ActionButtons';
 
 interface DiscoverContentProps {
   profiles: UserWithCoordinates[];
@@ -161,29 +162,18 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
       </motion.div>
       
       {/* Action buttons below the card */}
-      <div className="absolute bottom-[-80px] left-0 right-0 flex justify-center gap-6">
-        <Button 
-          variant="outline"
-          className="h-14 w-14 rounded-full bg-white border-gray-200 shadow-lg hover:bg-red-50 hover:border-red-200 transition-all duration-300"
-          onClick={handleSwipeLeft}
-        >
-          <X size={24} className="text-red-500" />
-        </Button>
-        
-        <Button 
-          className="h-14 w-14 rounded-full bg-gradient-love hover:opacity-90 shadow-lg transition-all duration-300"
-          onClick={handleSwipeRight}
-        >
-          <Heart size={24} />
-        </Button>
-      </div>
+      <ActionButtons 
+        profilesLength={profiles.length}
+        onSwipeLeft={handleSwipeLeft}
+        onSwipeRight={handleSwipeRight}
+      />
     </div>
   );
 };
 
 export default DiscoverContent;
 
-const displayDistance = (user: UserWithCoordinates) => {
+const displayDistance = (user: any) => {
   if (user.distance === undefined) return "Unknown distance";
   
   const dist = Math.round(user.distance);
