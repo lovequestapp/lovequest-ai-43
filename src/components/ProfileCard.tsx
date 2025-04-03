@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, X, MessageCircle, Star, Shield, Rocket } from 'lucide-react';
+import { MessageCircle, Eye, Shield, Rocket, X } from 'lucide-react';
 import { User } from '@/types/user';
 import { useNavigate } from 'react-router-dom';
 
@@ -78,7 +78,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         {isMatch && (
           <div className="absolute top-2 right-2">
             <Badge className="bg-love-100 text-love-700 border-none flex items-center gap-1">
-              <Star className="h-3 w-3 fill-love-500" />
               <span>Match!</span>
             </Badge>
           </div>
@@ -88,15 +87,18 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
       {showActions && (
         <CardContent className="p-3">
           <div className="flex gap-2">
-            <Button 
-              className={`flex-1 ${alreadyLiked ? 'bg-love-100 text-love-700' : ''}`}
-              variant={alreadyLiked ? 'outline' : 'default'}
-              size="sm"
-              onClick={handleLike}
-              disabled={alreadyLiked}
-            >
-              <Heart className={`h-4 w-4 ${alreadyLiked ? 'fill-love-500' : ''}`} />
-            </Button>
+            {!isMatch && onLike && (
+              <Button 
+                className={`flex-1 ${alreadyLiked ? 'bg-love-100 text-love-700' : ''}`}
+                variant={alreadyLiked ? 'outline' : 'default'}
+                size="sm"
+                onClick={handleLike}
+                disabled={alreadyLiked}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            )}
+            
             <Button 
               variant="outline" 
               size="sm" 
@@ -108,6 +110,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             >
               <MessageCircle className="h-4 w-4" />
             </Button>
+            
             {onBoost && (
               <Button 
                 variant="outline" 
@@ -118,14 +121,17 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                 <Rocket className="h-4 w-4" />
               </Button>
             )}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1"
-              onClick={handlePass}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            
+            {onPass && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={handlePass}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </CardContent>
       )}

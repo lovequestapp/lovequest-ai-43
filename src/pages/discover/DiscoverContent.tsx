@@ -133,6 +133,13 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
     }
   };
 
+  const handleViewProfile = () => {
+    if (formattedProfiles && formattedProfiles.length > 0) {
+      const currentProfile = formattedProfiles[0];
+      navigate(`/profile/${currentProfile.id}`);
+    }
+  };
+
   // Show placeholder when no profiles are available
   if (!profiles || profiles.length === 0) {
     return <NoMatchesCard />;
@@ -166,6 +173,7 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
         profilesLength={profiles.length}
         onSwipeLeft={handleSwipeLeft}
         onSwipeRight={handleSwipeRight}
+        onViewProfile={handleViewProfile}
       />
     </div>
   );

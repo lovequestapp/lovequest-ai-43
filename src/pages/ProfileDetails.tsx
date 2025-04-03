@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
@@ -43,7 +42,6 @@ const ProfileDetails = () => {
   const [isPlayingVoice, setIsPlayingVoice] = useState(false);
   const { isAuthenticated } = useProtectedRoute();
   
-  // Mock posts data
   const [posts, setPosts] = useState([
     {
       id: '1',
@@ -70,7 +68,6 @@ const ProfileDetails = () => {
   useEffect(() => {
     if (!userId) return;
     
-    // Find the user profile from potentialMatches or elsewhere
     const foundProfile = potentialMatches.find(match => match.id === userId);
     
     if (foundProfile) {
@@ -80,6 +77,25 @@ const ProfileDetails = () => {
       navigate('/discover');
     }
   }, [userId, potentialMatches, navigate]);
+  
+  const getCommonInterests = () => {
+    if (!currentUser || !profile) return [];
+    
+    return currentUser.interests.filter(interest => 
+      profile.interests.includes(interest)
+    );
+  };
+  
+  const getCommonTraits = () => {
+    if (!currentUser || !profile) return [];
+    
+    return currentUser.personalityTraits.filter(trait => 
+      profile.personalityTraits.includes(trait)
+    );
+  };
+  
+  const commonInterests = getCommonInterests();
+  const commonTraits = getCommonTraits();
   
   if (!profile) {
     return (
@@ -121,12 +137,10 @@ const ProfileDetails = () => {
     setIsPlayingVoice(!isPlayingVoice);
     if (!isPlayingVoice) {
       toast.success(`Playing ${profile.name}'s voice introduction`);
-      // Simulate voice playback
       setTimeout(() => setIsPlayingVoice(false), 5000);
     }
   };
   
-  // Ensure profile has photos
   const photos = profile.photos && profile.photos.length ? profile.photos : ['https://via.placeholder.com/400x600?text=No+Photo'];
   
   return (
@@ -149,7 +163,6 @@ const ProfileDetails = () => {
         </Button>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Left column - Photos */}
           <div className="md:col-span-2 space-y-6">
             <motion.div 
               className="relative rounded-xl overflow-hidden bg-black aspect-[4/3] group"
@@ -212,9 +225,10 @@ const ProfileDetails = () => {
             </div>
             
             <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-3 mb-6">
+              <TabsList className="grid grid-cols-4 mb-6">
                 <TabsTrigger value="about">About</TabsTrigger>
                 <TabsTrigger value="interests">Interests</TabsTrigger>
+                <TabsTrigger value="compatibility">Compatibility</TabsTrigger>
                 <TabsTrigger value="posts">Posts</TabsTrigger>
               </TabsList>
               
@@ -224,7 +238,6 @@ const ProfileDetails = () => {
                     <h3 className="text-xl font-semibold mb-4">About {profile.name}</h3>
                     <p className="text-gray-700 whitespace-pre-line">{profile.bio}</p>
                     
-                    {/* Voice Introduction */}
                     <div className="mt-6 p-3 bg-love-50 rounded-lg flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Volume2 size={18} className="text-love-700" />
@@ -277,11 +290,137 @@ const ProfileDetails = () => {
                         <Badge 
                           key={index} 
                           variant="secondary" 
-                          className="bg-love-50 text-love-700 py-1.5 px-3"
+                          className={`py-1.5 px-3 ${
+                            commonInterests.includes(interest) 
+                              ? "bg-love-100 text-love-700 border-love-200" 
+                              : "bg-gray-100 text-gray-700"
+                          }`}
                         >
                           {interest}
+                          {commonInterests.includes(interest) && (
+                            <span className="ml-1">★</span>
+                          )}
                         </Badge>
                       ))}
+                    </div>
+                    
+                    {commonInterests.length > 0 && (
+                      <div className="mt-4 p-3 bg-love-50 rounded-lg">
+                        <p className="text-love-700 font-medium">
+                          You and {profile.name} share {commonInterests.length} interests!
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="compatibility" className="space-y-6">
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-semibold mb-4">Compatibility Analysis</h3>
+                    
+                    {profile.compatibilityScore && (
+                      <div className="flex justify-center mb-6">
+                        <div className="relative w-40 h-40">
+                          <div className="w-full h-full rounded-full flex items-center justify-center border-8 border-love-100">
+                            <span className="text-4xl font-bold text-love-600">{profile.compatibilityScore}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium">Interests Match</span>
+                          <span className="text-sm text-love-600">
+                            {commonInterests.length > 0 
+                              ? Math.round((commonInterests.length / profile.interests.length) * 100) 
+                              : 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-love-500 h-2 rounded-full" 
+                            style={{ 
+                              width: `${commonInterests.length > 0 
+                                ? Math.round((commonInterests.length / profile.interests.length) * 100) 
+                                : 0}%` 
+                            }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium">Personality Match</span>
+                          <span className="text-sm text-love-600">
+                            {commonTraits.length > 0 
+                              ? Math.round((commonTraits.length / profile.personalityTraits.length) * 100) 
+                              : 0}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-love-500 h-2 rounded-full" 
+                            style={{ 
+                              width: `${commonTraits.length > 0 
+                                ? Math.round((commonTraits.length / profile.personalityTraits.length) * 100) 
+                                : 0}%` 
+                            }}
+                          />
+                        </div>
+                      </div>
+                      
+                      {profile.distance !== undefined && (
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm font-medium">Distance</span>
+                            <span className="text-sm text-love-600">
+                              {Math.round(profile.distance)} miles
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-love-500 h-2 rounded-full" 
+                              style={{ 
+                                width: `${Math.min(100, Math.max(0, 100 - (profile.distance / 50) * 100))}%` 
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="mt-6 p-4 bg-love-50 rounded-lg">
+                      <h4 className="font-medium text-love-700 mb-2">Common Interests</h4>
+                      {commonInterests.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {commonInterests.map((interest, i) => (
+                            <Badge key={i} className="bg-love-100 text-love-700">
+                              {interest}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-love-600">No common interests found</p>
+                      )}
+                    </div>
+                    
+                    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                      <h4 className="font-medium text-blue-700 mb-2">Common Personality Traits</h4>
+                      {commonTraits.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {commonTraits.map((trait, i) => (
+                            <Badge key={i} className="bg-blue-100 text-blue-700">
+                              {trait}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-blue-600">No common personality traits found</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -297,7 +436,6 @@ const ProfileDetails = () => {
             </Tabs>
           </div>
           
-          {/* Right column - Profile info and actions */}
           <div className="space-y-6">
             <Card className="overflow-hidden">
               <CardContent className="p-6">
