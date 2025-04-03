@@ -14,6 +14,7 @@ import MessagesPagination from '@/components/messaging/MessagesPagination';
 import { useMessages } from '@/hooks/useMessages';
 import { useRealtimeChat } from '@/hooks/useRealtimeChat';
 import ProtectedRoute from '@/components/protected-route';
+import { Message } from '@/types/user';
 
 const MessagesPage = () => {
   const { userId: selectedUserId } = useParams<{ userId: string }>();
@@ -111,7 +112,7 @@ const MessagesPage = () => {
   };
   
   // Handle sending message with real-time 
-  const handleSendMessage = (content: string, type: string = 'text') => {
+  const handleSendMessage = (content: string, type: Message['type'] = 'text') => {
     // Clear typing indicator when sending
     setTyping(false);
     

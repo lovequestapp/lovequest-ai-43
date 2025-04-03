@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Send, ImagePlus, Mic } from 'lucide-react';
 import EmojiPicker from './EmojiPicker';
+import { Message } from '@/types/user';
 
 interface MessageInputProps {
-  onSendMessage: (content: string, type?: string) => void;
+  onSendMessage: (content: string, type?: Message['type']) => void;
   onOpenGiftModal: () => void;
   onOpenImageUploader: () => void;
   onSendVoiceNote: (voiceUrl: string) => void;
