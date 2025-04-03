@@ -29,6 +29,8 @@ export const useProfileStorage = (userId: string) => {
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = `${prefix}/${userId}/${fileName}`;
       
+      console.log('Uploading file to path:', filePath);
+      
       // Upload the file
       const { data, error } = await supabase.storage
         .from(bucket)
@@ -39,9 +41,11 @@ export const useProfileStorage = (userId: string) => {
       
       if (error) {
         console.error('Upload error:', error);
-        toast.error('Failed to upload file');
+        toast.error('Failed to upload file: ' + error.message);
         return null;
       }
+      
+      console.log('File uploaded successfully:', data.path);
       
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
@@ -49,9 +53,9 @@ export const useProfileStorage = (userId: string) => {
         .getPublicUrl(data.path);
       
       return publicUrl;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in file upload:', error);
-      toast.error('An unexpected error occurred during upload');
+      toast.error('An unexpected error occurred during upload: ' + error.message);
       return null;
     } finally {
       setUploading(false);
@@ -61,18 +65,24 @@ export const useProfileStorage = (userId: string) => {
   /**
    * Delete a file from Supabase storage
    */
-  const deleteFile = async (fileUrl: string, bucket: string = 'profile-photos', prefix: string = 'profiles'): Promise<boolean> => {
+  const deleteFile = async (fileUrl: string, bucket: string = 'profile-photos'): Promise<boolean> => {
     try {
+      if (!fileUrl) {
+        console.warn('No file URL provided for deletion');
+        return false;
+      }
+      
       // Extract the path from the URL
       // Format: https://[project-ref].supabase.co/storage/v1/object/public/[bucket]/[path]
       const pathParts = fileUrl.split(`/storage/v1/object/public/${bucket}/`);
       
       if (pathParts.length < 2) {
-        console.error('Invalid file URL format');
+        console.error('Invalid file URL format:', fileUrl);
         return false;
       }
       
       const filePath = pathParts[1];
+      console.log('Deleting file at path:', filePath);
       
       // Delete the file
       const { error } = await supabase.storage
@@ -84,8 +94,9 @@ export const useProfileStorage = (userId: string) => {
         return false;
       }
       
+      console.log('File deleted successfully');
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in file deletion:', error);
       return false;
     }

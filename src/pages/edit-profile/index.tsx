@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
 import EditProfileForm from '@/components/profile-editor/EditProfileForm';
+import { useDirectProfileUpdate } from '@/hooks/useDirectProfileUpdate';
 
 const EditProfilePage = () => {
   const { currentUser } = useUser();
@@ -27,6 +28,7 @@ const EditProfilePage = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { updateProfile } = useDirectProfileUpdate();
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -39,6 +41,11 @@ const EditProfilePage = () => {
         setLoading(true);
         setError(null);
 
+        console.log('Fetching profile data for user:', currentUser.id);
+        
+        // Add a small delay to prevent rapid consecutive requests
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
         // Use maybeSingle to avoid errors when no data is returned
         const { data, error: fetchError } = await supabase
           .from('profiles')
@@ -51,6 +58,40 @@ const EditProfilePage = () => {
           setError('Failed to load profile data from database.');
           setProfileData(currentUser); // Fallback to context data
         } else if (data) {
+          console.log('Profile data retrieved successfully');
+          
+          // Parse JSON fields safely
+          let giftInventory = { rose: 0, heart: 0, teddy: 0 };
+          let receivedGifts = { rose: 0, heart: 0, teddy: 0 };
+          
+          try {
+            if (data.gift_inventory) {
+              const gift = typeof data.gift_inventory === 'string' 
+                ? JSON.parse(data.gift_inventory) 
+                : data.gift_inventory;
+                
+              giftInventory = {
+                rose: gift.rose?.count || 0,
+                heart: gift.heart?.count || 0,
+                teddy: gift.teddy?.count || 0
+              };
+            }
+            
+            if (data.received_gifts) {
+              const received = typeof data.received_gifts === 'string'
+                ? JSON.parse(data.received_gifts)
+                : data.received_gifts;
+                
+              receivedGifts = {
+                rose: received.rose?.count || 0,
+                heart: received.heart?.count || 0,
+                teddy: received.teddy?.count || 0
+              };
+            }
+          } catch (e) {
+            console.error('Error parsing JSON fields:', e);
+          }
+          
           // Transform database data to match User type
           const transformedData: User = {
             id: data.id,
@@ -59,31 +100,25 @@ const EditProfilePage = () => {
             age: data.age || 18,
             bio: data.bio || '',
             location: data.location || '',
-            interests: data.interests || [],
-            photos: data.photos || [],
-            gender: data.gender as 'male' | 'female' | 'non-binary' || 'non-binary',
-            interestedIn: data.interested_in as ('male' | 'female' | 'non-binary')[] || [],
+            interests: Array.isArray(data.interests) ? data.interests : [],
+            photos: Array.isArray(data.photos) ? data.photos : [],
+            gender: (data.gender as 'male' | 'female' | 'non-binary') || 'non-binary',
+            interestedIn: Array.isArray(data.interested_in) ? 
+              data.interested_in.filter(g => ['male', 'female', 'non-binary'].includes(g)) as ('male' | 'female' | 'non-binary')[] : 
+              [],
             popularityPoints: data.popularity_points || 0,
-            premiumStatus: data.premium_status as 'basic' | 'premium' | 'vip' | 'trial' || 'basic',
-            giftInventory: {
-              rose: data.gift_inventory?.rose?.count || 0,
-              heart: data.gift_inventory?.heart?.count || 0,
-              teddy: data.gift_inventory?.teddy?.count || 0
-            },
-            receivedGifts: {
-              rose: data.received_gifts?.rose?.count || 0,
-              heart: data.received_gifts?.heart?.count || 0,
-              teddy: data.received_gifts?.teddy?.count || 0
-            },
+            premiumStatus: (data.premium_status as 'basic' | 'premium' | 'vip' | 'trial') || 'basic',
+            giftInventory,
+            receivedGifts,
             compatibilityScore: 0,
-            personalityTraits: data.personality_traits || [],
-            role: data.role as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial' || 'subscriber',
-            isBanned: data.is_banned || false,
+            personalityTraits: Array.isArray(data.personality_traits) ? data.personality_traits : [],
+            role: (data.role as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial') || 'subscriber',
+            isBanned: !!data.is_banned,
             verificationStatus: data.is_verified ? 'verified' : 'unverified',
             lastMessage: '',
             lastMessageTime: new Date(),
             status: 'online',
-            favoriteMusic: data.favorite_music || [],
+            favoriteMusic: Array.isArray(data.favorite_music) ? data.favorite_music : [],
             voiceIntro: data.voice_intro || '',
             bankDetails: {
               accountName: '',
@@ -99,9 +134,9 @@ const EditProfilePage = () => {
           console.log('No profile data found, using context data');
           setProfileData(currentUser);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error in profile data fetching:', err);
-        setError('An unexpected error occurred while loading your profile.');
+        setError('An unexpected error occurred while loading your profile: ' + (err.message || 'Unknown error'));
         setProfileData(currentUser); // Fallback to context data
       } finally {
         setLoading(false);
@@ -118,40 +153,20 @@ const EditProfilePage = () => {
     }
 
     try {
-      // Transform the User type data to match database column names
-      const dbData = {
-        name: updatedData.name,
-        bio: updatedData.bio,
-        age: updatedData.age,
-        location: updatedData.location,
-        interests: updatedData.interests,
-        gender: updatedData.gender,
-        interested_in: updatedData.interestedIn,
-        personality_traits: updatedData.personalityTraits,
-        photos: updatedData.photos,
-        favorite_music: updatedData.favoriteMusic,
-        voice_intro: updatedData.voiceIntro
-      };
-
-      // Update profile in Supabase
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update(dbData)
-        .eq('id', currentUser.id);
-
-      if (updateError) {
-        console.error('Error updating profile:', updateError);
-        toast.error('Failed to update profile');
-        return false;
+      // Use our direct update function instead
+      const success = await updateProfile(currentUser.id, updatedData);
+      
+      if (success) {
+        // Update local state
+        setProfileData(prev => prev ? { ...prev, ...updatedData } : null);
+        toast.success('Profile updated successfully');
+        return true;
+      } else {
+        throw new Error('Failed to update profile');
       }
-
-      // Update local state
-      setProfileData(prev => prev ? { ...prev, ...updatedData } : null);
-      toast.success('Profile updated successfully');
-      return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error in profile update:', err);
-      toast.error('An unexpected error occurred while updating your profile');
+      toast.error('Failed to update profile: ' + (err.message || 'Unknown error'));
       return false;
     }
   };

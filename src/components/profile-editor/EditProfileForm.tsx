@@ -6,7 +6,6 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
 import { Camera, Loader2, Save, X } from 'lucide-react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
 import VoiceRecorder from '@/components/VoiceRecorder';
@@ -15,15 +14,17 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { useProfileStorage } from '@/hooks/useProfileStorage';
 
 // Define the schema for form validation
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  bio: z.string().max(500, 'Bio must not exceed 500 characters'),
+  bio: z.string().max(500, 'Bio must not exceed 500 characters').optional().or(z.literal('')),
   location: z.string().min(2, 'Location must be at least 2 characters'),
   age: z.coerce.number().min(18, 'Must be at least 18 years old').max(100, 'Age must be reasonable'),
-  gender: z.string().min(1, 'Gender is required'),
+  gender: z.enum(['male', 'female', 'non-binary'], {
+    errorMap: () => ({ message: 'Please select a gender' }),
+  }),
 });
 
 interface EditProfileFormProps {
@@ -40,16 +41,17 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
   const [favoriteMusic, setFavoriteMusic] = useState<string[]>(initialData.favoriteMusic || []);
   const [personalityTraits, setPersonalityTraits] = useState<string[]>(initialData.personalityTraits || []);
   const [interestedIn, setInterestedIn] = useState<('male' | 'female' | 'non-binary')[]>(initialData.interestedIn || []);
+  const { uploadFile, deleteFile, uploading } = useProfileStorage(initialData.id);
   
   // Create form with react-hook-form
-  const form = useForm({
+  const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: initialData.name || '',
       bio: initialData.bio || '',
       location: initialData.location || '',
       age: initialData.age || 18,
-      gender: initialData.gender || '',
+      gender: initialData.gender || 'non-binary',
     },
   });
   
@@ -97,38 +99,18 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
     
     setUploadingPhoto(true);
     try {
-      if (!initialData || !initialData.id) {
-        toast.error('User data not available for photo upload');
-        return;
-      }
+      const photoUrl = await uploadFile(file);
       
-      // Generate unique file name
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-      const filePath = `profiles/${initialData.id}/${fileName}`;
-      
-      // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('profile-photos')
-        .upload(filePath, file);
-      
-      if (uploadError) {
-        throw uploadError;
-      }
-      
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('profile-photos')
-        .getPublicUrl(filePath);
-      
-      if (urlData) {
-        const newPhotos = [...photos, urlData.publicUrl];
+      if (photoUrl) {
+        const newPhotos = [...photos, photoUrl];
         setPhotos(newPhotos);
         
         // Update profile with new photos array
         await onUpdate({ photos: newPhotos });
         
         toast.success('Photo added successfully');
+      } else {
+        throw new Error('Failed to upload photo');
       }
     } catch (error) {
       console.error('Error uploading photo:', error);
@@ -144,20 +126,8 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
       const removedPhoto = newPhotos.splice(index, 1)[0];
       setPhotos(newPhotos);
       
-      // Extract the path from the URL
-      const urlParts = removedPhoto.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-      const filePath = `profiles/${initialData.id}/${fileName}`;
-      
-      // Try to remove from storage (but don't block UI on this)
-      supabase.storage
-        .from('profile-photos')
-        .remove([filePath])
-        .then(({ error }) => {
-          if (error) {
-            console.warn('Could not remove photo from storage:', error);
-          }
-        });
+      // Try to remove from storage
+      await deleteFile(removedPhoto);
       
       // Update profile with new photos array
       await onUpdate({ photos: newPhotos });
@@ -182,63 +152,103 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
   };
   
   const toggleInterest = async (interest: string) => {
-    let updatedInterests: string[];
-    if (interests.includes(interest)) {
-      updatedInterests = interests.filter(i => i !== interest);
-    } else {
-      if (interests.length >= 20) {
-        toast.error('You can select up to 20 interests');
-        return;
+    try {
+      let updatedInterests: string[];
+      if (interests.includes(interest)) {
+        updatedInterests = interests.filter(i => i !== interest);
+      } else {
+        if (interests.length >= 20) {
+          toast.error('You can select up to 20 interests');
+          return;
+        }
+        updatedInterests = [...interests, interest];
       }
-      updatedInterests = [...interests, interest];
+      
+      setInterests(updatedInterests);
+      const success = await onUpdate({ interests: updatedInterests });
+      if (!success) {
+        // Revert state if update fails
+        setInterests(interests);
+        throw new Error('Failed to update interests');
+      }
+    } catch (error) {
+      console.error('Error updating interests:', error);
+      toast.error('Failed to update interests');
     }
-    
-    setInterests(updatedInterests);
-    await onUpdate({ interests: updatedInterests });
   };
   
   const toggleMusic = async (genre: string) => {
-    let updatedMusic: string[];
-    if (favoriteMusic.includes(genre)) {
-      updatedMusic = favoriteMusic.filter(m => m !== genre);
-    } else {
-      if (favoriteMusic.length >= 10) {
-        toast.error('You can select up to 10 music genres');
-        return;
+    try {
+      let updatedMusic: string[];
+      if (favoriteMusic.includes(genre)) {
+        updatedMusic = favoriteMusic.filter(m => m !== genre);
+      } else {
+        if (favoriteMusic.length >= 10) {
+          toast.error('You can select up to 10 music genres');
+          return;
+        }
+        updatedMusic = [...favoriteMusic, genre];
       }
-      updatedMusic = [...favoriteMusic, genre];
+      
+      setFavoriteMusic(updatedMusic);
+      const success = await onUpdate({ favoriteMusic: updatedMusic });
+      if (!success) {
+        // Revert state if update fails
+        setFavoriteMusic(favoriteMusic);
+        throw new Error('Failed to update music preferences');
+      }
+    } catch (error) {
+      console.error('Error updating music preferences:', error);
+      toast.error('Failed to update music preferences');
     }
-    
-    setFavoriteMusic(updatedMusic);
-    await onUpdate({ favoriteMusic: updatedMusic });
   };
   
   const togglePersonalityTrait = async (trait: string) => {
-    let updatedTraits: string[];
-    if (personalityTraits.includes(trait)) {
-      updatedTraits = personalityTraits.filter(t => t !== trait);
-    } else {
-      if (personalityTraits.length >= 8) {
-        toast.error('You can select up to 8 personality traits');
-        return;
+    try {
+      let updatedTraits: string[];
+      if (personalityTraits.includes(trait)) {
+        updatedTraits = personalityTraits.filter(t => t !== trait);
+      } else {
+        if (personalityTraits.length >= 8) {
+          toast.error('You can select up to 8 personality traits');
+          return;
+        }
+        updatedTraits = [...personalityTraits, trait];
       }
-      updatedTraits = [...personalityTraits, trait];
+      
+      setPersonalityTraits(updatedTraits);
+      const success = await onUpdate({ personalityTraits: updatedTraits });
+      if (!success) {
+        // Revert state if update fails
+        setPersonalityTraits(personalityTraits);
+        throw new Error('Failed to update personality traits');
+      }
+    } catch (error) {
+      console.error('Error updating personality traits:', error);
+      toast.error('Failed to update personality traits');
     }
-    
-    setPersonalityTraits(updatedTraits);
-    await onUpdate({ personalityTraits: updatedTraits });
   };
   
   const toggleGenderInterest = async (gender: 'male' | 'female' | 'non-binary') => {
-    let updatedGenderInterests: ('male' | 'female' | 'non-binary')[];
-    if (interestedIn.includes(gender)) {
-      updatedGenderInterests = interestedIn.filter(g => g !== gender);
-    } else {
-      updatedGenderInterests = [...interestedIn, gender];
+    try {
+      let updatedGenderInterests: ('male' | 'female' | 'non-binary')[];
+      if (interestedIn.includes(gender)) {
+        updatedGenderInterests = interestedIn.filter(g => g !== gender);
+      } else {
+        updatedGenderInterests = [...interestedIn, gender];
+      }
+      
+      setInterestedIn(updatedGenderInterests);
+      const success = await onUpdate({ interestedIn: updatedGenderInterests });
+      if (!success) {
+        // Revert state if update fails
+        setInterestedIn(interestedIn);
+        throw new Error('Failed to update gender preferences');
+      }
+    } catch (error) {
+      console.error('Error updating gender preferences:', error);
+      toast.error('Failed to update gender preferences');
     }
-    
-    setInterestedIn(updatedGenderInterests);
-    await onUpdate({ interestedIn: updatedGenderInterests });
   };
   
   // Sample data for UI
@@ -372,7 +382,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
                   />
                 </FormControl>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {field.value.length}/500 characters
+                  {field.value?.length || 0}/500 characters
                 </p>
                 <FormMessage />
               </FormItem>
@@ -390,6 +400,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
                     <select
                       className="w-full p-2 border rounded-md"
                       {...field}
+                      value={field.value}
                     >
                       <option value="">Select gender</option>
                       <option value="male">Male</option>
