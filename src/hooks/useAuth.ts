@@ -181,7 +181,10 @@ export const useAuth = () => {
         // Clear auth timestamp
         localStorage.removeItem('lovequestLastAuth');
         localStorage.removeItem('admin_email');
-        localStorage.removeItem('sb-' + (supabase.projectRef || 'jhfzugtgazuagqfpsuku') + '-auth-token');
+        
+        // Clear any Supabase auth tokens using a fixed key prefix
+        // Use fixed Supabase project ID instead of projectRef
+        localStorage.removeItem('sb-jhfzugtgazuagqfpsuku-auth-token');
         
         // Navigate to login page
         navigate('/login');

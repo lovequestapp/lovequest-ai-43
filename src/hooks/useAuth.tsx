@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -183,9 +182,8 @@ export const useAuth = () => {
         localStorage.removeItem('admin_email');
         
         // Clear any Supabase auth tokens using a fixed key prefix
-        // We use a fixed string instead of projectRef which doesn't exist in type
-        const supabaseKeyPrefix = 'sb-jhfzugtgazuagqfpsuku';
-        localStorage.removeItem(`${supabaseKeyPrefix}-auth-token`);
+        // Use fixed Supabase project ID instead of projectRef
+        localStorage.removeItem('sb-jhfzugtgazuagqfpsuku-auth-token');
         
         // Navigate to login page
         navigate('/login');
