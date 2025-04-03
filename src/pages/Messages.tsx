@@ -12,6 +12,8 @@ import MessageList from '@/components/messaging/MessageList';
 import MessageInput from '@/components/messaging/MessageInput';
 import MessagesPagination from '@/components/messaging/MessagesPagination';
 import { useMessages } from '@/hooks/useMessages';
+import { useRealtimeChat } from '@/hooks/useRealtimeChat';
+import ProtectedRoute from '@/components/protected-route';
 
 const MessagesPage = () => {
   const { userId: selectedUserId } = useParams<{ userId: string }>();
@@ -30,6 +32,13 @@ const MessagesPage = () => {
     sendMessage: sendMessageHandler, 
     loadMoreMessages 
   } = useMessages(selectedUserId);
+  
+  // Use real-time chat features
+  const {
+    typingStatus,
+    setTyping,
+    sendMessage: realtimeSendMessage
+  } = useRealtimeChat(selectedUserId);
   
   useEffect(() => {
     if (!currentUser) {
@@ -95,54 +104,71 @@ const MessagesPage = () => {
     sendMessageHandler('Image', 'image');
     handleCloseImageUploader();
   };
+
+  // Handle typing indicator for real-time feedback
+  const handleMessageInputChange = (isTyping: boolean) => {
+    setTyping(isTyping);
+  };
+  
+  // Handle sending message with real-time 
+  const handleSendMessage = (content: string, type: string = 'text') => {
+    // Clear typing indicator when sending
+    setTyping(false);
+    
+    // Send through the messages hook
+    return sendMessageHandler(content, type);
+  };
   
   return (
-    <div className="flex flex-col h-screen">
-      {/* Header */}
-      <MessageHeader 
-        selectedUser={selectedUser} 
-        onStartCall={handleStartCall}
-        onStartVideoCall={handleStartVideoCall}
-      />
-      
-      {/* Load more button */}
-      <MessagesPagination 
-        hasMore={hasMore} 
-        isLoading={isLoading} 
-        onLoadMore={loadMoreMessages} 
-      />
-      
-      {/* Message List */}
-      <MessageList 
-        messages={messages} 
-        currentUser={currentUser} 
-        selectedUser={selectedUser}
-        isLoading={isLoading}
-      />
-      
-      {/* Message Input */}
-      <MessageInput 
-        onSendMessage={sendMessageHandler}
-        onOpenGiftModal={handleOpenGiftModal}
-        onOpenImageUploader={handleOpenImageUploader}
-        onSendVoiceNote={handleSendVoiceNote}
-        isLoading={isLoading}
-      />
-      
-      {/* Gift Modal */}
-      <GiftModal 
-        isOpen={isGiftModalOpen} 
-        onClose={handleCloseGiftModal} 
-        onSendGift={handleSendGift} 
-      />
-      
-      {/* Image Uploader Modal */}
-      <ImageUploader 
-        onImageUploaded={handleSendImage} 
-        maxSize={5} 
-        className="w-full" 
-      />
-    </div>
+    <ProtectedRoute>
+      <div className="flex flex-col h-screen">
+        {/* Header */}
+        <MessageHeader 
+          selectedUser={selectedUser} 
+          onStartCall={handleStartCall}
+          onStartVideoCall={handleStartVideoCall}
+        />
+        
+        {/* Load more button */}
+        <MessagesPagination 
+          hasMore={hasMore} 
+          isLoading={isLoading} 
+          onLoadMore={loadMoreMessages} 
+        />
+        
+        {/* Message List */}
+        <MessageList 
+          messages={messages} 
+          currentUser={currentUser} 
+          selectedUser={selectedUser}
+          isLoading={isLoading}
+          typingStatus={typingStatus}
+        />
+        
+        {/* Message Input */}
+        <MessageInput 
+          onSendMessage={handleSendMessage}
+          onOpenGiftModal={handleOpenGiftModal}
+          onOpenImageUploader={handleOpenImageUploader}
+          onSendVoiceNote={handleSendVoiceNote}
+          isLoading={isLoading}
+        />
+        
+        {/* Gift Modal */}
+        <GiftModal 
+          isOpen={isGiftModalOpen} 
+          onClose={handleCloseGiftModal} 
+          onSendGift={handleSendGift} 
+        />
+        
+        {/* Image Uploader Modal */}
+        <ImageUploader 
+          onImageUploaded={handleSendImage} 
+          maxSize={5} 
+          className="w-full" 
+        />
+      </div>
+    </ProtectedRoute>
   );
 };
 

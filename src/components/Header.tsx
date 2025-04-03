@@ -1,9 +1,9 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser } from '@/context/UserContext';
+import { useTheme } from '@/context/ThemeContext';
 import {
   Popover,
   PopoverContent,
@@ -30,13 +30,17 @@ import {
   Compass,
   Users,
   BookOpen,
-  ShoppingBag
+  ShoppingBag,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
+import ThemeToggle from './ThemeToggle';
 
 const Header = () => {
   const { currentUser, logout, isAuthenticated } = useUser();
+  const { theme, toggleTheme } = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,10 +64,10 @@ const Header = () => {
   ];
 
   return (
-    <header className="border-b py-3 px-4 bg-love-50/50 backdrop-blur-sm sticky top-0 z-50">
+    <header className="border-b py-3 px-4 bg-love-50/50 backdrop-blur-sm sticky top-0 z-50 dark:bg-slate-900/90 dark:border-slate-800">
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="flex items-center">
-          <h1 className="text-lg md:text-xl font-bold text-love-600 font-display">MatchCupid</h1>
+          <h1 className="text-lg md:text-xl font-bold text-love-600 dark:text-love-400 font-display">MatchCupid</h1>
         </Link>
 
         {/* Desktop Navigation */}
@@ -76,7 +80,7 @@ const Header = () => {
                     <Link to={item.path}>
                       <Button 
                         variant={location.pathname === item.path ? "default" : "ghost"} 
-                        className="flex items-center"
+                        className={`flex items-center ${location.pathname === item.path ? 'bg-love-500 hover:bg-love-600 dark:bg-love-600 dark:hover:bg-love-700' : 'dark:text-slate-200'}`}
                       >
                         {item.icon}
                         {item.name}
@@ -89,7 +93,9 @@ const Header = () => {
           )}
         </nav>
 
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          
           {isAuthenticated ? (
             <>
               <Popover>
@@ -99,23 +105,23 @@ const Header = () => {
                     <Badge className="bg-love-500 absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0">3</Badge>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-80 p-2">
-                  <div className="text-sm font-semibold py-2 px-4 border-b">Notifications</div>
+                <PopoverContent align="end" className="w-80 p-2 dark:bg-slate-900 dark:border-slate-800">
+                  <div className="text-sm font-semibold py-2 px-4 border-b dark:border-slate-700">Notifications</div>
                   <div className="py-2">
-                    <div className="px-4 py-3 hover:bg-slate-50 cursor-pointer rounded-md">
+                    <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer rounded-md">
                       <p className="text-sm font-medium">You have a new match!</p>
                       <p className="text-xs text-muted-foreground">2 minutes ago</p>
                     </div>
-                    <div className="px-4 py-3 hover:bg-slate-50 cursor-pointer rounded-md">
+                    <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer rounded-md">
                       <p className="text-sm font-medium">John sent you a message</p>
                       <p className="text-xs text-muted-foreground">1 hour ago</p>
                     </div>
-                    <div className="px-4 py-3 hover:bg-slate-50 cursor-pointer rounded-md">
+                    <div className="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer rounded-md">
                       <p className="text-sm font-medium">Your profile has been viewed 10 times</p>
                       <p className="text-xs text-muted-foreground">3 hours ago</p>
                     </div>
                   </div>
-                  <div className="border-t pt-2 pb-1 px-4">
+                  <div className="border-t pt-2 pb-1 px-4 dark:border-slate-700">
                     <Button variant="link" className="w-full justify-center text-xs h-8">
                       View all notifications
                     </Button>
@@ -128,18 +134,18 @@ const Header = () => {
                   <Button variant="ghost" className="flex items-center gap-2 ml-2 relative">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={currentUser?.photos?.[0]} alt={currentUser?.name} />
-                      <AvatarFallback className="bg-love-100 text-love-800">
+                      <AvatarFallback className="bg-love-100 text-love-800 dark:bg-love-900 dark:text-love-200">
                         {currentUser?.name?.substring(0, 2).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <span className="hidden md:inline-block font-medium">{currentUser?.name}</span>
                     <ChevronDown size={16} />
                     {(currentUser?.role === 'admin' || currentUser?.role === 'moderator') && (
-                      <div className="absolute -top-1 -right-1 h-3 w-3 bg-love-500 rounded-full border-2 border-white"></div>
+                      <div className="absolute -top-1 -right-1 h-3 w-3 bg-love-500 rounded-full border-2 border-white dark:border-slate-900"></div>
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent align="end" className="w-56 p-2">
+                <PopoverContent align="end" className="w-56 p-2 dark:bg-slate-900 dark:border-slate-800">
                   <div className="grid gap-1">
                     <Button 
                       variant="ghost" 
@@ -179,7 +185,7 @@ const Header = () => {
                     
                     <Button 
                       variant="ghost" 
-                      className="flex justify-start items-center text-rose-500 hover:text-rose-600 hover:bg-rose-50 h-10"
+                      className="flex justify-start items-center text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/20 h-10"
                       onClick={handleLogout}
                     >
                       <LogOut className="mr-2 h-4 w-4" />
@@ -213,11 +219,11 @@ const Header = () => {
 
       {/* Mobile Menu */}
       <div className={cn(
-        "fixed inset-0 bg-white z-40 flex flex-col p-4 md:hidden transform transition-transform",
+        "fixed inset-0 bg-white dark:bg-slate-900 z-40 flex flex-col p-4 md:hidden transform transition-transform",
         isMenuOpen ? "translate-x-0" : "translate-x-full"
       )}>
         <div className="flex justify-between items-center mb-8 pt-2">
-          <h2 className="text-lg font-bold text-love-600">Menu</h2>
+          <h2 className="text-lg font-bold text-love-600 dark:text-love-400">Menu</h2>
           <Button variant="ghost" size="icon" onClick={toggleMenu}>
             <X size={24} />
           </Button>
@@ -228,7 +234,7 @@ const Header = () => {
             <Button
               key={item.path}
               variant={location.pathname === item.path ? "default" : "ghost"}
-              className="justify-start h-12"
+              className={`justify-start h-12 ${location.pathname === item.path ? 'bg-love-500 hover:bg-love-600 dark:bg-love-600 dark:hover:bg-love-700' : ''}`}
               onClick={() => {
                 navigate(item.path);
                 setIsMenuOpen(false);
@@ -241,7 +247,7 @@ const Header = () => {
 
           {isAuthenticated ? (
             <>
-              <div className="border-t my-4"></div>
+              <div className="border-t my-4 dark:border-slate-700"></div>
               <Button
                 variant="ghost"
                 className="justify-start h-12"
@@ -291,7 +297,7 @@ const Header = () => {
             </>
           ) : (
             <>
-              <div className="border-t my-4"></div>
+              <div className="border-t my-4 dark:border-slate-700"></div>
               <Button
                 variant="outline"
                 className="justify-center h-12 mb-2"

@@ -1,117 +1,243 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { useUser } from '@/context/UserContext';
-import { Message } from '@/types/user';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Message } from '@/types/user';
+import { useUser } from '@/context/UserContext';
 
-export const useMessages = (selectedUserId: string | undefined) => {
-  const { currentUser, messages: allMessages, sendMessage, markMessagesAsRead } = useUser();
+export const useMessages = (conversationUserId?: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
+  const { currentUser } = useUser();
+  const channelRef = useRef<any>(null);
   const messagesPerPage = 20;
 
-  // Load initial messages
-  useEffect(() => {
-    if (!selectedUserId || !currentUser) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    // Simulate fetching from API with pagination
+  // Fetch messages function
+  const fetchMessages = useCallback(async (pageNumber = 1) => {
+    if (!conversationUserId || !currentUser?.id) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const filteredMessages = allMessages
-        .filter(
-          message =>
-            (message.senderId === currentUser?.id && message.recipientId === selectedUserId) ||
-            (message.recipientId === currentUser?.id && message.senderId === selectedUserId)
-        )
-        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
-        .slice(0, page * messagesPerPage);
+      setIsLoading(true);
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${conversationUserId}),and(sender_id.eq.${conversationUserId},receiver_id.eq.${currentUser.id})`)
+        .order('created_at', { ascending: false })
+        .range((pageNumber - 1) * messagesPerPage, pageNumber * messagesPerPage - 1);
+
+      if (fetchError) throw fetchError;
+
+      // Check if we have more messages
+      setHasMore(data.length === messagesPerPage);
+
+      // Transform data to match Message type
+      const formattedMessages: Message[] = data.map(msg => ({
+        id: msg.id,
+        senderId: msg.sender_id,
+        recipientId: msg.receiver_id,
+        content: msg.content,
+        timestamp: new Date(msg.created_at),
+        type: msg.type || 'text',
+        isRead: msg.is_read,
+      }));
+
+      // Append or replace messages based on page
+      if (pageNumber === 1) {
+        setMessages(formattedMessages);
+      } else {
+        setMessages(prev => [...prev, ...formattedMessages]);
+      }
       
-      setMessages(filteredMessages);
-      setHasMore(filteredMessages.length === page * messagesPerPage);
-      
-      // Mark incoming messages as read
-      const unreadMessageIds = filteredMessages
-        .filter(msg => msg.senderId === selectedUserId && !msg.isRead)
+      // Mark received messages as read
+      const unreadMessageIds = formattedMessages
+        .filter(msg => msg.senderId === conversationUserId && !msg.isRead)
         .map(msg => msg.id);
-      
+        
       if (unreadMessageIds.length > 0) {
         markMessagesAsRead(unreadMessageIds);
       }
-    } catch (err) {
-      setError('Failed to load messages');
-      toast.error('Failed to load messages');
-      console.error(err);
+
+    } catch (err: any) {
+      console.error('Error fetching messages:', err);
+      setError(err.message || 'Failed to load messages');
+      toast.error('Failed to load messages', {
+        description: err.message
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [selectedUserId, currentUser, allMessages, page, markMessagesAsRead]);
+  }, [conversationUserId, currentUser?.id]);
 
-  // Set up real-time subscription for new messages
+  // Load more messages
+  const loadMoreMessages = useCallback(() => {
+    if (hasMore && !isLoading) {
+      setPage(prev => prev + 1);
+    }
+  }, [hasMore, isLoading]);
+
+  // Send a message
+  const sendMessage = useCallback(async (content: string, type: string = 'text'): Promise<boolean> => {
+    if (!conversationUserId || !currentUser?.id || !content.trim()) {
+      toast.error('Cannot send message', {
+        description: 'Missing recipient or content'
+      });
+      return false;
+    }
+
+    try {
+      // Create optimistic message
+      const tempId = `temp-${Date.now()}`;
+      const optimisticMessage: Message = {
+        id: tempId,
+        senderId: currentUser.id,
+        recipientId: conversationUserId,
+        content,
+        timestamp: new Date(),
+        type,
+        isRead: false,
+      };
+
+      // Update UI immediately
+      setMessages(prev => [optimisticMessage, ...prev]);
+
+      // Send to server
+      const { data, error: sendError } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: currentUser.id,
+          receiver_id: conversationUserId,
+          content,
+          type,
+          is_read: false,
+        })
+        .select()
+        .single();
+
+      if (sendError) throw sendError;
+
+      // Replace optimistic message with real one
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempId 
+          ? {
+              id: data.id,
+              senderId: data.sender_id,
+              recipientId: data.receiver_id,
+              content: data.content,
+              timestamp: new Date(data.created_at),
+              type: data.type || 'text',
+              isRead: data.is_read,
+            }
+          : msg
+      ));
+
+      return true;
+    } catch (err: any) {
+      console.error('Error sending message:', err);
+      toast.error('Failed to send message', {
+        description: err.message
+      });
+      
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => !msg.id.toString().startsWith('temp-')));
+      
+      return false;
+    }
+  }, [conversationUserId, currentUser?.id]);
+
+  // Mark messages as read
+  const markMessagesAsRead = useCallback(async (messageIds: string[]): Promise<boolean> => {
+    if (!messageIds.length) return true;
+
+    try {
+      const { error: updateError } = await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .in('id', messageIds);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setMessages(prev => 
+        prev.map(msg => 
+          messageIds.includes(msg.id) ? { ...msg, isRead: true } : msg
+        )
+      );
+
+      return true;
+    } catch (err: any) {
+      console.error('Error marking messages as read:', err);
+      return false;
+    }
+  }, []);
+
+  // Set up real-time subscription
   useEffect(() => {
-    if (!selectedUserId || !currentUser) return;
+    if (!conversationUserId || !currentUser?.id) return;
+
+    // Initial fetch
+    fetchMessages(1);
     
-    // This is a simulation of real-time subscription
-    // In a real app, you would use Supabase subscription
-    const channel = supabase
-      .channel('messages-channel')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `sender_id=eq.${selectedUserId},receiver_id=eq.${currentUser.id}`
-        },
-        (payload) => {
-          // Process the new message
-          // This is mock code as we don't have actual Supabase integration
-          console.log('New message received', payload);
-          
-          // In a real app, you would add the new message to your state
-          // For now, we're just using the mock data from the context
-        }
-      )
+    // Set up channel for real-time updates
+    const channel = supabase.channel(`messages:${currentUser.id}-${conversationUserId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `receiver_id=eq.${currentUser.id},sender_id=eq.${conversationUserId}`
+      }, (payload) => {
+        // New message received
+        const newMessage: Message = {
+          id: payload.new.id,
+          senderId: payload.new.sender_id,
+          recipientId: payload.new.receiver_id,
+          content: payload.new.content,
+          timestamp: new Date(payload.new.created_at),
+          type: payload.new.type || 'text',
+          isRead: payload.new.is_read,
+        };
+        
+        setMessages(prev => [newMessage, ...prev.filter(msg => msg.id !== newMessage.id)]);
+        
+        // Mark as read automatically since we're viewing the conversation
+        markMessagesAsRead([newMessage.id]);
+      })
       .subscribe();
     
+    // Store reference to channel
+    channelRef.current = channel;
+    
+    // Clean up on unmount
     return () => {
-      // Clean up subscription
-      supabase.removeChannel(channel);
-    };
-  }, [selectedUserId, currentUser?.id]);
-
-  const sendMessageHandler = useCallback(
-    (content: string, messageType: string = 'text') => {
-      if (!content.trim() && messageType === 'text') return;
-      if (!selectedUserId || !currentUser) return;
-      
-      try {
-        sendMessage(selectedUserId, content);
-      } catch (err) {
-        setError('Failed to send message');
-        toast.error('Failed to send message');
-        console.error(err);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
       }
-    },
-    [selectedUserId, currentUser, sendMessage]
-  );
+    };
+  }, [conversationUserId, currentUser?.id, fetchMessages, markMessagesAsRead]);
 
-  const loadMoreMessages = useCallback(() => {
-    if (!hasMore || isLoading) return;
-    setPage(prevPage => prevPage + 1);
-  }, [hasMore, isLoading]);
+  // Refetch when page changes
+  useEffect(() => {
+    if (page > 1) {
+      fetchMessages(page);
+    }
+  }, [page, fetchMessages]);
 
   return {
     messages,
     isLoading,
     error,
     hasMore,
-    sendMessage: sendMessageHandler,
-    loadMoreMessages
+    sendMessage,
+    loadMoreMessages,
+    markMessagesAsRead
   };
 };
+
+export default useMessages;
