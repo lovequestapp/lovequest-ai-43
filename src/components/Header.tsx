@@ -93,7 +93,7 @@ const Header = () => {
   return (
     <header className="border-b py-3 px-4 bg-white shadow-sm sticky top-0 z-50 dark:bg-slate-900/90 dark:border-slate-800">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="flex items-center mr-auto">
+        <Link to="/" className="flex items-center mr-auto pl-0">
           <Heart className="h-6 w-6 text-love-500 mr-2" />
           <h1 className="text-lg md:text-xl font-bold text-love-600 dark:text-love-400 font-display">LoveQuest</h1>
         </Link>
