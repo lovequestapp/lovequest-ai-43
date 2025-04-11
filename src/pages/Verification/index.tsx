@@ -1,8 +1,8 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
-import Header from '@/components/header/Header';
-import Footer from '@/components/Footer';
+import { Layout } from '@/components/layout';
 import VerificationProcess from '@/components/VerificationProcess';
 
 const VerificationPage = () => {
@@ -18,17 +18,13 @@ const VerificationPage = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <main className="flex-grow container mx-auto px-4 py-8">
+    <Layout>
+      <div className="container mx-auto px-4 py-8">
         <div className="max-w-xl mx-auto">
           <VerificationProcess skipVerification={handleSkipVerification} />
         </div>
-      </main>
-      
-      <Footer />
-    </div>
+      </div>
+    </Layout>
   );
 };
 

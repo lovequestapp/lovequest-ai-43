@@ -1,10 +1,10 @@
+
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Mail, ArrowLeft } from 'lucide-react';
-import Header from '@/components/header/Header';
-import Footer from '@/components/Footer';
+import { Layout } from '@/components/layout';
 
 const EmailConfirmationPage = () => {
   const location = useLocation();
@@ -12,10 +12,8 @@ const EmailConfirmationPage = () => {
   const email = location.state?.email || 'your email';
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
-      <main className="flex-grow container mx-auto px-4 py-8">
+    <Layout>
+      <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
           <Card>
             <CardHeader>
@@ -56,10 +54,8 @@ const EmailConfirmationPage = () => {
             </CardFooter>
           </Card>
         </div>
-      </main>
-      
-      <Footer />
-    </div>
+      </div>
+    </Layout>
   );
 };
 
