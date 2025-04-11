@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import CompatibilityQuiz from '@/components/CompatibilityQuiz';
-import Header from '@/components/Header';
+import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';

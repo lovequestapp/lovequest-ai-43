@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { format, parseISO, addDays } from 'date-fns';
 import { useUser } from '@/context/UserContext';
-import Header from '@/components/Header';
+import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
 import MapView from '@/components/MapView';
 import { Calendar } from '@/components/ui/calendar';

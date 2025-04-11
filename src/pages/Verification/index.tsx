@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthRedirect } from '@/hooks/useAuthRedirect';
-import Header from '@/components/Header';
+import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
 import VerificationProcess from '@/components/VerificationProcess';
 
