@@ -18,6 +18,7 @@ import Verification from './Verification';
 import EmailConfirmation from './EmailConfirmation';
 import EmailConfirmSuccess from './auth/confirm-email';
 import Shop from './Shop';
+import CheckoutPage from './checkout';
 
 export {
   Home,
@@ -38,5 +39,6 @@ export {
   Verification,
   EmailConfirmation,
   EmailConfirmSuccess,
-  Shop
+  Shop,
+  CheckoutPage
 };
