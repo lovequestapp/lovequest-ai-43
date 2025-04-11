@@ -2,9 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '@/context/UserContext';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import ProfilePosts from '@/components/ProfilePosts';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,12 +10,9 @@ import {
   Heart, 
   MessageCircle, 
   ArrowLeft, 
-  MapPin, 
-  Calendar, 
-  Music, 
+  MapPin,
   Sparkles,
   Camera,
-  Users,
   X,
   Share2,
   Gift,
@@ -31,6 +25,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { Layout } from '@/components/layout';
+import GiftShop from '@/components/GiftShop';
 
 const ProfileDetails = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -99,8 +95,7 @@ const ProfileDetails = () => {
   
   if (!profile) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
+      <Layout>
         <main className="flex-grow container mx-auto px-4 py-8 flex items-center justify-center">
           <div className="animate-pulse flex flex-col items-center">
             <div className="h-16 w-16 bg-love-200 rounded-full mb-4"></div>
@@ -108,8 +103,7 @@ const ProfileDetails = () => {
             <div className="h-4 w-32 bg-love-50 rounded"></div>
           </div>
         </main>
-        <Footer />
-      </div>
+      </Layout>
     );
   }
   
@@ -144,9 +138,7 @@ const ProfileDetails = () => {
   const photos = profile.photos && profile.photos.length ? profile.photos : ['https://via.placeholder.com/400x600?text=No+Photo'];
   
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      
+    <Layout>
       <motion.main 
         className="flex-grow container mx-auto px-4 py-8 pb-24"
         initial={{ opacity: 0, y: 20 }}
@@ -159,7 +151,7 @@ const ProfileDetails = () => {
           onClick={handleBack}
         >
           <ArrowLeft size={16} />
-          <span>Back to Discover</span>
+          <span>Back</span>
         </Button>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -225,11 +217,12 @@ const ProfileDetails = () => {
             </div>
             
             <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-4 mb-6">
+              <TabsList className="grid grid-cols-5 mb-6">
                 <TabsTrigger value="about">About</TabsTrigger>
                 <TabsTrigger value="interests">Interests</TabsTrigger>
                 <TabsTrigger value="compatibility">Compatibility</TabsTrigger>
                 <TabsTrigger value="posts">Posts</TabsTrigger>
+                <TabsTrigger value="gifts">Gifts</TabsTrigger>
               </TabsList>
               
               <TabsContent value="about" className="space-y-6">
@@ -238,25 +231,33 @@ const ProfileDetails = () => {
                     <h3 className="text-xl font-semibold mb-4">About {profile.name}</h3>
                     <p className="text-gray-700 whitespace-pre-line">{profile.bio}</p>
                     
-                    <div className="mt-6 p-3 bg-love-50 rounded-lg flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Volume2 size={18} className="text-love-700" />
-                        <span className="text-love-700 font-medium">Voice Introduction</span>
+                    {profile.voiceIntro && (
+                      <div className="mt-6 p-3 bg-love-50 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Volume2 size={18} className="text-love-700" />
+                          <span className="text-love-700 font-medium">Voice Introduction</span>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className={`rounded-full h-8 w-8 p-0 ${isPlayingVoice ? 'bg-love-100 text-love-700' : ''}`}
+                          onClick={toggleVoicePlay}
+                        >
+                          {isPlayingVoice ? <Pause size={16} /> : <Play size={16} />}
+                        </Button>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className={`rounded-full h-8 w-8 p-0 ${isPlayingVoice ? 'bg-love-100 text-love-700' : ''}`}
-                        onClick={toggleVoicePlay}
-                      >
-                        {isPlayingVoice ? <Pause size={16} /> : <Play size={16} />}
-                      </Button>
-                    </div>
+                    )}
                     
                     {profile.favoriteMusic && profile.favoriteMusic.length > 0 && (
-                      <div className="flex items-center gap-2 mt-4 text-love-700">
-                        <Music size={18} />
-                        <span>Favorite music: {profile.favoriteMusic.join(', ')}</span>
+                      <div className="flex flex-col gap-2 mt-4">
+                        <h4 className="font-medium">Favorite music:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profile.favoriteMusic.map((music: string, index: number) => (
+                            <Badge key={index} variant="secondary">
+                              {music}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </CardContent>
@@ -429,7 +430,50 @@ const ProfileDetails = () => {
               <TabsContent value="posts">
                 <Card>
                   <CardContent className="p-6">
-                    <ProfilePosts userId={profile.id} posts={posts} />
+                    <h3 className="text-xl font-semibold mb-4">{profile.name}'s Posts</h3>
+                    {posts.length > 0 ? (
+                      <div className="space-y-4">
+                        {posts.map((post) => (
+                          <div key={post.id} className="border rounded-lg overflow-hidden">
+                            <div className="p-4">
+                              <h4 className="font-medium">{post.title}</h4>
+                              <p className="text-sm text-muted-foreground mt-1">{post.content}</p>
+                            </div>
+                            {post.imageUrl && (
+                              <img 
+                                src={post.imageUrl} 
+                                alt={post.title} 
+                                className="w-full h-48 object-cover" 
+                              />
+                            )}
+                            <div className="p-4 bg-gray-50 flex items-center justify-between text-sm">
+                              <span className="text-muted-foreground">{post.date}</span>
+                              <div className="flex items-center gap-4">
+                                <span className="flex items-center gap-1">
+                                  <Heart size={14} /> {post.likes}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MessageCircle size={14} /> {post.comments}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No posts to show
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="gifts">
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="text-xl font-semibold mb-4">Send Gifts to {profile.name}</h3>
+                    <GiftShop recipientId={profile.id} recipientName={profile.name} />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -500,6 +544,7 @@ const ProfileDetails = () => {
                   <Button 
                     variant="outline"
                     className="border-amber-200 text-amber-700 hover:bg-amber-50 flex items-center justify-center gap-2"
+                    onClick={() => setActiveTab('gifts')}
                   >
                     <Gift size={18} />
                     <span>Send Gift</span>
@@ -523,10 +568,7 @@ const ProfileDetails = () => {
                     {profile.interestedIn && profile.interestedIn.length > 0 && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Interested in</span>
-                        <div className="flex items-center gap-1">
-                          <Users size={14} className="text-love-400" />
-                          <span className="font-medium">{profile.interestedIn.join(', ')}</span>
-                        </div>
+                        <span className="font-medium">{profile.interestedIn.join(', ')}</span>
                       </div>
                     )}
                   </div>
@@ -582,9 +624,7 @@ const ProfileDetails = () => {
           </div>
         </div>
       </motion.main>
-      
-      <Footer className="mt-auto" />
-    </div>
+    </Layout>
   );
 };
 
