@@ -33,6 +33,7 @@ import {
   Users,
   BookOpen,
   Home,
+  ShoppingBag,
 } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { cn } from '@/lib/utils';
@@ -65,6 +66,7 @@ const Header = () => {
     { name: 'Messages', path: '/messages', icon: <MessageSquare className="h-4 w-4 mr-2" /> },
     { name: 'Matches', path: '/matches', icon: <Users className="h-4 w-4 mr-2" /> },
     { name: 'Profile', path: '/user-profile', icon: <User className="h-4 w-4 mr-2" /> },
+    { name: 'Shop', path: '/shop', icon: <ShoppingBag className="h-4 w-4 mr-2" /> },
   ];
 
   // Dynamic nav items based on authentication status
@@ -91,7 +93,7 @@ const Header = () => {
   return (
     <header className="border-b py-3 px-4 bg-white shadow-sm sticky top-0 z-50 dark:bg-slate-900/90 dark:border-slate-800">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="flex items-center">
+        <Link to="/" className="flex items-center mr-auto">
           <Heart className="h-6 w-6 text-love-500 mr-2" />
           <h1 className="text-lg md:text-xl font-bold text-love-600 dark:text-love-400 font-display">LoveQuest</h1>
         </Link>
@@ -180,6 +182,14 @@ const Header = () => {
                     >
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Preferences</span>
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className="flex justify-start items-center h-10"
+                      onClick={() => navigate('/shop')}
+                    >
+                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      <span>Gift Shop</span>
                     </Button>
                     
                     {(currentUser?.role === 'admin' || currentUser?.role === 'moderator') && (

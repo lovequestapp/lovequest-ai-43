@@ -1,7 +1,7 @@
 
 import Home from './home';
 import Register from './register';
-import Login from './Login';
+import Login from './login';
 import Profile from './Profile';
 import Messages from './Messages';
 import EditProfile from './edit-profile';
