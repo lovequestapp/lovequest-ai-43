@@ -1,26 +1,21 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { GiftModal } from '@/components/GiftModal';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import ImageUploader from '@/components/ImageUploader';
-import MessageHeader from '@/components/messaging/MessageHeader';
-import MessageList from '@/components/messaging/MessageList';
-import MessageInput from '@/components/messaging/MessageInput';
-import MessagesPagination from '@/components/messaging/MessagesPagination';
-import { useMessages } from '@/hooks/useMessages';
-import { useRealtimeChat } from '@/hooks/useRealtimeChat';
-import ProtectedRoute from '@/components/protected-route';
-import { Message } from '@/types/user';
 import { Layout } from '@/components/layout';
+import MessagesLayout from '@/components/messaging/MessagesLayout';
+import { Message } from '@/types/user';
+import { useRealtimeChat } from '@/hooks/useRealtimeChat';
+import { useMessages } from '@/hooks/useMessages';
 
 const MessagesPage = () => {
   const { userId: selectedUserId } = useParams<{ userId: string }>();
   const { currentUser, allUsers } = useUser();
-  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
   const navigate = useNavigate();
@@ -42,10 +37,29 @@ const MessagesPage = () => {
     sendMessage: realtimeSendMessage
   } = useRealtimeChat(selectedUserId);
   
+  const [matches, setMatches] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
       return;
+    }
+    
+    // Filter and format users to populate the match list
+    if (allUsers && allUsers.length > 0) {
+      const matchData = allUsers
+        .filter(user => user.id !== currentUser.id)
+        .map(user => ({
+          id: user.id,
+          name: user.name,
+          photo: user.photos?.[0] || '',
+          status: Math.random() > 0.5 ? 'online' : 'offline', // Mock status
+          lastMessage: 'Hello there!', // Mock message
+          lastMessageTime: new Date(Date.now() - Math.random() * 86400000), // Random time in last 24h
+          unreadCount: Math.floor(Math.random() * 3) // Mock unread count
+        }));
+      setMatches(matchData);
     }
     
     if (selectedUserId) {
@@ -78,14 +92,6 @@ const MessagesPage = () => {
     setIsImageUploaderOpen(false);
   };
   
-  const handleStartCall = () => {
-    toast.success(`Voice call started with ${selectedUser?.name}`);
-  };
-  
-  const handleStartVideoCall = () => {
-    toast.success(`Video call started with ${selectedUser?.name}`);
-  };
-
   const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
     if (!selectedUserId) return;
     
@@ -124,56 +130,45 @@ const MessagesPage = () => {
     // Send through the messages hook
     return sendMessageHandler(content, type);
   };
+
+  // Handle selecting a user from the match list
+  const handleSelectMatch = (userId: string) => {
+    navigate(`/messages/${userId}`);
+  };
   
   return (
-    <Layout>
-      <div className="flex flex-col h-[calc(100vh-8rem)]">
-        {/* Header */}
-        <MessageHeader 
-          selectedUser={selectedUser} 
-          onStartCall={handleStartCall}
-          onStartVideoCall={handleStartVideoCall}
-        />
-        
-        {/* Load more button */}
-        <MessagesPagination 
-          hasMore={hasMore} 
-          isLoading={isLoading} 
-          onLoadMore={loadMoreMessages} 
-        />
-        
-        {/* Message List */}
-        <MessageList 
-          messages={messages} 
-          currentUser={currentUser} 
-          selectedUser={selectedUser}
-          isLoading={isLoading}
-          typingStatus={typingStatus}
-        />
-        
-        {/* Message Input */}
-        <MessageInput 
-          onSendMessage={handleSendMessage}
-          onOpenGiftModal={handleOpenGiftModal}
-          onOpenImageUploader={handleOpenImageUploader}
-          onSendVoiceNote={handleSendVoiceNote}
-          isLoading={isLoading}
-        />
-        
-        {/* Gift Modal */}
-        <GiftModal 
-          isOpen={isGiftModalOpen} 
-          onClose={handleCloseGiftModal} 
-          onSendGift={handleSendGift} 
-        />
-        
-        {/* Image Uploader Modal */}
-        <ImageUploader 
-          onImageUploaded={handleSendImage} 
-          maxSize={5} 
-          className="w-full" 
-        />
-      </div>
+    <Layout hideFooter>
+      <MessagesLayout
+        matches={matches}
+        activeMatchId={selectedUserId || null}
+        onSelectMatch={handleSelectMatch}
+        selectedUser={selectedUser}
+        messages={messages}
+        isLoading={isLoading}
+        typingStatus={typingStatus}
+        currentUser={currentUser}
+        onSendMessage={handleSendMessage}
+        onMessageInputChange={handleMessageInputChange}
+        onOpenGiftModal={handleOpenGiftModal}
+        onOpenImageUploader={handleOpenImageUploader}
+        onSendVoiceNote={handleSendVoiceNote}
+        hasMore={hasMore}
+        onLoadMore={loadMoreMessages}
+      />
+      
+      {/* Gift Modal */}
+      <GiftModal 
+        isOpen={isGiftModalOpen} 
+        onClose={handleCloseGiftModal} 
+        onSendGift={handleSendGift} 
+      />
+      
+      {/* Image Uploader Modal */}
+      <ImageUploader 
+        onImageUploaded={handleSendImage} 
+        maxSize={5} 
+        className="w-full" 
+      />
     </Layout>
   );
 };
