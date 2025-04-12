@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Gift, Diamond, Sparkles, Crown } from 'lucide-react';
+import { Heart, Gift, Diamond, Sparkles, Crown, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface GiftModalProps {
   isOpen: boolean;
@@ -13,99 +14,125 @@ interface GiftModalProps {
 }
 
 export const GiftModal: React.FC<GiftModalProps> = ({ isOpen, onClose, onSendGift }) => {
+  const [hoveredGift, setHoveredGift] = useState<string | null>(null);
+  
   const gifts = [
     { 
       id: 'rose', 
-      name: 'Rose', 
-      description: 'Send a beautiful rose to express interest',
+      name: 'Elegant Rose', 
+      description: 'A timeless classic to express your genuine interest',
       icon: <Heart className="text-red-500" />, 
-      bgColor: 'bg-red-50',
+      bgColor: 'bg-gradient-to-br from-red-50 to-red-100',
       borderColor: 'border-red-200',
-      textColor: 'text-red-700'
+      textColor: 'text-red-700',
+      hoverBg: 'hover:bg-red-100'
     },
     { 
       id: 'heart', 
-      name: 'Heart', 
-      description: 'Share your feelings with a lovely heart',
+      name: 'Crystal Heart', 
+      description: 'Share your deepest affection with this exquisite gift',
       icon: <Heart className="text-love-500 fill-love-500" />, 
-      bgColor: 'bg-love-50',
+      bgColor: 'bg-gradient-to-br from-love-50 to-love-100',
       borderColor: 'border-love-200',
-      textColor: 'text-love-700'
+      textColor: 'text-love-700',
+      hoverBg: 'hover:bg-love-100'
     },
     { 
       id: 'teddy', 
-      name: 'Teddy Bear', 
-      description: 'Make them smile with an adorable teddy bear',
-      icon: <Gift className="text-amber-700" />,
-      bgColor: 'bg-amber-50',
+      name: 'Luxury Teddy Bear', 
+      description: 'Delight them with this premium handcrafted gift',
+      icon: <Diamond className="text-amber-700" />,
+      bgColor: 'bg-gradient-to-br from-amber-50 to-amber-100',
       borderColor: 'border-amber-200', 
-      textColor: 'text-amber-700'
+      textColor: 'text-amber-700',
+      hoverBg: 'hover:bg-amber-100'
     }
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-center text-xl">
-            <Gift className="h-5 w-5 text-love-500" />
-            <span>Send a Gift</span>
+      <DialogContent className="sm:max-w-md rounded-xl border-0 shadow-2xl bg-white">
+        <DialogHeader className="pb-4 border-b border-gray-100">
+          <DialogTitle className="flex items-center gap-2 text-center text-xl font-serif tracking-tight">
+            <Crown className="h-5 w-5 text-amber-500" />
+            <span className="text-gray-800 font-medium">Premium Gifts</span>
           </DialogTitle>
         </DialogHeader>
         
-        <div className="p-1">
+        <div className="p-1 pt-4">
           <div className="grid grid-cols-1 gap-4 mt-2">
             {gifts.map((gift) => (
-              <div 
+              <motion.div 
                 key={gift.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
                 onClick={() => onSendGift(gift.id as 'rose' | 'heart' | 'teddy')}
                 className={cn(
-                  "flex items-start gap-4 p-4 rounded-lg border cursor-pointer transition-all",
-                  `${gift.bgColor} ${gift.borderColor} hover:shadow-md`
+                  "flex items-start gap-4 p-4 rounded-xl border cursor-pointer transition-all duration-300",
+                  `${gift.bgColor} ${gift.borderColor} ${gift.hoverBg} hover:shadow-lg`,
+                  hoveredGift === gift.id ? "scale-[1.02] shadow-md" : ""
                 )}
+                onMouseEnter={() => setHoveredGift(gift.id)}
+                onMouseLeave={() => setHoveredGift(null)}
               >
                 <div className={cn(
-                  "flex items-center justify-center rounded-full p-3",
+                  "flex items-center justify-center rounded-full p-3 shadow-inner",
                   gift.bgColor
                 )}>
                   <div className="text-2xl">{gift.icon}</div>
                 </div>
                 
                 <div className="flex-1">
-                  <h3 className={cn("font-medium mb-1", gift.textColor)}>{gift.name}</h3>
-                  <p className="text-sm text-gray-500">{gift.description}</p>
+                  <h3 className={cn("font-medium mb-1 font-serif tracking-tight", gift.textColor)}>
+                    {gift.name}
+                  </h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">{gift.description}</p>
                   
-                  <div className="mt-2 flex items-center gap-2">
-                    <Badge variant="outline" className={cn("bg-white/50", gift.borderColor)}>
-                      <Sparkles className="h-3 w-3 mr-1" />
-                      Special Gift
+                  <div className="mt-3 flex items-center gap-2">
+                    <Badge variant="outline" className={cn(
+                      "bg-white/90 shadow-sm transition-all", 
+                      gift.borderColor,
+                      hoveredGift === gift.id ? "animate-pulse" : ""
+                    )}>
+                      <Star className="h-3 w-3 mr-1 fill-amber-400 stroke-amber-500" />
+                      <span className="font-medium">Premium Gift</span>
                     </Badge>
                   </div>
                 </div>
-              </div>
+
+                <motion.div 
+                  className="self-center text-amber-500"
+                  animate={{ 
+                    opacity: hoveredGift === gift.id ? 1 : 0.6,
+                    scale: hoveredGift === gift.id ? 1.1 : 1
+                  }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Sparkles className="h-5 w-5" />
+                </motion.div>
+              </motion.div>
             ))}
           </div>
         </div>
 
-        <DialogFooter className="sm:justify-start gap-2 mt-2">
-          <div className="w-full flex justify-between items-center">
-            <Button 
-              variant="ghost" 
-              onClick={onClose} 
-              className="text-gray-500"
-            >
-              Cancel
-            </Button>
-            
-            <Button 
-              variant="outline"
-              className="border-love-200 text-love-700 hover:bg-love-50 hover:text-love-800"
-              onClick={() => window.location.href = "/shop"}
-            >
-              <Gift className="h-4 w-4 mr-2" />
-              Visit Gift Shop
-            </Button>
-          </div>
+        <DialogFooter className="sm:justify-between gap-4 pt-3 border-t border-gray-100">
+          <Button 
+            variant="ghost" 
+            onClick={onClose} 
+            className="text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+          >
+            Cancel
+          </Button>
+          
+          <Button 
+            variant="outline"
+            className="border-amber-200 bg-gradient-to-r from-amber-50 to-amber-100 text-amber-700 hover:bg-amber-100 hover:text-amber-800"
+            onClick={() => window.location.href = "/shop"}
+          >
+            <Gift className="h-4 w-4 mr-2" />
+            Visit Gift Gallery
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
