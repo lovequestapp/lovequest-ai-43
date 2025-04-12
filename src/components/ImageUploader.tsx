@@ -1,21 +1,25 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Upload, ImagePlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface ImageUploaderProps {
   onImageUploaded?: (url: string) => void;
   maxSize?: number; // in MB
   className?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({ 
   onImageUploaded,
   maxSize = 2,
-  className
+  className,
+  isOpen = false,
+  onClose
 }) => {
   const [uploading, setUploading] = useState(false);
   const { currentUser } = useUser();
@@ -57,6 +61,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         }
         toast.success("Image uploaded successfully");
         setUploading(false);
+        if (onClose) {
+          onClose();
+        }
       }, 1500);
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -67,47 +74,87 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
   };
 
+  // If isOpen and onClose are provided, wrap in Dialog component
+  if (isOpen !== undefined && onClose) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md">
+          <UploadContent 
+            uploading={uploading} 
+            handleImageUpload={handleImageUpload} 
+            currentUser={currentUser}
+            maxSize={maxSize}
+            className={className}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Otherwise render as normal component
   return (
     <Card className={`p-4 border-dashed border-2 hover:border-primary/50 transition-all ${className}`}>
-      <label className="flex flex-col items-center justify-center cursor-pointer">
-        <div className="flex flex-col items-center justify-center gap-2">
-          {uploading ? (
-            <>
-              <Loader2 className="h-10 w-10 text-muted-foreground animate-spin" />
-              <span className="text-sm text-muted-foreground">Uploading image...</span>
-            </>
-          ) : (
-            <>
-              <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center">
-                <ImagePlus className="h-10 w-10 text-muted-foreground" />
-              </div>
-              <div className="mt-2 text-center">
-                <p className="text-sm font-medium">Click to upload image</p>
-                <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, GIF up to {maxSize}MB</p>
-              </div>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
-                disabled={!currentUser}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Select Image
-              </Button>
-            </>
-          )}
-        </div>
-        <input 
-          type="file" 
-          className="hidden" 
-          accept="image/*"
-          onChange={handleImageUpload}
-          disabled={uploading || !currentUser}
-        />
-      </label>
+      <UploadContent 
+        uploading={uploading} 
+        handleImageUpload={handleImageUpload} 
+        currentUser={currentUser}
+        maxSize={maxSize}
+      />
     </Card>
   );
 };
+
+// Separated the content to avoid code duplication
+const UploadContent = ({ 
+  uploading, 
+  handleImageUpload, 
+  currentUser, 
+  maxSize,
+  className 
+}: { 
+  uploading: boolean;
+  handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  currentUser: any;
+  maxSize: number;
+  className?: string;
+}) => (
+  <label className="flex flex-col items-center justify-center cursor-pointer">
+    <div className="flex flex-col items-center justify-center gap-2">
+      {uploading ? (
+        <>
+          <Loader2 className="h-10 w-10 text-muted-foreground animate-spin" />
+          <span className="text-sm text-muted-foreground">Uploading image...</span>
+        </>
+      ) : (
+        <>
+          <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center">
+            <ImagePlus className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <div className="mt-2 text-center">
+            <p className="text-sm font-medium">Click to upload image</p>
+            <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, GIF up to {maxSize}MB</p>
+          </div>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            className="mt-2"
+            disabled={!currentUser}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Select Image
+          </Button>
+        </>
+      )}
+    </div>
+    <input 
+      type="file" 
+      className="hidden" 
+      accept="image/*"
+      onChange={handleImageUpload}
+      disabled={uploading || !currentUser}
+    />
+  </label>
+);
 
 export default ImageUploader;
