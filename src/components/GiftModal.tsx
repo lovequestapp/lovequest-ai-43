@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Gift, Diamond, Sparkles, Crown, Star } from 'lucide-react';
+import { Heart, Gift, Diamond, Sparkles, Crown, Star, Flower, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
@@ -21,7 +21,7 @@ export const GiftModal: React.FC<GiftModalProps> = ({ isOpen, onClose, onSendGif
       id: 'rose', 
       name: 'Elegant Rose', 
       description: 'A timeless classic to express your genuine interest',
-      icon: <Heart className="text-red-500" />, 
+      icon: <Flower className="text-red-500" />, 
       bgColor: 'bg-gradient-to-br from-red-50 to-red-100',
       borderColor: 'border-red-200',
       textColor: 'text-red-700',
@@ -41,7 +41,7 @@ export const GiftModal: React.FC<GiftModalProps> = ({ isOpen, onClose, onSendGif
       id: 'teddy', 
       name: 'Luxury Teddy Bear', 
       description: 'Delight them with this premium handcrafted gift',
-      icon: <Diamond className="text-amber-700" />,
+      icon: <ShoppingBag className="text-amber-700" />,
       bgColor: 'bg-gradient-to-br from-amber-50 to-amber-100',
       borderColor: 'border-amber-200', 
       textColor: 'text-amber-700',

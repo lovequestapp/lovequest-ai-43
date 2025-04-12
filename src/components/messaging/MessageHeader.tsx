@@ -12,6 +12,7 @@ interface MessageHeaderProps {
   onStartVideoCall: () => void;
   onBack?: () => void;
   showBackButton?: boolean;
+  onSendGift?: () => void;
 }
 
 const MessageHeader: React.FC<MessageHeaderProps> = ({ 
@@ -19,7 +20,8 @@ const MessageHeader: React.FC<MessageHeaderProps> = ({
   onStartCall, 
   onStartVideoCall,
   onBack,
-  showBackButton = false
+  showBackButton = false,
+  onSendGift
 }) => {
   const userStatus = selectedUser?.status || 'offline';
   
@@ -93,6 +95,18 @@ const MessageHeader: React.FC<MessageHeaderProps> = ({
           >
             <Heart className="h-5 w-5" />
           </Button>
+
+          {onSendGift && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full hover:bg-love-50 hover:text-love-600 text-gray-500"
+              onClick={onSendGift}
+              aria-label="Send gift"
+            >
+              <Gift className="h-5 w-5" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

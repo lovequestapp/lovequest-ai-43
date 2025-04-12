@@ -25,7 +25,7 @@ export const Layout: React.FC<LayoutProps> = ({
     <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900">
       {!hideHeader && <Header />}
       <main className="flex-grow pb-16 md:pb-0">{children}</main>
-      {!hideMobileToolbar && !headerOnly && <MobileToolbar />}
+      {!hideMobileToolbar && <MobileToolbar />}
       {!hideFooter && !headerOnly && <Footer />}
     </div>
   );
