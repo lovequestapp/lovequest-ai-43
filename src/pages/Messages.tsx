@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card } from "@/components/ui/card";
 import { GiftModal } from '@/components/GiftModal';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';

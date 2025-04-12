@@ -1,11 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import MatchList from './MatchList';
 import MessageHeader from './MessageHeader';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import MessagesPagination from './MessagesPagination';
 import { Message, User } from '@/types/user';
+import { ArrowLeft } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import MobileContainer from '../MobileContainer';
 
 interface MessagesLayoutProps {
   matches: any[];
@@ -42,52 +45,89 @@ const MessagesLayout: React.FC<MessagesLayoutProps> = ({
   hasMore,
   onLoadMore
 }) => {
+  const [showMatches, setShowMatches] = useState(!activeMatchId);
+  const isMobile = useIsMobile();
+  
+  // For mobile view, toggle between matches list and chat
+  const handleBackToMatches = () => {
+    setShowMatches(true);
+  };
+  
+  const handleSelectMatch = (matchId: string) => {
+    onSelectMatch(matchId);
+    setShowMatches(false);
+  };
+  
+  // On desktop, always show both columns
+  // On mobile, conditionally show match list or chat based on selection
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-gray-50">
-      {/* Left sidebar - Match list */}
-      <div className="w-1/3 max-w-sm border-r border-gray-200 bg-white">
-        <MatchList 
-          matches={matches} 
-          activeMatchId={activeMatchId}
-          onSelectMatch={onSelectMatch}
-        />
-      </div>
+      {/* Match list column */}
+      {(!isMobile || (isMobile && showMatches)) && (
+        <div className={`${isMobile ? 'w-full' : 'w-1/3 max-w-sm'} border-r border-gray-200 bg-white`}>
+          <MobileContainer scrollable>
+            <MatchList 
+              matches={matches} 
+              activeMatchId={activeMatchId}
+              onSelectMatch={handleSelectMatch}
+            />
+          </MobileContainer>
+        </div>
+      )}
       
-      {/* Right side - Chat area */}
-      <div className="flex-1 flex flex-col">
-        {/* Chat header */}
-        <MessageHeader 
-          selectedUser={selectedUser} 
-          onStartCall={() => toast.success(`Voice call started with ${selectedUser?.name}`)}
-          onStartVideoCall={() => toast.success(`Video call started with ${selectedUser?.name}`)}
-        />
-        
-        {/* Load more button */}
-        <MessagesPagination 
-          hasMore={hasMore} 
-          isLoading={isLoading} 
-          onLoadMore={onLoadMore} 
-        />
-        
-        {/* Message list */}
-        <MessageList 
-          messages={messages} 
-          currentUser={currentUser} 
-          selectedUser={selectedUser}
-          isLoading={isLoading}
-          typingStatus={typingStatus}
-        />
-        
-        {/* Message input */}
-        <MessageInput 
-          onSendMessage={onSendMessage}
-          onOpenGiftModal={onOpenGiftModal}
-          onOpenImageUploader={onOpenImageUploader}
-          onSendVoiceNote={onSendVoiceNote}
-          isLoading={isLoading}
-          onTypingChange={onMessageInputChange}
-        />
-      </div>
+      {/* Chat column - only shown if not showing matches on mobile */}
+      {(!isMobile || (isMobile && !showMatches)) && (
+        <div className={`${isMobile ? 'w-full' : 'flex-1'} flex flex-col`}>
+          <MobileContainer className="flex flex-col">
+            {/* Chat header with back button on mobile */}
+            {isMobile && (
+              <MessageHeader 
+                selectedUser={selectedUser}
+                onStartCall={() => toast.success(`Voice call started with ${selectedUser?.name}`)}
+                onStartVideoCall={() => toast.success(`Video call started with ${selectedUser?.name}`)}
+                onBack={handleBackToMatches}
+                showBackButton={true}
+              />
+            )}
+            
+            {/* Desktop header without back button */}
+            {!isMobile && (
+              <MessageHeader 
+                selectedUser={selectedUser}
+                onStartCall={() => toast.success(`Voice call started with ${selectedUser?.name}`)}
+                onStartVideoCall={() => toast.success(`Video call started with ${selectedUser?.name}`)}
+                showBackButton={false}
+              />
+            )}
+            
+            {/* Load more button */}
+            <MessagesPagination 
+              hasMore={hasMore} 
+              isLoading={isLoading} 
+              onLoadMore={onLoadMore} 
+            />
+            
+            {/* Message list */}
+            <MessageList 
+              messages={messages} 
+              currentUser={currentUser} 
+              selectedUser={selectedUser}
+              isLoading={isLoading}
+              typingStatus={typingStatus}
+            />
+            
+            {/* Message input */}
+            <MessageInput 
+              onSendMessage={onSendMessage}
+              onOpenGiftModal={onOpenGiftModal}
+              onOpenImageUploader={onOpenImageUploader}
+              onSendVoiceNote={onSendVoiceNote}
+              isLoading={isLoading}
+              onTypingChange={onMessageInputChange}
+            />
+          </MobileContainer>
+        </div>
+      )}
     </div>
   );
 };

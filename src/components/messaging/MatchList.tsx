@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Search, MessageCircle } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Match {
   id: string;
@@ -30,6 +31,7 @@ const MatchList: React.FC<MatchListProps> = ({
   onSelectMatch,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const isMobile = useIsMobile();
   
   const filteredMatches = matches.filter(match => 
     match.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -76,7 +78,7 @@ const MatchList: React.FC<MatchListProps> = ({
       </CardHeader>
       
       <CardContent className="p-0">
-        <ScrollArea className="h-[calc(100vh-12rem)]">
+        <ScrollArea className={isMobile ? "h-[calc(100vh-10rem)]" : "h-[calc(100vh-12rem)]"}>
           <div className="py-2">
             {filteredMatches.length === 0 ? (
               <div className="p-4 text-center text-muted-foreground">
