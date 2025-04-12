@@ -97,6 +97,12 @@ const MessagesPage = () => {
     const giftMessage = `Sent a ${giftType}`;
     sendMessageHandler(giftMessage, 'gift');
     handleCloseGiftModal();
+    
+    // Show success toast with animation
+    toast.success(`Gift Sent!`, {
+      description: `You sent a ${giftType} to ${selectedUser?.name}`,
+      duration: 3000
+    });
   };
 
   const handleSendVoiceNote = (voiceUrl: string) => {
@@ -164,6 +170,8 @@ const MessagesPage = () => {
       
       {/* Image Uploader Modal */}
       <ImageUploader 
+        isOpen={isImageUploaderOpen}
+        onClose={handleCloseImageUploader}
         onImageUploaded={handleSendImage} 
         maxSize={5} 
         className="w-full" 

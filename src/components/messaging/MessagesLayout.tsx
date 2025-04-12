@@ -66,6 +66,9 @@ const MessagesLayout: React.FC<MessagesLayoutProps> = ({
       {(!isMobile || (isMobile && showMatches)) && (
         <div className={`${isMobile ? 'w-full' : 'w-1/3 max-w-sm'} border-r border-gray-200 bg-white`}>
           <MobileContainer scrollable>
+            <div className="sticky top-0 z-10 p-3 border-b bg-white flex items-center justify-between">
+              <h2 className="font-semibold text-lg">Messages</h2>
+            </div>
             <MatchList 
               matches={matches} 
               activeMatchId={activeMatchId}
@@ -77,7 +80,7 @@ const MessagesLayout: React.FC<MessagesLayoutProps> = ({
       
       {/* Chat column - only shown if not showing matches on mobile */}
       {(!isMobile || (isMobile && !showMatches)) && (
-        <div className={`${isMobile ? 'w-full' : 'flex-1'} flex flex-col`}>
+        <div className={`${isMobile ? 'w-full' : 'flex-1'} flex flex-col bg-gradient-to-b from-white to-gray-50`}>
           <MobileContainer className="flex flex-col">
             {/* Chat header with back button on mobile */}
             {isMobile && (
