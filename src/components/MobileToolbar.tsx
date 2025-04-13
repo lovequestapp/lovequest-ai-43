@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Calendar, LayoutDashboard, LogOut, LogIn, User, Home, Compass } from 'lucide-react';
+import { Heart, MessageCircle, Calendar, LayoutDashboard, LogOut, LogIn, User, Home, Compass, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/context/UserContext';
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,12 @@ const MobileToolbar = () => {
       return true;
     }
     if (path === '/messages' && (currentPath === '/messages' || currentPath.startsWith('/messages/'))) {
+      return true;
+    }
+    if (path === '/blog' && (currentPath === '/blog' || currentPath.startsWith('/blog/'))) {
+      return true;
+    }
+    if (path === '/explore' && currentPath === '/explore') {
       return true;
     }
     if (path === '/dates' && currentPath === '/dates') {
@@ -80,16 +86,16 @@ const MobileToolbar = () => {
             </Link>
             
             <Link 
-              to="/matches" 
+              to="/blog" 
               className={cn(
                 "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
-                isActive('/matches') 
+                isActive('/blog') 
                   ? "text-love-500" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Heart size={22} className={cn(isActive('/matches') ? "fill-love-500" : "")} />
-              <span className="text-xs mt-1 font-medium">Matches</span>
+              <BookOpen size={22} className={cn(isActive('/blog') ? "fill-love-500" : "")} />
+              <span className="text-xs mt-1 font-medium">Blog</span>
             </Link>
             
             <Link 
@@ -117,21 +123,6 @@ const MobileToolbar = () => {
               <User size={22} className={cn(isActive('/user-profile') ? "fill-love-500" : "")} />
               <span className="text-xs mt-1 font-medium">Profile</span>
             </Link>
-            
-            {currentUser?.role === 'admin' && (
-              <Link 
-                to="/admin" 
-                className={cn(
-                  "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
-                  isActive('/admin') 
-                    ? "text-love-500" 
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <LayoutDashboard size={22} className={cn(isActive('/admin') ? "fill-love-500" : "")} />
-                <span className="text-xs mt-1 font-medium">Admin</span>
-              </Link>
-            )}
           </>
         ) : (
           // Non-authenticated user navigation
@@ -160,6 +151,19 @@ const MobileToolbar = () => {
             >
               <Compass size={22} className={cn(isActive('/discover') ? "fill-love-500" : "")} />
               <span className="text-xs mt-1 font-medium">Discover</span>
+            </Link>
+            
+            <Link 
+              to="/blog" 
+              className={cn(
+                "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
+                isActive('/blog') 
+                  ? "text-love-500" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <BookOpen size={22} className={cn(isActive('/blog') ? "fill-love-500" : "")} />
+              <span className="text-xs mt-1 font-medium">Blog</span>
             </Link>
             
             <Link 

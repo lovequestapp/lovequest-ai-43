@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Home, Compass, MessageSquare, Users, User, ShoppingBag } from 'lucide-react';
+import { Home, Compass, MessageSquare, Users, User, ShoppingBag, BookOpen } from 'lucide-react';
 
 interface NavItemsProps {
   isAuthenticated: boolean;
@@ -17,6 +17,8 @@ const NavItems = ({ isAuthenticated, isMobile = false, closeDrawer = () => {} }:
   // Common navigation items for all users
   const COMMON_NAV_ITEMS = [
     { name: 'Home', path: '/', icon: <Home className="h-4 w-4 mr-2" /> },
+    { name: 'Explore', path: '/explore', icon: <Compass className="h-4 w-4 mr-2" /> },
+    { name: 'Blog', path: '/blog', icon: <BookOpen className="h-4 w-4 mr-2" /> },
   ];
 
   // Navigation items for authenticated users

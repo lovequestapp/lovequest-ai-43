@@ -42,6 +42,9 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/email-confirmation" element={<EmailConfirmation />} />
           <Route path="/auth/confirm-email" element={<EmailConfirmSuccess />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:postId" element={<BlogPost />} />
+          <Route path="/explore" element={<Explore />} />
           
           {/* Protected routes */}
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -53,7 +56,6 @@ const App = () => {
           <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
           <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/user-profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-          <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
           <Route path="/preferences" element={<ProtectedRoute><Preferences /></ProtectedRoute>} />
           <Route path="/verification" element={<ProtectedRoute><Verification /></ProtectedRoute>} />
           <Route path="/shop" element={<ProtectedRoute><Shop /></ProtectedRoute>} />

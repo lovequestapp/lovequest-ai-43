@@ -1,10 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Gift, Mic, Image as ImageIcon, Smile } from 'lucide-react';
+import { Send, Gift, Mic, Image as ImageIcon } from 'lucide-react';
 import { toast } from "sonner";
 import { cn } from '@/lib/utils';
+import EmojiPicker from '@/components/messaging/EmojiPicker';
 
 interface MessageInputProps {
   onSendMessage: (content: string, type?: 'text' | 'image' | 'voice' | 'gift') => void;
@@ -95,6 +95,13 @@ const MessageInput: React.FC<MessageInputProps> = ({
       handleSendMessage();
     } else {
       handleTyping();
+    }
+  };
+  
+  const handleEmojiSelect = (emoji: string) => {
+    setMessage(prev => prev + emoji);
+    if (textareaRef.current) {
+      textareaRef.current.focus();
     }
   };
   
@@ -229,16 +236,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
               <span className="absolute top-0 right-0 h-2 w-2 bg-love-400 rounded-full"></span>
             </Button>
             
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-9 w-9 rounded-full text-gray-500 hover:text-love-500 hover:bg-love-50"
-              disabled={isLoading}
-              aria-label="Insert emoji"
-            >
-              <Smile className="h-5 w-5" />
-            </Button>
+            <EmojiPicker onEmojiSelect={handleEmojiSelect} />
           </div>
           
           <div className="flex items-end gap-2">
