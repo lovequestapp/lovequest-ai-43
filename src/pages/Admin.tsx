@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +12,6 @@ import SettingsPanel from '@/components/admin/SettingsPanel';
 import AppSettings from '@/components/admin/AppSettings';
 import { CalendarDays, UserCog, Flag, Activity, Settings } from 'lucide-react';
 import { toast } from 'sonner';
-import { Layout } from '@/components/layout';
 import AdminMobileContainer from '@/components/AdminMobileContainer';
 
 const AdminPage = () => {
@@ -88,67 +86,63 @@ const AdminPage = () => {
   
   if (loading) {
     return (
-      <Layout>
-        <div className="container mx-auto p-4 text-center">Loading admin panel...</div>
-      </Layout>
+      <div className="container mx-auto p-4 text-center">Loading admin panel...</div>
     );
   }
   
   return (
-    <Layout>
-      <AdminMobileContainer>
-        <div className="container mx-auto p-4 space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Admin Panel</h1>
-          </div>
-          
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-5 mb-6">
-              <TabsTrigger value="dashboard" className="flex items-center gap-1">
-                <CalendarDays className="h-4 w-4" />
-                <span className="hidden sm:inline">Dashboard</span>
-              </TabsTrigger>
-              <TabsTrigger value="users" className="flex items-center gap-1">
-                <UserCog className="h-4 w-4" />
-                <span className="hidden sm:inline">Users</span>
-              </TabsTrigger>
-              <TabsTrigger value="moderation" className="flex items-center gap-1">
-                <Flag className="h-4 w-4" />
-                <span className="hidden sm:inline">Moderation</span>
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="flex items-center gap-1">
-                <Activity className="h-4 w-4" />
-                <span className="hidden sm:inline">Analytics</span>
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-1">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Settings</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="dashboard">
-              <AdminDashboard data={userData} />
-            </TabsContent>
-            
-            <TabsContent value="users">
-              <UserManagement />
-            </TabsContent>
-            
-            <TabsContent value="moderation">
-              <ContentModeration />
-            </TabsContent>
-            
-            <TabsContent value="analytics">
-              <AnalyticsPanel />
-            </TabsContent>
-            
-            <TabsContent value="settings">
-              <AppSettings />
-            </TabsContent>
-          </Tabs>
+    <AdminMobileContainer>
+      <div className="container mx-auto p-4 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Admin Panel</h1>
         </div>
-      </AdminMobileContainer>
-    </Layout>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-5 mb-6">
+            <TabsTrigger value="dashboard" className="flex items-center gap-1">
+              <CalendarDays className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-1">
+              <UserCog className="h-4 w-4" />
+              <span className="hidden sm:inline">Users</span>
+            </TabsTrigger>
+            <TabsTrigger value="moderation" className="flex items-center gap-1">
+              <Flag className="h-4 w-4" />
+              <span className="hidden sm:inline">Moderation</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-1">
+              <Activity className="h-4 w-4" />
+              <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-1">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="dashboard">
+            <AdminDashboard data={userData} />
+          </TabsContent>
+          
+          <TabsContent value="users">
+            <UserManagement />
+          </TabsContent>
+          
+          <TabsContent value="moderation">
+            <ContentModeration />
+          </TabsContent>
+          
+          <TabsContent value="analytics">
+            <AnalyticsPanel />
+          </TabsContent>
+          
+          <TabsContent value="settings">
+            <AppSettings />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </AdminMobileContainer>
   );
 };
 

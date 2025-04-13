@@ -8,7 +8,7 @@ import { useGifts } from '@/hooks/useGifts';
 import GiftInventory from '@/components/GiftInventory';
 import GiftTransactionHistory from '@/components/GiftTransactionHistory';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Flower, Heart, Rabbit } from 'lucide-react';
 
 const GiftItem = ({ 
   type, 
@@ -17,7 +17,7 @@ const GiftItem = ({
   onPurchase 
 }: { 
   type: 'rose' | 'heart' | 'teddy'; 
-  icon: string; 
+  icon: React.ReactNode; 
   price: number;
   onPurchase: (quantity: number) => void;
 }) => {
@@ -26,7 +26,9 @@ const GiftItem = ({
   return (
     <div className="border rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4">
       <div className="flex items-center gap-4">
-        <div className="text-4xl">{icon}</div>
+        <div className="text-4xl flex items-center justify-center w-12 h-12">
+          {icon}
+        </div>
         <div>
           <h3 className="font-medium capitalize">{type}</h3>
           <p className="text-sm text-muted-foreground">Send a {type} to show your affection</p>
@@ -86,19 +88,19 @@ const Shop = () => {
               <CardContent className="space-y-4">
                 <GiftItem 
                   type="rose" 
-                  icon="🌹" 
+                  icon={<Flower className="h-8 w-8 text-red-500" />} 
                   price={4.99} 
                   onPurchase={(quantity) => handlePurchase('rose', quantity)} 
                 />
                 <GiftItem 
                   type="heart" 
-                  icon="❤️" 
+                  icon={<Heart className="h-8 w-8 text-love-500" />} 
                   price={9.99} 
                   onPurchase={(quantity) => handlePurchase('heart', quantity)} 
                 />
                 <GiftItem 
                   type="teddy" 
-                  icon="🧸" 
+                  icon={<Rabbit className="h-8 w-8 text-amber-500" />} 
                   price={14.99} 
                   onPurchase={(quantity) => handlePurchase('teddy', quantity)} 
                 />
@@ -108,9 +110,18 @@ const Shop = () => {
             <div className="bg-muted p-4 rounded-lg text-sm">
               <p className="font-medium mb-2">Gift Values</p>
               <ul className="space-y-1 text-muted-foreground">
-                <li>🌹 Roses: $1 in monetary value</li>
-                <li>❤️ Hearts: $3 in monetary value</li>
-                <li>🧸 Teddy Bears: $5 in monetary value</li>
+                <li>
+                  <span className="inline-block mr-1"><Flower className="h-4 w-4 text-red-500 inline" /></span> 
+                  Roses: $1 in monetary value
+                </li>
+                <li>
+                  <span className="inline-block mr-1"><Heart className="h-4 w-4 text-love-500 inline" /></span> 
+                  Hearts: $3 in monetary value
+                </li>
+                <li>
+                  <span className="inline-block mr-1"><Rabbit className="h-4 w-4 text-amber-500 inline" /></span> 
+                  Teddy Bears: $5 in monetary value
+                </li>
               </ul>
               <p className="mt-2 text-muted-foreground">
                 Once purchased, you can gift these items to other members. When received, they'll add to that member's popularity and monetization potential.

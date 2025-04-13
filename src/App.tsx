@@ -60,7 +60,7 @@ const App = () => {
           <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
           
           {/* Admin routes */}
-          <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Layout hideFooter hideMobileToolbar><Admin /></Layout></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
           
           {/* Catch-all for 404 */}
           <Route path="*" element={<NotFound />} />
