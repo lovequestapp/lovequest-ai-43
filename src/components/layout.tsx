@@ -22,9 +22,9 @@ export const Layout: React.FC<LayoutProps> = ({
   footerOnly = false
 }) => {
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900 overflow-x-hidden w-full max-w-[100vw]">
       {!hideHeader && <Header />}
-      <main className="flex-grow pb-16 md:pb-0">{children}</main>
+      <main className="flex-grow pb-16 md:pb-0 overflow-x-hidden w-full">{children}</main>
       {!hideMobileToolbar && <MobileToolbar />}
       {!hideFooter && !headerOnly && <Footer />}
     </div>

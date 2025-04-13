@@ -45,6 +45,7 @@
     --passion-700: #be123c;
     --passion-800: #9f1239;
     --passion-900: #881337;
+    --passion-950: #500724;
   }
 
   .dark {
@@ -77,6 +78,21 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    width: 100%; /* Ensure body takes full width */
+    position: relative; /* For proper overflow control */
+    min-height: 100vh; /* Full height */
+    max-width: 100vw; /* Prevent horizontal overflow */
+  }
+  
+  html {
+    overflow-x: hidden; /* Prevent horizontal scrolling at root level */
+    max-width: 100vw;
+  }
+  
+  #root {
+    overflow-x: hidden; /* Prevent horizontal scrolling in React root */
+    max-width: 100vw;
   }
   
   /* Font settings */

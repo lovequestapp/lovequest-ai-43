@@ -9,6 +9,7 @@ import { Message, User } from '@/types/user';
 import { ArrowLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MobileContainer from '../MobileContainer';
+import { toast } from 'sonner';
 
 interface MessagesLayoutProps {
   matches: any[];
@@ -61,11 +62,11 @@ const MessagesLayout: React.FC<MessagesLayoutProps> = ({
   // On desktop, always show both columns
   // On mobile, conditionally show match list or chat based on selection
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-gray-50">
+    <div className="flex h-[calc(100vh-4rem)] bg-gray-50 overflow-hidden w-full">
       {/* Match list column */}
       {(!isMobile || (isMobile && showMatches)) && (
         <div className={`${isMobile ? 'w-full' : 'w-1/3 max-w-sm'} border-r border-gray-200 bg-white`}>
-          <MobileContainer scrollable>
+          <MobileContainer scrollable fullWidth={isMobile}>
             <div className="sticky top-0 z-10 p-3 border-b bg-white flex items-center justify-between">
               <h2 className="font-semibold text-lg">Messages</h2>
             </div>
@@ -80,8 +81,8 @@ const MessagesLayout: React.FC<MessagesLayoutProps> = ({
       
       {/* Chat column - only shown if not showing matches on mobile */}
       {(!isMobile || (isMobile && !showMatches)) && (
-        <div className={`${isMobile ? 'w-full' : 'flex-1'} flex flex-col bg-gradient-to-b from-white to-gray-50`}>
-          <MobileContainer className="flex flex-col">
+        <div className={`${isMobile ? 'w-full' : 'flex-1'} flex flex-col bg-gradient-to-b from-white to-gray-50 h-full`}>
+          <MobileContainer className="flex flex-col h-full" fullWidth={isMobile}>
             {/* Chat header with back button on mobile */}
             {isMobile && (
               <MessageHeader 
@@ -135,5 +136,4 @@ const MessagesLayout: React.FC<MessagesLayoutProps> = ({
   );
 };
 
-import { toast } from 'sonner';
 export default MessagesLayout;
