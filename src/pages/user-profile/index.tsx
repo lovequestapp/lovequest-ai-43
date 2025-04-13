@@ -17,6 +17,7 @@ import GiftTransactionHistory from '@/components/GiftTransactionHistory';
 import GiftShop from '@/components/GiftShop';
 import ProfileDetails from '@/pages/ProfileDetails';
 import MobileToolbar from '@/components/MobileToolbar';
+import { Layout } from '@/components/layout';
 
 const UserProfile = () => {
   const { currentUser, setCurrentUser } = useUser();
@@ -133,138 +134,138 @@ const UserProfile = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center flex-wrap">
-          <h1 className="text-2xl md:text-3xl font-display font-bold">Your Profile</h1>
-          {getRoleBadge()}
-          {getSubscriptionBadge()}
-        </div>
-        <Button 
-          variant="outline" 
-          className="flex items-center gap-2"
-          onClick={() => navigate('/edit-profile')}
-        >
-          <Edit size={16} />
-          Edit Profile
-        </Button>
-      </div>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-800">
-          <p className="font-medium">Error loading profile</p>
-          <p className="text-sm">{error}</p>
+    <Layout>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-6 flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center flex-wrap">
+            <h1 className="text-2xl md:text-3xl font-display font-bold">Your Profile</h1>
+            {getRoleBadge()}
+            {getSubscriptionBadge()}
+          </div>
           <Button 
             variant="outline" 
-            size="sm" 
-            className="mt-2" 
-            onClick={() => window.location.reload()}
+            className="flex items-center gap-2"
+            onClick={() => navigate('/edit-profile')}
           >
-            Retry
+            <Edit size={16} />
+            Edit Profile
           </Button>
         </div>
-      )}
 
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-4 mb-8">
-          <TabsTrigger value="profile" className="flex items-center gap-2">
-            <User size={16} />
-            <span>Profile Info</span>
-          </TabsTrigger>
-          <TabsTrigger value="edit" className="flex items-center gap-2">
-            <Edit size={16} />
-            <span>Edit Profile</span>
-          </TabsTrigger>
-          <TabsTrigger value="shop" className="flex items-center gap-2">
-            <ShoppingBag size={16} />
-            <span>Gift Shop</span>
-          </TabsTrigger>
-          <TabsTrigger value="monetize" className="flex items-center gap-2">
-            <Wallet size={16} />
-            <span>Monetization</span>
-          </TabsTrigger>
-        </TabsList>
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-800">
+            <p className="font-medium">Error loading profile</p>
+            <p className="text-sm">{error}</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2" 
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
+          </div>
+        )}
 
-        <Card>
-          <CardContent className="pt-6">
-            {loading ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="h-8 w-8 rounded-full border-2 border-t-love-500 border-love-200 animate-spin"></div>
-              </div>
-            ) : (
-              <>
-                <TabsContent value="profile" className="mt-0">
-                  <ProfileInfo profile={profileData || currentUser} />
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-4 mb-8">
+            <TabsTrigger value="profile" className="flex items-center gap-2">
+              <User size={16} />
+              <span>Profile Info</span>
+            </TabsTrigger>
+            <TabsTrigger value="edit" className="flex items-center gap-2">
+              <Edit size={16} />
+              <span>Edit Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="shop" className="flex items-center gap-2">
+              <ShoppingBag size={16} />
+              <span>Gift Shop</span>
+            </TabsTrigger>
+            <TabsTrigger value="monetize" className="flex items-center gap-2">
+              <Wallet size={16} />
+              <span>Monetization</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <Card>
+            <CardContent className="pt-6">
+              {loading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="h-8 w-8 rounded-full border-2 border-t-love-500 border-love-200 animate-spin"></div>
+                </div>
+              ) : (
+                <>
+                  <TabsContent value="profile" className="mt-0">
+                    <ProfileInfo profile={profileData || currentUser} />
+                    
+                    {profileData?.voiceIntro && (
+                      <div className="mt-6 p-4 border rounded-lg">
+                        <h3 className="text-lg font-medium flex items-center gap-2">
+                          <Mic size={18} />
+                          Voice Introduction
+                        </h3>
+                        <div className="mt-3">
+                          <audio
+                            controls
+                            src={profileData.voiceIntro}
+                            className="w-full"
+                          >
+                            Your browser does not support the audio element.
+                          </audio>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {profileData?.favoriteMusic && profileData.favoriteMusic.length > 0 && (
+                      <div className="mt-6 p-4 border rounded-lg">
+                        <h3 className="text-lg font-medium flex items-center gap-2">
+                          <Music size={18} />
+                          Favorite Music
+                        </h3>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {profileData.favoriteMusic.map((genre: string, index: number) => (
+                            <Badge key={index} variant="secondary">
+                              {genre}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
                   
-                  {profileData?.voiceIntro && (
-                    <div className="mt-6 p-4 border rounded-lg">
-                      <h3 className="text-lg font-medium flex items-center gap-2">
-                        <Mic size={18} />
-                        Voice Introduction
-                      </h3>
-                      <div className="mt-3">
-                        <audio
-                          controls
-                          src={profileData.voiceIntro}
-                          className="w-full"
-                        >
-                          Your browser does not support the audio element.
-                        </audio>
+                  <TabsContent value="edit" className="mt-0">
+                    <ProfileEditor initialData={profileData || currentUser} />
+                  </TabsContent>
+                  
+                  <TabsContent value="shop" className="mt-0">
+                    <div className="space-y-8">
+                      <div>
+                        <h2 className="text-xl font-semibold mb-4">Gift Shop</h2>
+                        <GiftShop />
+                      </div>
+                      
+                      <div>
+                        <h2 className="text-xl font-semibold mb-4">Gift Inventory</h2>
+                        <GiftInventory />
+                      </div>
+                      
+                      <div>
+                        <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
+                        <GiftTransactionHistory />
                       </div>
                     </div>
-                  )}
+                  </TabsContent>
                   
-                  {profileData?.favoriteMusic && profileData.favoriteMusic.length > 0 && (
-                    <div className="mt-6 p-4 border rounded-lg">
-                      <h3 className="text-lg font-medium flex items-center gap-2">
-                        <Music size={18} />
-                        Favorite Music
-                      </h3>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {profileData.favoriteMusic.map((genre: string, index: number) => (
-                          <Badge key={index} variant="secondary">
-                            {genre}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </TabsContent>
-                
-                <TabsContent value="edit" className="mt-0">
-                  <ProfileEditor initialData={profileData || currentUser} />
-                </TabsContent>
-                
-                <TabsContent value="shop" className="mt-0">
-                  <div className="space-y-8">
-                    <div>
-                      <h2 className="text-xl font-semibold mb-4">Gift Shop</h2>
-                      <GiftShop />
-                    </div>
-                    
-                    <div>
-                      <h2 className="text-xl font-semibold mb-4">Gift Inventory</h2>
-                      <GiftInventory />
-                    </div>
-                    
-                    <div>
-                      <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
-                      <GiftTransactionHistory />
-                    </div>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="monetize" className="mt-0">
-                  <Monetization userData={profileData || currentUser} />
-                </TabsContent>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </Tabs>
-
-      <MobileToolbar />
-    </div>
+                  <TabsContent value="monetize" className="mt-0">
+                    <Monetization userData={profileData || currentUser} />
+                  </TabsContent>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </Tabs>
+      </div>
+    </Layout>
   );
 };
 

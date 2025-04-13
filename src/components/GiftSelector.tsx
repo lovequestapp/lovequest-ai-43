@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Rocket, Globe, MapPin, Check, Gift, ShoppingBag } from 'lucide-react';
+import { Rocket, Globe, MapPin, Check, Gift, ShoppingBag, Flower, Heart, BearIcon } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { useGifts } from '@/hooks/useGifts';
 import { useNavigate } from 'react-router-dom';
@@ -84,7 +84,7 @@ const GiftSelector: React.FC<GiftSelectorProps> = ({ isOpen, onClose, onSendGift
                 onClick={() => handleSendGift('rose')}
                 disabled={isProcessing || renderGiftCount('rose') <= 0}
               >
-                <span className="text-3xl mb-2">🌹</span>
+                <Flower className="h-8 w-8 text-red-500 mb-2" />
                 <span>Rose</span>
                 <span className="text-xs text-muted-foreground mt-1">
                   {renderGiftCount('rose')} available
@@ -97,7 +97,7 @@ const GiftSelector: React.FC<GiftSelectorProps> = ({ isOpen, onClose, onSendGift
                 onClick={() => handleSendGift('heart')}
                 disabled={isProcessing || renderGiftCount('heart') <= 0}
               >
-                <span className="text-3xl mb-2">❤️</span>
+                <Heart className="h-8 w-8 text-love-500 mb-2" />
                 <span>Heart</span>
                 <span className="text-xs text-muted-foreground mt-1">
                   {renderGiftCount('heart')} available
@@ -110,7 +110,7 @@ const GiftSelector: React.FC<GiftSelectorProps> = ({ isOpen, onClose, onSendGift
                 onClick={() => handleSendGift('teddy')}
                 disabled={isProcessing || renderGiftCount('teddy') <= 0}
               >
-                <span className="text-3xl mb-2">🧸</span>
+                <BearIcon className="h-8 w-8 text-amber-500 mb-2" />
                 <span>Teddy</span>
                 <span className="text-xs text-muted-foreground mt-1">
                   {renderGiftCount('teddy')} available

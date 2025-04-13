@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { User, ShieldCheck, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { User, ShieldCheck, CheckCircle, XCircle, AlertTriangle, Fingerprint } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useUser } from '@/context/UserContext';
 import IdentityVerification from '@/components/IdentityVerification';
@@ -32,7 +32,7 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
     setProgress(progress);
   };
   
-  const handleVerificationComplete = async (success: boolean, verificationId?: string, selfieUrl?: string, documentUrl?: string) => {
+  const handleVerificationComplete = async (success: boolean, verificationId?: string, selfieUrl?: string, documentUrl?: string, biometricData?: any) => {
     if (!success || !verificationId || !currentUser) {
       toast.error("Verification failed. Please try again later.");
       return;
@@ -41,10 +41,13 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
     setIsProcessing(true);
     
     try {
-      // Generate a biometric score (simulated in this case)
-      const biometricScore = 0.85 + (Math.random() * 0.1); // Simulated score between 0.85 and 0.95
+      // Generate a biometric score (using the provided biometric data or a simulated score)
+      const biometricScore = biometricData?.score || (0.85 + (Math.random() * 0.1)); // Score between 0.85 and 0.95
       
-      // Create verification request record
+      // Store biometric signature data (if available)
+      const biometricSignature = biometricData?.signature || null;
+      
+      // Create verification request record with enhanced biometric data
       const { error: requestError } = await supabase
         .from('verification_requests')
         .insert({
@@ -53,7 +56,8 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
           selfie_url: selfieUrl,
           document_url: documentUrl,
           biometric_match_score: biometricScore,
-          verification_status: 'pending'
+          verification_status: 'pending',
+          biometric_signature: biometricSignature
         });
         
       if (requestError) throw requestError;
@@ -68,7 +72,7 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
         
       if (updateError) throw updateError;
       
-      // Notify admin of new verification request
+      // Notify admin of new verification request with enhanced data
       const { data: verificationData, error: notifyError } = await supabase
         .functions.invoke('account-verification', {
           body: {
@@ -77,7 +81,8 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
             verificationId,
             selfieUrl,
             documentUrl,
-            biometricScore
+            biometricScore,
+            biometricSignature
           }
         });
       
@@ -132,6 +137,7 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
                   <ul className="text-sm text-amber-700 space-y-1">
                     <li>• Your webcam for a selfie photo</li>
                     <li>• A valid government-issued ID (driver's license, passport, etc.)</li>
+                    <li>• Face recognition will be used for biometric verification</li>
                     <li>• A few minutes to complete the process</li>
                   </ul>
                 </div>
@@ -143,7 +149,8 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
                 onClick={handleStartVerification}
                 className="w-full"
               >
-                Start Verification
+                <Fingerprint className="mr-2 h-4 w-4" />
+                Start Biometric Verification
               </Button>
               
               {skipVerification && (
@@ -164,7 +171,7 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
             {progress > 0 && (
               <div className="space-y-2">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Verification in progress...</span>
+                  <span>Biometric verification in progress...</span>
                   <span>{progress}%</span>
                 </div>
                 <Progress value={progress} className="h-2" />
@@ -175,6 +182,7 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
               onVerificationComplete={handleVerificationComplete}
               onProgressUpdate={handleProgressUpdate}
               isProcessing={isProcessing}
+              withBiometrics={true}
             />
           </div>
         );
@@ -190,7 +198,7 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
             <div>
               <h3 className="text-xl font-semibold mb-2">Verification Submitted</h3>
               <p className="text-muted-foreground max-w-md mx-auto">
-                Your verification has been submitted successfully. Our team will review your documents shortly.
+                Your biometric verification has been submitted successfully. Our team will review your documents shortly.
               </p>
             </div>
             
@@ -213,7 +221,7 @@ const VerificationProcess: React.FC<VerificationProcessProps> = ({ skipVerificat
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-center">Identity Verification</CardTitle>
+        <CardTitle className="text-center">Biometric Identity Verification</CardTitle>
         <CardDescription className="text-center">Complete verification to access all features</CardDescription>
       </CardHeader>
       <CardContent>

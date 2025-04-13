@@ -3,6 +3,7 @@ import React from 'react';
 import { useGifts } from '@/hooks/useGifts';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Flower, Heart, BearIcon } from 'lucide-react';
 
 const GiftInventory = () => {
   const { inventory, updateInventory } = useGifts();
@@ -11,7 +12,7 @@ const GiftInventory = () => {
     updateInventory();
   }, [updateInventory]);
 
-  const renderGiftCount = (type: 'rose' | 'heart' | 'teddy', icon: string) => {
+  const renderGiftCount = (type: 'rose' | 'heart' | 'teddy') => {
     const count = typeof inventory[type] === 'object' 
       ? (inventory[type] as any)?.count || 0 
       : inventory[type] || 0;
@@ -19,6 +20,11 @@ const GiftInventory = () => {
     const value = typeof inventory[type] === 'object'
       ? (inventory[type] as any)?.value || 0
       : 0;
+    
+    let icon;
+    if (type === 'rose') icon = <Flower className="h-8 w-8 text-red-500" />;
+    else if (type === 'heart') icon = <Heart className="h-8 w-8 text-love-500" />;
+    else if (type === 'teddy') icon = <BearIcon className="h-8 w-8 text-amber-500" />;
       
     return (
       <div className="flex items-center justify-between p-4 border rounded-lg">
@@ -44,9 +50,9 @@ const GiftInventory = () => {
         <CardTitle>Your Gift Inventory</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {renderGiftCount('rose', '🌹')}
-        {renderGiftCount('heart', '❤️')}
-        {renderGiftCount('teddy', '🧸')}
+        {renderGiftCount('rose')}
+        {renderGiftCount('heart')}
+        {renderGiftCount('teddy')}
       </CardContent>
     </Card>
   );

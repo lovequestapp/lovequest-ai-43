@@ -12,12 +12,12 @@ import { Button } from "@/components/ui/button";
 import { 
   Heart, 
   Gift, 
-  Diamond, 
   Flower, 
   ShoppingCart,
   Plus,
   Minus,
-  User
+  User,
+  BearIcon
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -235,7 +235,7 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
                           <div className="aspect-square bg-love-50 flex items-center justify-center p-6">
                             {type === 'rose' && <Flower className="h-16 w-16 text-red-500" />}
                             {type === 'heart' && <Heart className="h-16 w-16 text-love-500" />}
-                            {type === 'teddy' && <Diamond className="h-16 w-16 text-amber-500" />}
+                            {type === 'teddy' && <BearIcon className="h-16 w-16 text-amber-500" />}
                           </div>
                           
                           <CardContent className="p-4">
@@ -311,7 +311,7 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
               <div className="h-16 w-16 bg-love-50 rounded-lg flex items-center justify-center">
                 {selectedGift.type === 'rose' && <Flower className="h-8 w-8 text-red-500" />}
                 {selectedGift.type === 'heart' && <Heart className="h-8 w-8 text-love-500" />}
-                {selectedGift.type === 'teddy' && <Diamond className="h-8 w-8 text-amber-500" />}
+                {selectedGift.type === 'teddy' && <BearIcon className="h-8 w-8 text-amber-500" />}
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold">{selectedGift.name}</h4>
@@ -354,7 +354,7 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
         </DialogContent>
       </Dialog>
 
-      {/* Cart Dialog - Just a preview, we'll create a separate Cart component */}
+      {/* Cart Dialog */}
       <Dialog open={cartDialogOpen} onOpenChange={setCartDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -378,7 +378,7 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
                   <div className="h-10 w-10 bg-love-50 rounded-lg flex items-center justify-center">
                     {item.type === 'rose' && <Flower className="h-5 w-5 text-red-500" />}
                     {item.type === 'heart' && <Heart className="h-5 w-5 text-love-500" />}
-                    {item.type === 'teddy' && <Diamond className="h-5 w-5 text-amber-500" />}
+                    {item.type === 'teddy' && <BearIcon className="h-5 w-5 text-amber-500" />}
                   </div>
                   <div className="flex-1">
                     <div className="font-medium">{item.name}</div>
