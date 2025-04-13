@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -43,7 +42,7 @@ export const GIFT_ITEMS = [
     name: 'Rose',
     description: 'Send a beautiful rose to show your interest.',
     price: 4.99,
-    image: '/gifts/rose.svg',
+    image: '/gifts/rose-detailed.png',
     type: 'rose' as const
   },
   {
@@ -51,7 +50,7 @@ export const GIFT_ITEMS = [
     name: 'Heart',
     description: 'Express your feelings with a lovely heart.',
     price: 9.99,
-    image: '/gifts/heart.svg',
+    image: '/gifts/crystal-heart.png',
     type: 'heart' as const
   },
   {
@@ -59,7 +58,7 @@ export const GIFT_ITEMS = [
     name: 'Teddy Bear',
     description: 'Make them smile with an adorable teddy bear.',
     price: 14.99,
-    image: '/gifts/teddy.svg',
+    image: '/gifts/luxury-teddy.png',
     type: 'teddy' as const
   }
 ];
@@ -105,7 +104,6 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
     
     try {
       setIsProcessing(true);
-      // Call the purchaseGifts function with the gift type and quantity
       const success = await purchaseGifts(selectedGift.type, quantity);
       
       if (success) {
@@ -170,56 +168,57 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
               <TabsTrigger value="inventory">My Inventory</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="available" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {GIFT_ITEMS.map((gift) => (
-                  <Card key={gift.id} className="overflow-hidden">
-                    <div className="aspect-square bg-love-50 flex items-center justify-center p-6">
-                      {gift.type === 'rose' && <Flower className="h-16 w-16 text-red-500" />}
-                      {gift.type === 'heart' && <Heart className="h-16 w-16 text-love-500" />}
-                      {gift.type === 'teddy' && <Diamond className="h-16 w-16 text-amber-500" />}
-                    </div>
-                    
-                    <CardContent className="p-4">
-                      <CardTitle className="text-lg">{gift.name}</CardTitle>
-                      <CardDescription className="mt-1 line-clamp-2">
-                        {gift.description}
-                      </CardDescription>
-                      <div className="mt-4 flex justify-between items-center">
-                        <div className="text-sm font-semibold text-love-700">
-                          ${gift.price.toFixed(2)}
-                        </div>
-                        <div className="space-x-2">
-                          {recipientId ? (
-                            <Button 
-                              size="sm"
-                              onClick={() => handleAddToCart(gift)}
-                            >
-                              Add to Cart
-                            </Button>
-                          ) : (
-                            <>
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => handlePurchase()}
-                              >
-                                Buy Now
-                              </Button>
+            <TabsContent value="available" className="space-y-6">
+              <Card>
+                <CardContent className="space-y-4">
+                  {GIFT_ITEMS.map((gift) => (
+                    <div key={gift.id} className="flex items-center gap-4">
+                      <img 
+                        src={gift.image} 
+                        alt={gift.name} 
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">{gift.name}</CardTitle>
+                        <CardDescription className="mt-1 line-clamp-2">
+                          {gift.description}
+                        </CardDescription>
+                        <div className="mt-4 flex justify-between items-center">
+                          <div className="text-sm font-semibold text-love-700">
+                            ${gift.price.toFixed(2)}
+                          </div>
+                          <div className="space-x-2">
+                            {recipientId ? (
                               <Button 
                                 size="sm"
                                 onClick={() => handleAddToCart(gift)}
                               >
                                 Add to Cart
                               </Button>
-                            </>
-                          )}
+                            ) : (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handlePurchase()}
+                                >
+                                  Buy Now
+                                </Button>
+                                <Button 
+                                  size="sm"
+                                  onClick={() => handleAddToCart(gift)}
+                                >
+                                  Add to Cart
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             </TabsContent>
             
             <TabsContent value="inventory" className="min-h-[200px]">

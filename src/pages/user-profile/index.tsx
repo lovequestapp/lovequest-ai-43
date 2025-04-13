@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +16,7 @@ import GiftInventory from '@/components/GiftInventory';
 import GiftTransactionHistory from '@/components/GiftTransactionHistory';
 import GiftShop from '@/components/GiftShop';
 import ProfileDetails from '@/pages/ProfileDetails';
+import MobileToolbar from '@/components/MobileToolbar';
 
 const UserProfile = () => {
   const { currentUser, setCurrentUser } = useUser();
@@ -29,7 +29,6 @@ const UserProfile = () => {
   const navigate = useNavigate();
   const { userId } = useParams<{ userId: string }>();
 
-  // If there's a userId parameter, we're viewing someone else's profile
   if (userId && userId !== currentUser?.id) {
     return <ProfileDetails />;
   }
@@ -263,6 +262,8 @@ const UserProfile = () => {
           </CardContent>
         </Card>
       </Tabs>
+
+      <MobileToolbar />
     </div>
   );
 };
