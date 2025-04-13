@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Rocket, Globe, MapPin, Check, Gift, ShoppingBag, Flower, Heart, BearIcon } from 'lucide-react';
+import { Rocket, Globe, MapPin, Check, Gift, ShoppingBag, Flower, Heart, Mouse } from 'lucide-react';
 import { useUser } from '@/context/UserContext';
 import { useGifts } from '@/hooks/useGifts';
 import { useNavigate } from 'react-router-dom';
@@ -110,7 +109,7 @@ const GiftSelector: React.FC<GiftSelectorProps> = ({ isOpen, onClose, onSendGift
                 onClick={() => handleSendGift('teddy')}
                 disabled={isProcessing || renderGiftCount('teddy') <= 0}
               >
-                <BearIcon className="h-8 w-8 text-amber-500 mb-2" />
+                <Mouse className="h-8 w-8 text-amber-500 mb-2" />
                 <span>Teddy</span>
                 <span className="text-xs text-muted-foreground mt-1">
                   {renderGiftCount('teddy')} available
