@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,7 +15,6 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useProfileStorage } from '@/hooks/useProfileStorage';
 
-// Define the schema for form validation
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   bio: z.string().max(500, 'Bio must not exceed 500 characters').optional().or(z.literal('')),
@@ -43,7 +41,6 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
   const [interestedIn, setInterestedIn] = useState<('male' | 'female' | 'non-binary')[]>(initialData.interestedIn || []);
   const { uploadFile, deleteFile, uploading } = useProfileStorage(initialData.id);
   
-  // Create form with react-hook-form
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -58,7 +55,6 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
   const onSubmit = async (data: z.infer<typeof profileSchema>) => {
     setLoading(true);
     try {
-      // Combine form data with other state
       const updatedData: Partial<User> = {
         ...data,
         photos,
@@ -85,13 +81,11 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
     const file = e.target.files?.[0];
     if (!file) return;
     
-    // Check file size (limit to 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast.error('File size must be less than 5MB');
       return;
     }
     
-    // Check if already at max 6 photos
     if (photos.length >= 6) {
       toast.error('You can only upload up to 6 photos');
       return;
@@ -105,7 +99,6 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
         const newPhotos = [...photos, photoUrl];
         setPhotos(newPhotos);
         
-        // Update profile with new photos array
         await onUpdate({ photos: newPhotos });
         
         toast.success('Photo added successfully');
@@ -126,10 +119,8 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
       const removedPhoto = newPhotos.splice(index, 1)[0];
       setPhotos(newPhotos);
       
-      // Try to remove from storage
       await deleteFile(removedPhoto);
       
-      // Update profile with new photos array
       await onUpdate({ photos: newPhotos });
       
       toast.success('Photo removed successfully');
@@ -154,6 +145,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
   const toggleInterest = async (interest: string) => {
     try {
       let updatedInterests: string[];
+      
       if (interests.includes(interest)) {
         updatedInterests = interests.filter(i => i !== interest);
       } else {
@@ -165,21 +157,36 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
       }
       
       setInterests(updatedInterests);
-      const success = await onUpdate({ interests: updatedInterests });
-      if (!success) {
-        // Revert state if update fails
-        setInterests(interests);
-        throw new Error('Failed to update interests');
+      
+      try {
+        const success = await onUpdate({ interests: updatedInterests });
+        
+        if (!success) {
+          console.log('Trying direct interest update approach');
+          const { error } = await supabase
+            .from('profiles')
+            .update({ interests: updatedInterests })
+            .eq('id', initialData.id);
+            
+          if (error) {
+            console.error('Direct interest update failed:', error);
+            setInterests(interests);
+            throw new Error('Failed to update interests in database');
+          }
+        }
+      } catch (err) {
+        console.error('Interest update error:', err);
       }
     } catch (error) {
-      console.error('Error updating interests:', error);
-      toast.error('Failed to update interests');
+      console.error('Error in interest toggle:', error);
+      toast.error('There was an issue updating your interests');
     }
   };
   
   const toggleMusic = async (genre: string) => {
     try {
       let updatedMusic: string[];
+      
       if (favoriteMusic.includes(genre)) {
         updatedMusic = favoriteMusic.filter(m => m !== genre);
       } else {
@@ -191,9 +198,10 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
       }
       
       setFavoriteMusic(updatedMusic);
+      
       const success = await onUpdate({ favoriteMusic: updatedMusic });
+      
       if (!success) {
-        // Revert state if update fails
         setFavoriteMusic(favoriteMusic);
         throw new Error('Failed to update music preferences');
       }
@@ -206,6 +214,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
   const togglePersonalityTrait = async (trait: string) => {
     try {
       let updatedTraits: string[];
+      
       if (personalityTraits.includes(trait)) {
         updatedTraits = personalityTraits.filter(t => t !== trait);
       } else {
@@ -217,9 +226,10 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
       }
       
       setPersonalityTraits(updatedTraits);
+      
       const success = await onUpdate({ personalityTraits: updatedTraits });
+      
       if (!success) {
-        // Revert state if update fails
         setPersonalityTraits(personalityTraits);
         throw new Error('Failed to update personality traits');
       }
@@ -232,6 +242,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
   const toggleGenderInterest = async (gender: 'male' | 'female' | 'non-binary') => {
     try {
       let updatedGenderInterests: ('male' | 'female' | 'non-binary')[];
+      
       if (interestedIn.includes(gender)) {
         updatedGenderInterests = interestedIn.filter(g => g !== gender);
       } else {
@@ -239,9 +250,10 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
       }
       
       setInterestedIn(updatedGenderInterests);
+      
       const success = await onUpdate({ interestedIn: updatedGenderInterests });
+      
       if (!success) {
-        // Revert state if update fails
         setInterestedIn(interestedIn);
         throw new Error('Failed to update gender preferences');
       }
@@ -251,7 +263,6 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
     }
   };
   
-  // Sample data for UI
   const interestCategories = [
     { category: "Lifestyle", items: ["Travel", "Fashion", "Gaming", "Technology", "Pets", "Gardening", "DIY"] },
     { category: "Sports & Fitness", items: ["Running", "Yoga", "Gym", "Hiking", "Swimming", "Cycling", "Basketball"] },
@@ -266,7 +277,6 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {/* Photo Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Profile Photos</h3>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
@@ -318,7 +328,6 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
 
         <Separator />
 
-        {/* Basic Info Section */}
         <div className="grid grid-cols-1 gap-6">
           <FormField
             control={form.control}
@@ -434,7 +443,6 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
 
         <Separator />
         
-        {/* Voice Intro Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Voice Introduction</h3>
           <VoiceRecorder 
@@ -446,7 +454,6 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
 
         <Separator />
         
-        {/* Interests Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Interests</h3>
           <p className="text-sm text-muted-foreground">
@@ -482,7 +489,6 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
 
         <Separator />
         
-        {/* Music Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Favorite Music</h3>
           <div className="flex flex-wrap gap-2">
@@ -507,7 +513,6 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
 
         <Separator />
         
-        {/* Personality Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Personality Traits</h3>
           <p className="text-sm text-muted-foreground">

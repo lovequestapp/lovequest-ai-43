@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/header/Header';
@@ -6,7 +5,6 @@ import Footer from '@/components/Footer';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useUser } from '@/context/UserContext';
-import ProfileEditor from '@/components/profile-editor/ProfileEditor';
 import ProtectedRoute from '@/components/protected-route';
 import { toast } from 'sonner';
 import MobileContainer from '@/components/MobileContainer';
@@ -21,6 +19,7 @@ import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
 import EditProfileForm from '@/components/profile-editor/EditProfileForm';
 import { useDirectProfileUpdate } from '@/hooks/useDirectProfileUpdate';
+import { directProfileUpdate } from '@/utils/directProfileUpdate';
 
 const EditProfilePage = () => {
   const { currentUser } = useUser();
@@ -45,10 +44,8 @@ const EditProfilePage = () => {
 
         console.log('Fetching profile data for user:', currentUser.id);
         
-        // Add a small delay to prevent rapid consecutive requests
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Use maybeSingle to avoid errors when no data is returned
         const { data, error: fetchError } = await supabase
           .from('profiles')
           .select('*')
@@ -58,11 +55,10 @@ const EditProfilePage = () => {
         if (fetchError) {
           console.error('Error fetching profile data:', fetchError);
           setError('Failed to load profile data from database.');
-          setProfileData(currentUser); // Fallback to context data
+          setProfileData(currentUser);
         } else if (data) {
           console.log('Profile data retrieved successfully');
           
-          // Parse JSON fields safely
           let giftInventory = { rose: 0, heart: 0, teddy: 0 };
           let receivedGifts = { rose: 0, heart: 0, teddy: 0 };
           
@@ -94,7 +90,6 @@ const EditProfilePage = () => {
             console.error('Error parsing JSON fields:', e);
           }
           
-          // Transform database data to match User type
           const transformedData: User = {
             id: data.id,
             name: data.name || '',
@@ -139,7 +134,7 @@ const EditProfilePage = () => {
       } catch (err: any) {
         console.error('Error in profile data fetching:', err);
         setError('An unexpected error occurred while loading your profile: ' + (err.message || 'Unknown error'));
-        setProfileData(currentUser); // Fallback to context data
+        setProfileData(currentUser);
       } finally {
         setLoading(false);
       }
@@ -155,17 +150,19 @@ const EditProfilePage = () => {
     }
 
     try {
-      // Use our direct update function instead
-      const success = await updateProfile(currentUser.id, updatedData);
+      const success = await directProfileUpdate(currentUser.id, updatedData);
       
-      if (success) {
-        // Update local state
-        setProfileData(prev => prev ? { ...prev, ...updatedData } : null);
-        toast.success('Profile updated successfully');
-        return true;
-      } else {
-        throw new Error('Failed to update profile');
+      if (!success) {
+        const hookSuccess = await updateProfile(currentUser.id, updatedData);
+        
+        if (!hookSuccess) {
+          throw new Error('All profile update methods failed');
+        }
       }
+      
+      setProfileData(prev => prev ? { ...prev, ...updatedData } : null);
+      toast.success('Profile updated successfully');
+      return true;
     } catch (err: any) {
       console.error('Error in profile update:', err);
       toast.error('Failed to update profile: ' + (err.message || 'Unknown error'));

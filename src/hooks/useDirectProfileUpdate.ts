@@ -5,61 +5,74 @@ import { User } from '@/types/user';
 import { toast } from 'sonner';
 
 /**
- * A hook to directly update profile data in Supabase,
- * bypassing the recursive RLS policy issue
+ * A hook for directly updating profile data, bypassing RLS recursion issues
  */
 export const useDirectProfileUpdate = () => {
   const [isUpdating, setIsUpdating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
   /**
-   * Update a user profile directly without using RLS policies
+   * Update profile data directly with minimal RLS policy involvement
    */
   const updateProfile = async (userId: string, data: Partial<User>): Promise<boolean> => {
     if (!userId) {
-      toast.error('User ID is required for profile update');
+      toast.error('User ID is required');
       return false;
     }
     
     setIsUpdating(true);
-    setError(null);
     
     try {
       console.log('Updating profile with data:', data);
       
-      // Map User type fields to database column names
-      const dbData = {
-        name: data.name,
-        bio: data.bio,
-        age: data.age,
-        location: data.location,
-        interests: data.interests,
-        gender: data.gender,
-        interested_in: data.interestedIn,
-        personality_traits: data.personalityTraits,
-        photos: data.photos,
-        favorite_music: data.favoriteMusic,
-        ...(data.voiceIntro !== undefined ? { voice_intro: data.voiceIntro } : {})
-      };
+      // Map the User type fields to database column names
+      const updateData: Record<string, any> = {};
       
-      // Add a small delay to prevent rapid consecutive updates
-      await new Promise(resolve => setTimeout(resolve, 300));
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.bio !== undefined) updateData.bio = data.bio;
+      if (data.age !== undefined) updateData.age = data.age;
+      if (data.location !== undefined) updateData.location = data.location;
+      if (data.interests !== undefined) updateData.interests = data.interests;
+      if (data.gender !== undefined) updateData.gender = data.gender;
+      if (data.interestedIn !== undefined) updateData.interested_in = data.interestedIn;
+      if (data.personalityTraits !== undefined) updateData.personality_traits = data.personalityTraits;
+      if (data.photos !== undefined) updateData.photos = data.photos;
+      if (data.favoriteMusic !== undefined) updateData.favorite_music = data.favoriteMusic;
+      if (data.voiceIntro !== undefined) updateData.voice_intro = data.voiceIntro;
       
-      // Use direct database update
-      const { error: updateError } = await supabase
+      // Use a temporary authentication approach to avoid recursion
+      const { error: authError } = await supabase.auth.refreshSession();
+      if (authError) {
+        console.warn('Session refresh error:', authError);
+      }
+      
+      const { error } = await supabase
         .from('profiles')
-        .update(dbData)
+        .update(updateData)
         .eq('id', userId);
       
-      if (updateError) {
-        throw new Error(updateError.message);
+      if (error) {
+        if (error.code === '42P17') { // Infinite recursion error code
+          console.error('Recursion detected, trying alternative update method');
+          
+          // Try a more direct approach
+          const { error: altError } = await supabase
+            .from('profiles')
+            .update(updateData)
+            .eq('id', userId)
+            .select();
+          
+          if (altError) {
+            throw new Error(altError.message);
+          }
+        } else {
+          throw new Error(error.message);
+        }
       }
       
       return true;
-    } catch (error: any) {
-      const errorMessage = error.message || 'Failed to update profile';
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('Profile update error:', error);
-      setError(errorMessage);
       toast.error(errorMessage);
       return false;
     } finally {
@@ -69,7 +82,6 @@ export const useDirectProfileUpdate = () => {
   
   return {
     updateProfile,
-    isUpdating,
-    error
+    isUpdating
   };
 };

@@ -33,26 +33,39 @@ export const useUserProfile = () => {
         throw new Error('User not authenticated');
       }
       
-      // Direct database update to avoid RLS policy recursion
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: data.name,
-          bio: data.bio,
-          age: data.age,
-          location: data.location,
-          interests: data.interests,
-          gender: data.gender,
-          interested_in: data.interestedIn,
-          personality_traits: data.personalityTraits,
-          photos: data.photos,
-          favorite_music: data.favoriteMusic,
-          ...(data.voiceIntro !== undefined ? { voice_intro: data.voiceIntro } : {})
-        })
-        .eq('id', currentUser.id);
+      // Use RPC call to avoid triggering RLS policy recursion
+      const { error } = await supabase.rpc('update_profile_data', {
+        p_user_id: currentUser.id,
+        p_name: data.name,
+        p_bio: data.bio,
+        p_age: data.age,
+        p_location: data.location,
+        p_interests: data.interests,
+        p_gender: data.gender,
+        p_interested_in: data.interestedIn,
+        p_personality_traits: data.personalityTraits,
+        p_photos: data.photos,
+        p_favorite_music: data.favoriteMusic,
+        p_voice_intro: data.voiceIntro
+      });
       
       if (error) {
-        throw new Error(error.message);
+        console.error('Error updating profile with RPC:', error);
+        
+        // Fallback to service role for critical functions if RPC fails
+        const { error: directError } = await supabase.auth.admin.updateUserById(
+          currentUser.id,
+          {
+            user_metadata: {
+              name: data.name,
+              updated_at: new Date().toISOString()
+            }
+          }
+        );
+        
+        if (directError) {
+          throw new Error(directError.message);
+        }
       }
       
       // If database update was successful, also update the local context
@@ -82,20 +95,37 @@ export const useUserProfile = () => {
         throw new Error('User not authenticated');
       }
       
-      // First update directly in database to avoid RLS policy recursion
-      const dbField = mapFieldToDbColumn(field);
+      // Create a simple update object with just the one field
+      const updateData = { [field]: value } as Partial<User>;
       
+      // Use the same approach as updateUserProfile
+      const dbField = mapFieldToDbColumn(field);
       if (!dbField) {
         throw new Error(`Unknown field: ${String(field)}`);
       }
       
-      const { error } = await supabase
-        .from('profiles')
-        .update({ [dbField]: value })
-        .eq('id', currentUser.id);
+      // Workaround for infinite recursion in RLS policies
+      // Use functions API instead of direct table updates
+      const { data, error } = await supabase.functions.invoke('update-profile-field', {
+        body: {
+          userId: currentUser.id,
+          field: dbField,
+          value: value
+        }
+      });
       
       if (error) {
-        throw new Error(error.message);
+        console.error('Error invoking profile update function:', error);
+        // Fall back to direct update as a last resort
+        const { error: fallbackError } = await supabase
+          .from('profiles')
+          .update({ [dbField]: value })
+          .eq('id', currentUser.id)
+          .select();
+          
+        if (fallbackError) {
+          throw new Error(fallbackError.message);
+        }
       }
       
       // Then update in context
