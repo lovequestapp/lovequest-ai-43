@@ -160,20 +160,17 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
       setInterests(updatedInterests);
       
       try {
-        const success = await onUpdate({ interests: updatedInterests });
-        
-        if (!success) {
-          console.log('Trying direct interest update approach');
-          const { error } = await supabase
-            .from('profiles')
-            .update({ interests: updatedInterests })
-            .eq('id', initialData.id);
+        const { data, error } = await supabase
+          .rpc('update_profile_field', {
+            profile_id: initialData.id,
+            field_name: 'interests',
+            field_value: updatedInterests
+          });
             
-          if (error) {
-            console.error('Direct interest update failed:', error);
-            setInterests(interests);
-            throw new Error('Failed to update interests in database');
-          }
+        if (error) {
+          console.error('Direct interest update failed:', error);
+          setInterests(interests);
+          throw new Error('Failed to update interests in database');
         }
       } catch (err) {
         console.error('Interest update error:', err);

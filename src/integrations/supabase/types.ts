@@ -236,12 +236,49 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_profile_by_id: {
+        Args: { profile_id: string }
+        Returns: {
+          age: number | null
+          bio: string | null
+          created_at: string | null
+          email: string | null
+          favorite_music: string[] | null
+          gender: string | null
+          gift_inventory: Json
+          id: string
+          interested_in: string[] | null
+          interests: string[] | null
+          is_banned: boolean | null
+          is_verified: boolean | null
+          location: string | null
+          name: string | null
+          personality_traits: string[] | null
+          photos: string[] | null
+          popularity_points: number | null
+          premium_status: string | null
+          received_gifts: Json
+          role: string | null
+          trial_end_date: string | null
+          updated_at: string | null
+          verification_status: string
+          voice_intro: string | null
+        }[]
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: string
       }
       is_profile_owner: {
         Args: { profile_id: string }
+        Returns: boolean
+      }
+      update_profile_data: {
+        Args: { profile_id: string; profile_data: Json }
+        Returns: boolean
+      }
+      update_profile_field: {
+        Args: { profile_id: string; field_name: string; field_value: Json }
         Returns: boolean
       }
     }

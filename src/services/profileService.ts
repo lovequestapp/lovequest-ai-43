@@ -14,46 +14,46 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
 
     console.log('Updating profile for user:', userId, 'with data:', profileData);
 
-    // Prepare update data with appropriate column names for Supabase
-    const updateData = {
-      name: profileData.name,
-      bio: profileData.bio,
-      age: profileData.age,
-      location: profileData.location,
-      interests: profileData.interests,
-      gender: profileData.gender,
-      interested_in: profileData.interestedIn,
-      personality_traits: profileData.personalityTraits,
-      photos: profileData.photos,
-      favorite_music: profileData.favoriteMusic,
-      // Handle voice intro if provided
-      ...(profileData.voiceIntro !== undefined ? { voice_intro: profileData.voiceIntro } : {}),
-      // Add updated timestamp
-      updated_at: new Date().toISOString()
-    };
-
-    // Try using a direct call with service role to bypass RLS
-    const { error } = await supabase.auth.admin.updateUserById(
-      userId,
-      { user_metadata: { profile_updated: new Date().toISOString() } }
-    );
+    // Use the new database function for profile updates
+    const { data: result, error } = await supabase
+      .rpc('update_profile_data', {
+        profile_id: userId,
+        profile_data: profileData
+      });
     
     if (error) {
-      console.error('Error updating user metadata:', error);
-    }
-    
-    // Use direct update instead of RPC call
-    const { error: directError } = await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('id', userId);
-    
-    if (directError) {
-      console.error('Error updating profile directly:', directError);
-      toast.error("Failed to update profile", {
-        description: directError.message || "Database error"
-      });
-      return false;
+      console.error('Error updating profile with database function:', error);
+      
+      // Fall back to direct update
+      const updateData = {
+        name: profileData.name,
+        bio: profileData.bio,
+        age: profileData.age,
+        location: profileData.location,
+        interests: profileData.interests,
+        gender: profileData.gender,
+        interested_in: profileData.interestedIn,
+        personality_traits: profileData.personalityTraits,
+        photos: profileData.photos,
+        favorite_music: profileData.favoriteMusic,
+        // Handle voice intro if provided
+        ...(profileData.voiceIntro !== undefined ? { voice_intro: profileData.voiceIntro } : {}),
+        // Add updated timestamp
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error: directError } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId);
+      
+      if (directError) {
+        console.error('Error updating profile directly:', directError);
+        toast.error("Failed to update profile", {
+          description: directError.message || "Database error"
+        });
+        return false;
+      }
     }
     
     console.log('Profile updated successfully');
@@ -166,52 +166,42 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
       return null;
     }
 
-    // Use direct query instead of RPC call
+    // Use the new database function for profile retrieval
     const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
+      .rpc('get_profile_by_id', {
+        profile_id: userId
+      });
     
     if (error) {
-      console.error("Error fetching profile:", error);
+      console.error("Error fetching profile with database function:", error);
       
-      // Try alternate approach with is_profile_owner function
-      const { data: isOwnerResult } = await supabase
-        .rpc('is_profile_owner', { profile_id: userId });
+      // Fall back to direct query
+      const { data: directData, error: directError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
       
-      if (isOwnerResult) {
-        // If user is owner, try direct query again
-        const { data: directData, error: directError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle();
-        
-        if (directError) {
-          console.error("Error fetching profile:", directError);
-          return null;
-        }
-        
-        if (!directData) {
-          console.error("No profile found for user:", userId);
-          return null;
-        }
-        
-        // Use the direct data
-        return transformProfileData(directData);
+      if (directError) {
+        console.error("Error fetching profile:", directError);
+        return null;
       }
       
-      console.error("Not authorized to access profile");
-      return null;
+      if (!directData) {
+        console.error("No profile found for user:", userId);
+        return null;
+      }
+      
+      // Use the direct data
+      return transformProfileData(directData);
     }
     
-    if (!data) {
+    if (!data || data.length === 0) {
       console.error("No profile found for user:", userId);
       return null;
     }
     
-    return transformProfileData(data);
+    return transformProfileData(data[0]);
   } catch (error: any) {
     console.error('Profile fetch error:', error.message);
     return null;

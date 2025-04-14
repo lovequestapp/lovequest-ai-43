@@ -1,3 +1,4 @@
+
 import { useUser } from '@/context/UserContext';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -32,43 +33,38 @@ export const useUserProfile = () => {
         throw new Error('User not authenticated');
       }
       
-      // Instead of using RPC call, use direct table update
-      // Map the User type fields to database column names
-      const updateData: Record<string, any> = {};
-      
-      if (data.name !== undefined) updateData.name = data.name;
-      if (data.bio !== undefined) updateData.bio = data.bio;
-      if (data.age !== undefined) updateData.age = data.age;
-      if (data.location !== undefined) updateData.location = data.location;
-      if (data.interests !== undefined) updateData.interests = data.interests;
-      if (data.gender !== undefined) updateData.gender = data.gender;
-      if (data.interestedIn !== undefined) updateData.interested_in = data.interestedIn;
-      if (data.personalityTraits !== undefined) updateData.personality_traits = data.personalityTraits;
-      if (data.photos !== undefined) updateData.photos = data.photos;
-      if (data.favoriteMusic !== undefined) updateData.favorite_music = data.favoriteMusic;
-      if (data.voiceIntro !== undefined) updateData.voice_intro = data.voiceIntro;
-      
-      // Update the timestamp
-      updateData.updated_at = new Date().toISOString();
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', currentUser.id);
+      // Use the new database function for profile updates
+      const { data: result, error } = await supabase
+        .rpc('update_profile_data', {
+          profile_id: currentUser.id,
+          profile_data: data
+        });
       
       if (error) {
-        console.error('Error updating profile with direct update:', error);
+        console.error('Error updating profile with database function:', error);
         
-        // Fallback to service role for critical functions if update fails
-        const { error: directError } = await supabase.auth.admin.updateUserById(
-          currentUser.id,
-          {
-            user_metadata: {
-              name: data.name,
-              updated_at: new Date().toISOString()
-            }
-          }
-        );
+        // Fallback to direct update with simplified mapping
+        const updateData: Record<string, any> = {};
+        
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.bio !== undefined) updateData.bio = data.bio;
+        if (data.age !== undefined) updateData.age = data.age;
+        if (data.location !== undefined) updateData.location = data.location;
+        if (data.interests !== undefined) updateData.interests = data.interests;
+        if (data.gender !== undefined) updateData.gender = data.gender;
+        if (data.interestedIn !== undefined) updateData.interested_in = data.interestedIn;
+        if (data.personalityTraits !== undefined) updateData.personality_traits = data.personalityTraits;
+        if (data.photos !== undefined) updateData.photos = data.photos;
+        if (data.favoriteMusic !== undefined) updateData.favorite_music = data.favoriteMusic;
+        if (data.voiceIntro !== undefined) updateData.voice_intro = data.voiceIntro;
+        
+        // Update the timestamp
+        updateData.updated_at = new Date().toISOString();
+        
+        const { error: directError } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', currentUser.id);
         
         if (directError) {
           throw new Error(directError.message);
@@ -111,15 +107,13 @@ export const useUserProfile = () => {
         throw new Error(`Unknown field: ${String(field)}`);
       }
       
-      // Workaround for infinite recursion in RLS policies
-      // Use functions API instead of direct table updates
-      const { data, error } = await supabase.functions.invoke('update-profile-field', {
-        body: {
-          userId: currentUser.id,
-          field: dbField,
-          value: value
-        }
-      });
+      // Use the new database function
+      const { data: result, error } = await supabase
+        .rpc('update_profile_field', {
+          profile_id: currentUser.id,
+          field_name: dbField,
+          field_value: value
+        });
       
       if (error) {
         console.error('Error invoking profile update function:', error);
@@ -190,25 +184,40 @@ export const useUserProfile = () => {
       // Add a small delay to prevent multiple rapid requests
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Directly fetch from supabase instead of using profileService
-      // Using is_profile_owner function to avoid recursion issues
+      // Use the new database function to fetch profile
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
+        .rpc('get_profile_by_id', {
+          profile_id: userId
+        });
       
       if (error) {
         console.error('Error fetching profile data:', error);
-        throw error;
+        
+        // Fallback to direct query
+        const { data: directData, error: directError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+          
+        if (directError) {
+          throw directError;
+        }
+        
+        if (!directData) {
+          console.log('No profile data found, will fall back to context user data');
+          return null;
+        }
+        
+        return directData;
       }
       
-      if (!data) {
-        console.log('No profile data found, will fall back to context user data');
+      if (!data || data.length === 0) {
+        console.log('No profile data found via RPC, will fall back to context user data');
         return null;
       }
       
-      return data;
+      return data[0];
     } catch (error) {
       console.error('Profile fetch error:', error);
       throw error;
