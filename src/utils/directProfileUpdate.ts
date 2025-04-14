@@ -28,7 +28,7 @@ export const directProfileUpdate = async (userId: string, data: Partial<User>): 
     // Convert to JSON-compatible format
     const jsonData = userToJsonObject(data);
     
-    // Use the new database function for profile updates
+    // Use the database function for profile updates
     const { data: result, error } = await supabase
       .rpc('update_profile_data', {
         profile_id: userId,

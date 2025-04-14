@@ -194,7 +194,7 @@ export const useUserProfile = () => {
       // Add a small delay to prevent multiple rapid requests
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Use the new database function to fetch profile
+      // Use the database function to fetch profile
       const { data, error } = await supabase
         .rpc('get_profile_by_id', {
           profile_id: userId

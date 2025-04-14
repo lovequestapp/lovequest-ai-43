@@ -1,3 +1,4 @@
+
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
 import { toast } from 'sonner';
@@ -24,7 +25,7 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
     // Convert to JSON-compatible format
     const jsonData = userToJsonObject(profileData);
 
-    // Use the new database function for profile updates
+    // Use the database function for profile updates
     const { data: result, error } = await supabase
       .rpc('update_profile_data', {
         profile_id: userId,
@@ -176,7 +177,7 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
       return null;
     }
 
-    // Use the new database function for profile retrieval
+    // Use the database function for profile retrieval
     const { data, error } = await supabase
       .rpc('get_profile_by_id', {
         profile_id: userId

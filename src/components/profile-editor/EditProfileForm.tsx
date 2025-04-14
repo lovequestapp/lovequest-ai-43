@@ -66,6 +66,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
         interestedIn,
       };
       
+      console.log('Submitting profile update with data:', updatedData);
       const success = await onUpdate(updatedData);
       
       if (!success) {
@@ -73,6 +74,8 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
       }
     } catch (error) {
       console.error('Profile update error:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to update profile: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -160,11 +163,13 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
       setInterests(updatedInterests);
       
       try {
+        const jsonValue = JSON.parse(JSON.stringify(updatedInterests));
+        
         const { data, error } = await supabase
           .rpc('update_profile_field', {
             profile_id: initialData.id,
             field_name: 'interests',
-            field_value: updatedInterests
+            field_value: jsonValue
           });
             
         if (error) {
