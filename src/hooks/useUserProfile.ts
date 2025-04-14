@@ -1,4 +1,3 @@
-
 import { useUser } from '@/context/UserContext';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -33,26 +32,34 @@ export const useUserProfile = () => {
         throw new Error('User not authenticated');
       }
       
-      // Use RPC call to avoid triggering RLS policy recursion
-      const { error } = await supabase.rpc('update_profile_data', {
-        p_user_id: currentUser.id,
-        p_name: data.name,
-        p_bio: data.bio,
-        p_age: data.age,
-        p_location: data.location,
-        p_interests: data.interests,
-        p_gender: data.gender,
-        p_interested_in: data.interestedIn,
-        p_personality_traits: data.personalityTraits,
-        p_photos: data.photos,
-        p_favorite_music: data.favoriteMusic,
-        p_voice_intro: data.voiceIntro
-      });
+      // Instead of using RPC call, use direct table update
+      // Map the User type fields to database column names
+      const updateData: Record<string, any> = {};
+      
+      if (data.name !== undefined) updateData.name = data.name;
+      if (data.bio !== undefined) updateData.bio = data.bio;
+      if (data.age !== undefined) updateData.age = data.age;
+      if (data.location !== undefined) updateData.location = data.location;
+      if (data.interests !== undefined) updateData.interests = data.interests;
+      if (data.gender !== undefined) updateData.gender = data.gender;
+      if (data.interestedIn !== undefined) updateData.interested_in = data.interestedIn;
+      if (data.personalityTraits !== undefined) updateData.personality_traits = data.personalityTraits;
+      if (data.photos !== undefined) updateData.photos = data.photos;
+      if (data.favoriteMusic !== undefined) updateData.favorite_music = data.favoriteMusic;
+      if (data.voiceIntro !== undefined) updateData.voice_intro = data.voiceIntro;
+      
+      // Update the timestamp
+      updateData.updated_at = new Date().toISOString();
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', currentUser.id);
       
       if (error) {
-        console.error('Error updating profile with RPC:', error);
+        console.error('Error updating profile with direct update:', error);
         
-        // Fallback to service role for critical functions if RPC fails
+        // Fallback to service role for critical functions if update fails
         const { error: directError } = await supabase.auth.admin.updateUserById(
           currentUser.id,
           {

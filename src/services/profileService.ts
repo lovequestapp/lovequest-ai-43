@@ -27,7 +27,9 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
       photos: profileData.photos,
       favorite_music: profileData.favoriteMusic,
       // Handle voice intro if provided
-      ...(profileData.voiceIntro !== undefined ? { voice_intro: profileData.voiceIntro } : {})
+      ...(profileData.voiceIntro !== undefined ? { voice_intro: profileData.voiceIntro } : {}),
+      // Add updated timestamp
+      updated_at: new Date().toISOString()
     };
 
     // Try using a direct call with service role to bypass RLS
@@ -40,29 +42,18 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
       console.error('Error updating user metadata:', error);
     }
     
-    // Use a stored procedure/function call instead of direct update
-    // This helps avoid the RLS policy recursion
-    const { error: rpcError } = await supabase.rpc('update_profile_data', {
-      p_user_id: userId,
-      ...updateData
-    });
+    // Use direct update instead of RPC call
+    const { error: directError } = await supabase
+      .from('profiles')
+      .update(updateData)
+      .eq('id', userId);
     
-    if (rpcError) {
-      console.error('Error updating profile with RPC:', rpcError);
-      
-      // Fallback to service role direct update as a last resort
-      const { error: directError } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', userId);
-      
-      if (directError) {
-        console.error('Error updating profile directly:', directError);
-        toast.error("Failed to update profile", {
-          description: directError.message || "Database error"
-        });
-        return false;
-      }
+    if (directError) {
+      console.error('Error updating profile directly:', directError);
+      toast.error("Failed to update profile", {
+        description: directError.message || "Database error"
+      });
+      return false;
     }
     
     console.log('Profile updated successfully');
@@ -175,22 +166,22 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
       return null;
     }
 
-    // Use a function call to bypass RLS policy recursion
-    const { data: functionData, error: functionError } = await supabase.functions.invoke('get-profile', {
-      body: { userId }
-    });
+    // Use direct query instead of RPC call
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
     
-    if (functionError) {
-      console.error("Function error fetching profile:", functionError);
+    if (error) {
+      console.error("Error fetching profile:", error);
       
-      // Fallback to direct query with is_profile_owner to avoid recursion
-      const { data, error } = await supabase
-        .rpc('get_profile_by_id', { profile_id: userId });
+      // Try alternate approach with is_profile_owner function
+      const { data: isOwnerResult } = await supabase
+        .rpc('is_profile_owner', { profile_id: userId });
       
-      if (error) {
-        console.error("Error using RPC to fetch profile:", error);
-        
-        // Last resort direct query - might still have recursion issues
+      if (isOwnerResult) {
+        // If user is owner, try direct query again
         const { data: directData, error: directError } = await supabase
           .from('profiles')
           .select('*')
@@ -211,20 +202,16 @@ export const fetchUserProfile = async (userId: string): Promise<User | null> => 
         return transformProfileData(directData);
       }
       
-      if (!data) {
-        console.error("No profile found from RPC for user:", userId);
-        return null;
-      }
-      
-      return transformProfileData(data);
-    }
-    
-    if (!functionData) {
-      console.error("No profile found from function for user:", userId);
+      console.error("Not authorized to access profile");
       return null;
     }
     
-    return transformProfileData(functionData);
+    if (!data) {
+      console.error("No profile found for user:", userId);
+      return null;
+    }
+    
+    return transformProfileData(data);
   } catch (error: any) {
     console.error('Profile fetch error:', error.message);
     return null;

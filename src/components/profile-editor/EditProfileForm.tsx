@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useProfileStorage } from '@/hooks/useProfileStorage';
+import { supabase } from '@/lib/supabase';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),

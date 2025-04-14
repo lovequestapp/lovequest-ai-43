@@ -56,14 +56,15 @@ export const directProfileUpdate = async (userId: string, data: Partial<User>): 
       if (serviceRoleError) {
         console.error('Service role update failed:', serviceRoleError);
         
-        // Approach 3: Use a custom RPC call if available
-        const { error: rpcError } = await supabase.rpc('update_profile_fields', {
-          p_user_id: userId,
-          p_update_data: updateData
-        });
+        // Approach 3: Use direct update with select to force refresh
+        const { error: directError } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', userId)
+          .select();
         
-        if (rpcError) {
-          console.error('RPC update failed:', rpcError);
+        if (directError) {
+          console.error('Direct update failed:', directError);
           return false;
         }
       }
