@@ -22,6 +22,13 @@ export const useUserProfile = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   /**
+   * Convert User object to JSON-compatible format
+   */
+  const userToJsonObject = (userData: Partial<User>): Record<string, any> => {
+    return JSON.parse(JSON.stringify(userData));
+  };
+  
+  /**
    * Update the entire user profile
    */
   const updateUserProfile = async (data: Partial<User>) => {
@@ -33,11 +40,14 @@ export const useUserProfile = () => {
         throw new Error('User not authenticated');
       }
       
-      // Use the new database function for profile updates
+      // Convert user data to JSON-compatible format
+      const jsonData = userToJsonObject(data);
+      
+      // Use the database function for profile updates
       const { data: result, error } = await supabase
         .rpc('update_profile_data', {
           profile_id: currentUser.id,
-          profile_data: data
+          profile_data: jsonData
         });
       
       if (error) {
@@ -98,8 +108,8 @@ export const useUserProfile = () => {
         throw new Error('User not authenticated');
       }
       
-      // Create a simple update object with just the one field
-      const updateData = { [field]: value } as Partial<User>;
+      // Convert value to JSON-compatible format
+      const jsonValue = JSON.parse(JSON.stringify(value));
       
       // Use the same approach as updateUserProfile
       const dbField = mapFieldToDbColumn(field);
@@ -112,7 +122,7 @@ export const useUserProfile = () => {
         .rpc('update_profile_field', {
           profile_id: currentUser.id,
           field_name: dbField,
-          field_value: value
+          field_value: jsonValue
         });
       
       if (error) {
@@ -120,7 +130,7 @@ export const useUserProfile = () => {
         // Fall back to direct update as a last resort
         const { error: fallbackError } = await supabase
           .from('profiles')
-          .update({ [dbField]: value })
+          .update({ [dbField]: jsonValue })
           .eq('id', currentUser.id)
           .select();
           

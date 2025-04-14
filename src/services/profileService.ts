@@ -3,6 +3,13 @@ import { User } from '@/types/user';
 import { toast } from 'sonner';
 
 /**
+ * Convert User object to JSON-compatible format
+ */
+const userToJsonObject = (userData: Partial<User>): Record<string, any> => {
+  return JSON.parse(JSON.stringify(userData));
+};
+
+/**
  * Updates a user's profile in the database
  */
 export const updateProfileData = async (userId: string, profileData: Partial<User>): Promise<boolean> => {
@@ -14,11 +21,14 @@ export const updateProfileData = async (userId: string, profileData: Partial<Use
 
     console.log('Updating profile for user:', userId, 'with data:', profileData);
 
+    // Convert to JSON-compatible format
+    const jsonData = userToJsonObject(profileData);
+
     // Use the new database function for profile updates
     const { data: result, error } = await supabase
       .rpc('update_profile_data', {
         profile_id: userId,
-        profile_data: profileData
+        profile_data: jsonData
       });
     
     if (error) {

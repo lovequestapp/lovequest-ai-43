@@ -3,6 +3,13 @@ import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
 
 /**
+ * Convert User object to JSON-compatible format
+ */
+const userToJsonObject = (userData: Partial<User>): Record<string, any> => {
+  return JSON.parse(JSON.stringify(userData));
+};
+
+/**
  * Update a user profile directly, bypassing potential RLS recursion issues
  * 
  * @param userId - The ID of the user to update
@@ -18,11 +25,14 @@ export const directProfileUpdate = async (userId: string, data: Partial<User>): 
   try {
     console.log('Updating profile with direct method:', data);
     
+    // Convert to JSON-compatible format
+    const jsonData = userToJsonObject(data);
+    
     // Use the new database function for profile updates
     const { data: result, error } = await supabase
       .rpc('update_profile_data', {
         profile_id: userId,
-        profile_data: data
+        profile_data: jsonData
       });
     
     if (error) {
