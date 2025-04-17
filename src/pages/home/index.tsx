@@ -1,31 +1,26 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Heart, Sparkles, MessageCircleHeart, UserCheck, Shield, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from "@/components/ui/card";
-
-const benefits = [
-  {
-    icon: <Sparkles className="h-6 w-6 text-love-500" />,
-    title: "AI-Powered Matching",
-    description: "Our advanced algorithm finds your most compatible matches based on personality, values, and goals."
-  },
-  {
-    icon: <MessageCircleHeart className="h-6 w-6 text-love-500" />,
-    title: "Meaningful Conversations",
-    description: "Start with AI-suggested conversation topics based on your shared interests."
-  },
-  {
-    icon: <Shield className="h-6 w-6 text-love-500" />,
-    title: "Verified Profiles",
-    description: "100% of our profiles are verified for your safety and peace of mind."
-  }
-];
-
+const benefits = [{
+  icon: <Sparkles className="h-6 w-6 text-love-500" />,
+  title: "AI-Powered Matching",
+  description: "Our advanced algorithm finds your most compatible matches based on personality, values, and goals."
+}, {
+  icon: <MessageCircleHeart className="h-6 w-6 text-love-500" />,
+  title: "Meaningful Conversations",
+  description: "Start with AI-suggested conversation topics based on your shared interests."
+}, {
+  icon: <Shield className="h-6 w-6 text-love-500" />,
+  title: "Verified Profiles",
+  description: "100% of our profiles are verified for your safety and peace of mind."
+}];
 const containerVariants = {
-  hidden: { opacity: 0 },
+  hidden: {
+    opacity: 0
+  },
   visible: {
     opacity: 1,
     transition: {
@@ -33,65 +28,85 @@ const containerVariants = {
     }
   }
 };
-
 const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
+  hidden: {
+    y: 20,
+    opacity: 0
+  },
   visible: {
     y: 0,
     opacity: 1,
-    transition: { duration: 0.5 }
+    transition: {
+      duration: 0.5
+    }
   }
 };
-
 const Home = () => {
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       {/* Hero Section */}
       <section className="relative min-h-[90vh] flex flex-col items-center justify-center px-6 text-center">
         {/* Background gradients */}
         <div className="absolute inset-0 bg-gradient-to-br from-love-50 to-passion-50 -z-10" />
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_var(--love-100),transparent_70%)]" />
         
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="max-w-4xl mx-auto"
-        >
-          <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center justify-center bg-white p-3 rounded-full mb-8 shadow-md"
-          >
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        duration: 0.7
+      }} className="max-w-4xl mx-auto">
+          <motion.div initial={{
+          scale: 0.8,
+          opacity: 0
+        }} animate={{
+          scale: 1,
+          opacity: 1
+        }} transition={{
+          duration: 0.5
+        }} className="inline-flex items-center justify-center bg-white p-3 rounded-full mb-8 shadow-md">
             <Heart size={36} className="text-love-500" />
           </motion.div>
           
-          <motion.h1 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl font-display font-bold mb-6 bg-gradient-love text-transparent bg-clip-text leading-tight"
-          >
+          <motion.h1 initial={{
+          y: 20,
+          opacity: 0
+        }} animate={{
+          y: 0,
+          opacity: 1
+        }} transition={{
+          duration: 0.6,
+          delay: 0.1
+        }} className="text-4xl md:text-6xl font-display font-bold mb-6 bg-gradient-love text-transparent bg-clip-text leading-tight">
             Find Your Perfect Match with <br className="hidden sm:block" />Intelligent AI
           </motion.h1>
           
-          <motion.p 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl text-gray-700 mb-10 max-w-2xl mx-auto"
-          >
+          <motion.p initial={{
+          y: 20,
+          opacity: 0
+        }} animate={{
+          y: 0,
+          opacity: 1
+        }} transition={{
+          duration: 0.6,
+          delay: 0.2
+        }} className="text-xl text-gray-700 mb-10 max-w-2xl mx-auto">
             Experience a smarter way to date. Our AI algorithm finds deep compatibility 
             beyond just photos and profiles.
           </motion.p>
           
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
-          >
+          <motion.div initial={{
+          y: 20,
+          opacity: 0
+        }} animate={{
+          y: 0,
+          opacity: 1
+        }} transition={{
+          duration: 0.6,
+          delay: 0.3
+        }} className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Link to="/register">
               <Button size="lg" className="bg-gradient-love group relative overflow-hidden shadow-md hover:shadow-xl text-white w-full sm:w-auto rounded-full">
                 <Sparkles size={20} className="mr-2" />
@@ -109,35 +124,37 @@ const Home = () => {
             </Link>
           </motion.div>
           
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="inline-flex items-center bg-white/90 backdrop-blur-sm rounded-full px-6 py-3 shadow-md"
-          >
+          <motion.div initial={{
+          y: 20,
+          opacity: 0
+        }} animate={{
+          y: 0,
+          opacity: 1
+        }} transition={{
+          duration: 0.6,
+          delay: 0.4
+        }} className="inline-flex items-center bg-white/90 backdrop-blur-sm rounded-full px-6 py-3 shadow-md">
             <Shield size={20} className="text-love-500 mr-3" />
-            <p className="text-sm font-medium text-love-700">All profiles are verified for your safety</p>
+            <p className="text-sm font-medium text-love-700">All LoveQuest profiles are verified for your safety</p>
           </motion.div>
         </motion.div>
         
         {/* Scroll indicator */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 1 }}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-        >
+        <motion.div initial={{
+        opacity: 0
+      }} animate={{
+        opacity: 1
+      }} transition={{
+        delay: 1,
+        duration: 1
+      }} className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
           <div className="w-6 h-10 rounded-full border-2 border-love-300 flex justify-center p-1">
-            <motion.div 
-              animate={{ 
-                y: [0, 12, 0],
-              }}
-              transition={{ 
-                repeat: Infinity,
-                duration: 1.5,
-              }}
-              className="w-2 h-2 bg-love-500 rounded-full"
-            />
+            <motion.div animate={{
+            y: [0, 12, 0]
+          }} transition={{
+            repeat: Infinity,
+            duration: 1.5
+          }} className="w-2 h-2 bg-love-500 rounded-full" />
           </div>
         </motion.div>
       </section>
@@ -154,15 +171,11 @@ const Home = () => {
             </p>
           </div>
           
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            className="grid md:grid-cols-3 gap-8"
-          >
-            {benefits.map((benefit, index) => (
-              <motion.div key={index} variants={itemVariants}>
+          <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{
+          once: true,
+          amount: 0.3
+        }} className="grid md:grid-cols-3 gap-8">
+            {benefits.map((benefit, index) => <motion.div key={index} variants={itemVariants}>
                 <Card className="border-love-100 shadow-sm hover:shadow-md transition-shadow h-full">
                   <CardContent className="p-6 text-center">
                     <div className="mb-4 w-16 h-16 rounded-full bg-love-50 flex items-center justify-center mx-auto">
@@ -172,8 +185,7 @@ const Home = () => {
                     <p className="text-gray-600">{benefit.description}</p>
                   </CardContent>
                 </Card>
-              </motion.div>
-            ))}
+              </motion.div>)}
           </motion.div>
         </div>
       </section>
@@ -194,8 +206,6 @@ const Home = () => {
           </Link>
         </div>
       </section>
-    </div>
-  );
+    </div>;
 };
-
 export default Home;
