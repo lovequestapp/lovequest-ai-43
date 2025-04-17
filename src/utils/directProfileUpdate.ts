@@ -48,7 +48,30 @@ export const directProfileUpdate = async (userId: string, data: Partial<User>): 
     // Convert to JSON-compatible format
     const jsonData = userToJsonObject(data);
     
+    // Try the edge function first for more reliable updates
+    try {
+      console.log('Trying edge function update first');
+      const { data: edgeResult, error: edgeError } = await supabase.functions
+        .invoke('get_profile_by_id', {
+          body: { 
+            profileId: userId,
+            profileData: jsonData,
+            action: 'update'
+          }
+        });
+        
+      if (!edgeError && edgeResult?.success) {
+        console.log('Edge function update successful');
+        return true;
+      } else if (edgeError) {
+        console.warn('Edge function update failed:', edgeError);
+      }
+    } catch (edgeFuncError) {
+      console.warn('Edge function call failed:', edgeFuncError);
+    }
+
     // Use the security-definer database function for profile updates
+    console.log('Trying database function update');
     const { data: result, error } = await supabase
       .rpc('update_profile_data', {
         profile_id: userId,

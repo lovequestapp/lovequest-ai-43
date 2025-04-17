@@ -8,7 +8,7 @@ import { useGifts } from '@/hooks/useGifts';
 import GiftInventory from '@/components/GiftInventory';
 import GiftTransactionHistory from '@/components/GiftTransactionHistory';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
-import { Loader2, Flower, Heart, Rabbit } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const GiftItem = ({ 
   type, 
@@ -22,12 +22,14 @@ const GiftItem = ({
   onPurchase: (quantity: number) => void;
 }) => {
   const [quantity, setQuantity] = useState(1);
+  
+  const emoji = type === 'rose' ? '🌹' : type === 'heart' ? '❤️' : '🧸';
 
   return (
     <div className="border rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4">
       <div className="flex items-center gap-4">
         <div className="text-4xl flex items-center justify-center w-12 h-12">
-          {icon}
+          {emoji}
         </div>
         <div>
           <h3 className="font-medium capitalize">{type}</h3>
@@ -35,7 +37,7 @@ const GiftItem = ({
           <p className="text-lg font-semibold">${price.toFixed(2)}</p>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 w-full md:w-auto">
         <Input
           type="number"
           min="1"
@@ -44,7 +46,7 @@ const GiftItem = ({
           onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
           className="w-20"
         />
-        <Button onClick={() => onPurchase(quantity)}>
+        <Button onClick={() => onPurchase(quantity)} className="flex-1 md:flex-initial">
           Buy
         </Button>
       </div>
@@ -69,15 +71,15 @@ const Shop = () => {
   };
 
   return (
-    <div className="container py-8 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Gift Shop</h1>
+    <div className="container py-6 md:py-8 px-4 max-w-4xl mx-auto">
+      <h1 className="text-2xl md:text-3xl font-bold mb-6">Gift Shop</h1>
       
-      <div className="grid grid-cols-1 gap-8">
+      <div className="grid grid-cols-1 gap-6 md:gap-8">
         <Tabs defaultValue="shop" className="w-full">
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 w-full grid grid-cols-3">
             <TabsTrigger value="shop">Shop</TabsTrigger>
             <TabsTrigger value="inventory">My Inventory</TabsTrigger>
-            <TabsTrigger value="transactions">Transaction History</TabsTrigger>
+            <TabsTrigger value="transactions">History</TabsTrigger>
           </TabsList>
           
           <TabsContent value="shop" className="space-y-6">
@@ -88,19 +90,19 @@ const Shop = () => {
               <CardContent className="space-y-4">
                 <GiftItem 
                   type="rose" 
-                  icon={<Flower className="h-8 w-8 text-red-500" />} 
+                  icon={<span className="text-4xl">🌹</span>} 
                   price={4.99} 
                   onPurchase={(quantity) => handlePurchase('rose', quantity)} 
                 />
                 <GiftItem 
                   type="heart" 
-                  icon={<Heart className="h-8 w-8 text-love-500" />} 
+                  icon={<span className="text-4xl">❤️</span>} 
                   price={9.99} 
                   onPurchase={(quantity) => handlePurchase('heart', quantity)} 
                 />
                 <GiftItem 
                   type="teddy" 
-                  icon={<Rabbit className="h-8 w-8 text-amber-500" />} 
+                  icon={<span className="text-4xl">🧸</span>} 
                   price={14.99} 
                   onPurchase={(quantity) => handlePurchase('teddy', quantity)} 
                 />
@@ -110,16 +112,16 @@ const Shop = () => {
             <div className="bg-muted p-4 rounded-lg text-sm">
               <p className="font-medium mb-2">Gift Values</p>
               <ul className="space-y-1 text-muted-foreground">
-                <li>
-                  <span className="inline-block mr-1"><Flower className="h-4 w-4 text-red-500 inline" /></span> 
+                <li className="flex items-center gap-2">
+                  <span className="text-lg">🌹</span>
                   Roses: $1 in monetary value
                 </li>
-                <li>
-                  <span className="inline-block mr-1"><Heart className="h-4 w-4 text-love-500 inline" /></span> 
+                <li className="flex items-center gap-2">
+                  <span className="text-lg">❤️</span>
                   Hearts: $3 in monetary value
                 </li>
-                <li>
-                  <span className="inline-block mr-1"><Rabbit className="h-4 w-4 text-amber-500 inline" /></span> 
+                <li className="flex items-center gap-2">
+                  <span className="text-lg">🧸</span>
                   Teddy Bears: $5 in monetary value
                 </li>
               </ul>

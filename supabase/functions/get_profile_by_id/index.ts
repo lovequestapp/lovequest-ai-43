@@ -17,8 +17,8 @@ serve(async (req) => {
   }
 
   try {
-    // Get the profile ID from the request
-    const { profileId } = await req.json();
+    const body = await req.json();
+    const { profileId, profileData, action } = body;
     
     if (!profileId) {
       return new Response(
@@ -27,7 +27,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Edge function: Fetching profile for ID: ${profileId}`);
+    console.log(`Edge function: ${action === 'update' ? 'Updating' : 'Fetching'} profile for ID: ${profileId}`);
 
     // Create a Supabase client with the admin role
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -38,6 +38,47 @@ serve(async (req) => {
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // If this is an update request
+    if (action === 'update' && profileData) {
+      console.log('Processing profile update with data:', profileData);
+      
+      // Convert any special fields as needed
+      const updateData: Record<string, any> = {};
+      
+      // Map fields from client names to database column names
+      if (profileData.name !== undefined) updateData.name = profileData.name;
+      if (profileData.bio !== undefined) updateData.bio = profileData.bio;
+      if (profileData.age !== undefined) updateData.age = profileData.age;
+      if (profileData.location !== undefined) updateData.location = profileData.location;
+      if (profileData.interests !== undefined) updateData.interests = profileData.interests;
+      if (profileData.gender !== undefined) updateData.gender = profileData.gender;
+      if (profileData.interestedIn !== undefined) updateData.interested_in = profileData.interestedIn;
+      if (profileData.personalityTraits !== undefined) updateData.personality_traits = profileData.personalityTraits;
+      if (profileData.photos !== undefined) updateData.photos = profileData.photos;
+      if (profileData.favoriteMusic !== undefined) updateData.favorite_music = profileData.favoriteMusic;
+      if (profileData.voiceIntro !== undefined) updateData.voice_intro = profileData.voiceIntro;
+      updateData.updated_at = new Date().toISOString();
+      
+      // Perform the update using the service role
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', profileId);
+      
+      if (updateError) {
+        console.error('Error updating profile:', updateError);
+        return new Response(
+          JSON.stringify({ error: updateError.message, success: false }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+      
+      return new Response(
+        JSON.stringify({ success: true, message: 'Profile updated successfully' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
     
     // Get the profile data directly using the service role
     const { data, error } = await supabase

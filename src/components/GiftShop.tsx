@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
@@ -12,12 +13,10 @@ import { Button } from "@/components/ui/button";
 import { 
   Heart, 
   Gift, 
-  Flower, 
-  ShoppingCart,
+  User,
   Plus,
   Minus,
-  User,
-  Mouse
+  ShoppingCart
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -43,7 +42,8 @@ export const GIFT_ITEMS = [
     description: 'Send a beautiful rose to show your interest.',
     price: 4.99,
     image: '/gifts/rose-detailed.png',
-    type: 'rose' as const
+    type: 'rose' as const,
+    emoji: '🌹'
   },
   {
     id: 'gift-heart',
@@ -51,7 +51,8 @@ export const GIFT_ITEMS = [
     description: 'Express your feelings with a lovely heart.',
     price: 9.99,
     image: '/gifts/crystal-heart.png',
-    type: 'heart' as const
+    type: 'heart' as const,
+    emoji: '❤️'
   },
   {
     id: 'gift-teddy',
@@ -59,7 +60,8 @@ export const GIFT_ITEMS = [
     description: 'Make them smile with an adorable teddy bear.',
     price: 14.99,
     image: '/gifts/luxury-teddy.png',
-    type: 'teddy' as const
+    type: 'teddy' as const,
+    emoji: '🧸'
   }
 ];
 
@@ -130,6 +132,12 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
       setQuantity(prev => prev - 1);
     }
   };
+
+  // Get emoji for gift type
+  const getGiftEmoji = (type: string) => {
+    const gift = GIFT_ITEMS.find(g => g.type === type);
+    return gift?.emoji || '🎁';
+  };
   
   return (
     <>
@@ -170,20 +178,18 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
             
             <TabsContent value="available" className="space-y-6">
               <Card>
-                <CardContent className="space-y-4">
+                <CardContent className="p-4 space-y-4 md:p-6">
                   {GIFT_ITEMS.map((gift) => (
                     <div key={gift.id} className="flex items-center gap-4">
-                      <img 
-                        src={gift.image} 
-                        alt={gift.name} 
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
+                      <div className="text-4xl flex items-center justify-center min-w-14 h-14">
+                        {gift.emoji}
+                      </div>
                       <div className="flex-1">
                         <CardTitle className="text-lg">{gift.name}</CardTitle>
                         <CardDescription className="mt-1 line-clamp-2">
                           {gift.description}
                         </CardDescription>
-                        <div className="mt-4 flex justify-between items-center">
+                        <div className="mt-4 flex flex-wrap justify-between items-center gap-2">
                           <div className="text-sm font-semibold text-love-700">
                             ${gift.price.toFixed(2)}
                           </div>
@@ -233,9 +239,7 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
                       return (
                         <Card key={`inventory-${type}`} className="overflow-hidden">
                           <div className="aspect-square bg-love-50 flex items-center justify-center p-6">
-                            {type === 'rose' && <Flower className="h-16 w-16 text-red-500" />}
-                            {type === 'heart' && <Heart className="h-16 w-16 text-love-500" />}
-                            {type === 'teddy' && <Mouse className="h-16 w-16 text-amber-500" />}
+                            <span className="text-5xl">{getGiftEmoji(type)}</span>
                           </div>
                           
                           <CardContent className="p-4">
@@ -297,7 +301,7 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
       </Card>
 
       <Dialog open={purchaseDialogOpen} onOpenChange={setPurchaseDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-xs sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Add Gift to Cart</DialogTitle>
             <DialogDescription>
@@ -308,9 +312,7 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
           {selectedGift && (
             <div className="flex items-center gap-4 py-4">
               <div className="h-16 w-16 bg-love-50 rounded-lg flex items-center justify-center">
-                {selectedGift.type === 'rose' && <Flower className="h-8 w-8 text-red-500" />}
-                {selectedGift.type === 'heart' && <Heart className="h-8 w-8 text-love-500" />}
-                {selectedGift.type === 'teddy' && <Mouse className="h-8 w-8 text-amber-500" />}
+                <span className="text-3xl">{selectedGift.emoji}</span>
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold">{selectedGift.name}</h4>
@@ -342,11 +344,11 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
             </div>
           )}
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPurchaseDialogOpen(false)}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button variant="outline" onClick={() => setPurchaseDialogOpen(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={confirmAddToCart}>
+            <Button onClick={confirmAddToCart} className="w-full sm:w-auto">
               Add to Cart
             </Button>
           </DialogFooter>
@@ -354,7 +356,7 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
       </Dialog>
 
       <Dialog open={cartDialogOpen} onOpenChange={setCartDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-xs sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
@@ -365,7 +367,7 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 max-h-[300px] overflow-auto">
+          <div className="space-y-4 max-h-[240px] overflow-auto">
             {cartItems.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
                 Your cart is empty
@@ -374,9 +376,7 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
               cartItems.map((item) => (
                 <div key={item.id} className="flex items-center gap-3 py-2 border-b">
                   <div className="h-10 w-10 bg-love-50 rounded-lg flex items-center justify-center">
-                    {item.type === 'rose' && <Flower className="h-5 w-5 text-red-500" />}
-                    {item.type === 'heart' && <Heart className="h-5 w-5 text-love-500" />}
-                    {item.type === 'teddy' && <Mouse className="h-5 w-5 text-amber-500" />}
+                    <span className="text-xl">{getGiftEmoji(item.type)}</span>
                   </div>
                   <div className="flex-1">
                     <div className="font-medium">{item.name}</div>
@@ -397,8 +397,12 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
             <span>${cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
           </div>
           
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCartDialogOpen(false)}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setCartDialogOpen(false)}
+              className="w-full sm:w-auto"
+            >
               Continue Shopping
             </Button>
             <Button 
@@ -407,6 +411,7 @@ const GiftShop: React.FC<GiftShopProps> = ({ recipientId, recipientName }) => {
                 window.location.href = "/checkout";
               }}
               disabled={cartItems.length === 0}
+              className="w-full sm:w-auto"
             >
               Checkout
             </Button>
