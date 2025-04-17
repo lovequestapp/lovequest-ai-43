@@ -9,7 +9,6 @@ AS $$
 DECLARE
   result JSONB;
   prepared_statement TEXT;
-  i INT;
 BEGIN
   -- Generate a random prepared statement name to avoid conflicts
   prepared_statement := 'stmt_' || floor(random() * 1000000)::TEXT;
@@ -18,7 +17,7 @@ BEGIN
   EXECUTE 'PREPARE ' || prepared_statement || ' AS ' || query;
   
   -- Execute the prepared statement with parameters
-  EXECUTE 'EXECUTE ' || prepared_statement INTO result USING params;
+  EXECUTE 'EXECUTE ' || prepared_statement || ' INTO result USING params::json';
   
   -- Deallocate the prepared statement
   EXECUTE 'DEALLOCATE ' || prepared_statement;

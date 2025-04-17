@@ -236,6 +236,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      execute_sql: {
+        Args: { query: string; params?: Json }
+        Returns: Json
+      }
       get_profile_by_id: {
         Args: { profile_id: string }
         Returns: {
