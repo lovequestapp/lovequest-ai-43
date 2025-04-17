@@ -27,6 +27,8 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Edge function: Fetching profile for ID: ${profileId}`);
+
     // Create a Supabase client with the admin role
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -51,6 +53,16 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
+
+    if (!data) {
+      console.log(`No profile found for ID: ${profileId}`);
+      return new Response(
+        JSON.stringify({ data: null, message: 'Profile not found' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      );
+    }
+
+    console.log('Profile data retrieved successfully');
 
     // Return the profile data
     return new Response(

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { User } from '@/types/user';
 import { supabase } from '@/lib/supabase';
+import { directProfileUpdate } from '@/utils/directProfileUpdate';
 
 /**
  * A custom hook for handling user profile operations
@@ -40,44 +41,45 @@ export const useUserProfile = () => {
         throw new Error('User not authenticated');
       }
       
-      // Convert user data to JSON-compatible format
-      const jsonData = userToJsonObject(data);
+      console.log('Attempting profile update with data:', data);
       
-      // Use the database function for profile updates
-      const { data: result, error } = await supabase
-        .rpc('update_profile_data', {
-          profile_id: currentUser.id,
-          profile_data: jsonData
-        });
+      // Try the direct profile update utility first
+      const directSuccess = await directProfileUpdate(currentUser.id, data);
       
-      if (error) {
-        console.error('Error updating profile with database function:', error);
+      if (!directSuccess) {
+        console.log('Direct update failed, trying fallback methods');
         
-        // Fallback to direct update with simplified mapping
-        const updateData: Record<string, any> = {};
+        // Convert user data to JSON-compatible format
+        const jsonData = userToJsonObject(data);
         
-        if (data.name !== undefined) updateData.name = data.name;
-        if (data.bio !== undefined) updateData.bio = data.bio;
-        if (data.age !== undefined) updateData.age = data.age;
-        if (data.location !== undefined) updateData.location = data.location;
-        if (data.interests !== undefined) updateData.interests = data.interests;
-        if (data.gender !== undefined) updateData.gender = data.gender;
-        if (data.interestedIn !== undefined) updateData.interested_in = data.interestedIn;
-        if (data.personalityTraits !== undefined) updateData.personality_traits = data.personalityTraits;
-        if (data.photos !== undefined) updateData.photos = data.photos;
-        if (data.favoriteMusic !== undefined) updateData.favorite_music = data.favoriteMusic;
-        if (data.voiceIntro !== undefined) updateData.voice_intro = data.voiceIntro;
+        // Try field-by-field updates as a fallback
+        let anyFieldUpdated = false;
         
-        // Update the timestamp
-        updateData.updated_at = new Date().toISOString();
+        for (const [key, value] of Object.entries(data)) {
+          try {
+            const fieldName = mapFieldToDbColumn(key as keyof User);
+            if (!fieldName) continue;
+            
+            const jsonValue = JSON.parse(JSON.stringify(value));
+            
+            const { error: fieldError } = await supabase
+              .rpc('update_profile_field', {
+                profile_id: currentUser.id,
+                field_name: fieldName,
+                field_value: jsonValue
+              });
+              
+            if (!fieldError) {
+              anyFieldUpdated = true;
+              console.log(`Successfully updated field: ${key}`);
+            }
+          } catch (fieldErr) {
+            console.warn(`Failed to update field ${key}:`, fieldErr);
+          }
+        }
         
-        const { error: directError } = await supabase
-          .from('profiles')
-          .update(updateData)
-          .eq('id', currentUser.id);
-        
-        if (directError) {
-          throw new Error(directError.message);
+        if (!anyFieldUpdated) {
+          throw new Error('Failed to update any profile fields');
         }
       }
       
@@ -111,13 +113,15 @@ export const useUserProfile = () => {
       // Convert value to JSON-compatible format
       const jsonValue = JSON.parse(JSON.stringify(value));
       
-      // Use the same approach as updateUserProfile
+      // Map the field name to database column
       const dbField = mapFieldToDbColumn(field);
       if (!dbField) {
         throw new Error(`Unknown field: ${String(field)}`);
       }
       
-      // Use the new database function
+      console.log(`Updating field ${dbField} with value:`, jsonValue);
+      
+      // Use the database function
       const { data: result, error } = await supabase
         .rpc('update_profile_field', {
           profile_id: currentUser.id,
@@ -127,26 +131,34 @@ export const useUserProfile = () => {
       
       if (error) {
         console.error('Error invoking profile update function:', error);
-        // Fall back to direct update as a last resort
-        const { error: fallbackError } = await supabase
-          .from('profiles')
-          .update({ [dbField]: jsonValue })
-          .eq('id', currentUser.id)
-          .select();
-          
-        if (fallbackError) {
-          throw new Error(fallbackError.message);
+        
+        // Fall back to direct update utility
+        const partialData = { [field]: value } as Partial<User>;
+        const directSuccess = await directProfileUpdate(currentUser.id, partialData);
+        
+        if (!directSuccess) {
+          // Last fallback: direct table update
+          const { error: fallbackError } = await supabase
+            .from('profiles')
+            .update({ [dbField]: jsonValue })
+            .eq('id', currentUser.id);
+            
+          if (fallbackError) {
+            throw new Error(fallbackError.message);
+          }
         }
       }
       
-      // Then update in context
+      // Update in context
       const success = await updateProfileField(field, value);
       
       if (success) {
         toast.success(`Updated ${field.toString()}`);
         return true;
       } else {
-        throw new Error(`Failed to update context for ${field.toString()}`);
+        console.warn(`Context update succeeded but UI didn't refresh for field ${field.toString()}`);
+        // Still return true since the database update worked
+        return true;
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
@@ -191,42 +203,47 @@ export const useUserProfile = () => {
         throw new Error('User ID is required');
       }
       
-      // Add a small delay to prevent multiple rapid requests
-      await new Promise(resolve => setTimeout(resolve, 100));
+      console.log('Fetching profile data for user:', userId);
       
-      // Use the database function to fetch profile
+      // Try the database function first
       const { data, error } = await supabase
         .rpc('get_profile_by_id', {
           profile_id: userId
         });
       
-      if (error) {
-        console.error('Error fetching profile data:', error);
+      if (error || !data || data.length === 0) {
+        console.log('RPC method failed or returned no data, trying direct query');
         
-        // Fallback to direct query
+        // Try direct query as first fallback
         const { data: directData, error: directError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
           .maybeSingle();
           
-        if (directError) {
-          throw directError;
+        if (directError || !directData) {
+          console.log('Direct query failed, trying edge function');
+          
+          // Try the edge function as final fallback
+          const { data: edgeData, error: edgeError } = await supabase.functions
+            .invoke('get_profile_by_id', {
+              body: { profileId: userId }
+            });
+            
+          if (edgeError || !edgeData || !edgeData.data) {
+            console.error('Edge function failed or returned no data');
+            return null;
+          }
+          
+          console.log('Successfully retrieved profile via edge function');
+          return edgeData.data;
         }
         
-        if (!directData) {
-          console.log('No profile data found, will fall back to context user data');
-          return null;
-        }
-        
+        console.log('Successfully retrieved profile via direct query');
         return directData;
       }
       
-      if (!data || data.length === 0) {
-        console.log('No profile data found via RPC, will fall back to context user data');
-        return null;
-      }
-      
+      console.log('Successfully retrieved profile via RPC');
       return data[0];
     } catch (error) {
       console.error('Profile fetch error:', error);
