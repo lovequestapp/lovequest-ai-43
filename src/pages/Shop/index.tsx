@@ -31,7 +31,7 @@ const GiftItem = ({
         </div>
         <div>
           <h3 className="font-medium capitalize">{type}</h3>
-          <p className="text-sm text-muted-foreground">Send a {type} to show your affection</p>
+          <p className="text-sm text-muted-foreground">Send a {icon} {type} to show your affection</p>
           <p className="text-lg font-semibold">${price.toFixed(2)}</p>
         </div>
       </div>

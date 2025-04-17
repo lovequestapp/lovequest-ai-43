@@ -80,8 +80,12 @@ serve(async (req) => {
         updateData.updated_at = new Date().toISOString();
         
         console.log('Performing update with data:', updateData);
+
+        // Use the service role client to completely bypass RLS policies
+        // This is critical to avoid the recursion issue
+        console.log('Bypassing RLS with service role to avoid recursion');
         
-        // Perform the update using the service role
+        // Perform the update using the service role directly to table without RLS checks
         const { error: updateError } = await supabase
           .from('profiles')
           .update(updateData)
@@ -89,6 +93,60 @@ serve(async (req) => {
         
         if (updateError) {
           console.error('Error updating profile:', updateError);
+          
+          // Try direct SQL if the standard update fails
+          if (updateError.message.includes('recursion')) {
+            console.log('Detected recursion error, attempting SQL-based update');
+            
+            // Build a SQL statement for direct update - bypassing RLS completely
+            const setStatements = [];
+            for (const [key, value] of Object.entries(updateData)) {
+              if (Array.isArray(value)) {
+                setStatements.push(`${key} = $${setStatements.length + 1}::text[]`);
+              } else if (typeof value === 'object' && value !== null) {
+                setStatements.push(`${key} = $${setStatements.length + 1}::jsonb`);
+              } else {
+                setStatements.push(`${key} = $${setStatements.length + 1}`);
+              }
+            }
+            
+            const values = Object.values(updateData);
+            values.push(profileId); // Add profileId as the last parameter
+            
+            const sqlQuery = `
+              UPDATE public.profiles 
+              SET ${setStatements.join(', ')} 
+              WHERE id = $${values.length}
+            `;
+            
+            try {
+              const { data: sqlResult, error: sqlError } = await supabase.rpc(
+                'execute_sql',
+                { query: sqlQuery, params: values }
+              );
+              
+              if (sqlError) {
+                console.error('SQL update failed:', sqlError);
+                return new Response(
+                  JSON.stringify({ error: sqlError.message, success: false }),
+                  { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+                );
+              }
+              
+              console.log('SQL update successful');
+              return new Response(
+                JSON.stringify({ success: true, message: 'Profile updated successfully' }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+              );
+            } catch (sqlExecErr) {
+              console.error('Error executing SQL update:', sqlExecErr);
+              return new Response(
+                JSON.stringify({ error: sqlExecErr.message, success: false }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+              );
+            }
+          }
+          
           return new Response(
             JSON.stringify({ error: updateError.message, success: false }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
