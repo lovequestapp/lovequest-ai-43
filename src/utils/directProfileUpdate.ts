@@ -1,6 +1,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
+import { toast } from 'sonner';
 
 /**
  * Convert User object to JSON-compatible format
@@ -19,10 +20,23 @@ const userToJsonObject = (userData: Partial<User>): Record<string, any> => {
         typeof value === 'string' || 
         typeof value === 'number' || 
         typeof value === 'boolean' || 
-        value === null || 
-        Array.isArray(value)
+        value === null
       ) {
         safeData[key] = value;
+      } else if (Array.isArray(value)) {
+        // Handle arrays safely
+        try {
+          safeData[key] = [...value];
+        } catch (err) {
+          console.warn(`Could not serialize array field ${key}:`, err);
+        }
+      } else if (typeof value === 'object' && value !== null) {
+        // Handle objects safely
+        try {
+          safeData[key] = {...value};
+        } catch (err) {
+          console.warn(`Could not serialize object field ${key}:`, err);
+        }
       }
     });
     return safeData;
@@ -62,15 +76,18 @@ export const directProfileUpdate = async (userId: string, data: Partial<User>): 
         
       if (!edgeError && edgeResult?.success) {
         console.log('Edge function update successful');
+        toast.success('Profile updated successfully');
         return true;
       } else if (edgeError) {
         console.warn('Edge function update failed:', edgeError);
+        // Continue to other methods
       }
     } catch (edgeFuncError) {
       console.warn('Edge function call failed:', edgeFuncError);
+      // Continue to other methods
     }
 
-    // Use the security-definer database function for profile updates
+    // Use a security-definer database function for profile updates
     console.log('Trying database function update');
     const { data: result, error } = await supabase
       .rpc('update_profile_data', {
@@ -81,57 +98,20 @@ export const directProfileUpdate = async (userId: string, data: Partial<User>): 
     if (error) {
       console.error('Database function update failed:', error);
       
-      // Map user fields to database columns with proper handling of complex types
-      const updateData: Record<string, any> = {};
+      // Try field-by-field updates
+      console.log('Trying field-by-field updates');
+      let updateSuccess = false;
       
-      if (data.name !== undefined) updateData.name = data.name;
-      if (data.bio !== undefined) updateData.bio = data.bio;
-      if (data.age !== undefined) updateData.age = data.age;
-      if (data.location !== undefined) updateData.location = data.location;
-      
-      // Handle array fields properly
-      if (data.interests !== undefined) {
-        // Ensure it's a proper array
-        updateData.interests = Array.isArray(data.interests) ? data.interests : [];
-      }
-      
-      if (data.gender !== undefined) updateData.gender = data.gender;
-      
-      if (data.interestedIn !== undefined) {
-        updateData.interested_in = Array.isArray(data.interestedIn) ? data.interestedIn : [];
-      }
-      
-      if (data.personalityTraits !== undefined) {
-        updateData.personality_traits = Array.isArray(data.personalityTraits) ? data.personalityTraits : [];
-      }
-      
-      if (data.photos !== undefined) {
-        updateData.photos = Array.isArray(data.photos) ? data.photos : [];
-      }
-      
-      if (data.favoriteMusic !== undefined) {
-        updateData.favorite_music = Array.isArray(data.favoriteMusic) ? data.favoriteMusic : [];
-      }
-      
-      if (data.voiceIntro !== undefined) updateData.voice_intro = data.voiceIntro;
-      
-      // Add updated_at timestamp
-      updateData.updated_at = new Date().toISOString();
-      
-      console.log('Falling back to direct update with data:', updateData);
-      
-      // Try individual field updates as another fallback approach
-      try {
-        let updateSuccess = false;
+      for (const [field, value] of Object.entries(jsonData)) {
+        const fieldName = mapFieldToDbColumn(field);
+        if (!fieldName) continue;
         
-        for (const [field, value] of Object.entries(updateData)) {
-          if (field === 'updated_at') continue; // Skip the timestamp for individual updates
-          
+        try {
           // Use field-by-field update with the secure function
           const fieldResult = await supabase.rpc('update_profile_field', {
             profile_id: userId,
-            field_name: field,
-            field_value: JSON.parse(JSON.stringify(value))
+            field_name: fieldName,
+            field_value: value
           });
           
           if (fieldResult.error) {
@@ -140,42 +120,98 @@ export const directProfileUpdate = async (userId: string, data: Partial<User>): 
             updateSuccess = true;
             console.log(`Successfully updated field ${field}`);
           }
+        } catch (fieldError) {
+          console.error(`Error updating field ${field}:`, fieldError);
         }
-        
-        if (!updateSuccess) {
-          throw new Error('All field updates failed');
-        }
-      } catch (fieldError) {
-        console.error('Field-by-field update failed:', fieldError);
-        
-        // Last resort: direct table update
-        const { error: standardError } = await supabase
-          .from('profiles')
-          .update(updateData)
-          .eq('id', userId);
-        
-        if (standardError) {
-          console.error('Standard update failed:', standardError);
-          
-          // One final attempt with .select() to force refresh
-          const { error: directError } = await supabase
-            .from('profiles')
-            .update(updateData)
-            .eq('id', userId)
-            .select();
-          
-          if (directError) {
-            console.error('Direct update failed:', directError);
-            return false;
-          }
-        }
+      }
+      
+      if (updateSuccess) {
+        toast.success('Profile partially updated');
+        return true;
+      }
+      
+      // Last resort: direct table update
+      console.log('Trying direct table update');
+      const updateData = mapUserToDbFields(jsonData);
+      
+      const { error: directError } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId);
+      
+      if (directError) {
+        throw new Error(`All update methods failed: ${directError.message}`);
       }
     }
     
     console.log('Profile update successful');
+    toast.success('Profile updated successfully');
     return true;
   } catch (error) {
     console.error('Profile update error:', error);
+    const message = error instanceof Error ? error.message : 'Unknown error occurred';
+    toast.error(`Profile update failed: ${message}`);
     return false;
   }
+};
+
+/**
+ * Map User type fields to database column names
+ */
+const mapFieldToDbColumn = (field: string): string | null => {
+  const fieldMap: Record<string, string> = {
+    name: 'name',
+    bio: 'bio',
+    age: 'age',
+    location: 'location',
+    interests: 'interests',
+    gender: 'gender',
+    interestedIn: 'interested_in',
+    personalityTraits: 'personality_traits',
+    photos: 'photos',
+    favoriteMusic: 'favorite_music',
+    voiceIntro: 'voice_intro'
+  };
+  
+  return fieldMap[field] || null;
+};
+
+/**
+ * Map User data to database fields
+ */
+const mapUserToDbFields = (userData: Record<string, any>): Record<string, any> => {
+  const updateData: Record<string, any> = {};
+  
+  if (userData.name !== undefined) updateData.name = userData.name;
+  if (userData.bio !== undefined) updateData.bio = userData.bio;
+  if (userData.age !== undefined) updateData.age = userData.age;
+  if (userData.location !== undefined) updateData.location = userData.location;
+  
+  // Handle array fields properly
+  if (userData.interests !== undefined) {
+    updateData.interests = Array.isArray(userData.interests) ? userData.interests : [];
+  }
+  
+  if (userData.gender !== undefined) updateData.gender = userData.gender;
+  
+  if (userData.interestedIn !== undefined) {
+    updateData.interested_in = Array.isArray(userData.interestedIn) ? userData.interestedIn : [];
+  }
+  
+  if (userData.personalityTraits !== undefined) {
+    updateData.personality_traits = Array.isArray(userData.personalityTraits) ? userData.personalityTraits : [];
+  }
+  
+  if (userData.photos !== undefined) {
+    updateData.photos = Array.isArray(userData.photos) ? userData.photos : [];
+  }
+  
+  if (userData.favoriteMusic !== undefined) {
+    updateData.favorite_music = Array.isArray(userData.favoriteMusic) ? userData.favoriteMusic : [];
+  }
+  
+  if (userData.voiceIntro !== undefined) updateData.voice_intro = userData.voiceIntro;
+  updateData.updated_at = new Date().toISOString();
+  
+  return updateData;
 };

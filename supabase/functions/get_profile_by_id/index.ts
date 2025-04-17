@@ -43,41 +43,69 @@ serve(async (req) => {
     if (action === 'update' && profileData) {
       console.log('Processing profile update with data:', profileData);
       
-      // Convert any special fields as needed
-      const updateData: Record<string, any> = {};
-      
-      // Map fields from client names to database column names
-      if (profileData.name !== undefined) updateData.name = profileData.name;
-      if (profileData.bio !== undefined) updateData.bio = profileData.bio;
-      if (profileData.age !== undefined) updateData.age = profileData.age;
-      if (profileData.location !== undefined) updateData.location = profileData.location;
-      if (profileData.interests !== undefined) updateData.interests = profileData.interests;
-      if (profileData.gender !== undefined) updateData.gender = profileData.gender;
-      if (profileData.interestedIn !== undefined) updateData.interested_in = profileData.interestedIn;
-      if (profileData.personalityTraits !== undefined) updateData.personality_traits = profileData.personalityTraits;
-      if (profileData.photos !== undefined) updateData.photos = profileData.photos;
-      if (profileData.favoriteMusic !== undefined) updateData.favorite_music = profileData.favoriteMusic;
-      if (profileData.voiceIntro !== undefined) updateData.voice_intro = profileData.voiceIntro;
-      updateData.updated_at = new Date().toISOString();
-      
-      // Perform the update using the service role
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', profileId);
-      
-      if (updateError) {
-        console.error('Error updating profile:', updateError);
+      try {
+        // Convert any special fields as needed
+        const updateData: Record<string, any> = {};
+        
+        // Map fields from client names to database column names
+        if (profileData.name !== undefined) updateData.name = profileData.name;
+        if (profileData.bio !== undefined) updateData.bio = profileData.bio;
+        if (profileData.age !== undefined) updateData.age = profileData.age;
+        if (profileData.location !== undefined) updateData.location = profileData.location;
+        
+        // Handle array fields properly
+        if (profileData.interests !== undefined) {
+          updateData.interests = Array.isArray(profileData.interests) ? profileData.interests : [];
+        }
+        
+        if (profileData.gender !== undefined) updateData.gender = profileData.gender;
+        
+        if (profileData.interestedIn !== undefined) {
+          updateData.interested_in = Array.isArray(profileData.interestedIn) ? profileData.interestedIn : [];
+        }
+        
+        if (profileData.personalityTraits !== undefined) {
+          updateData.personality_traits = Array.isArray(profileData.personalityTraits) ? profileData.personalityTraits : [];
+        }
+        
+        if (profileData.photos !== undefined) {
+          updateData.photos = Array.isArray(profileData.photos) ? profileData.photos : [];
+        }
+        
+        if (profileData.favoriteMusic !== undefined) {
+          updateData.favorite_music = Array.isArray(profileData.favoriteMusic) ? profileData.favoriteMusic : [];
+        }
+        
+        if (profileData.voiceIntro !== undefined) updateData.voice_intro = profileData.voiceIntro;
+        updateData.updated_at = new Date().toISOString();
+        
+        console.log('Performing update with data:', updateData);
+        
+        // Perform the update using the service role
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', profileId);
+        
+        if (updateError) {
+          console.error('Error updating profile:', updateError);
+          return new Response(
+            JSON.stringify({ error: updateError.message, success: false }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+          );
+        }
+        
         return new Response(
-          JSON.stringify({ error: updateError.message, success: false }),
+          JSON.stringify({ success: true, message: 'Profile updated successfully' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      } catch (updateErr) {
+        console.error('Error processing update:', updateErr);
+        return new Response(
+          JSON.stringify({ error: updateErr.message, success: false }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
         );
       }
-      
-      return new Response(
-        JSON.stringify({ success: true, message: 'Profile updated successfully' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
     }
     
     // Get the profile data directly using the service role

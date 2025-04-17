@@ -17,19 +17,17 @@ const GiftItem = ({
   onPurchase 
 }: { 
   type: 'rose' | 'heart' | 'teddy'; 
-  icon: React.ReactNode; 
+  icon: string; 
   price: number;
   onPurchase: (quantity: number) => void;
 }) => {
   const [quantity, setQuantity] = useState(1);
-  
-  const emoji = type === 'rose' ? '🌹' : type === 'heart' ? '❤️' : '🧸';
 
   return (
     <div className="border rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4">
       <div className="flex items-center gap-4">
         <div className="text-4xl flex items-center justify-center w-12 h-12">
-          {emoji}
+          {icon}
         </div>
         <div>
           <h3 className="font-medium capitalize">{type}</h3>
@@ -90,19 +88,19 @@ const Shop = () => {
               <CardContent className="space-y-4">
                 <GiftItem 
                   type="rose" 
-                  icon={<span className="text-4xl">🌹</span>} 
+                  icon="🌹" 
                   price={4.99} 
                   onPurchase={(quantity) => handlePurchase('rose', quantity)} 
                 />
                 <GiftItem 
                   type="heart" 
-                  icon={<span className="text-4xl">❤️</span>} 
+                  icon="❤️" 
                   price={9.99} 
                   onPurchase={(quantity) => handlePurchase('heart', quantity)} 
                 />
                 <GiftItem 
                   type="teddy" 
-                  icon={<span className="text-4xl">🧸</span>} 
+                  icon="🧸" 
                   price={14.99} 
                   onPurchase={(quantity) => handlePurchase('teddy', quantity)} 
                 />
