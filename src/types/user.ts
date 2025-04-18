@@ -25,7 +25,7 @@ export interface UserPreferences {
   };
 }
 
-// Make sure User interface includes preferences
+// Make sure User interface includes preferences and updated premiumStatus
 export interface User {
   id: string;
   name: string;
@@ -38,7 +38,7 @@ export interface User {
   gender: 'male' | 'female' | 'non-binary';
   interestedIn: ('male' | 'female' | 'non-binary')[];
   popularityPoints: number;
-  premiumStatus: 'basic' | 'premium' | 'vip' | 'trial';
+  premiumStatus: 'standard' | 'unlimited' | 'vip' | 'admin';
   giftInventory: GiftInventory;
   receivedGifts: GiftInventory;
   compatibilityScore: number;

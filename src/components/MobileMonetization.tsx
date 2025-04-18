@@ -41,7 +41,7 @@ const MobileMonetization = () => {
   };
   
   const earnings = calculateEarnings();
-  const isPremium = currentUser?.premiumStatus !== 'basic';
+  const isPremium = currentUser?.premiumStatus !== 'standard';
   
   // Calculate popularity score
   const popularityScore = (): number => {
@@ -108,7 +108,7 @@ const MobileMonetization = () => {
                 {isPremium ? (
                   <span className="text-amber-500">{currentUser?.premiumStatus}</span>
                 ) : (
-                  <span>Basic</span>
+                  <span>Standard</span>
                 )}
               </div>
             </div>
@@ -197,7 +197,7 @@ const MobileMonetization = () => {
       </Card>
       
       {/* Upgrade Banner */}
-      {!isPremium && (
+      {currentUser?.premiumStatus === 'standard' && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -208,9 +208,9 @@ const MobileMonetization = () => {
               <Gem className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-semibold text-love-800">Upgrade to VIP</h3>
+              <h3 className="font-semibold text-love-800">Upgrade Your Account</h3>
               <p className="text-sm text-love-600 mt-1">
-                Earn 2x more from gifts and increase your visibility
+                Get premium features with Unlimited or VIP subscription
               </p>
               <Button size="sm" className="mt-3 bg-love-500 hover:bg-love-600">
                 Upgrade Now

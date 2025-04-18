@@ -343,7 +343,7 @@ export type Database = {
         Returns: string
       }
       get_user_role: {
-        Args: { user_id: string }
+        Args: Record<PropertyKey, never> | { user_id: string }
         Returns: string
       }
       is_profile_owner: {
@@ -356,6 +356,14 @@ export type Database = {
       }
       update_profile_field: {
         Args: { profile_id: string; field_name: string; field_value: Json }
+        Returns: boolean
+      }
+      update_user_profile: {
+        Args: { profile_id: string; profile_data: Json }
+        Returns: boolean
+      }
+      user_has_subscription: {
+        Args: { user_id: string; required_level: string }
         Returns: boolean
       }
     }

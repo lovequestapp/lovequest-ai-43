@@ -17,7 +17,7 @@ export const useProtectedRoute = (options: {
   requireAuth?: boolean; 
   adminOnly?: boolean;
   moderatorOnly?: boolean;
-  requiredSubscription?: 'basic' | 'premium' | 'vip' | 'trial';
+  requiredSubscription?: 'standard' | 'unlimited' | 'vip' | 'admin';
 } = {}) => {
   const { 
     requireAuth = true, 
@@ -71,10 +71,10 @@ export const useProtectedRoute = (options: {
             
             if (requiredSubscription) {
               const subscriptionLevels = {
-                'basic': 0,
-                'trial': 1,
-                'premium': 2,
-                'vip': 3
+                'standard': 0,
+                'unlimited': 1,
+                'vip': 2,
+                'admin': 3
               };
               
               const userLevel = subscriptionLevels[subscription as keyof typeof subscriptionLevels] || 0;

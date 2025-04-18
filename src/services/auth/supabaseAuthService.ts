@@ -50,20 +50,7 @@ export class SupabaseAuthService implements AuthService {
         console.error("Error fetching profile:", profileError);
       }
       
-      // Check if trial has expired
-      if (profile?.premium_status === 'trial' && profile?.trial_end_date) {
-        const trialExpired = await checkTrialExpiration(
-          profile.trial_end_date,
-          data.user.id,
-          this.updateProfile
-        );
-        
-        if (trialExpired) {
-          profile.premium_status = 'basic';
-          toast.info("Your free trial has expired. You have been moved to our Basic plan.");
-        }
-      }
-
+      // We no longer need to check trial expiration, as we've moved to standard/unlimited/vip model
       const userObj = mapProfileToUser(profile, data.user.id, data.user.email || '');
       
       // Check if profile is incomplete - if bio is empty or no photos, redirect to profile setup
@@ -88,7 +75,7 @@ export class SupabaseAuthService implements AuthService {
     email: string, 
     password: string, 
     name: string, 
-    planType: string = 'free'
+    planType: string = 'standard'
   ): Promise<AuthResult> {
     try {
       // First, create the user account
@@ -111,14 +98,11 @@ export class SupabaseAuthService implements AuthService {
         return { success: false, error: "No user account created" };
       }
       
-      // Determine premium status and trial end date
-      let premiumStatus = 'basic';
-      let trialEndDate = null;
+      // Set premium status based on plan type
+      let premiumStatus = 'standard';
       
-      if (planType === 'premium' || planType === 'vip') {
-        // Set trial period for premium plans (3 days)
-        premiumStatus = 'trial';
-        trialEndDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+      if (planType === 'unlimited' || planType === 'vip' || planType === 'admin') {
+        premiumStatus = planType;
       }
 
       // Create profile record if we have a session
@@ -131,7 +115,6 @@ export class SupabaseAuthService implements AuthService {
             name,
             email,
             premium_status: premiumStatus,
-            trial_end_date: trialEndDate,
             created_at: new Date().toISOString(),
           });
 
@@ -144,10 +127,10 @@ export class SupabaseAuthService implements AuthService {
         const profile = await this.fetchUserProfile(data.user.id);
         const userObj = mapProfileToUser(profile, data.user.id, data.user.email || '');
         
-        if (planType === 'free') {
-          toast.success("Your free account has been created!");
+        if (planType === 'standard') {
+          toast.success("Your standard account has been created!");
         } else {
-          toast.success(`Your ${planType} subscription has been activated with a 3-day free trial!`);
+          toast.success(`Your ${planType} subscription has been activated!`);
         }
         
         return { 
@@ -329,7 +312,7 @@ export class SupabaseAuthService implements AuthService {
         return { 
           isLoggedIn: true, 
           role: 'admin', 
-          subscription: 'vip' 
+          subscription: 'admin' 
         };
       }
       
@@ -348,7 +331,7 @@ export class SupabaseAuthService implements AuthService {
       // Get user profile from the profiles table
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('role, premium_status, trial_end_date')
+        .select('role, premium_status')
         .eq('id', userId)
         .single();
         
@@ -357,31 +340,14 @@ export class SupabaseAuthService implements AuthService {
         return { 
           isLoggedIn: true, 
           role: 'subscriber', 
-          subscription: 'basic' 
+          subscription: 'standard' 
         };
-      }
-      
-      // Check if trial has expired
-      if (profileData.premium_status === 'trial' && profileData.trial_end_date) {
-        const trialExpired = await checkTrialExpiration(
-          profileData.trial_end_date,
-          userId,
-          this.updateProfile
-        );
-        
-        if (trialExpired) {
-          return { 
-            isLoggedIn: true, 
-            role: profileData.role || 'subscriber', 
-            subscription: 'basic' 
-          };
-        }
       }
       
       return { 
         isLoggedIn: true, 
         role: profileData.role || 'subscriber', 
-        subscription: profileData.premium_status || 'basic' 
+        subscription: profileData.premium_status || 'standard' 
       };
     } catch (error) {
       console.error("Error checking user role and subscription:", error);

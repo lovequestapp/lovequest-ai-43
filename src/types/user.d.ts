@@ -11,7 +11,7 @@ export interface User {
   gender: 'male' | 'female' | 'non-binary';
   interestedIn: ('male' | 'female' | 'non-binary')[];
   popularityPoints: number;
-  premiumStatus: 'basic' | 'premium' | 'vip' | 'trial';
+  premiumStatus: 'standard' | 'unlimited' | 'vip' | 'admin';
   giftInventory: {
     rose: number;
     heart: number;
