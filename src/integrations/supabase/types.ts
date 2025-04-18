@@ -42,6 +42,45 @@ export type Database = {
         }
         Relationships: []
       }
+      matches: {
+        Row: {
+          created_at: string
+          id: string
+          status: string | null
+          user1_id: string | null
+          user2_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string | null
+          user1_id?: string | null
+          user2_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string | null
+          user1_id?: string | null
+          user2_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matches_user1_id_fkey"
+            columns: ["user1_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matches_user2_id_fkey"
+            columns: ["user2_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           content: string | null
@@ -156,6 +195,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          max_age: number | null
+          max_distance: number | null
+          min_age: number | null
+          preferred_gender: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          max_age?: number | null
+          max_distance?: number | null
+          min_age?: number | null
+          preferred_gender?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_age?: number | null
+          max_distance?: number | null
+          min_age?: number | null
+          preferred_gender?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       verification_notifications: {
         Row: {
           created_at: string | null
@@ -241,7 +310,7 @@ export type Database = {
         Returns: Json
       }
       get_profile_by_id: {
-        Args: { profile_id: string }
+        Args: { profile_id: string } | { user_id: number }
         Returns: {
           age: number | null
           bio: string | null
@@ -269,12 +338,16 @@ export type Database = {
           voice_intro: string | null
         }[]
       }
+      get_user_profile_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_role: {
         Args: { user_id: string }
         Returns: string
       }
       is_profile_owner: {
-        Args: { profile_id: string }
+        Args: Record<PropertyKey, never> | { profile_id: string }
         Returns: boolean
       }
       update_profile_data: {
