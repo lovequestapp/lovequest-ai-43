@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +12,8 @@ import ProfileSetupProgress from '@/components/profile-setup/ProfileSetupProgres
 import ProfileSetupFooter from '@/components/profile-setup/ProfileSetupFooter';
 import LocationSelector from '@/components/profile-setup/LocationSelector';
 import InterestsForm from '@/components/profile-setup/InterestsForm';
-import { updateProfileData, uploadProfilePhoto, saveVoiceIntro } from '@/services/profileService';
+import { directProfileUpdate } from '@/utils/directProfileUpdate';
+import { uploadProfilePhoto, saveVoiceIntro } from '@/services/profileService';
 import { User } from '@/types/user';
 
 const ProfileSetupPage = () => {
@@ -209,8 +209,10 @@ const ProfileSetupPage = () => {
         photos
       };
       
-      // Update profile
-      const success = await updateProfileData(currentUser.id, updateData);
+      console.log('Submitting profile data:', updateData);
+      
+      // First, try to use directProfileUpdate utility which has improved RLS handling
+      const success = await directProfileUpdate(currentUser.id, updateData);
       
       // If we have a voice note, save it separately
       if (voiceNote && success) {

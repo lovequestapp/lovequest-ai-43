@@ -29,7 +29,7 @@ const userToJsonObject = (userData: Partial<User>): Record<string, any> => {
 };
 
 /**
- * Update a user profile directly with the new RLS policies
+ * Update a user profile directly with simple RLS policy approach
  */
 export const directProfileUpdate = async (userId: string, data: Partial<User>): Promise<boolean> => {
   if (!userId) {
@@ -43,7 +43,7 @@ export const directProfileUpdate = async (userId: string, data: Partial<User>): 
     // Convert to JSON-compatible format
     const jsonData = userToJsonObject(data);
     
-    // Map the data to database fields
+    // Map the data to database fields with correct names
     const updateData = {
       name: jsonData.name,
       bio: jsonData.bio,
@@ -59,14 +59,27 @@ export const directProfileUpdate = async (userId: string, data: Partial<User>): 
       updated_at: new Date().toISOString()
     };
 
-    // Direct update using new RLS policies
-    const { error } = await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('id', userId);
+    // Try direct update with RPC function to bypass recursion issues
+    const { data: result, error: rpcError } = await supabase.rpc(
+      'update_profile_data',
+      {
+        profile_id: userId,
+        profile_data: updateData
+      }
+    );
     
-    if (error) {
-      throw error;
+    if (rpcError) {
+      console.error('RPC update failed, falling back to direct update:', rpcError);
+      
+      // Fall back to direct update
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', userId);
+      
+      if (error) {
+        throw error;
+      }
     }
     
     console.log('Profile update successful');
