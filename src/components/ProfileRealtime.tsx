@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types/user';
+import { convertPremiumStatus } from '@/utils/subscription';
 
 interface ProfileRealtimeProps {
   onProfileInsert?: (profile: User) => void;
@@ -30,30 +31,8 @@ const ProfileRealtime = ({
           
           // Map Supabase profile fields to our app's User interface
           const mapDatabaseRecordToUser = (record: any): User => {
-            // Map premium_status to correct value
-            let premiumStatus: 'standard' | 'unlimited' | 'vip' | 'admin' = 'standard';
-            
-            if (record.premium_status) {
-              switch(record.premium_status) {
-                case 'basic':
-                  premiumStatus = 'standard';
-                  break;
-                case 'premium':
-                  premiumStatus = 'unlimited';
-                  break;
-                case 'trial':
-                  premiumStatus = 'standard';
-                  break;
-                case 'standard':
-                case 'unlimited':
-                case 'vip':
-                case 'admin':
-                  premiumStatus = record.premium_status;
-                  break;
-                default:
-                  premiumStatus = 'standard';
-              }
-            }
+            // Convert premium_status to the correct value using our utility
+            const premiumStatus = convertPremiumStatus(record.premium_status || 'standard');
             
             return {
               id: record.id,

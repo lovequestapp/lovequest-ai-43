@@ -1,5 +1,6 @@
 
 import { User } from '@/types/user';
+import { convertPremiumStatus } from '@/utils/subscription';
 
 // Helper function to create an admin user
 export const createAdminUser = (): User => {
@@ -43,25 +44,6 @@ export const isAdminCredentials = (email: string, password: string): boolean => 
   return email === "hunainm.qureshi@gmail.com" && password === "LoveQuest14";
 };
 
-// Helper function to convert old premium status values to new ones
-export const convertPremiumStatus = (status: string): 'standard' | 'unlimited' | 'vip' | 'admin' => {
-  switch(status) {
-    case 'basic':
-      return 'standard';
-    case 'premium':
-      return 'unlimited';
-    case 'trial':
-      return 'standard';
-    case 'standard':
-    case 'unlimited':
-    case 'vip':
-    case 'admin':
-      return status as 'standard' | 'unlimited' | 'vip' | 'admin';
-    default:
-      return 'standard';
-  }
-};
-
 // Map database profile to User object
 export const mapProfileToUser = (profile: any, userId: string, email: string): User => {
   // Handle type-safe gender
@@ -78,7 +60,7 @@ export const mapProfileToUser = (profile: any, userId: string, email: string): U
     ) as ('male' | 'female' | 'non-binary')[] :
     [] as ('male' | 'female' | 'non-binary')[];
   
-  // Handle type-safe premiumStatus  
+  // Handle type-safe premiumStatus using our conversion util
   const premiumStatus = convertPremiumStatus(profile?.premium_status || 'standard');
     
   // Handle type-safe role

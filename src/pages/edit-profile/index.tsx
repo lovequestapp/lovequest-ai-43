@@ -20,7 +20,7 @@ import { User } from '@/types/user';
 import EditProfileForm from '@/components/profile-editor/EditProfileForm';
 import { useDirectProfileUpdate } from '@/hooks/useDirectProfileUpdate';
 import { directProfileUpdate } from '@/utils/directProfileUpdate';
-import { convertPremiumStatus } from '@/utils/premiumStatusUtils';
+import { convertPremiumStatus } from '@/utils/subscription';
 
 const EditProfilePage = () => {
   const { currentUser } = useUser();

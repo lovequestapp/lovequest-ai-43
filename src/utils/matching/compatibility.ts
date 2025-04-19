@@ -1,5 +1,6 @@
 import { calculateDistance } from './distance';
 import type { User, UserWithCoordinates } from '@/types/user';
+import { convertPremiumStatus } from '@/utils/subscription';
 
 // Calculate interests score
 export const calculateInterestsScore = (user1: User, user2: User): number => {
@@ -102,9 +103,12 @@ export const calculateCompatibilityScore = (user1: User, user2: User): number =>
   // Boost based on premium status
   let boostedScore = weightedScore;
   
-  if (user2.premiumStatus === 'premium') {
+  // Convert the premium status before comparison
+  const normalizedStatus = convertPremiumStatus(user2.premiumStatus);
+  
+  if (normalizedStatus === 'unlimited') {
     boostedScore += (100 - weightedScore) * 0.1;
-  } else if (user2.premiumStatus === 'vip') {
+  } else if (normalizedStatus === 'vip') {
     boostedScore += (100 - weightedScore) * 0.2;
   }
 

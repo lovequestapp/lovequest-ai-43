@@ -18,6 +18,8 @@ import GiftShop from '@/components/GiftShop';
 import ProfileDetails from '@/pages/ProfileDetails';
 import MobileToolbar from '@/components/MobileToolbar';
 import { Layout } from '@/components/layout';
+import SubscriptionBadge from '@/components/SubscriptionBadge';
+import { convertPremiumStatus } from '@/utils/subscription';
 
 const UserProfile = () => {
   const { currentUser, setCurrentUser } = useUser();
@@ -103,34 +105,8 @@ const UserProfile = () => {
   };
 
   const getSubscriptionBadge = () => {
-    const subscription = currentUser?.premiumStatus || 'basic';
-    
-    switch(subscription) {
-      case 'vip':
-        return (
-          <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white ml-2">
-            VIP
-          </Badge>
-        );
-      case 'premium':
-        return (
-          <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white ml-2">
-            Premium
-          </Badge>
-        );
-      case 'trial':
-        return (
-          <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white ml-2">
-            Trial
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className="bg-gradient-to-r from-gray-400 to-gray-500 text-white ml-2">
-            Basic
-          </Badge>
-        );
-    }
+    const subscription = currentUser?.premiumStatus || 'standard';
+    return <SubscriptionBadge status={subscription} className="ml-2" />;
   };
 
   return (

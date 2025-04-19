@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +15,7 @@ import GiftInventory from '@/components/GiftInventory';
 import GiftTransactionHistory from '@/components/GiftTransactionHistory';
 import GiftShop from '@/components/GiftShop';
 import ProfileDetails from '@/pages/ProfileDetails';
+import SubscriptionBadge from '@/components/SubscriptionBadge';
 
 const Profile = () => {
   const { currentUser, setCurrentUser } = useUser();
@@ -101,33 +101,7 @@ const Profile = () => {
 
   const getSubscriptionBadge = () => {
     const subscription = currentUser?.premiumStatus || 'standard';
-    
-    switch(subscription) {
-      case 'vip':
-        return (
-          <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white ml-2">
-            VIP
-          </Badge>
-        );
-      case 'unlimited':
-        return (
-          <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white ml-2">
-            Unlimited
-          </Badge>
-        );
-      case 'admin':
-        return (
-          <Badge className="bg-gradient-to-r from-red-500 to-rose-500 text-white ml-2">
-            Admin
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className="bg-gradient-to-r from-gray-400 to-gray-500 text-white ml-2">
-            Standard
-          </Badge>
-        );
-    }
+    return <SubscriptionBadge status={subscription} className="ml-2" />;
   };
 
   return (

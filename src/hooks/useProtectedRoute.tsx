@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
 import authService from '@/services/auth';
-import { convertPremiumStatus } from '@/services/auth/utils';
+import { convertPremiumStatus } from '@/utils/subscription';
 
 /**
  * Hook to protect routes that require authentication
@@ -57,7 +57,7 @@ export const useProtectedRoute = (options: {
             const { role, subscription } = await authService.checkUserRoleAndSubscription();
             setUserRole(role);
             
-            // Convert old subscription values to new ones if needed
+            // Convert old subscription values to new ones
             const normalizedSubscription = convertPremiumStatus(subscription || 'standard');
             setUserSubscription(normalizedSubscription);
             

@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
+import { convertPremiumStatus } from '@/utils/subscription';
+import SubscriptionBadge from './SubscriptionBadge';
 
 export const Navbar = () => {
   const location = useLocation();
@@ -68,10 +70,8 @@ export const Navbar = () => {
                         <div>
                           <p className="font-semibold text-love-900">{currentUser.name}</p>
                           <p className="text-xs text-gray-500">{currentUser.email}</p>
-                          {currentUser.premiumStatus !== 'basic' && (
-                            <span className="inline-flex mt-1 items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                              {currentUser.premiumStatus.charAt(0).toUpperCase() + currentUser.premiumStatus.slice(1)}
-                            </span>
+                          {currentUser.premiumStatus !== convertPremiumStatus('standard') && (
+                            <SubscriptionBadge status={currentUser.premiumStatus} className="mt-1" />
                           )}
                         </div>
                       </div>
