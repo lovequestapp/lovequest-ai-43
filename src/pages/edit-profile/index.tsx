@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/header/Header';
@@ -99,8 +98,8 @@ const EditProfilePage = () => {
           };
           
           try {
-            // Type assertion to access bank_details as any
-            const bankData = data.bank_details || null;
+            // Use type assertion to access the bank_details property
+            const bankData = (data as any).bank_details || null;
             if (bankData) {
               const parsedBankData = typeof bankData === 'string' 
                 ? JSON.parse(bankData)
@@ -308,4 +307,3 @@ const EditProfilePage = () => {
 };
 
 export default EditProfilePage;
-
