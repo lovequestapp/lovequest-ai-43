@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/header/Header';
@@ -98,17 +99,19 @@ const EditProfilePage = () => {
           };
           
           try {
-            if (data.bank_details) {
-              const bankData = typeof data.bank_details === 'string' 
-                ? JSON.parse(data.bank_details)
-                : data.bank_details;
+            // Type assertion to access bank_details as any
+            const bankData = data.bank_details || null;
+            if (bankData) {
+              const parsedBankData = typeof bankData === 'string' 
+                ? JSON.parse(bankData)
+                : bankData;
                 
               bankDetails = {
-                accountName: bankData.accountName || '',
-                accountNumber: bankData.accountNumber || '',
-                bankName: bankData.bankName || '',
-                routingNumber: bankData.routingNumber || '',
-                accountType: bankData.accountType || ''
+                accountName: parsedBankData.accountName || '',
+                accountNumber: parsedBankData.accountNumber || '',
+                bankName: parsedBankData.bankName || '',
+                routingNumber: parsedBankData.routingNumber || '',
+                accountType: parsedBankData.accountType || ''
               };
             }
           } catch (e) {
@@ -305,3 +308,4 @@ const EditProfilePage = () => {
 };
 
 export default EditProfilePage;
+
