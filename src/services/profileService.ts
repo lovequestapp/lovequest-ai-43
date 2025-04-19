@@ -265,10 +265,16 @@ export const updateBankDetails = async (userId: string, bankDetails: {
   accountType: string;
 }): Promise<boolean> => {
   try {
+    // Instead of trying to update a non-existent bank_details field,
+    // store the individual bank details fields
     const { error } = await supabase
       .from('profiles')
       .update({
-        bank_details: bankDetails
+        bank_account_name: bankDetails.accountName,
+        bank_account_number: bankDetails.accountNumber,
+        bank_name: bankDetails.bankName,
+        bank_routing_number: bankDetails.routingNumber,
+        bank_account_type: bankDetails.accountType
       })
       .eq('id', userId);
 
