@@ -15,7 +15,7 @@ export const createAdminUser = (): User => {
     gender: 'non-binary',
     interestedIn: ['male', 'female', 'non-binary'],
     popularityPoints: 100,
-    premiumStatus: 'vip',
+    premiumStatus: 'admin',
     giftInventory: { rose: 999, heart: 999, teddy: 999 },
     receivedGifts: { rose: 0, heart: 0, teddy: 0 },
     compatibilityScore: 0,
@@ -59,16 +59,21 @@ export const mapProfileToUser = (profile: any, userId: string, email: string): U
     ) as ('male' | 'female' | 'non-binary')[] :
     [] as ('male' | 'female' | 'non-binary')[];
     
-  // Handle type-safe premiumStatus
-  const premiumStatus = profile?.premium_status || 'basic';
+  // Handle type-safe premiumStatus  
+  let premiumStatus = profile?.premium_status || 'standard';
+  // Convert old status values to new ones
+  if (premiumStatus === 'basic') premiumStatus = 'standard';
+  if (premiumStatus === 'premium') premiumStatus = 'unlimited';
+  if (premiumStatus === 'trial') premiumStatus = 'standard';
+  
   const validPremiumStatus = (
-    premiumStatus === 'basic' || 
-    premiumStatus === 'premium' || 
+    premiumStatus === 'standard' || 
+    premiumStatus === 'unlimited' || 
     premiumStatus === 'vip' || 
-    premiumStatus === 'trial'
+    premiumStatus === 'admin'
   )
-    ? premiumStatus as 'basic' | 'premium' | 'vip' | 'trial'
-    : 'basic' as const;
+    ? premiumStatus as 'standard' | 'unlimited' | 'vip' | 'admin'
+    : 'standard' as const;
     
   // Handle type-safe role
   const role = profile?.role || 'subscriber';
@@ -138,9 +143,9 @@ export const checkTrialExpiration = async (
   const now = new Date();
   
   if (now > endDate) {
-    // Trial has expired, update to basic
+    // Trial has expired, update to standard
     try {
-      await updateProfileFn(userId, { premium_status: 'basic' });
+      await updateProfileFn(userId, { premium_status: 'standard' });
       return true;
     } catch (error) {
       console.error('Error updating expired trial status:', error);

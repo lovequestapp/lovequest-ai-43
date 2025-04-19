@@ -359,7 +359,9 @@ export type Database = {
         Returns: boolean
       }
       update_user_profile: {
-        Args: { profile_id: string; profile_data: Json }
+        Args:
+          | { profile_data: Json }
+          | { profile_id: string; profile_data: Json }
         Returns: boolean
       }
       user_has_subscription: {

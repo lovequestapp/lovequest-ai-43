@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface UseProtectedRouteProps {
   requireAuth?: boolean;
   requiredRole?: 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial';
-  requiredSubscription?: 'basic' | 'premium' | 'vip' | 'trial';
+  requiredSubscription?: 'standard' | 'unlimited' | 'vip' | 'admin';
   redirectPath?: string;
 }
 
@@ -80,7 +80,14 @@ export const useProtectedRoute = ({
               
             if (profileData) {
               setUserRole(profileData.role);
-              setUserSubscription(profileData.premium_status);
+              
+              // Convert old premium status to new format if needed
+              let premiumStatus = profileData.premium_status;
+              if (premiumStatus === 'basic') premiumStatus = 'standard';
+              if (premiumStatus === 'premium') premiumStatus = 'unlimited';
+              if (premiumStatus === 'trial') premiumStatus = 'standard';
+              
+              setUserSubscription(premiumStatus);
               
               // Check role requirements
               if (requiredRole && profileData.role !== requiredRole) {
@@ -89,7 +96,7 @@ export const useProtectedRoute = ({
               }
               
               // Check subscription requirements
-              if (requiredSubscription && profileData.premium_status !== requiredSubscription) {
+              if (requiredSubscription && premiumStatus !== requiredSubscription) {
                 navigate('/pricing');
                 return;
               }

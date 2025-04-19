@@ -72,7 +72,7 @@ export interface UserProfile {
   interests: string[];
   personalityTraits: string[];
   compatibilityScore: number;
-  premiumStatus: 'basic' | 'premium' | 'vip' | 'trial';
+  premiumStatus: 'standard' | 'unlimited' | 'vip' | 'admin';
   verificationStatus: 'verified' | 'unverified' | 'pending' | 'rejected';
 }
 
