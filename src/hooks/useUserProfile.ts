@@ -43,8 +43,15 @@ export const useUserProfile = () => {
       
       console.log('Attempting profile update with data:', data);
       
+      // Prepare bank details for database if present
+      const preparedData = { ...data };
+      if (preparedData.bankDetails) {
+        // This will be handled by directProfileUpdate which knows to convert it to a JSON string
+        console.log('Bank details included in update:', preparedData.bankDetails);
+      }
+      
       // Try the direct profile update utility first
-      const directSuccess = await directProfileUpdate(currentUser.id, data);
+      const directSuccess = await directProfileUpdate(currentUser.id, preparedData);
       
       if (!directSuccess) {
         console.log('Direct update failed, trying fallback methods');
@@ -59,6 +66,23 @@ export const useUserProfile = () => {
           try {
             const fieldName = mapFieldToDbColumn(key as keyof User);
             if (!fieldName) continue;
+            
+            // Special handling for bank details
+            if (key === 'bankDetails' && value) {
+              const bankDetailsJson = JSON.stringify(value);
+              
+              const { error: bankError } = await supabase
+                .from('profiles')
+                .update({ bank_details: bankDetailsJson })
+                .eq('id', currentUser.id);
+                
+              if (!bankError) {
+                anyFieldUpdated = true;
+                console.log('Successfully updated bank details');
+              }
+              
+              continue;
+            }
             
             const jsonValue = JSON.parse(JSON.stringify(value));
             
@@ -110,6 +134,30 @@ export const useUserProfile = () => {
         throw new Error('User not authenticated');
       }
       
+      // Special handling for bank details
+      if (field === 'bankDetails' && value) {
+        const bankDetailsJson = JSON.stringify(value);
+        
+        const { error: bankError } = await supabase
+          .from('profiles')
+          .update({ bank_details: bankDetailsJson })
+          .eq('id', currentUser.id);
+          
+        if (bankError) {
+          throw new Error(`Failed to update bank details: ${bankError.message}`);
+        }
+        
+        // Update in context
+        const success = await updateProfileField(field, value);
+        
+        if (success) {
+          toast.success(`Updated bank details`);
+          return true;
+        }
+        
+        return true;
+      }
+      
       // Convert value to JSON-compatible format
       const jsonValue = JSON.parse(JSON.stringify(value));
       
@@ -122,7 +170,7 @@ export const useUserProfile = () => {
       console.log(`Updating field ${dbField} with value:`, jsonValue);
       
       // Use the database function
-      const { data: result, error } = await supabase
+      const { error } = await supabase
         .rpc('update_profile_field', {
           profile_id: currentUser.id,
           field_name: dbField,
@@ -186,7 +234,8 @@ export const useUserProfile = () => {
       personalityTraits: 'personality_traits',
       photos: 'photos',
       favoriteMusic: 'favorite_music',
-      voiceIntro: 'voice_intro'
+      voiceIntro: 'voice_intro',
+      bankDetails: 'bank_details'
     };
     
     return fieldMap[field as string] || null;
@@ -222,21 +271,8 @@ export const useUserProfile = () => {
           .maybeSingle();
           
         if (directError || !directData) {
-          console.log('Direct query failed, trying edge function');
-          
-          // Try the edge function as final fallback
-          const { data: edgeData, error: edgeError } = await supabase.functions
-            .invoke('get_profile_by_id', {
-              body: { profileId: userId }
-            });
-            
-          if (edgeError || !edgeData || !edgeData.data) {
-            console.error('Edge function failed or returned no data');
-            return null;
-          }
-          
-          console.log('Successfully retrieved profile via edge function');
-          return edgeData.data;
+          console.log('Direct query failed');
+          return null;
         }
         
         console.log('Successfully retrieved profile via direct query');

@@ -2,7 +2,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Home, Compass, MessageSquare, Users, User, ShoppingBag, BookOpen } from 'lucide-react';
+import { Home, MessageSquare, Users, User, ShoppingBag, BookOpen } from 'lucide-react';
 
 interface NavItemsProps {
   isAuthenticated: boolean;
@@ -22,7 +22,6 @@ const NavItems = ({ isAuthenticated, isMobile = false, closeDrawer = () => {} }:
 
   // Navigation items for authenticated users
   const AUTH_NAV_ITEMS = [
-    { name: 'Discover', path: '/discover', icon: <Compass className="h-4 w-4 mr-2" /> },
     { name: 'Messages', path: '/messages', icon: <MessageSquare className="h-4 w-4 mr-2" /> },
     { name: 'Matches', path: '/matches', icon: <Users className="h-4 w-4 mr-2" /> },
     { name: 'Profile', path: '/user-profile', icon: <User className="h-4 w-4 mr-2" /> },

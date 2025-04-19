@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
 import { convertPremiumStatus } from '@/utils/subscription';
 
@@ -149,117 +149,6 @@ export const deleteProfilePhoto = async (photoUrl: string): Promise<boolean> => 
   }
 };
 
-// Function to fetch users by location
-export const fetchUsersByLocation = async (location: string): Promise<User[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .ilike('location', `%${location}%`);
-  
-      if (error) {
-        console.error('Error fetching users by location:', error);
-        return [];
-      }
-  
-      if (!data) {
-        console.log('No users found in this location');
-        return [];
-      }
-  
-      return data.map(record => mapDatabaseRecordToUser(record, record.id));
-    } catch (error) {
-      console.error('Unexpected error fetching users by location:', error);
-      return [];
-    }
-  };
-
-// Function to fetch users by interests
-export const fetchUsersByInterest = async (interest: string): Promise<User[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .contains('interests', [interest]);
-
-    if (error) {
-      console.error('Error fetching users by interest:', error);
-      return [];
-    }
-
-    if (!data) {
-      console.log('No users found with this interest');
-      return [];
-    }
-
-    return data.map(record => mapDatabaseRecordToUser(record, record.id));
-  } catch (error) {
-    console.error('Unexpected error fetching users by interest:', error);
-    return [];
-  }
-};
-
-// Function to fetch users by gender preference
-export const fetchUsersByGenderPreference = async (gender: 'male' | 'female' | 'non-binary'): Promise<User[]> => {
-  try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .contains('interested_in', [gender]);
-
-    if (error) {
-      console.error('Error fetching users by gender preference:', error);
-      return [];
-    }
-
-    if (!data) {
-      console.log('No users found with this gender preference');
-      return [];
-    }
-
-    return data.map(record => mapDatabaseRecordToUser(record, record.id));
-  } catch (error) {
-    console.error('Unexpected error fetching users by gender preference:', error);
-    return [];
-  }
-};
-
-// Function to update user location
-export const updateUserLocation = async (userId: string, latitude: number, longitude: number): Promise<boolean> => {
-  try {
-    // First, attempt to get the city from reverse geocoding
-    const reverseGeocodingUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
-    const response = await fetch(reverseGeocodingUrl);
-    const data = await response.json();
-
-    let city = 'Unknown';
-    if (data && data.address && data.address.city) {
-      city = data.address.city;
-    } else if (data && data.address && data.address.town) {
-      city = data.address.town;
-    } else if (data && data.address && data.address.village) {
-      city = data.address.village;
-    }
-
-    // Update the profile with the city
-    const { error } = await supabase
-      .from('profiles')
-      .update({ location: city })
-      .eq('id', userId);
-
-    if (error) {
-      console.error('Error updating user location:', error);
-      return false;
-    }
-
-    console.log('User location updated successfully');
-    return true;
-  } catch (error) {
-    console.error('Unexpected error updating user location:', error);
-    return false;
-  }
-};
-
 // Update bank details
 export const updateBankDetails = async (userId: string, bankDetails: {
   accountName: string;
@@ -270,15 +159,8 @@ export const updateBankDetails = async (userId: string, bankDetails: {
 }): Promise<boolean> => {
   try {
     // Create a serialized JSON object to store bank details
-    const bankDetailsJson = JSON.stringify({
-      accountName: bankDetails.accountName,
-      accountNumber: bankDetails.accountNumber,
-      bankName: bankDetails.bankName,
-      routingNumber: bankDetails.routingNumber,
-      accountType: bankDetails.accountType
-    });
+    const bankDetailsJson = JSON.stringify(bankDetails);
     
-    // Use our new helper function to update
     const { error } = await supabase
       .from('profiles')
       .update({ bank_details: bankDetailsJson })
@@ -295,59 +177,6 @@ export const updateBankDetails = async (userId: string, bankDetails: {
     console.error('Unexpected error updating bank details:', error);
     return false;
   }
-};
-
-// Initiate withdrawal
-export const initiateWithdrawal = async (
-  userId: string,
-  amount: number, 
-  method: 'bank' | 'paypal'
-): Promise<boolean> => {
-  try {
-    // In a real app, you would create a withdrawal record in your database
-    // and potentially integrate with a payment processor
-    console.log(`Withdrawal initiated: $${amount} via ${method} for user ${userId}`);
-    
-    // For demo purposes, we'll just return success
-    // In a real app you might create a record in a withdrawals table
-    return true;
-  } catch (error) {
-    console.error('Unexpected error initiating withdrawal:', error);
-    return false;
-  }
-};
-
-// Helper function to prepare user data for database update
-const prepareUserDataForDatabase = (userData: Partial<User>): Record<string, any> => {
-  const dbData: Record<string, any> = {};
-  
-  // Map User object fields to database column names
-  if (userData.name !== undefined) dbData.name = userData.name;
-  if (userData.bio !== undefined) dbData.bio = userData.bio;
-  if (userData.age !== undefined) dbData.age = userData.age;
-  if (userData.location !== undefined) dbData.location = userData.location;
-  if (userData.interests !== undefined) dbData.interests = userData.interests;
-  if (userData.photos !== undefined) dbData.photos = userData.photos;
-  if (userData.gender !== undefined) dbData.gender = userData.gender;
-  if (userData.interestedIn !== undefined) dbData.interested_in = userData.interestedIn;
-  if (userData.personalityTraits !== undefined) dbData.personality_traits = userData.personalityTraits;
-  if (userData.favoriteMusic !== undefined) dbData.favorite_music = userData.favoriteMusic;
-  if (userData.voiceIntro !== undefined) dbData.voice_intro = userData.voiceIntro;
-  
-  // Handle bank details
-  if (userData.bankDetails) {
-    dbData.bank_details = JSON.stringify({
-      accountName: userData.bankDetails.accountName,
-      accountNumber: userData.bankDetails.accountNumber,
-      bankName: userData.bankDetails.bankName,
-      routingNumber: userData.bankDetails.routingNumber,
-      accountType: userData.bankDetails.accountType
-    });
-  }
-  
-  dbData.updated_at = new Date().toISOString();
-  
-  return dbData;
 };
 
 // Update profile data with a single field or set of fields
@@ -377,30 +206,40 @@ export const updateProfileData = async (
   }
 };
 
-// Save voice intro for a user
-export const saveVoiceIntro = async (
-  userId: string, 
-  voiceIntroUrl: string
-): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ voice_intro: voiceIntroUrl })
-      .eq('id', userId);
-
-    if (error) {
-      console.error('Error saving voice intro:', error);
-      return false;
-    }
-
-    console.log('Voice intro saved successfully');
-    return true;
-  } catch (error) {
-    console.error('Unexpected error saving voice intro:', error);
-    return false;
+// Helper function to prepare user data for database update
+const prepareUserDataForDatabase = (userData: Partial<User>): Record<string, any> => {
+  const dbData: Record<string, any> = {};
+  
+  // Map User object fields to database column names
+  if (userData.name !== undefined) dbData.name = userData.name;
+  if (userData.bio !== undefined) dbData.bio = userData.bio;
+  if (userData.age !== undefined) dbData.age = userData.age;
+  if (userData.location !== undefined) dbData.location = userData.location;
+  if (userData.interests !== undefined) dbData.interests = userData.interests;
+  if (userData.photos !== undefined) dbData.photos = userData.photos;
+  if (userData.gender !== undefined) dbData.gender = userData.gender;
+  if (userData.interestedIn !== undefined) dbData.interested_in = userData.interestedIn;
+  if (userData.personalityTraits !== undefined) dbData.personality_traits = userData.personalityTraits;
+  if (userData.favoriteMusic !== undefined) dbData.favorite_music = userData.favoriteMusic;
+  if (userData.voiceIntro !== undefined) dbData.voice_intro = userData.voiceIntro;
+  
+  // Handle bank details - store as JSON string
+  if (userData.bankDetails) {
+    dbData.bank_details = JSON.stringify({
+      accountName: userData.bankDetails.accountName,
+      accountNumber: userData.bankDetails.accountNumber,
+      bankName: userData.bankDetails.bankName,
+      routingNumber: userData.bankDetails.routingNumber,
+      accountType: userData.bankDetails.accountType
+    });
   }
+  
+  dbData.updated_at = new Date().toISOString();
+  
+  return dbData;
 };
 
+// Function to map database record to User type
 export const mapDatabaseRecordToUser = (record: any, userId: string = ''): User => {
   // Ensure default values are provided for all fields
   const gender = record.gender || 'non-binary';
@@ -493,4 +332,28 @@ export const mapDatabaseRecordToUser = (record: any, userId: string = ''): User 
     voiceIntro: record.voice_intro || '',
     bankDetails
   };
+};
+
+// Save voice intro for a user
+export const saveVoiceIntro = async (
+  userId: string, 
+  voiceIntroUrl: string
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ voice_intro: voiceIntroUrl })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error saving voice intro:', error);
+      return false;
+    }
+
+    console.log('Voice intro saved successfully');
+    return true;
+  } catch (error) {
+    console.error('Unexpected error saving voice intro:', error);
+    return false;
+  }
 };

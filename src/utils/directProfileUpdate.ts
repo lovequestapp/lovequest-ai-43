@@ -44,7 +44,7 @@ export const directProfileUpdate = async (userId: string, data: Partial<User>): 
     const jsonData = userToJsonObject(data);
     
     // Map the data to database fields with correct names
-    const updateData = {
+    const updateData: Record<string, any> = {
       name: jsonData.name,
       bio: jsonData.bio,
       age: jsonData.age,
@@ -59,8 +59,26 @@ export const directProfileUpdate = async (userId: string, data: Partial<User>): 
       updated_at: new Date().toISOString()
     };
 
+    // Special handling for bank details
+    if (data.bankDetails) {
+      updateData.bank_details = JSON.stringify({
+        accountName: data.bankDetails.accountName,
+        accountNumber: data.bankDetails.accountNumber,
+        bankName: data.bankDetails.bankName,
+        routingNumber: data.bankDetails.routingNumber,
+        accountType: data.bankDetails.accountType
+      });
+    }
+
+    // Clean any undefined values
+    Object.keys(updateData).forEach(key => {
+      if (updateData[key] === undefined) {
+        delete updateData[key];
+      }
+    });
+
     // Try direct update with RPC function to bypass recursion issues
-    const { data: result, error: rpcError } = await supabase.rpc(
+    const { error: rpcError } = await supabase.rpc(
       'update_profile_data',
       {
         profile_id: userId,

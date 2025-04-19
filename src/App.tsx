@@ -7,7 +7,6 @@ import {
   Login,
   Profile,
   Messages,
-  EditProfile,
   Discover,
   Matches,
   Admin,
@@ -27,7 +26,6 @@ import { UserProvider } from '@/context/UserContext';
 import { CartProvider } from '@/context/CartContext';
 import ProtectedRoute from '@/components/protected-route';
 import NotFound from '@/components/404';
-import { Layout } from '@/components/layout';
 
 const App = () => {
   return (
@@ -49,7 +47,6 @@ const App = () => {
           <Route path="/profile-setup" element={<ProtectedRoute><ProfileSetup /></ProtectedRoute>} />
           <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
           <Route path="/messages/:userId" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-          <Route path="/edit-profile" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
           <Route path="/discover" element={<ProtectedRoute><Discover /></ProtectedRoute>} />
           <Route path="/matches" element={<ProtectedRoute><Matches /></ProtectedRoute>} />
           <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

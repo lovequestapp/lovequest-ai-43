@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Heart, MessageCircle, Calendar, LayoutDashboard, LogOut, LogIn, User, Home, Compass, BookOpen } from 'lucide-react';
+import { Heart, MessageCircle, LogOut, LogIn, User, Home, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/context/UserContext';
 import { Button } from "@/components/ui/button";
@@ -23,9 +23,6 @@ const MobileToolbar = () => {
     if (path === '/' && currentPath === '/') {
       return true;
     }
-    if (path === '/discover' && (currentPath === '/discover' || currentPath.startsWith('/discover'))) {
-      return true;
-    }
     if (path === '/matches' && (currentPath === '/matches' || currentPath.startsWith('/profile'))) {
       return true;
     }
@@ -33,12 +30,6 @@ const MobileToolbar = () => {
       return true;
     }
     if (path === '/blog' && (currentPath === '/blog' || currentPath.startsWith('/blog/'))) {
-      return true;
-    }
-    if (path === '/dates' && currentPath === '/dates') {
-      return true;
-    }
-    if (path === '/admin' && currentPath === '/admin') {
       return true;
     }
     if (path === '/user-profile' && currentPath === '/user-profile') {
@@ -70,19 +61,6 @@ const MobileToolbar = () => {
             </Link>
             
             <Link 
-              to="/discover" 
-              className={cn(
-                "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
-                isActive('/discover') 
-                  ? "text-love-500" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Compass size={22} className={cn(isActive('/discover') ? "fill-love-500" : "")} />
-              <span className="text-xs mt-1 font-medium">Discover</span>
-            </Link>
-            
-            <Link 
               to="/blog" 
               className={cn(
                 "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
@@ -106,6 +84,19 @@ const MobileToolbar = () => {
             >
               <MessageCircle size={22} className={cn(isActive('/messages') ? "fill-love-500" : "")} />
               <span className="text-xs mt-1 font-medium">Messages</span>
+            </Link>
+            
+            <Link 
+              to="/matches" 
+              className={cn(
+                "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
+                isActive('/matches') 
+                  ? "text-love-500" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Heart size={22} className={cn(isActive('/matches') ? "fill-love-500" : "")} />
+              <span className="text-xs mt-1 font-medium">Matches</span>
             </Link>
             
             <Link 
@@ -135,19 +126,6 @@ const MobileToolbar = () => {
             >
               <Home size={22} className={cn(isActive('/') ? "fill-love-500" : "")} />
               <span className="text-xs mt-1 font-medium">Home</span>
-            </Link>
-            
-            <Link 
-              to="/discover" 
-              className={cn(
-                "flex flex-col items-center justify-center flex-1 py-2 transition-colors",
-                isActive('/discover') 
-                  ? "text-love-500" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Compass size={22} className={cn(isActive('/discover') ? "fill-love-500" : "")} />
-              <span className="text-xs mt-1 font-medium">Discover</span>
             </Link>
             
             <Link 
