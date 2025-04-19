@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { User, Message, UserPreferences, BlogPostType, BlogComment } from '@/types/user';
-import { calculateCompatibilityScore } from '@/utils/matchingAlgorithm';
+import { calculateCompatibilityScore } from '@/utils/matching/compatibility';
 
 export interface UserContextType {
   currentUser: User | null;
@@ -136,7 +136,7 @@ const UserContext = createContext<UserContextType>({
 
 export const useUser = () => useContext(UserContext);
 
-export const UserProvider = ({ children }: { children: React.ReactNode }) => {
+export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [allUsers, setAllUsers] = useState<User[]>([
     {
@@ -151,7 +151,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       gender: 'female',
       interestedIn: ['male', 'non-binary'],
       popularityPoints: 150,
-      premiumStatus: 'basic',
+      premiumStatus: 'standard',
       giftInventory: { rose: 0, heart: 0, teddy: 0 },
       receivedGifts: { rose: 0, heart: 0, teddy: 0 },
       compatibilityScore: 0,
@@ -184,7 +184,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       gender: 'male',
       interestedIn: ['female'],
       popularityPoints: 200,
-      premiumStatus: 'premium',
+      premiumStatus: 'unlimited',
       giftInventory: { rose: 0, heart: 0, teddy: 0 },
       receivedGifts: { rose: 0, heart: 0, teddy: 0 },
       compatibilityScore: 0,
@@ -257,7 +257,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         gender: 'male',
         interestedIn: ['female'],
         popularityPoints: 100,
-        premiumStatus: 'basic',
+        premiumStatus: 'standard',
         giftInventory: { rose: 0, heart: 0, teddy: 0 },
         receivedGifts: { rose: 0, heart: 0, teddy: 0 },
         compatibilityScore: 0,
@@ -297,7 +297,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
           gender: 'male',
           interestedIn: ['female'],
           popularityPoints: 100,
-          premiumStatus: 'basic',
+          premiumStatus: 'standard',
           giftInventory: { rose: 0, heart: 0, teddy: 0 },
           receivedGifts: { rose: 0, heart: 0, teddy: 0 },
           compatibilityScore: 0,
@@ -341,7 +341,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
           gender: 'male',
           interestedIn: ['female'],
           popularityPoints: 100,
-          premiumStatus: 'basic',
+          premiumStatus: 'standard',
           giftInventory: { rose: 0, heart: 0, teddy: 0 },
           receivedGifts: { rose: 0, heart: 0, teddy: 0 },
           compatibilityScore: 0,

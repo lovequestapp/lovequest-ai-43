@@ -1,331 +1,329 @@
-
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types/user';
-import { toast } from 'sonner';
+import { convertPremiumStatus } from '@/utils/subscription';
 
-/**
- * Convert User object to JSON-compatible format
- */
-const userToJsonObject = (userData: Partial<User>): Record<string, any> => {
-  return JSON.parse(JSON.stringify(userData));
+// Function to fetch a user profile by ID
+export const fetchUserProfile = async (userId: string): Promise<User | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      console.error('Error fetching profile:', error);
+      return null;
+    }
+
+    if (!data) {
+      console.log('Profile not found');
+      return null;
+    }
+
+    return mapDatabaseRecordToUser(data, userId);
+  } catch (error) {
+    console.error('Unexpected error fetching profile:', error);
+    return null;
+  }
 };
 
-/**
- * Updates a user's profile in the database
- */
-export const updateProfileData = async (userId: string, profileData: Partial<User>): Promise<boolean> => {
+// Function to fetch all user profiles
+export const fetchAllUserProfiles = async (): Promise<User[]> => {
   try {
-    if (!userId) {
-      console.error('No user ID provided for profile update');
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*');
+
+    if (error) {
+      console.error('Error fetching all profiles:', error);
+      return [];
+    }
+
+    if (!data) {
+      console.log('No profiles found');
+      return [];
+    }
+
+    return data.map(record => mapDatabaseRecordToUser(record, record.id));
+  } catch (error) {
+    console.error('Unexpected error fetching all profiles:', error);
+    return [];
+  }
+};
+
+// Function to update a user profile
+export const updateUserProfile = async (userId: string, updates: Partial<User>): Promise<User | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', userId)
+      .select('*')
+      .single();
+
+    if (error) {
+      console.error('Error updating profile:', error);
+      return null;
+    }
+
+    if (!data) {
+      console.log('Profile not found or update failed');
+      return null;
+    }
+
+    return mapDatabaseRecordToUser(data, userId);
+  } catch (error) {
+    console.error('Unexpected error updating profile:', error);
+    return null;
+  }
+};
+
+// Function to delete a user profile
+export const deleteUserProfile = async (userId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error deleting profile:', error);
       return false;
     }
 
-    console.log('Updating profile for user:', userId, 'with data:', profileData);
-
-    // Convert to JSON-compatible format
-    const jsonData = userToJsonObject(profileData);
-
-    // Use the database function for profile updates
-    const { data: result, error } = await supabase
-      .rpc('update_profile_data', {
-        profile_id: userId,
-        profile_data: jsonData
-      });
-    
-    if (error) {
-      console.error('Error updating profile with database function:', error);
-      
-      // Fall back to direct update
-      const updateData = {
-        name: profileData.name,
-        bio: profileData.bio,
-        age: profileData.age,
-        location: profileData.location,
-        interests: profileData.interests,
-        gender: profileData.gender,
-        interested_in: profileData.interestedIn,
-        personality_traits: profileData.personalityTraits,
-        photos: profileData.photos,
-        favorite_music: profileData.favoriteMusic,
-        // Handle voice intro if provided
-        ...(profileData.voiceIntro !== undefined ? { voice_intro: profileData.voiceIntro } : {}),
-        // Add updated timestamp
-        updated_at: new Date().toISOString()
-      };
-      
-      const { error: directError } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', userId);
-      
-      if (directError) {
-        console.error('Error updating profile directly:', directError);
-        toast.error("Failed to update profile", {
-          description: directError.message || "Database error"
-        });
-        return false;
-      }
-    }
-    
-    console.log('Profile updated successfully');
-    toast.success("Profile updated successfully");
+    console.log('Profile deleted successfully');
     return true;
-  } catch (error: any) {
-    console.error('Profile update error:', error.message);
-    toast.error("Failed to update profile", {
-      description: error.message || "An unexpected error occurred"
-    });
+  } catch (error) {
+    console.error('Unexpected error deleting profile:', error);
     return false;
   }
 };
 
-/**
- * Uploads a photo to the user's profile
- */
+// Function to upload a profile photo
 export const uploadProfilePhoto = async (userId: string, file: File): Promise<string | null> => {
   try {
-    if (!userId) {
-      toast.error('You must be logged in to upload a photo to LoveQuest');
-      return null;
-    }
-    
-    // Generate a unique file name to avoid collisions
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-    const filePath = `profiles/${userId}/${fileName}`;
-    
-    console.log('Uploading photo to path:', filePath);
-    
-    // Upload the file to Supabase storage
+    const filePath = `profile-photos/${userId}/${file.name}`;
     const { data, error } = await supabase.storage
-      .from('profile-photos')
+      .from('avatars')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false
       });
-      
+
     if (error) {
-      console.error("Error uploading photo:", error);
-      toast.error("Failed to upload photo to LoveQuest", {
-        description: error.message
-      });
+      console.error('Error uploading image:', error);
       return null;
     }
-    
-    // Get the public URL for the uploaded file
-    const { data: { publicUrl } } = supabase.storage
-      .from('profile-photos')
-      .getPublicUrl(data.path);
-    
-    console.log('Photo uploaded successfully to LoveQuest:', publicUrl);
-    return publicUrl;
-  } catch (error: any) {
-    console.error('Upload photo error:', error);
-    toast.error("Failed to upload photo to LoveQuest", {
-      description: error.message || "An unexpected error occurred"
-    });
+
+    const publicURL = `https://utrifqgsjrtjlkufyhol.supabase.co/storage/v1/object/public/${data.fullPath}`;
+    return publicURL;
+  } catch (error) {
+    console.error('Unexpected error uploading image:', error);
     return null;
   }
 };
 
-/**
- * Saves an audio recording to the user's profile
- */
-export const saveVoiceIntro = async (userId: string, audioData: string): Promise<boolean> => {
+// Function to delete a profile photo
+export const deleteProfilePhoto = async (photoUrl: string): Promise<boolean> => {
   try {
-    if (!userId) {
-      console.error('No user ID provided for voice intro save');
-      return false;
-    }
+    const filePath = photoUrl.replace("https://utrifqgsjrtjlkufyhol.supabase.co/storage/v1/object/public/avatars/", "");
+    const { error } = await supabase.storage
+      .from('avatars')
+      .remove([filePath]);
 
-    console.log('Saving voice intro for user:', userId);
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        voice_intro: audioData
-      })
-      .eq('id', userId);
-    
     if (error) {
-      console.error("Error saving voice intro:", error);
-      toast.error("Failed to save voice introduction", {
-        description: error.message
-      });
+      console.error('Error deleting image:', error);
       return false;
     }
-    
-    console.log('Voice intro saved successfully');
-    toast.success("Voice introduction saved successfully");
+
     return true;
-  } catch (error: any) {
-    console.error('Voice intro save error:', error.message);
-    toast.error("Failed to save voice introduction", {
-      description: error.message || "An unexpected error occurred"
-    });
+  } catch (error) {
+    console.error('Unexpected error deleting image:', error);
     return false;
   }
 };
 
-/**
- * Retrieves a user's profile data
- */
-export const fetchUserProfile = async (userId: string): Promise<User | null> => {
-  try {
-    if (!userId) {
-      console.error('No user ID provided for profile fetch');
-      return null;
-    }
-
-    // Use the database function for profile retrieval
-    const { data, error } = await supabase
-      .rpc('get_profile_by_id', {
-        profile_id: userId
-      });
-    
-    if (error) {
-      console.error("Error fetching profile with database function:", error);
-      
-      // Fall back to direct query
-      const { data: directData, error: directError } = await supabase
+// Function to fetch users by location
+export const fetchUsersByLocation = async (location: string): Promise<User[]> => {
+    try {
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      
-      if (directError) {
-        console.error("Error fetching profile:", directError);
-        return null;
+        .ilike('location', `%${location}%`);
+  
+      if (error) {
+        console.error('Error fetching users by location:', error);
+        return [];
       }
-      
-      if (!directData) {
-        console.error("No profile found for user:", userId);
-        return null;
+  
+      if (!data) {
+        console.log('No users found in this location');
+        return [];
       }
-      
-      // Use the direct data
-      return transformProfileData(directData);
-    }
-    
-    if (!data || data.length === 0) {
-      console.error("No profile found for user:", userId);
-      return null;
-    }
-    
-    return transformProfileData(data[0]);
-  } catch (error: any) {
-    console.error('Profile fetch error:', error.message);
-    return null;
-  }
-};
-
-/**
- * Transform database record to User type
- */
-const transformProfileData = (data: any): User => {
-  const giftInventory = typeof data.gift_inventory === 'object' 
-    ? data.gift_inventory as { rose: number; heart: number; teddy: number }
-    : { rose: 0, heart: 0, teddy: 0 };
-    
-  const receivedGifts = typeof data.received_gifts === 'object'
-    ? data.received_gifts as { rose: number; heart: number; teddy: number }
-    : { rose: 0, heart: 0, teddy: 0 };
-    
-  return {
-    id: data.id,
-    name: data.name || '',
-    email: data.email || '',
-    age: data.age || 18,
-    bio: data.bio || '',
-    location: data.location || '',
-    interests: data.interests || [],
-    photos: data.photos || [],
-    gender: data.gender as 'male' | 'female' | 'non-binary' || 'non-binary',
-    interestedIn: data.interested_in as ('male' | 'female' | 'non-binary')[] || [],
-    popularityPoints: data.popularity_points || 0,
-    premiumStatus: data.premium_status as 'basic' | 'premium' | 'vip' | 'trial' || 'basic',
-    giftInventory,
-    receivedGifts,
-    compatibilityScore: 0,
-    personalityTraits: data.personality_traits || [],
-    role: data.role as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial' || 'subscriber',
-    isBanned: data.is_banned || false,
-    verificationStatus: data.is_verified ? 'verified' : 'unverified',
-    lastMessage: '',
-    lastMessageTime: new Date(),
-    status: 'online',
-    favoriteMusic: data.favorite_music || [],
-    voiceIntro: data.voice_intro || '',
-    bankDetails: {
-      accountName: '',
-      accountNumber: '',
-      bankName: '',
-      routingNumber: '',
-      accountType: ''
+  
+      return data.map(record => mapDatabaseRecordToUser(record, record.id));
+    } catch (error) {
+      console.error('Unexpected error fetching users by location:', error);
+      return [];
     }
   };
+
+// Function to fetch users by interests
+export const fetchUsersByInterest = async (interest: string): Promise<User[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .contains('interests', [interest]);
+
+    if (error) {
+      console.error('Error fetching users by interest:', error);
+      return [];
+    }
+
+    if (!data) {
+      console.log('No users found with this interest');
+      return [];
+    }
+
+    return data.map(record => mapDatabaseRecordToUser(record, record.id));
+  } catch (error) {
+    console.error('Unexpected error fetching users by interest:', error);
+    return [];
+  }
 };
 
-/**
- * Updates bank details for a user's profile
- */
-export const updateBankDetails = async (userId: string, bankDetails: {
-  accountName: string;
-  accountNumber: string;
-  bankName: string;
-  routingNumber: string;
-  accountType: string;
-}): Promise<boolean> => {
+// Function to fetch users by gender preference
+export const fetchUsersByGenderPreference = async (gender: 'male' | 'female' | 'non-binary'): Promise<User[]> => {
   try {
-    if (!userId) {
-      console.error('No user ID provided for bank details update');
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .contains('interested_in', [gender]);
+
+    if (error) {
+      console.error('Error fetching users by gender preference:', error);
+      return [];
+    }
+
+    if (!data) {
+      console.log('No users found with this gender preference');
+      return [];
+    }
+
+    return data.map(record => mapDatabaseRecordToUser(record, record.id));
+  } catch (error) {
+    console.error('Unexpected error fetching users by gender preference:', error);
+    return [];
+  }
+};
+
+// Function to update user location
+export const updateUserLocation = async (userId: string, latitude: number, longitude: number): Promise<boolean> => {
+  try {
+    // First, attempt to get the city from reverse geocoding
+    const reverseGeocodingUrl = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
+    const response = await fetch(reverseGeocodingUrl);
+    const data = await response.json();
+
+    let city = 'Unknown';
+    if (data && data.address && data.address.city) {
+      city = data.address.city;
+    } else if (data && data.address && data.address.town) {
+      city = data.address.town;
+    } else if (data && data.address && data.address.village) {
+      city = data.address.village;
+    }
+
+    // Update the profile with the city
+    const { error } = await supabase
+      .from('profiles')
+      .update({ location: city })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error updating user location:', error);
       return false;
     }
 
-    // Instead of directly updating bank_details which doesn't exist in the schema yet,
-    // we'll store this as JSON in a metadata field or similar
-    // This could be added to the database schema properly in the future
-    
-    // For now, we'll just show a success message and not actually update the DB
-    toast.success("Bank details updated successfully");
-    console.log("Bank details would be updated:", bankDetails);
+    console.log('User location updated successfully');
     return true;
-  } catch (error: any) {
-    console.error('Bank details update error:', error.message);
-    toast.error("Failed to update bank details", {
-      description: error.message || "An unexpected error occurred"
-    });
+  } catch (error) {
+    console.error('Unexpected error updating user location:', error);
     return false;
   }
 };
 
-/**
- * Initiates a withdrawal request
- */
-export const initiateWithdrawal = async (userId: string, amount: number, method: 'bank' | 'paypal'): Promise<boolean> => {
-  try {
-    if (!userId) {
-      console.error('No user ID provided for withdrawal request');
-      return false;
-    }
+export const mapDatabaseRecordToUser = (record: any, userId: string = ''): User => {
+  // Ensure default values are provided for all fields
+  const gender = record.gender || 'non-binary';
+  const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary')
+    ? gender as 'male' | 'female' | 'non-binary'
+    : 'non-binary' as const;
 
-    if (amount <= 0) {
-      toast.error("Invalid withdrawal amount");
-      return false;
-    }
+  const interestedIn = record.interested_in || [];
+  const validInterestedIn = Array.isArray(interestedIn) ?
+    interestedIn.filter((interest: string) =>
+      interest === 'male' || interest === 'female' || interest === 'non-binary'
+    ) as ('male' | 'female' | 'non-binary')[] :
+    [] as ('male' | 'female' | 'non-binary')[];
 
-    // In a real app, this would create a withdrawal record in the database
-    // For demo purposes, we'll just show a success message
-    toast.success(`Withdrawal of $${amount.toFixed(2)} initiated via ${method}`, {
-      description: `Your ${method === 'bank' ? 'bank transfer' : 'PayPal transfer'} has been initiated and will be processed shortly.`
-    });
-    
-    return true;
-  } catch (error: any) {
-    console.error('Withdrawal initiation error:', error.message);
-    toast.error("Failed to initiate withdrawal", {
-      description: error.message || "An unexpected error occurred"
-    });
-    return false;
-  }
+  // Convert premium status from database to our standardized format
+  const premiumStatus = convertPremiumStatus(record.premium_status || 'standard');
+
+  const role = record.role || 'subscriber';
+  const validRole = (
+    role === 'admin' ||
+    role === 'moderator' ||
+    role === 'subscriber' ||
+    role === 'vip' ||
+    role === 'trial'
+  )
+    ? role as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial'
+    : 'subscriber' as const;
+
+  const verificationStatus = record.verification_status || 'unverified';
+  const validVerificationStatus = (
+    verificationStatus === 'verified' ||
+    verificationStatus === 'unverified' ||
+    verificationStatus === 'pending' ||
+    verificationStatus === 'rejected'
+  )
+    ? verificationStatus as 'verified' | 'unverified' | 'pending' | 'rejected'
+    : 'unverified' as const;
+
+  return {
+    id: userId || record.id || 'unknown',
+    name: record.name || 'Unknown User',
+    email: record.email || '',
+    age: record.age || 18,
+    bio: record.bio || '',
+    location: record.location || '',
+    interests: record.interests || [],
+    photos: record.photos || [],
+    gender: validGender,
+    interestedIn: validInterestedIn,
+    popularityPoints: record.popularity_points || 0,
+    premiumStatus: premiumStatus,
+    giftInventory: record.gift_inventory || { rose: 0, heart: 0, teddy: 0 },
+    receivedGifts: record.received_gifts || { rose: 0, heart: 0, teddy: 0 },
+    compatibilityScore: 0,
+    personalityTraits: record.personality_traits || [],
+    role: validRole,
+    isBanned: record.is_banned || false,
+    verificationStatus: validVerificationStatus,
+    lastMessage: record.last_message || '',
+    lastMessageTime: record.last_message_time ? new Date(record.last_message_time) : new Date(),
+    status: record.status || 'offline',
+    favoriteMusic: record.favorite_music || [],
+    voiceIntro: record.voice_intro || '',
+    bankDetails: {
+      accountName: record.bank_account_name || '',
+      accountNumber: record.bank_account_number || '',
+      bankName: record.bank_name || '',
+      routingNumber: record.bank_routing_number || '',
+      accountType: record.bank_account_type || ''
+    }
+  };
 };

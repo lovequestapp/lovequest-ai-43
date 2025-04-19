@@ -1,179 +1,527 @@
-
 import { User } from '@/types/user';
 
-// Generate 25 demo users with full profile information
-export const demoUsers: User[] = [
+const demoUsers: User[] = [
   {
     id: "demo-1",
-    name: "Sophia Williams",
-    email: "sophia.w@demo.com",
+    name: "Sophie Adams",
+    email: "sophie.a@example.com",
     age: 28,
-    bio: "Travel enthusiast and coffee lover. I've visited 23 countries and counting! Looking for someone who shares my passion for adventure and trying new cuisines. When I'm not exploring new places, I'm usually reading or taking photos.",
+    bio: "Passionate about photography and travel. Looking for someone to share adventures with.",
     location: "New York, NY",
-    interests: ["travel", "photography", "coffee", "reading", "hiking", "food"],
+    interests: ["photography", "travel", "cooking", "hiking"],
     photos: [
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80",
-      "https://images.unsplash.com/photo-1581704906775-891dd5207444?w=400&q=80",
-      "https://images.unsplash.com/photo-1545168167-3356e224a165?w=400&q=80"
-    ],
-    gender: "female",
-    interestedIn: ["male"],
-    popularityPoints: 85,
-    premiumStatus: "premium",
-    giftInventory: { rose: 5, heart: 3, teddy: 1 },
-    receivedGifts: { rose: 12, heart: 8, teddy: 3 },
-    compatibilityScore: 87,
-    personalityTraits: ["adventurous", "creative", "outgoing", "curious"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Hey! How are your travels going?",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 24),
-    status: "online",
-    favoriteMusic: ["indie pop", "jazz", "world music"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-2",
-    name: "James Rodriguez",
-    email: "james.r@demo.com",
-    age: 32,
-    bio: "Tech entrepreneur by day, guitarist by night. Looking for someone who appreciates deep conversations and isn't afraid to debate ideas. I love building things, whether it's software or furniture. Let's create something together.",
-    location: "San Francisco, CA",
-    interests: ["technology", "music", "woodworking", "entrepreneurship", "philosophy", "outdoors"],
-    photos: [
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
-      "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=400&q=80"
-    ],
-    gender: "male",
-    interestedIn: ["female"],
-    popularityPoints: 72,
-    premiumStatus: "vip",
-    giftInventory: { rose: 8, heart: 4, teddy: 2 },
-    receivedGifts: { rose: 7, heart: 3, teddy: 1 },
-    compatibilityScore: 78,
-    personalityTraits: ["analytical", "creative", "ambitious", "thoughtful"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Did you see the latest tech conference? Some amazing innovations!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 60),
-    status: "offline",
-    favoriteMusic: ["classic rock", "jazz", "ambient"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-3",
-    name: "Emma Chen",
-    email: "emma.c@demo.com",
-    age: 26,
-    bio: "Art curator with a passion for modern expressionism. I believe in living mindfully and finding beauty in everyday moments. Looking for someone who appreciates both intellectual stimulation and spontaneity.",
-    location: "Chicago, IL",
-    interests: ["art", "museums", "mindfulness", "yoga", "cooking", "film"],
-    photos: [
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&q=80",
-      "https://images.unsplash.com/photo-1616597082843-de7ce757d095?w=400&q=80"
-    ],
-    gender: "female",
-    interestedIn: ["male", "non-binary"],
-    popularityPoints: 76,
-    premiumStatus: "basic",
-    giftInventory: { rose: 2, heart: 1, teddy: 0 },
-    receivedGifts: { rose: 15, heart: 9, teddy: 4 },
-    compatibilityScore: 83,
-    personalityTraits: ["creative", "introspective", "compassionate", "intellectual"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "The new exhibit at the modern art museum is breathtaking!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 120),
-    status: "away",
-    favoriteMusic: ["classical", "indie folk", "ambient electronic"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-4",
-    name: "Marcus Johnson",
-    email: "marcus.j@demo.com",
-    age: 29,
-    bio: "Former athlete turned fitness coach. I believe in balancing hard work with enjoying life's pleasures. When I'm not at the gym, you'll find me trying new restaurants or at live music venues. Looking for someone who wants to live life to the fullest.",
-    location: "Miami, FL",
-    interests: ["fitness", "food", "music", "travel", "sports", "outdoors"],
-    photos: [
-      "https://images.unsplash.com/photo-1488161628813-04466f872be2?w=400&q=80",
-      "https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&q=80"
-    ],
-    gender: "male",
-    interestedIn: ["female"],
-    popularityPoints: 79,
-    premiumStatus: "premium",
-    giftInventory: { rose: 3, heart: 2, teddy: 1 },
-    receivedGifts: { rose: 6, heart: 4, teddy: 1 },
-    compatibilityScore: 75,
-    personalityTraits: ["energetic", "confident", "easygoing", "passionate"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Just finished an amazing workout! How's your day going?",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 180),
-    status: "online",
-    favoriteMusic: ["hip-hop", "R&B", "electronic"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-5",
-    name: "Olivia Martinez",
-    email: "olivia.m@demo.com",
-    age: 31,
-    bio: "Environmental lawyer fighting for a better planet. I'm passionate about sustainability, animal rights, and building community. I love hiking, plant-based cooking, and meaningful conversations. Looking for someone who shares my values and vision.",
-    location: "Seattle, WA",
-    interests: ["environment", "hiking", "cooking", "activism", "animals", "community"],
-    photos: [
-      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&q=80",
-      "https://images.unsplash.com/photo-1592621385612-4d7129426394?w=400&q=80"
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1964&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1964&auto=format&fit=crop"
     ],
     gender: "female",
     interestedIn: ["male", "female"],
-    popularityPoints: 68,
-    premiumStatus: "basic",
-    giftInventory: { rose: 1, heart: 0, teddy: 0 },
-    receivedGifts: { rose: 9, heart: 5, teddy: 2 },
-    compatibilityScore: 79,
-    personalityTraits: ["passionate", "compassionate", "determined", "thoughtful"],
+    popularityPoints: 342,
+    premiumStatus: "unlimited", // Changed from "premium" to "unlimited"
+    giftInventory: {
+      rose: 5,
+      heart: 3,
+      teddy: 1
+    },
+    receivedGifts: {
+      rose: 12,
+      heart: 8,
+      teddy: 3
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["creative", "adventurous", "spontaneous"],
     role: "subscriber",
     isBanned: false,
     verificationStatus: "verified",
-    lastMessage: "Just got back from a cleanup event at the beach. It was so rewarding!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 240),
+    lastMessage: "Hi there! How are you doing today?",
+    lastMessageTime: new Date(),
+    status: "online",
+    favoriteMusic: ["pop", "indie", "electronic"],
+    voiceIntro: "",
+    bankDetails: {
+      accountName: "",
+      accountNumber: "",
+      bankName: "",
+      routingNumber: "",
+      accountType: ""
+    },
+    isDemo: true
+  },
+  {
+    id: "demo-2",
+    name: "Michael Chen",
+    email: "michael.c@example.com",
+    age: 32,
+    bio: "Software engineer by day, amateur chef by night. Looking for someone who appreciates good food and good conversation.",
+    location: "San Francisco, CA",
+    interests: ["cooking", "technology", "hiking", "movies"],
+    photos: [
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1974&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=1970&auto=format&fit=crop"
+    ],
+    gender: "male",
+    interestedIn: ["female"],
+    popularityPoints: 287,
+    premiumStatus: "standard", // Changed from "basic" to "standard"
+    giftInventory: {
+      rose: 2,
+      heart: 1,
+      teddy: 0
+    },
+    receivedGifts: {
+      rose: 5,
+      heart: 2,
+      teddy: 0
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["analytical", "creative", "patient"],
+    role: "subscriber",
+    isBanned: false,
+    verificationStatus: "verified",
+    lastMessage: "I found this great new restaurant we should try!",
+    lastMessageTime: new Date(),
     status: "offline",
+    favoriteMusic: ["jazz", "classical", "rock"],
+    voiceIntro: "",
+    bankDetails: {
+      accountName: "",
+      accountNumber: "",
+      bankName: "",
+      routingNumber: "",
+      accountType: ""
+    },
+    isDemo: true
+  },
+  {
+    id: "demo-3",
+    name: "Alex Johnson",
+    email: "alex.j@example.com",
+    age: 26,
+    bio: "Non-binary artist and musician. Looking for open-minded individuals who appreciate art in all its forms.",
+    location: "Portland, OR",
+    interests: ["art", "music", "poetry", "nature"],
+    photos: [
+      "https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?q=80&w=1974&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"
+    ],
+    gender: "non-binary",
+    interestedIn: ["male", "female", "non-binary"],
+    popularityPoints: 310,
+    premiumStatus: "unlimited", // Changed from "premium" to "unlimited"
+    giftInventory: {
+      rose: 7,
+      heart: 4,
+      teddy: 2
+    },
+    receivedGifts: {
+      rose: 15,
+      heart: 9,
+      teddy: 4
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["creative", "empathetic", "philosophical"],
+    role: "subscriber",
+    isBanned: false,
+    verificationStatus: "verified",
+    lastMessage: "Have you seen the new exhibit at the modern art museum?",
+    lastMessageTime: new Date(),
+    status: "online",
+    favoriteMusic: ["indie", "alternative", "experimental"],
+    voiceIntro: "",
+    bankDetails: {
+      accountName: "",
+      accountNumber: "",
+      bankName: "",
+      routingNumber: "",
+      accountType: ""
+    },
+    isDemo: true
+  },
+  {
+    id: "demo-4",
+    name: "Emily Rodriguez",
+    email: "emily.r@example.com",
+    age: 29,
+    bio: "Yoga instructor and wellness coach. Seeking someone who values mindfulness and healthy living.",
+    location: "Los Angeles, CA",
+    interests: ["yoga", "meditation", "nutrition", "beach"],
+    photos: [
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1974&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=1974&auto=format&fit=crop"
+    ],
+    gender: "female",
+    interestedIn: ["male"],
+    popularityPoints: 375,
+    premiumStatus: "standard", // Changed from "basic" to "standard"
+    giftInventory: {
+      rose: 3,
+      heart: 2,
+      teddy: 1
+    },
+    receivedGifts: {
+      rose: 20,
+      heart: 12,
+      teddy: 5
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["calm", "disciplined", "compassionate"],
+    role: "subscriber",
+    isBanned: false,
+    verificationStatus: "verified",
+    lastMessage: "Just finished a great meditation session. How was your day?",
+    lastMessageTime: new Date(),
+    status: "away",
+    favoriteMusic: ["ambient", "world", "acoustic"],
+    voiceIntro: "",
+    bankDetails: {
+      accountName: "",
+      accountNumber: "",
+      bankName: "",
+      routingNumber: "",
+      accountType: ""
+    },
+    isDemo: true
+  },
+  {
+    id: "demo-5",
+    name: "James Wilson",
+    email: "james.w@example.com",
+    age: 34,
+    bio: "Financial analyst who loves outdoor adventures on weekends. Looking for someone to share both quiet evenings and exciting trips.",
+    location: "Chicago, IL",
+    interests: ["finance", "hiking", "skiing", "reading"],
+    photos: [
+      "https://images.unsplash.com/photo-1566492031773-4f4e44671857?q=80&w=1974&auto=format&fit=crop"
+    ],
+    gender: "male",
+    interestedIn: ["female"],
+    popularityPoints: 256,
+    premiumStatus: "unlimited", // Changed from "premium" to "unlimited"
+    giftInventory: {
+      rose: 4,
+      heart: 2,
+      teddy: 1
+    },
+    receivedGifts: {
+      rose: 7,
+      heart: 3,
+      teddy: 1
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["analytical", "adventurous", "reliable"],
+    role: "subscriber",
+    isBanned: false,
+    verificationStatus: "verified",
+    lastMessage: "Planning a hiking trip next weekend. Would you be interested?",
+    lastMessageTime: new Date(),
+    status: "online",
+    favoriteMusic: ["rock", "classical", "blues"],
+    voiceIntro: "",
+    bankDetails: {
+      accountName: "",
+      accountNumber: "",
+      bankName: "",
+      routingNumber: "",
+      accountType: ""
+    },
+    isDemo: true
+  },
+  {
+    id: "demo-6",
+    name: "Olivia Kim",
+    email: "olivia.k@example.com",
+    age: 27,
+    bio: "Graphic designer with a passion for street photography. Looking for someone creative and curious about the world.",
+    location: "Seattle, WA",
+    interests: ["design", "photography", "coffee", "art"],
+    photos: [
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1976&auto=format&fit=crop"
+    ],
+    gender: "female",
+    interestedIn: ["male", "female"],
+    popularityPoints: 298,
+    premiumStatus: "standard", // Changed from "basic" to "standard"
+    giftInventory: {
+      rose: 1,
+      heart: 0,
+      teddy: 0
+    },
+    receivedGifts: {
+      rose: 10,
+      heart: 5,
+      teddy: 2
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["creative", "observant", "thoughtful"],
+    role: "subscriber",
+    isBanned: false,
+    verificationStatus: "verified",
+    lastMessage: "Check out this photo I took yesterday!",
+    lastMessageTime: new Date(),
+    status: "offline",
+    favoriteMusic: ["indie", "electronic", "alternative"],
+    voiceIntro: "",
+    bankDetails: {
+      accountName: "",
+      accountNumber: "",
+      bankName: "",
+      routingNumber: "",
+      accountType: ""
+    },
+    isDemo: true
+  },
+  {
+    id: "demo-7",
+    name: "David Thompson",
+    email: "david.t@example.com",
+    age: 31,
+    bio: "English teacher and aspiring novelist. Looking for someone who enjoys deep conversations and quiet evenings with a good book.",
+    location: "Boston, MA",
+    interests: ["literature", "writing", "teaching", "travel"],
+    photos: [
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"
+    ],
+    gender: "male",
+    interestedIn: ["female"],
+    popularityPoints: 245,
+    premiumStatus: "standard", // Changed from "basic" to "standard"
+    giftInventory: {
+      rose: 2,
+      heart: 1,
+      teddy: 0
+    },
+    receivedGifts: {
+      rose: 6,
+      heart: 2,
+      teddy: 1
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["intellectual", "thoughtful", "articulate"],
+    role: "subscriber",
+    isBanned: false,
+    verificationStatus: "verified",
+    lastMessage: "What's your favorite book? Mine is 'To Kill a Mockingbird'.",
+    lastMessageTime: new Date(),
+    status: "away",
+    favoriteMusic: ["classical", "jazz", "folk"],
+    voiceIntro: "",
+    bankDetails: {
+      accountName: "",
+      accountNumber: "",
+      bankName: "",
+      routingNumber: "",
+      accountType: ""
+    },
+    isDemo: true
+  },
+  {
+    id: "demo-8",
+    name: "Sophia Martinez",
+    email: "sophia.m@example.com",
+    age: 30,
+    bio: "Marketing executive who loves salsa dancing and trying new restaurants. Looking for someone spontaneous and fun-loving.",
+    location: "Miami, FL",
+    interests: ["dancing", "food", "marketing", "beach"],
+    photos: [
+      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=1974&auto=format&fit=crop"
+    ],
+    gender: "female",
+    interestedIn: ["male"],
+    popularityPoints: 320,
+    premiumStatus: "unlimited", // Changed from "premium" to "unlimited"
+    giftInventory: {
+      rose: 5,
+      heart: 3,
+      teddy: 1
+    },
+    receivedGifts: {
+      rose: 18,
+      heart: 10,
+      teddy: 4
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["outgoing", "ambitious", "passionate"],
+    role: "subscriber",
+    isBanned: false,
+    verificationStatus: "verified",
+    lastMessage: "There's a new Cuban restaurant downtown we should check out!",
+    lastMessageTime: new Date(),
+    status: "online",
+    favoriteMusic: ["latin", "pop", "dance"],
+    voiceIntro: "",
+    bankDetails: {
+      accountName: "",
+      accountNumber: "",
+      bankName: "",
+      routingNumber: "",
+      accountType: ""
+    },
+    isDemo: true
+  },
+  {
+    id: "demo-9",
+    name: "Daniel Lee",
+    email: "daniel.l@example.com",
+    age: 29,
+    bio: "Physical therapist who enjoys rock climbing and outdoor photography. Looking for an active partner to share adventures.",
+    location: "Denver, CO",
+    interests: ["climbing", "photography", "fitness", "nature"],
+    photos: [
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1974&auto=format&fit=crop"
+    ],
+    gender: "male",
+    interestedIn: ["female"],
+    popularityPoints: 275,
+    premiumStatus: "standard", // Changed from "basic" to "standard"
+    giftInventory: {
+      rose: 3,
+      heart: 1,
+      teddy: 0
+    },
+    receivedGifts: {
+      rose: 8,
+      heart: 3,
+      teddy: 1
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["active", "patient", "detail-oriented"],
+    role: "subscriber",
+    isBanned: false,
+    verificationStatus: "verified",
+    lastMessage: "Just got back from an amazing hike! The views were incredible.",
+    lastMessageTime: new Date(),
+    status: "offline",
+    favoriteMusic: ["alternative", "rock", "indie"],
+    voiceIntro: "",
+    bankDetails: {
+      accountName: "",
+      accountNumber: "",
+      bankName: "",
+      routingNumber: "",
+      accountType: ""
+    },
+    isDemo: true
+  },
+  {
+    id: "demo-10",
+    name: "Emma Davis",
+    email: "emma.d@example.com",
+    age: 26,
+    bio: "Veterinarian and animal lover. Looking for someone kind-hearted who shares my passion for animal welfare.",
+    location: "Austin, TX",
+    interests: ["animals", "volunteering", "nature", "cooking"],
+    photos: [
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1974&auto=format&fit=crop"
+    ],
+    gender: "female",
+    interestedIn: ["male"],
+    popularityPoints: 290,
+    premiumStatus: "unlimited", // Changed from "premium" to "unlimited"
+    giftInventory: {
+      rose: 4,
+      heart: 2,
+      teddy: 1
+    },
+    receivedGifts: {
+      rose: 14,
+      heart: 8,
+      teddy: 3
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["compassionate", "dedicated", "nurturing"],
+    role: "subscriber",
+    isBanned: false,
+    verificationStatus: "verified",
+    lastMessage: "Just rescued the cutest puppy at the shelter today!",
+    lastMessageTime: new Date(),
+    status: "online",
+    favoriteMusic: ["folk", "acoustic", "indie"],
+    voiceIntro: "",
+    bankDetails: {
+      accountName: "",
+      accountNumber: "",
+      bankName: "",
+      routingNumber: "",
+      accountType: ""
+    },
+    isDemo: true
+  },
+  {
+    id: "demo-11",
+    name: "Ryan Patel",
+    email: "ryan.p@example.com",
+    age: 33,
+    bio: "Startup founder and tech enthusiast. Looking for someone ambitious who enjoys intellectual conversations and travel.",
+    location: "San Francisco, CA",
+    interests: ["technology", "entrepreneurship", "travel", "philosophy"],
+    photos: [
+      "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?q=80&w=1970&auto=format&fit=crop"
+    ],
+    gender: "male",
+    interestedIn: ["female"],
+    popularityPoints: 305,
+    premiumStatus: "unlimited", // Changed from "premium" to "unlimited"
+    giftInventory: {
+      rose: 6,
+      heart: 3,
+      teddy: 1
+    },
+    receivedGifts: {
+      rose: 9,
+      heart: 4,
+      teddy: 2
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["ambitious", "innovative", "curious"],
+    role: "subscriber",
+    isBanned: false,
+    verificationStatus: "verified",
+    lastMessage: "Just closed a new funding round! We should celebrate.",
+    lastMessageTime: new Date(),
+    status: "away",
+    favoriteMusic: ["electronic", "ambient", "jazz"],
+    voiceIntro: "",
+    bankDetails: {
+      accountName: "",
+      accountNumber: "",
+      bankName: "",
+      routingNumber: "",
+      accountType: ""
+    },
+    isDemo: true
+  },
+  {
+    id: "demo-12",
+    name: "Zoe Williams",
+    email: "zoe.w@example.com",
+    age: 25,
+    bio: "Environmental scientist passionate about sustainability. Looking for someone who cares about making a positive impact.",
+    location: "Portland, OR",
+    interests: ["environment", "hiking", "gardening", "activism"],
+    photos: [
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1976&auto=format&fit=crop"
+    ],
+    gender: "female",
+    interestedIn: ["male", "female", "non-binary"],
+    popularityPoints: 265,
+    premiumStatus: "standard", // Changed from "basic" to "standard"
+    giftInventory: {
+      rose: 2,
+      heart: 1,
+      teddy: 0
+    },
+    receivedGifts: {
+      rose: 11,
+      heart: 6,
+      teddy: 2
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["passionate", "principled", "thoughtful"],
+    role: "subscriber",
+    isBanned: false,
+    verificationStatus: "verified",
+    lastMessage: "Just joined a new community garden project!",
+    lastMessageTime: new Date(),
+    status: "online",
     favoriteMusic: ["folk", "indie", "world"],
     voiceIntro: "",
     bankDetails: {
@@ -182,288 +530,43 @@ export const demoUsers: User[] = [
       bankName: "",
       routingNumber: "",
       accountType: ""
-    }
-  },
-  {
-    id: "demo-6",
-    name: "Alex Taylor",
-    email: "alex.t@demo.com",
-    age: 27,
-    bio: "UX designer with a passion for creating intuitive digital experiences. I identify as non-binary and am looking for open-minded people who value authenticity and creativity. Love art, design, and exploring new technologies.",
-    location: "Austin, TX",
-    interests: ["design", "art", "technology", "gaming", "cultural events", "psychology"],
-    photos: [
-      "https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?w=400&q=80",
-      "https://images.unsplash.com/photo-1549068106-b024baf5062d?w=400&q=80"
-    ],
-    gender: "non-binary",
-    interestedIn: ["male", "female", "non-binary"],
-    popularityPoints: 70,
-    premiumStatus: "premium",
-    giftInventory: { rose: 4, heart: 2, teddy: 1 },
-    receivedGifts: { rose: 8, heart: 5, teddy: 2 },
-    compatibilityScore: 82,
-    personalityTraits: ["creative", "analytical", "empathetic", "innovative"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Working on a fascinating new design project this week!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 300),
-    status: "online",
-    favoriteMusic: ["electronic", "indie", "avant-garde"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-7",
-    name: "Natalie Kim",
-    email: "natalie.k@demo.com",
-    age: 24,
-    bio: "Graduate student in psychology with a fascination for human behavior. I love deep conversations about emotions, relationships, and personal growth. In my free time, I enjoy dancing, reading psychology books, and exploring new cafes.",
-    location: "Los Angeles, CA",
-    interests: ["psychology", "dance", "books", "coffee", "travel", "wellness"],
-    photos: [
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
-      "https://images.unsplash.com/photo-1536344539488-45159dea1c8d?w=400&q=80"
-    ],
-    gender: "female",
-    interestedIn: ["male"],
-    popularityPoints: 74,
-    premiumStatus: "basic",
-    giftInventory: { rose: 2, heart: 1, teddy: 0 },
-    receivedGifts: { rose: 13, heart: 8, teddy: 3 },
-    compatibilityScore: 85,
-    personalityTraits: ["insightful", "empathetic", "curious", "expressive"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "What's your perspective on attachment theory?",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 360),
-    status: "away",
-    favoriteMusic: ["jazz", "soul", "R&B"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-8",
-    name: "Michael Patel",
-    email: "michael.p@demo.com",
-    age: 33,
-    bio: "Doctor specializing in international humanitarian medicine. I've worked in 12 countries providing healthcare to underserved communities. Looking for someone who values compassion, adventure, and making a difference in the world.",
-    location: "Portland, OR",
-    interests: ["medicine", "humanitarian work", "travel", "languages", "cultures", "outdoor adventures"],
-    photos: [
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
-      "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=400&q=80"
-    ],
-    gender: "male",
-    interestedIn: ["female"],
-    popularityPoints: 81,
-    premiumStatus: "vip",
-    giftInventory: { rose: 10, heart: 6, teddy: 3 },
-    receivedGifts: { rose: 5, heart: 3, teddy: 1 },
-    compatibilityScore: 76,
-    personalityTraits: ["compassionate", "adventurous", "dedicated", "worldly"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Just returned from a medical mission in Guatemala. Life-changing experience.",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 420),
-    status: "offline",
-    favoriteMusic: ["world music", "classical", "folk"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-9",
-    name: "Zoe Thompson",
-    email: "zoe.t@demo.com",
-    age: 25,
-    bio: "Digital nomad and content creator. I work remotely while exploring new places. Passionate about sustainable travel, minimalism, and authentic connections. Looking for someone who shares my wanderlust and appreciation for simple living.",
-    location: "Denver, CO",
-    interests: ["travel", "minimalism", "sustainability", "photography", "writing", "meditation"],
-    photos: [
-      "https://images.unsplash.com/photo-1493666438817-866a91353ca9?w=400&q=80",
-      "https://images.unsplash.com/photo-1541823709867-1b206113eafd?w=400&q=80"
-    ],
-    gender: "female",
-    interestedIn: ["male", "non-binary"],
-    popularityPoints: 77,
-    premiumStatus: "premium",
-    giftInventory: { rose: 3, heart: 2, teddy: 1 },
-    receivedGifts: { rose: 11, heart: 7, teddy: 3 },
-    compatibilityScore: 84,
-    personalityTraits: ["independent", "adventurous", "mindful", "creative"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Currently in Bali! The digital nomad community here is amazing.",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 480),
-    status: "online",
-    favoriteMusic: ["electronic", "world music", "indie folk"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-10",
-    name: "Daniel Wilson",
-    email: "daniel.w@demo.com",
-    age: 30,
-    bio: "Chef and culinary explorer. I believe food is the universal language that brings people together. Looking for someone to share delicious meals and adventures with. When I'm not in the kitchen, I'm usually at farmers markets or traveling for new food inspirations.",
-    location: "New Orleans, LA",
-    interests: ["cooking", "food", "travel", "markets", "wine", "culture"],
-    photos: [
-      "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&q=80",
-      "https://images.unsplash.com/photo-1583195764036-6dc248ac07d9?w=400&q=80"
-    ],
-    gender: "male",
-    interestedIn: ["female"],
-    popularityPoints: 73,
-    premiumStatus: "basic",
-    giftInventory: { rose: 2, heart: 1, teddy: 0 },
-    receivedGifts: { rose: 4, heart: 2, teddy: 1 },
-    compatibilityScore: 80,
-    personalityTraits: ["passionate", "creative", "sociable", "curious"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Just perfected my homemade pasta recipe. Wish I could share it with you!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 540),
-    status: "away",
-    favoriteMusic: ["jazz", "soul", "world"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  // Adding 15 more profiles to meet the 25 profile requirement
-  {
-    id: "demo-11",
-    name: "Isabella Garcia",
-    email: "isabella.g@demo.com",
-    age: 27,
-    bio: "Freelance illustrator who loves creating whimsical art inspired by nature. Looking for someone creative who appreciates the beauty in small things. I enjoy quiet evenings with tea and sketching, but also love exploring art galleries and cultural events.",
-    location: "Boston, MA",
-    interests: ["art", "illustration", "nature", "museums", "tea", "reading"],
-    photos: [
-      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&q=80",
-      "https://images.unsplash.com/photo-1502767089025-6572583495f9?w=400&q=80"
-    ],
-    gender: "female",
-    interestedIn: ["male", "female"],
-    popularityPoints: 71,
-    premiumStatus: "basic",
-    giftInventory: { rose: 2, heart: 1, teddy: 0 },
-    receivedGifts: { rose: 10, heart: 6, teddy: 2 },
-    compatibilityScore: 77,
-    personalityTraits: ["creative", "observant", "gentle", "thoughtful"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Just finished a new watercolor series inspired by Japanese gardens.",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 600),
-    status: "online",
-    favoriteMusic: ["indie folk", "ambient", "classical"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-12",
-    name: "Tyler Robinson",
-    email: "tyler.r@demo.com",
-    age: 29,
-    bio: "Marine biologist dedicated to ocean conservation. I split my time between research diving and advocacy work. Looking for someone who shares my love for the ocean and planet. I can tell you fascinating facts about marine creatures on our first date!",
-    location: "San Diego, CA",
-    interests: ["ocean", "diving", "conservation", "kayaking", "photography", "education"],
-    photos: [
-      "https://images.unsplash.com/photo-1552058544-f2b08422138a?w=400&q=80",
-      "https://images.unsplash.com/photo-1527082395-e939b847da0d?w=400&q=80"
-    ],
-    gender: "male",
-    interestedIn: ["female", "non-binary"],
-    popularityPoints: 69,
-    premiumStatus: "premium",
-    giftInventory: { rose: 4, heart: 2, teddy: 1 },
-    receivedGifts: { rose: 6, heart: 3, teddy: 1 },
-    compatibilityScore: 79,
-    personalityTraits: ["passionate", "knowledgeable", "adventurous", "dedicated"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Just spotted a rare whale species during today's research expedition!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 660),
-    status: "offline",
-    favoriteMusic: ["surf rock", "reggae", "instrumental"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
+    },
+    isDemo: true
   },
   {
     id: "demo-13",
-    name: "Samira Ahmed",
-    email: "samira.a@demo.com",
-    age: 28,
-    bio: "Journalist and documentary filmmaker focusing on human interest stories around the world. I'm passionate about amplifying voices that often go unheard. Looking for a partner who values empathy, authenticity, and engaging with different perspectives.",
-    location: "Washington DC",
-    interests: ["journalism", "film", "travel", "culture", "politics", "languages"],
+    name: "Marcus Johnson",
+    email: "marcus.j@example.com",
+    age: 30,
+    bio: "Jazz musician and music teacher. Looking for someone who appreciates the arts and spontaneous jam sessions.",
+    location: "New Orleans, LA",
+    interests: ["music", "jazz", "teaching", "food"],
     photos: [
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80",
-      "https://images.unsplash.com/photo-1590650046871-92c887180603?w=400&q=80"
+      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1974&auto=format&fit=crop"
     ],
-    gender: "female",
-    interestedIn: ["male"],
-    popularityPoints: 75,
-    premiumStatus: "premium",
-    giftInventory: { rose: 3, heart: 2, teddy: 1 },
-    receivedGifts: { rose: 14, heart: 9, teddy: 4 },
-    compatibilityScore: 86,
-    personalityTraits: ["compassionate", "curious", "articulate", "worldly"],
+    gender: "male",
+    interestedIn: ["female"],
+    popularityPoints: 280,
+    premiumStatus: "standard", // Changed from "basic" to "standard"
+    giftInventory: {
+      rose: 3,
+      heart: 1,
+      teddy: 0
+    },
+    receivedGifts: {
+      rose: 7,
+      heart: 3,
+      teddy: 1
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["creative", "expressive", "laid-back"],
     role: "subscriber",
     isBanned: false,
     verificationStatus: "verified",
-    lastMessage: "Currently working on a documentary about traditional craftspeople.",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 720),
-    status: "away",
-    favoriteMusic: ["world music", "jazz", "indie"],
+    lastMessage: "Playing at the Blue Note this weekend. Would love for you to come!",
+    lastMessageTime: new Date(),
+    status: "offline",
+    favoriteMusic: ["jazz", "blues", "soul"],
     voiceIntro: "",
     bankDetails: {
       accountName: "",
@@ -471,35 +574,43 @@ export const demoUsers: User[] = [
       bankName: "",
       routingNumber: "",
       accountType: ""
-    }
+    },
+    isDemo: true
   },
   {
     id: "demo-14",
-    name: "Ryan Park",
-    email: "ryan.p@demo.com",
-    age: 31,
-    bio: "Software engineer by day, rock climber by weekend. I believe in challenging myself both mentally and physically. Looking for someone who enjoys outdoor adventures and isn't afraid of heights! I also brew my own beer and love exploring craft breweries.",
-    location: "Boulder, CO",
-    interests: ["climbing", "hiking", "brewing", "technology", "camping", "travel"],
+    name: "Isabella Garcia",
+    email: "isabella.g@example.com",
+    age: 28,
+    bio: "Fashion designer with a love for vintage aesthetics. Seeking someone stylish with an appreciation for the arts.",
+    location: "New York, NY",
+    interests: ["fashion", "art", "vintage", "photography"],
     photos: [
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80"
+      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=1974&auto=format&fit=crop"
     ],
-    gender: "male",
-    interestedIn: ["female"],
-    popularityPoints: 72,
-    premiumStatus: "basic",
-    giftInventory: { rose: 1, heart: 1, teddy: 0 },
-    receivedGifts: { rose: 5, heart: 2, teddy: 1 },
-    compatibilityScore: 74,
-    personalityTraits: ["analytical", "adventurous", "determined", "relaxed"],
+    gender: "female",
+    interestedIn: ["male"],
+    popularityPoints: 315,
+    premiumStatus: "unlimited", // Changed from "premium" to "unlimited"
+    giftInventory: {
+      rose: 5,
+      heart: 3,
+      teddy: 1
+    },
+    receivedGifts: {
+      rose: 16,
+      heart: 9,
+      teddy: 4
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["creative", "detail-oriented", "expressive"],
     role: "subscriber",
     isBanned: false,
     verificationStatus: "verified",
-    lastMessage: "Just sent a 5.11 route for the first time! So excited!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 780),
+    lastMessage: "Just finished my new collection! Can't wait to show you.",
+    lastMessageTime: new Date(),
     status: "online",
-    favoriteMusic: ["folk rock", "indie", "alternative"],
+    favoriteMusic: ["indie", "vintage", "alternative"],
     voiceIntro: "",
     bankDetails: {
       accountName: "",
@@ -507,35 +618,43 @@ export const demoUsers: User[] = [
       bankName: "",
       routingNumber: "",
       accountType: ""
-    }
+    },
+    isDemo: true
   },
   {
     id: "demo-15",
-    name: "Maya Patel",
-    email: "maya.p@demo.com",
-    age: 26,
-    bio: "Classical Indian dancer and dance instructor. Dance is my way of connecting with my heritage and expressing emotions. I'm looking for someone who appreciates art and culture. Besides dancing, I enjoy cooking traditional recipes and practicing yoga.",
-    location: "Atlanta, GA",
-    interests: ["dance", "yoga", "cooking", "culture", "teaching", "spirituality"],
+    name: "Nathan Wright",
+    email: "nathan.w@example.com",
+    age: 32,
+    bio: "Architect with a passion for sustainable design. Looking for someone who appreciates creativity and thoughtful conversation.",
+    location: "Chicago, IL",
+    interests: ["architecture", "design", "sustainability", "art"],
     photos: [
-      "https://images.unsplash.com/photo-1592621385612-4d7129426394?w=400&q=80",
-      "https://images.unsplash.com/photo-1586907835000-f692bbd4c9e0?w=400&q=80"
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1974&auto=format&fit=crop"
     ],
-    gender: "female",
-    interestedIn: ["male"],
-    popularityPoints: 78,
-    premiumStatus: "basic",
-    giftInventory: { rose: 2, heart: 1, teddy: 0 },
-    receivedGifts: { rose: 16, heart: 10, teddy: 5 },
-    compatibilityScore: 81,
-    personalityTraits: ["graceful", "disciplined", "expressive", "spiritual"],
+    gender: "male",
+    interestedIn: ["female"],
+    popularityPoints: 270,
+    premiumStatus: "standard", // Changed from "basic" to "standard"
+    giftInventory: {
+      rose: 2,
+      heart: 1,
+      teddy: 0
+    },
+    receivedGifts: {
+      rose: 6,
+      heart: 2,
+      teddy: 1
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["creative", "analytical", "thoughtful"],
     role: "subscriber",
     isBanned: false,
     verificationStatus: "verified",
-    lastMessage: "Just finished teaching a workshop on Bharatanatyam dance.",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 840),
-    status: "offline",
-    favoriteMusic: ["classical Indian", "fusion", "instrumental"],
+    lastMessage: "Just visited this amazing building downtown. The design is incredible!",
+    lastMessageTime: new Date(),
+    status: "away",
+    favoriteMusic: ["classical", "ambient", "jazz"],
     voiceIntro: "",
     bankDetails: {
       accountName: "",
@@ -543,35 +662,43 @@ export const demoUsers: User[] = [
       bankName: "",
       routingNumber: "",
       accountType: ""
-    }
+    },
+    isDemo: true
   },
   {
     id: "demo-16",
-    name: "Diego Hernandez",
-    email: "diego.h@demo.com",
-    age: 29,
-    bio: "Professional chef specialized in fusion cuisine. Food is my love language, and I enjoy creating unique dining experiences. Looking for someone adventurous with their palate who appreciates culinary creativity. I also enjoy salsa dancing and playing guitar.",
-    location: "Miami, FL",
-    interests: ["cooking", "food", "music", "dancing", "travel", "languages"],
+    name: "Lily Chen",
+    email: "lily.c@example.com",
+    age: 27,
+    bio: "Nutritionist and food blogger. Looking for someone who enjoys cooking and exploring new cuisines together.",
+    location: "Seattle, WA",
+    interests: ["nutrition", "cooking", "blogging", "travel"],
     photos: [
-      "https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=400&q=80",
-      "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&q=80"
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1976&auto=format&fit=crop"
     ],
-    gender: "male",
-    interestedIn: ["female"],
-    popularityPoints: 76,
-    premiumStatus: "premium",
-    giftInventory: { rose: 5, heart: 3, teddy: 1 },
-    receivedGifts: { rose: 7, heart: 4, teddy: 2 },
-    compatibilityScore: 83,
-    personalityTraits: ["creative", "passionate", "sociable", "detail-oriented"],
+    gender: "female",
+    interestedIn: ["male"],
+    popularityPoints: 295,
+    premiumStatus: "unlimited", // Changed from "premium" to "unlimited"
+    giftInventory: {
+      rose: 4,
+      heart: 2,
+      teddy: 1
+    },
+    receivedGifts: {
+      rose: 13,
+      heart: 7,
+      teddy: 3
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["health-conscious", "creative", "organized"],
     role: "subscriber",
     isBanned: false,
     verificationStatus: "verified",
-    lastMessage: "Would love to cook you my signature dish sometime.",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 900),
+    lastMessage: "I just posted a new recipe on my blog. Would love your feedback!",
+    lastMessageTime: new Date(),
     status: "online",
-    favoriteMusic: ["latin", "jazz", "world"],
+    favoriteMusic: ["pop", "acoustic", "world"],
     voiceIntro: "",
     bankDetails: {
       accountName: "",
@@ -579,35 +706,43 @@ export const demoUsers: User[] = [
       bankName: "",
       routingNumber: "",
       accountType: ""
-    }
+    },
+    isDemo: true
   },
   {
     id: "demo-17",
-    name: "Harper Wilson",
-    email: "harper.w@demo.com",
-    age: 24,
-    bio: "Environmental scientist working on sustainable agriculture projects. I'm passionate about creating a more sustainable future through science and community action. Looking for someone who shares my love for nature and commitment to making a difference.",
-    location: "Portland, OR",
-    interests: ["environment", "sustainability", "gardening", "hiking", "community", "science"],
+    name: "Jordan Taylor",
+    email: "jordan.t@example.com",
+    age: 29,
+    bio: "Non-binary fitness coach and mental health advocate. Looking for someone who values wellness in all its forms.",
+    location: "Austin, TX",
+    interests: ["fitness", "mental health", "meditation", "outdoors"],
     photos: [
-      "https://images.unsplash.com/photo-1535324492437-d8dea70a38a7?w=400&q=80",
-      "https://images.unsplash.com/photo-1541823709867-1b206113eafd?w=400&q=80"
+      "https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?q=80&w=1974&auto=format&fit=crop"
     ],
     gender: "non-binary",
     interestedIn: ["male", "female", "non-binary"],
-    popularityPoints: 70,
-    premiumStatus: "basic",
-    giftInventory: { rose: 1, heart: 0, teddy: 0 },
-    receivedGifts: { rose: 8, heart: 5, teddy: 2 },
-    compatibilityScore: 78,
-    personalityTraits: ["analytical", "compassionate", "determined", "practical"],
+    popularityPoints: 285,
+    premiumStatus: "standard", // Changed from "basic" to "standard"
+    giftInventory: {
+      rose: 3,
+      heart: 1,
+      teddy: 0
+    },
+    receivedGifts: {
+      rose: 9,
+      heart: 4,
+      teddy: 2
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["motivational", "empathetic", "balanced"],
     role: "subscriber",
     isBanned: false,
     verificationStatus: "verified",
-    lastMessage: "Starting a community garden project this weekend. Would love your help!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 960),
+    lastMessage: "Just finished teaching a great mindfulness class today!",
+    lastMessageTime: new Date(),
     status: "away",
-    favoriteMusic: ["folk", "indie", "ambient"],
+    favoriteMusic: ["electronic", "ambient", "motivational"],
     voiceIntro: "",
     bankDetails: {
       accountName: "",
@@ -615,35 +750,43 @@ export const demoUsers: User[] = [
       bankName: "",
       routingNumber: "",
       accountType: ""
-    }
+    },
+    isDemo: true
   },
   {
     id: "demo-18",
-    name: "Lucas Bennett",
-    email: "lucas.b@demo.com",
-    age: 33,
-    bio: "Aerospace engineer with a passion for both space exploration and keeping my feet on the ground through hiking and photography. Looking for someone who enjoys stargazing and conversations about the universe, but who's also up for weekend adventures.",
-    location: "Houston, TX",
-    interests: ["astronomy", "engineering", "hiking", "photography", "science", "travel"],
+    name: "Ethan Miller",
+    email: "ethan.m@example.com",
+    age: 31,
+    bio: "Travel photographer who's visited over 40 countries. Looking for someone with wanderlust and a sense of adventure.",
+    location: "Los Angeles, CA",
+    interests: ["photography", "travel", "cultures", "languages"],
     photos: [
-      "https://images.unsplash.com/photo-1555952517-2e8e729e0b44?w=400&q=80",
-      "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=400&q=80"
+      "https://images.unsplash.com/photo-1566492031773-4f4e44671857?q=80&w=1974&auto=format&fit=crop"
     ],
     gender: "male",
     interestedIn: ["female"],
-    popularityPoints: 74,
-    premiumStatus: "vip",
-    giftInventory: { rose: 7, heart: 4, teddy: 2 },
-    receivedGifts: { rose: 3, heart: 2, teddy: 1 },
-    compatibilityScore: 72,
-    personalityTraits: ["intelligent", "curious", "ambitious", "thoughtful"],
+    popularityPoints: 310,
+    premiumStatus: "unlimited", // Changed from "premium" to "unlimited"
+    giftInventory: {
+      rose: 5,
+      heart: 3,
+      teddy: 1
+    },
+    receivedGifts: {
+      rose: 8,
+      heart: 4,
+      teddy: 2
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["adventurous", "curious", "adaptable"],
     role: "subscriber",
     isBanned: false,
     verificationStatus: "verified",
-    lastMessage: "Did you see the meteor shower last night? It was incredible!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 1020),
-    status: "offline",
-    favoriteMusic: ["ambient", "electronic", "classical"],
+    lastMessage: "Just booked my next trip to Thailand! Have you been?",
+    lastMessageTime: new Date(),
+    status: "online",
+    favoriteMusic: ["world", "electronic", "ambient"],
     voiceIntro: "",
     bankDetails: {
       accountName: "",
@@ -651,35 +794,43 @@ export const demoUsers: User[] = [
       bankName: "",
       routingNumber: "",
       accountType: ""
-    }
+    },
+    isDemo: true
   },
   {
     id: "demo-19",
-    name: "Aisha Johnson",
-    email: "aisha.j@demo.com",
-    age: 27,
-    bio: "Clinical psychologist specializing in trauma healing. I find meaning in helping others on their journey to wellness. Looking for a supportive partner who values emotional intelligence and authentic connection. I enjoy reading, yoga, and deep conversations.",
-    location: "Philadelphia, PA",
-    interests: ["psychology", "yoga", "reading", "wellness", "art", "nature"],
+    name: "Ava Robinson",
+    email: "ava.r@example.com",
+    age: 26,
+    bio: "Marine biologist passionate about ocean conservation. Looking for someone who shares my love for the sea and environmental causes.",
+    location: "San Diego, CA",
+    interests: ["marine life", "conservation", "diving", "beach"],
     photos: [
-      "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&q=80",
-      "https://images.unsplash.com/photo-1548142813-c348350df52b?w=400&q=80"
+      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1974&auto=format&fit=crop"
     ],
     gender: "female",
     interestedIn: ["male"],
-    popularityPoints: 77,
-    premiumStatus: "premium",
-    giftInventory: { rose: 3, heart: 2, teddy: 1 },
-    receivedGifts: { rose: 12, heart: 7, teddy: 3 },
-    compatibilityScore: 85,
-    personalityTraits: ["empathetic", "insightful", "compassionate", "grounded"],
+    popularityPoints: 275,
+    premiumStatus: "standard", // Changed from "basic" to "standard"
+    giftInventory: {
+      rose: 2,
+      heart: 1,
+      teddy: 0
+    },
+    receivedGifts: {
+      rose: 12,
+      heart: 6,
+      teddy: 2
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["passionate", "dedicated", "curious"],
     role: "subscriber",
     isBanned: false,
     verificationStatus: "verified",
-    lastMessage: "The mind-body connection is so fascinating, don't you think?",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 1080),
-    status: "online",
-    favoriteMusic: ["acoustic", "ambient", "world"],
+    lastMessage: "Just got back from an amazing dive with sea turtles!",
+    lastMessageTime: new Date(),
+    status: "offline",
+    favoriteMusic: ["indie", "acoustic", "ambient"],
     voiceIntro: "",
     bankDetails: {
       accountName: "",
@@ -687,107 +838,43 @@ export const demoUsers: User[] = [
       bankName: "",
       routingNumber: "",
       accountType: ""
-    }
+    },
+    isDemo: true
   },
   {
     id: "demo-20",
-    name: "Gabriel Santos",
-    email: "gabriel.s@demo.com",
-    age: 26,
-    bio: "Professional dancer and choreographer specializing in contemporary and street styles. Dancing is how I express my deepest emotions and connect with others. Looking for someone who appreciates art and isn't afraid to step onto the dance floor with me.",
-    location: "Los Angeles, CA",
-    interests: ["dance", "choreography", "music", "art", "fitness", "travel"],
+    name: "Benjamin Foster",
+    email: "benjamin.f@example.com",
+    age: 33,
+    bio: "Chef and culinary instructor with a passion for farm-to-table cooking. Looking for a foodie to share culinary adventures.",
+    location: "Portland, OR",
+    interests: ["cooking", "food", "farming", "wine"],
     photos: [
-      "https://images.unsplash.com/photo-1463453091185-61582044d556?w=400&q=80",
-      "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&q=80"
-    ],
-    gender: "male",
-    interestedIn: ["female", "male"],
-    popularityPoints: 79,
-    premiumStatus: "basic",
-    giftInventory: { rose: 2, heart: 1, teddy: 0 },
-    receivedGifts: { rose: 6, heart: 3, teddy: 1 },
-    compatibilityScore: 76,
-    personalityTraits: ["creative", "expressive", "passionate", "disciplined"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Just finished choreographing a new piece. Can't wait to perform it!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 1140),
-    status: "offline",
-    favoriteMusic: ["hip-hop", "electronic", "soul"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-21",
-    name: "Ellie Nguyen",
-    email: "ellie.n@demo.com",
-    age: 25,
-    bio: "App developer and digital artist creating interactive experiences that blur the line between technology and art. Looking for someone who appreciates creativity in all its forms. I love video games, sci-fi, and experimenting with new technologies.",
-    location: "Seattle, WA",
-    interests: ["technology", "art", "gaming", "sci-fi", "design", "innovation"],
-    photos: [
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&q=80",
-      "https://images.unsplash.com/photo-1566616213894-2d4e1baee5d8?w=400&q=80"
-    ],
-    gender: "female",
-    interestedIn: ["male", "non-binary"],
-    popularityPoints: 73,
-    premiumStatus: "premium",
-    giftInventory: { rose: 4, heart: 2, teddy: 1 },
-    receivedGifts: { rose: 9, heart: 6, teddy: 2 },
-    compatibilityScore: 80,
-    personalityTraits: ["creative", "innovative", "analytical", "playful"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Working on a really cool AR project this week. It's mind-blowing!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 1200),
-    status: "online",
-    favoriteMusic: ["electronic", "synthwave", "indie"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-22",
-    name: "Omar Castillo",
-    email: "omar.c@demo.com",
-    age: 30,
-    bio: "Architect focused on sustainable urban design. I believe good design can transform communities and improve quality of life. Looking for someone thoughtful and passionate about making a positive impact. I enjoy sketching, exploring cities on foot, and photography.",
-    location: "Chicago, IL",
-    interests: ["architecture", "design", "sustainability", "art", "photography", "urban exploration"],
-    photos: [
-      "https://images.unsplash.com/photo-1567784177951-6fa58317e16b?w=400&q=80",
-      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&q=80"
+      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1974&auto=format&fit=crop"
     ],
     gender: "male",
     interestedIn: ["female"],
-    popularityPoints: 71,
-    premiumStatus: "basic",
-    giftInventory: { rose: 1, heart: 0, teddy: 0 },
-    receivedGifts: { rose: 4, heart: 2, teddy: 1 },
-    compatibilityScore: 75,
-    personalityTraits: ["thoughtful", "creative", "detail-oriented", "analytical"],
+    popularityPoints: 290,
+    premiumStatus: "unlimited", // Changed from "premium" to "unlimited"
+    giftInventory: {
+      rose: 4,
+      heart: 2,
+      teddy: 1
+    },
+    receivedGifts: {
+      rose: 7,
+      heart: 3,
+      teddy: 1
+    },
+    compatibilityScore: 0,
+    personalityTraits: ["creative", "detail-oriented", "passionate"],
     role: "subscriber",
     isBanned: false,
     verificationStatus: "verified",
-    lastMessage: "Just visited an amazing adaptive reuse project downtown. So inspiring!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 1260),
+    lastMessage: "Just perfected a new recipe I'd love to cook for you!",
+    lastMessageTime: new Date(),
     status: "away",
-    favoriteMusic: ["jazz", "ambient", "classical"],
+    favoriteMusic: ["jazz", "classical", "world"],
     voiceIntro: "",
     bankDetails: {
       accountName: "",
@@ -795,114 +882,9 @@ export const demoUsers: User[] = [
       bankName: "",
       routingNumber: "",
       accountType: ""
-    }
-  },
-  {
-    id: "demo-23",
-    name: "Lily Chen",
-    email: "lily.c@demo.com",
-    age: 29,
-    bio: "Veterinarian with a special love for rescue animals. I currently have two adopted cats and a dog who are my world. Looking for an animal lover with a kind heart. Besides my passion for animal welfare, I enjoy hiking, reading, and vegetarian cooking.",
-    location: "Denver, CO",
-    interests: ["animals", "veterinary medicine", "hiking", "reading", "cooking", "rescue work"],
-    photos: [
-      "https://images.unsplash.com/photo-1596815064285-45ed8a9c0463?w=400&q=80",
-      "https://images.unsplash.com/photo-1503185912284-5271ff81b9a8?w=400&q=80"
-    ],
-    gender: "female",
-    interestedIn: ["male"],
-    popularityPoints: 80,
-    premiumStatus: "premium",
-    giftInventory: { rose: 3, heart: 2, teddy: 1 },
-    receivedGifts: { rose: 14, heart: 8, teddy: 4 },
-    compatibilityScore: 87,
-    personalityTraits: ["compassionate", "dedicated", "gentle", "nurturing"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Just helped rescue a litter of kittens today. My heart is so full!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 1320),
-    status: "offline",
-    favoriteMusic: ["indie folk", "acoustic", "classical"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-24",
-    name: "Jamal Williams",
-    email: "jamal.w@demo.com",
-    age: 27,
-    bio: "Music producer and jazz pianist with a passion for blending traditional jazz with modern electronic sounds. Music is my form of communication. Looking for someone who appreciates the artistry in everyday life and enjoys live performances.",
-    location: "New Orleans, LA",
-    interests: ["music", "jazz", "production", "performing", "vinyl collecting", "music history"],
-    photos: [
-      "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&q=80",
-      "https://images.unsplash.com/photo-1531384441138-2736e62e0919?w=400&q=80"
-    ],
-    gender: "male",
-    interestedIn: ["female", "male"],
-    popularityPoints: 72,
-    premiumStatus: "basic",
-    giftInventory: { rose: 2, heart: 1, teddy: 0 },
-    receivedGifts: { rose: 5, heart: 3, teddy: 1 },
-    compatibilityScore: 79,
-    personalityTraits: ["creative", "expressive", "thoughtful", "soulful"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Playing a show at the Blue Note this weekend. Would love to see you there!",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 1380),
-    status: "away",
-    favoriteMusic: ["jazz", "neo-soul", "electronic"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
-  },
-  {
-    id: "demo-25",
-    name: "Sophia Lee",
-    email: "sophia.l@demo.com",
-    age: 32,
-    bio: "Literature professor specializing in contemporary fiction. Books have always been my gateway to different worlds and perspectives. Looking for someone who enjoys deep conversations about ideas and isn't afraid to challenge conventional thinking.",
-    location: "Boston, MA",
-    interests: ["literature", "writing", "teaching", "philosophy", "art", "theater"],
-    photos: [
-      "https://images.unsplash.com/photo-1499887142886-791eca5918cd?w=400&q=80",
-      "https://images.unsplash.com/photo-1593351799227-75df2989c986?w=400&q=80"
-    ],
-    gender: "female",
-    interestedIn: ["male"],
-    popularityPoints: 75,
-    premiumStatus: "premium",
-    giftInventory: { rose: 4, heart: 2, teddy: 1 },
-    receivedGifts: { rose: 11, heart: 7, teddy: 3 },
-    compatibilityScore: 83,
-    personalityTraits: ["intellectual", "articulate", "thoughtful", "curious"],
-    role: "subscriber",
-    isBanned: false,
-    verificationStatus: "verified",
-    lastMessage: "Just finished reading an incredible novel. I can't stop thinking about it.",
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 1440),
-    status: "online",
-    favoriteMusic: ["classical", "jazz", "indie"],
-    voiceIntro: "",
-    bankDetails: {
-      accountName: "",
-      accountNumber: "",
-      bankName: "",
-      routingNumber: "",
-      accountType: ""
-    }
+    },
+    isDemo: true
   }
 ];
+
+export default demoUsers;
