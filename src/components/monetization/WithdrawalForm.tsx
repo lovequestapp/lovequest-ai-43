@@ -37,6 +37,8 @@ const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ balance, userId }) => {
         toast.success(`Withdrawal of ${formatCurrency(parseFloat(amount))} initiated`, {
           description: "Your funds will be transferred shortly"
         });
+      } else {
+        throw new Error("Withdrawal processing failed");
       }
     } catch (error) {
       console.error("Withdrawal error:", error);

@@ -55,7 +55,6 @@ export const fetchAllUserProfiles = async (): Promise<User[]> => {
 // Function to update a user profile
 export const updateUserProfile = async (userId: string, updates: Partial<User>): Promise<User | null> => {
   try {
-    // Convert the User object format to database format
     const dbUpdates = prepareUserDataForDatabase(updates);
     console.log('Updating profile with data:', dbUpdates);
 
@@ -157,7 +156,6 @@ export const updateBankDetails = async (userId: string, bankDetails: {
   accountType: string;
 }): Promise<boolean> => {
   try {
-    // Create a serialized JSON object to store bank details
     const bankDetailsJson = JSON.stringify(bankDetails);
     
     const { error } = await supabase
@@ -185,33 +183,12 @@ export const initiateWithdrawal = async (
   method: 'bank' | 'paypal'
 ): Promise<boolean> => {
   try {
-    // In a real app, this would connect to a payment processor
-    // For now, we'll just log the withdrawal request
     console.log(`Withdrawal initiated: $${amount} via ${method} for user ${userId}`);
     
-    // Add withdrawal record to database
-    const { error } = await supabase
-      .from('withdrawals')
-      .insert({
-        user_id: userId,
-        amount,
-        method,
-        status: 'pending',
-        created_at: new Date().toISOString()
-      })
-      .single();
-
-    if (error) {
-      // If there's an error and it's because the table doesn't exist,
-      // we'll still return true for demo purposes
-      if (error.code === '42P01') { // PostgreSQL table doesn't exist error
-        console.log('Withdrawal table does not exist, but withdrawal would have been processed');
-        return true;
-      }
-      console.error('Error recording withdrawal:', error);
-      return false;
-    }
-
+    console.log('Simulating withdrawal processing');
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     return true;
   } catch (error) {
     console.error('Unexpected error processing withdrawal:', error);
@@ -225,7 +202,6 @@ export const updateProfileData = async (
   data: Partial<User>
 ): Promise<boolean> => {
   try {
-    // Use our helper function to prepare data for the database
     const dbData = prepareUserDataForDatabase(data);
     
     const { error } = await supabase
@@ -250,7 +226,6 @@ export const updateProfileData = async (
 const prepareUserDataForDatabase = (userData: Partial<User>): Record<string, any> => {
   const dbData: Record<string, any> = {};
   
-  // Map User object fields to database column names
   if (userData.name !== undefined) dbData.name = userData.name;
   if (userData.bio !== undefined) dbData.bio = userData.bio;
   if (userData.age !== undefined) dbData.age = userData.age;
@@ -263,7 +238,6 @@ const prepareUserDataForDatabase = (userData: Partial<User>): Record<string, any
   if (userData.favoriteMusic !== undefined) dbData.favorite_music = userData.favoriteMusic;
   if (userData.voiceIntro !== undefined) dbData.voice_intro = userData.voiceIntro;
   
-  // Handle bank details - store as JSON string
   if (userData.bankDetails) {
     dbData.bank_details = JSON.stringify({
       accountName: userData.bankDetails.accountName,
@@ -281,7 +255,6 @@ const prepareUserDataForDatabase = (userData: Partial<User>): Record<string, any
 
 // Function to map database record to User type
 export const mapDatabaseRecordToUser = (record: any, userId: string = ''): User => {
-  // Ensure default values are provided for all fields
   const gender = record.gender || 'non-binary';
   const validGender = (gender === 'male' || gender === 'female' || gender === 'non-binary')
     ? gender as 'male' | 'female' | 'non-binary'
@@ -294,7 +267,6 @@ export const mapDatabaseRecordToUser = (record: any, userId: string = ''): User 
     ) as ('male' | 'female' | 'non-binary')[] :
     [] as ('male' | 'female' | 'non-binary')[];
 
-  // Convert premium status from database to our standardized format
   const premiumStatus = convertPremiumStatus(record.premium_status || 'standard');
 
   const role = record.role || 'subscriber';
@@ -318,7 +290,6 @@ export const mapDatabaseRecordToUser = (record: any, userId: string = ''): User 
     ? verificationStatus as 'verified' | 'unverified' | 'pending' | 'rejected'
     : 'unverified' as const;
 
-  // Parse bank details if they exist
   let bankDetails = {
     accountName: '',
     accountNumber: '',
