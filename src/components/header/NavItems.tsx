@@ -17,7 +17,6 @@ const NavItems = ({ isAuthenticated, isMobile = false, closeDrawer = () => {} }:
   // Common navigation items for all users
   const COMMON_NAV_ITEMS = [
     { name: 'Home', path: '/', icon: <Home className="h-4 w-4 mr-2" /> },
-    { name: 'Explore', path: '/explore', icon: <Compass className="h-4 w-4 mr-2" /> },
     { name: 'Blog', path: '/blog', icon: <BookOpen className="h-4 w-4 mr-2" /> },
   ];
 

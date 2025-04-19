@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
@@ -18,9 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
 import EditProfileForm from '@/components/profile-editor/EditProfileForm';
-import { useDirectProfileUpdate } from '@/hooks/useDirectProfileUpdate';
-import { directProfileUpdate } from '@/utils/directProfileUpdate';
-import { convertPremiumStatus } from '@/utils/subscription';
+import { updateProfileData } from '@/services/profileService'; 
 
 const EditProfilePage = () => {
   const { currentUser } = useUser();
@@ -30,7 +29,6 @@ const EditProfilePage = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { updateProfile } = useDirectProfileUpdate();
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -91,6 +89,33 @@ const EditProfilePage = () => {
             console.error('Error parsing JSON fields:', e);
           }
           
+          // Parse bank details
+          let bankDetails = {
+            accountName: '',
+            accountNumber: '',
+            bankName: '',
+            routingNumber: '',
+            accountType: ''
+          };
+          
+          try {
+            if (data.bank_details) {
+              const bankData = typeof data.bank_details === 'string' 
+                ? JSON.parse(data.bank_details)
+                : data.bank_details;
+                
+              bankDetails = {
+                accountName: bankData.accountName || '',
+                accountNumber: bankData.accountNumber || '',
+                bankName: bankData.bankName || '',
+                routingNumber: bankData.routingNumber || '',
+                accountType: bankData.accountType || ''
+              };
+            }
+          } catch (e) {
+            console.error('Error parsing bank details:', e);
+          }
+          
           const transformedData: User = {
             id: data.id,
             name: data.name || '',
@@ -105,26 +130,20 @@ const EditProfilePage = () => {
               data.interested_in.filter(g => ['male', 'female', 'non-binary'].includes(g)) as ('male' | 'female' | 'non-binary')[] : 
               [],
             popularityPoints: data.popularity_points || 0,
-            premiumStatus: convertPremiumStatus(data.premium_status) as 'standard' | 'unlimited' | 'vip' | 'admin',
+            premiumStatus: data.premium_status as 'standard' | 'unlimited' | 'vip' | 'admin',
             giftInventory,
             receivedGifts,
             compatibilityScore: 0,
             personalityTraits: Array.isArray(data.personality_traits) ? data.personality_traits : [],
             role: (data.role as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial') || 'subscriber',
             isBanned: !!data.is_banned,
-            verificationStatus: data.is_verified ? 'verified' : 'unverified',
+            verificationStatus: data.verification_status || 'unverified',
             lastMessage: '',
             lastMessageTime: new Date(),
             status: 'online',
             favoriteMusic: Array.isArray(data.favorite_music) ? data.favorite_music : [],
             voiceIntro: data.voice_intro || '',
-            bankDetails: {
-              accountName: '',
-              accountNumber: '',
-              bankName: '',
-              routingNumber: '',
-              accountType: ''
-            }
+            bankDetails
           };
           
           setProfileData(transformedData);
@@ -151,14 +170,11 @@ const EditProfilePage = () => {
     }
 
     try {
-      const success = await directProfileUpdate(currentUser.id, updatedData);
+      console.log('Updating profile with data:', updatedData);
+      const success = await updateProfileData(currentUser.id, updatedData);
       
       if (!success) {
-        const hookSuccess = await updateProfile(currentUser.id, updatedData);
-        
-        if (!hookSuccess) {
-          throw new Error('All profile update methods failed');
-        }
+        throw new Error('Profile update failed');
       }
       
       setProfileData(prev => prev ? { ...prev, ...updatedData } : null);

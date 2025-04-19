@@ -35,9 +35,6 @@ const MobileToolbar = () => {
     if (path === '/blog' && (currentPath === '/blog' || currentPath.startsWith('/blog/'))) {
       return true;
     }
-    if (path === '/explore' && currentPath === '/explore') {
-      return true;
-    }
     if (path === '/dates' && currentPath === '/dates') {
       return true;
     }

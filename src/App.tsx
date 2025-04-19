@@ -15,7 +15,6 @@ import {
   ProfileSetup,
   BlogPage,
   BlogPost,
-  Explore,
   Preferences,
   Verification,
   EmailConfirmation,
@@ -44,7 +43,6 @@ const App = () => {
           <Route path="/auth/confirm-email" element={<EmailConfirmSuccess />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:postId" element={<BlogPost />} />
-          <Route path="/explore" element={<Explore />} />
           
           {/* Protected routes */}
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

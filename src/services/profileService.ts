@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types/user';
 import { convertPremiumStatus } from '@/utils/subscription';
@@ -55,9 +56,13 @@ export const fetchAllUserProfiles = async (): Promise<User[]> => {
 // Function to update a user profile
 export const updateUserProfile = async (userId: string, updates: Partial<User>): Promise<User | null> => {
   try {
+    // Convert the User object format to database format
+    const dbUpdates = prepareUserDataForDatabase(updates);
+    console.log('Updating profile with data:', dbUpdates);
+
     const { data, error } = await supabase
       .from('profiles')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', userId)
       .select('*')
       .single();
@@ -255,7 +260,7 @@ export const updateUserLocation = async (userId: string, latitude: number, longi
   }
 };
 
-// NEW FUNCTION: Update bank details
+// Update bank details
 export const updateBankDetails = async (userId: string, bankDetails: {
   accountName: string;
   accountNumber: string;
@@ -264,8 +269,7 @@ export const updateBankDetails = async (userId: string, bankDetails: {
   accountType: string;
 }): Promise<boolean> => {
   try {
-    // Create a serialized JSON object to store all bank details in a single field
-    // This works around type limitations by using a known field (like "bio" or adding a JSON column)
+    // Create a serialized JSON object to store bank details
     const bankDetailsJson = JSON.stringify({
       accountName: bankDetails.accountName,
       accountNumber: bankDetails.accountNumber,
@@ -274,15 +278,10 @@ export const updateBankDetails = async (userId: string, bankDetails: {
       accountType: bankDetails.accountType
     });
     
-    // Use a type assertion to bypass TypeScript's type checking
-    // or store bank details in an existing JSON field that is known to the schema
+    // Use our new helper function to update
     const { error } = await supabase
       .from('profiles')
-      .update({
-        // Type assertion to allow any fields to be updated
-        // In the database, we're assuming these columns exist due to our migration
-        bank_details: bankDetailsJson
-      } as any)
+      .update({ bank_details: bankDetailsJson })
       .eq('id', userId);
 
     if (error) {
@@ -298,7 +297,7 @@ export const updateBankDetails = async (userId: string, bankDetails: {
   }
 };
 
-// NEW FUNCTION: Initiate withdrawal
+// Initiate withdrawal
 export const initiateWithdrawal = async (
   userId: string,
   amount: number, 
@@ -318,15 +317,51 @@ export const initiateWithdrawal = async (
   }
 };
 
-// NEW FUNCTION: Update profile data with a single field or set of fields
+// Helper function to prepare user data for database update
+const prepareUserDataForDatabase = (userData: Partial<User>): Record<string, any> => {
+  const dbData: Record<string, any> = {};
+  
+  // Map User object fields to database column names
+  if (userData.name !== undefined) dbData.name = userData.name;
+  if (userData.bio !== undefined) dbData.bio = userData.bio;
+  if (userData.age !== undefined) dbData.age = userData.age;
+  if (userData.location !== undefined) dbData.location = userData.location;
+  if (userData.interests !== undefined) dbData.interests = userData.interests;
+  if (userData.photos !== undefined) dbData.photos = userData.photos;
+  if (userData.gender !== undefined) dbData.gender = userData.gender;
+  if (userData.interestedIn !== undefined) dbData.interested_in = userData.interestedIn;
+  if (userData.personalityTraits !== undefined) dbData.personality_traits = userData.personalityTraits;
+  if (userData.favoriteMusic !== undefined) dbData.favorite_music = userData.favoriteMusic;
+  if (userData.voiceIntro !== undefined) dbData.voice_intro = userData.voiceIntro;
+  
+  // Handle bank details
+  if (userData.bankDetails) {
+    dbData.bank_details = JSON.stringify({
+      accountName: userData.bankDetails.accountName,
+      accountNumber: userData.bankDetails.accountNumber,
+      bankName: userData.bankDetails.bankName,
+      routingNumber: userData.bankDetails.routingNumber,
+      accountType: userData.bankDetails.accountType
+    });
+  }
+  
+  dbData.updated_at = new Date().toISOString();
+  
+  return dbData;
+};
+
+// Update profile data with a single field or set of fields
 export const updateProfileData = async (
   userId: string, 
   data: Partial<User>
 ): Promise<boolean> => {
   try {
+    // Use our helper function to prepare data for the database
+    const dbData = prepareUserDataForDatabase(data);
+    
     const { error } = await supabase
       .from('profiles')
-      .update(data)
+      .update(dbData)
       .eq('id', userId);
 
     if (error) {
@@ -342,7 +377,7 @@ export const updateProfileData = async (
   }
 };
 
-// NEW FUNCTION: Save voice intro for a user
+// Save voice intro for a user
 export const saveVoiceIntro = async (
   userId: string, 
   voiceIntroUrl: string
@@ -404,6 +439,33 @@ export const mapDatabaseRecordToUser = (record: any, userId: string = ''): User 
     ? verificationStatus as 'verified' | 'unverified' | 'pending' | 'rejected'
     : 'unverified' as const;
 
+  // Parse bank details if they exist
+  let bankDetails = {
+    accountName: '',
+    accountNumber: '',
+    bankName: '',
+    routingNumber: '',
+    accountType: ''
+  };
+  
+  try {
+    if (record.bank_details) {
+      const bankData = typeof record.bank_details === 'string' 
+        ? JSON.parse(record.bank_details)
+        : record.bank_details;
+        
+      bankDetails = {
+        accountName: bankData.accountName || '',
+        accountNumber: bankData.accountNumber || '',
+        bankName: bankData.bankName || '',
+        routingNumber: bankData.routingNumber || '',
+        accountType: bankData.accountType || ''
+      };
+    }
+  } catch (e) {
+    console.error('Error parsing bank details:', e);
+  }
+
   return {
     id: userId || record.id || 'unknown',
     name: record.name || 'Unknown User',
@@ -429,12 +491,6 @@ export const mapDatabaseRecordToUser = (record: any, userId: string = ''): User 
     status: record.status || 'offline',
     favoriteMusic: record.favorite_music || [],
     voiceIntro: record.voice_intro || '',
-    bankDetails: {
-      accountName: record.bank_account_name || '',
-      accountNumber: record.bank_account_number || '',
-      bankName: record.bank_name || '',
-      routingNumber: record.bank_routing_number || '',
-      accountType: record.bank_account_type || ''
-    }
+    bankDetails
   };
 };
