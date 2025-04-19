@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
@@ -154,7 +153,7 @@ const MatchesPage = () => {
   const generateMockProfiles = (count: number, user: User): User[] => {
     const genders = ['male', 'female', 'non-binary'] as const;
     const verificationStatuses = ['verified', 'unverified', 'pending'] as const;
-    const premiumStatuses = ['basic', 'premium', 'vip', 'trial'] as const;
+    const premiumStatuses = ['standard', 'unlimited', 'vip', 'admin'] as const;
     
     const locations = [
       'New York, NY', 'Los Angeles, CA', 'Chicago, IL', 'Houston, TX',
@@ -245,6 +244,26 @@ const MatchesPage = () => {
         }
       }
       
+      // Map premium status values
+      let premiumStatus: 'standard' | 'unlimited' | 'vip' | 'admin' = 'standard';
+      const randomStatusIndex = Math.floor(Math.random() * 4);
+      switch(randomStatusIndex) {
+        case 0:
+          premiumStatus = 'standard';
+          break;
+        case 1:
+          premiumStatus = 'unlimited';
+          break;
+        case 2:
+          premiumStatus = 'vip';
+          break;
+        case 3:
+          premiumStatus = 'admin';
+          break;
+        default:
+          premiumStatus = 'standard';
+      }
+      
       mockProfiles.push({
         id: `mock-${i}`,
         name,
@@ -257,7 +276,7 @@ const MatchesPage = () => {
         gender,
         interestedIn: [user.gender], // Make sure they're interested in the user's gender
         popularityPoints: Math.floor(Math.random() * 500) + 100,
-        premiumStatus: premiumStatuses[Math.floor(Math.random() * premiumStatuses.length)],
+        premiumStatus: premiumStatus,
         giftInventory: { rose: 0, heart: 0, teddy: 0 },
         receivedGifts: { rose: 0, heart: 0, teddy: 0 },
         compatibilityScore: 0,

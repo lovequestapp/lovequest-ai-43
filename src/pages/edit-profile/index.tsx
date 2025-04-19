@@ -20,6 +20,7 @@ import { User } from '@/types/user';
 import EditProfileForm from '@/components/profile-editor/EditProfileForm';
 import { useDirectProfileUpdate } from '@/hooks/useDirectProfileUpdate';
 import { directProfileUpdate } from '@/utils/directProfileUpdate';
+import { convertPremiumStatus } from '@/utils/premiumStatusUtils';
 
 const EditProfilePage = () => {
   const { currentUser } = useUser();
@@ -104,7 +105,7 @@ const EditProfilePage = () => {
               data.interested_in.filter(g => ['male', 'female', 'non-binary'].includes(g)) as ('male' | 'female' | 'non-binary')[] : 
               [],
             popularityPoints: data.popularity_points || 0,
-            premiumStatus: (data.premium_status as 'basic' | 'premium' | 'vip' | 'trial') || 'basic',
+            premiumStatus: convertPremiumStatus(data.premium_status) as 'standard' | 'unlimited' | 'vip' | 'admin',
             giftInventory,
             receivedGifts,
             compatibilityScore: 0,

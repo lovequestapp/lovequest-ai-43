@@ -100,7 +100,7 @@ const Profile = () => {
   };
 
   const getSubscriptionBadge = () => {
-    const subscription = currentUser?.premiumStatus || 'basic';
+    const subscription = currentUser?.premiumStatus || 'standard';
     
     switch(subscription) {
       case 'vip':
@@ -109,22 +109,22 @@ const Profile = () => {
             VIP
           </Badge>
         );
-      case 'premium':
+      case 'unlimited':
         return (
           <Badge className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white ml-2">
-            Premium
+            Unlimited
           </Badge>
         );
-      case 'trial':
+      case 'admin':
         return (
-          <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white ml-2">
-            Trial
+          <Badge className="bg-gradient-to-r from-red-500 to-rose-500 text-white ml-2">
+            Admin
           </Badge>
         );
       default:
         return (
           <Badge className="bg-gradient-to-r from-gray-400 to-gray-500 text-white ml-2">
-            Basic
+            Standard
           </Badge>
         );
     }

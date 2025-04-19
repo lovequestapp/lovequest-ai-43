@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/context/UserContext';
 import { toast } from 'sonner';
 import authService from '@/services/auth';
+import { convertPremiumStatus } from '@/services/auth/utils';
 
 /**
  * Hook to protect routes that require authentication
@@ -55,7 +56,10 @@ export const useProtectedRoute = (options: {
           if (adminOnly || moderatorOnly || requiredSubscription) {
             const { role, subscription } = await authService.checkUserRoleAndSubscription();
             setUserRole(role);
-            setUserSubscription(subscription);
+            
+            // Convert old subscription values to new ones if needed
+            const normalizedSubscription = convertPremiumStatus(subscription || 'standard');
+            setUserSubscription(normalizedSubscription);
             
             if (adminOnly && role !== 'admin') {
               toast.error("You need admin privileges to access this page");
@@ -77,8 +81,8 @@ export const useProtectedRoute = (options: {
                 'admin': 3
               };
               
-              const userLevel = subscriptionLevels[subscription as keyof typeof subscriptionLevels] || 0;
-              const requiredLevel = subscriptionLevels[requiredSubscription] || 0;
+              const userLevel = subscriptionLevels[normalizedSubscription];
+              const requiredLevel = subscriptionLevels[requiredSubscription];
               
               if (userLevel < requiredLevel) {
                 toast.error(`You need a ${requiredSubscription} subscription to access this page`);

@@ -43,6 +43,25 @@ export const isAdminCredentials = (email: string, password: string): boolean => 
   return email === "hunainm.qureshi@gmail.com" && password === "LoveQuest14";
 };
 
+// Helper function to convert old premium status values to new ones
+export const convertPremiumStatus = (status: string): 'standard' | 'unlimited' | 'vip' | 'admin' => {
+  switch(status) {
+    case 'basic':
+      return 'standard';
+    case 'premium':
+      return 'unlimited';
+    case 'trial':
+      return 'standard';
+    case 'standard':
+    case 'unlimited':
+    case 'vip':
+    case 'admin':
+      return status as 'standard' | 'unlimited' | 'vip' | 'admin';
+    default:
+      return 'standard';
+  }
+};
+
 // Map database profile to User object
 export const mapProfileToUser = (profile: any, userId: string, email: string): User => {
   // Handle type-safe gender
@@ -58,22 +77,9 @@ export const mapProfileToUser = (profile: any, userId: string, email: string): U
       interest === 'male' || interest === 'female' || interest === 'non-binary'
     ) as ('male' | 'female' | 'non-binary')[] :
     [] as ('male' | 'female' | 'non-binary')[];
-    
-  // Handle type-safe premiumStatus  
-  let premiumStatus = profile?.premium_status || 'standard';
-  // Convert old status values to new ones
-  if (premiumStatus === 'basic') premiumStatus = 'standard';
-  if (premiumStatus === 'premium') premiumStatus = 'unlimited';
-  if (premiumStatus === 'trial') premiumStatus = 'standard';
   
-  const validPremiumStatus = (
-    premiumStatus === 'standard' || 
-    premiumStatus === 'unlimited' || 
-    premiumStatus === 'vip' || 
-    premiumStatus === 'admin'
-  )
-    ? premiumStatus as 'standard' | 'unlimited' | 'vip' | 'admin'
-    : 'standard' as const;
+  // Handle type-safe premiumStatus  
+  const premiumStatus = convertPremiumStatus(profile?.premium_status || 'standard');
     
   // Handle type-safe role
   const role = profile?.role || 'subscriber';
@@ -110,7 +116,7 @@ export const mapProfileToUser = (profile: any, userId: string, email: string): U
     gender: validGender,
     interestedIn: validInterestedIn,
     popularityPoints: profile?.popularity_points || 0,
-    premiumStatus: validPremiumStatus,
+    premiumStatus: premiumStatus,
     giftInventory: profile?.gift_inventory || { rose: 0, heart: 0, teddy: 0 },
     receivedGifts: profile?.received_gifts || { rose: 0, heart: 0, teddy: 0 },
     compatibilityScore: 0,

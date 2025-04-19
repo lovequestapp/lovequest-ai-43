@@ -31,10 +31,29 @@ const ProfileRealtime = ({
           // Map Supabase profile fields to our app's User interface
           const mapDatabaseRecordToUser = (record: any): User => {
             // Map premium_status to correct value
-            let premiumStatus = record.premium_status || 'standard';
-            if (premiumStatus === 'basic') premiumStatus = 'standard';
-            if (premiumStatus === 'premium') premiumStatus = 'unlimited';
-            if (premiumStatus === 'trial') premiumStatus = 'standard';
+            let premiumStatus: 'standard' | 'unlimited' | 'vip' | 'admin' = 'standard';
+            
+            if (record.premium_status) {
+              switch(record.premium_status) {
+                case 'basic':
+                  premiumStatus = 'standard';
+                  break;
+                case 'premium':
+                  premiumStatus = 'unlimited';
+                  break;
+                case 'trial':
+                  premiumStatus = 'standard';
+                  break;
+                case 'standard':
+                case 'unlimited':
+                case 'vip':
+                case 'admin':
+                  premiumStatus = record.premium_status;
+                  break;
+                default:
+                  premiumStatus = 'standard';
+              }
+            }
             
             return {
               id: record.id,
@@ -48,7 +67,7 @@ const ProfileRealtime = ({
               gender: record.gender as 'male' | 'female' | 'non-binary',
               interestedIn: record.interested_in || [],
               popularityPoints: record.popularity_points || 0,
-              premiumStatus: premiumStatus as 'standard' | 'unlimited' | 'vip' | 'admin',
+              premiumStatus: premiumStatus,
               giftInventory: record.gift_inventory || { rose: 0, heart: 0, teddy: 0 },
               receivedGifts: record.received_gifts || { rose: 0, heart: 0, teddy: 0 },
               compatibilityScore: 0,

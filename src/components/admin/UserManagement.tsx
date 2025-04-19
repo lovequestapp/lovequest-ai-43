@@ -63,7 +63,7 @@ const UserManagement = () => {
       gender: newUser.gender as "male" | "female" | "non-binary",
       interestedIn: ["male", "female"],
       popularityPoints: 0,
-      premiumStatus: "basic",
+      premiumStatus: "standard", // Use standard as the default
       giftInventory: { rose: 0, heart: 0, teddy: 0 },
       receivedGifts: { rose: 0, heart: 0, teddy: 0 },
       compatibilityScore: 0,
