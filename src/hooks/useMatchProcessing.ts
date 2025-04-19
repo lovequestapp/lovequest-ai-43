@@ -1,12 +1,16 @@
-
-import { useState, useCallback, useMemo } from 'react';
-import { User, UserWithCoordinates, BoostLevelType } from '@/types/user';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { User, UserWithCoordinates, BoostLevelType, UserPreferences } from '@/types/user';
 import { calculateDistance } from '@/utils/matching/distance';
 import { BOOST_MULTIPLIERS } from '@/utils/matching/filtering';
 import { calculateCompatibilityScore } from '@/utils/matching/compatibility';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
 
 // Use a memoized cache for distance calculations to improve performance
 const distanceCache = new Map<string, number>();
+
+// Cache for compatibility scores to avoid recalculations
+const compatibilityCache = new Map<string, number>();
 
 export const calculateDistances = (
   users: UserWithCoordinates[],
@@ -50,7 +54,8 @@ export const filterProfiles = (
   maxDistance?: number,
   minAge?: number,
   maxAge?: number,
-  verifiedOnly?: boolean
+  verifiedOnly?: boolean,
+  onlyShowInterested?: boolean
 ): UserWithCoordinates[] => {
   if (!currentUser) return profiles;
   
@@ -73,6 +78,14 @@ export const filterProfiles = (
       return false;
     }
 
+    // Filter by gender interest if option is enabled
+    if (onlyShowInterested && profile.interestedIn && profile.interestedIn.length > 0) {
+      // Check if the profile is interested in current user's gender
+      if (!profile.interestedIn.includes(currentUser.gender)) {
+        return false;
+      }
+    }
+
     return true;
   });
 };
@@ -91,12 +104,23 @@ export const sortProfiles = (
   const profileScores = new Map<string, number>();
   
   profiles.forEach(profile => {
-    // Cache the compatibility score
+    // Calculate compatibility score if not already cached
     if (sortBy === 'compatibility' && !profileScores.has(profile.id)) {
-      const score = profile.finalScore !== undefined 
-        ? profile.finalScore 
-        : calculateCompatibilityScore(currentUser, profile);
+      // Check if score is already cached to improve performance
+      const cacheKey = `${currentUser.id}-${profile.id}`;
+      let score: number;
+      
+      if (compatibilityCache.has(cacheKey)) {
+        score = compatibilityCache.get(cacheKey) || 0;
+      } else {
+        score = profile.finalScore !== undefined 
+          ? profile.finalScore 
+          : calculateCompatibilityScore(currentUser, profile);
         
+        // Cache the score for future use
+        compatibilityCache.set(cacheKey, score);
+      }
+      
       const boost = profile.isBoosted && profile.boostLevel 
         ? BOOST_MULTIPLIERS[profile.boostLevel] 
         : 1;
@@ -108,7 +132,7 @@ export const sortProfiles = (
   switch (sortBy) {
     case 'compatibility':
       sortedProfiles.sort((a, b) => {
-        return profileScores.get(b.id) || 0 - (profileScores.get(a.id) || 0);
+        return (profileScores.get(b.id) || 0) - (profileScores.get(a.id) || 0);
       });
       break;
       
@@ -143,11 +167,16 @@ export const sortProfiles = (
       break;
       
     case 'recent':
-      // Use a more efficient shuffling algorithm for random ordering
-      for (let i = sortedProfiles.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [sortedProfiles[i], sortedProfiles[j]] = [sortedProfiles[j], sortedProfiles[i]];
-      }
+      // Improved randomization for 'recent' sorting that prioritizes newer profiles
+      sortedProfiles.sort((a, b) => {
+        // If both have created_at dates, sort by date
+        if (a.createdAt && b.createdAt) {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        
+        // Otherwise use randomization
+        return Math.random() - 0.5;
+      });
       break;
   }
 
@@ -157,7 +186,7 @@ export const sortProfiles = (
 export const boostProfile = (
   userId: string,
   profiles: UserWithCoordinates[],
-  boostLevel: 'local' | 'international'
+  boostLevel: BoostLevelType
 ): UserWithCoordinates[] => {
   return profiles.map(profile => {
     if (profile.id === userId) {
@@ -179,15 +208,112 @@ export const useMatchProcessing = (
   const [maxDistance, setMaxDistance] = useState<number | undefined>(undefined);
   const [ageRange, setAgeRange] = useState<[number, number] | undefined>(undefined);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [onlyShowInterested, setOnlyShowInterested] = useState(false);
   const [sortBy, setSortBy] = useState<'compatibility' | 'distance' | 'popularity' | 'recent'>('compatibility');
+  const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(false);
   
   // Cache the boost information
   const boostCache = useMemo(() => new Map<string, number>(), []);
 
+  // Calculate distances for all users
   const usersWithDistances = useMemo(() => {
     return calculateDistances(allUsers, currentUser as UserWithCoordinates);
   }, [allUsers, currentUser]);
 
+  // Load user preferences from Supabase
+  useEffect(() => {
+    const loadUserPreferences = async () => {
+      if (!currentUser?.id) return;
+      
+      try {
+        setIsLoadingPreferences(true);
+        
+        const { data, error } = await supabase
+          .from('user_preferences')
+          .select('*')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+        
+        if (error) throw error;
+        
+        if (data) {
+          // Convert database format to our UserPreferences type
+          const preferences: UserPreferences = {
+            maxDistance: data.max_distance,
+            ageRange: {
+              min: data.min_age,
+              max: data.max_age
+            },
+            notificationsEnabled: true,
+            messagePreview: true,
+            theme: 'light',
+            language: 'en',
+            showMeToUsers: true,
+            notificationPreferences: {
+              messages: true,
+              matches: true,
+              likes: true,
+              app: true
+            },
+            preferredLocations: [],
+            matchingPriorities: {
+              distance: 1,
+              interests: 1,
+              personality: 1,
+              age: 1
+            }
+          };
+          
+          setUserPreferences(preferences);
+          
+          // Apply loaded preferences to state
+          if (preferences.maxDistance) setMaxDistance(preferences.maxDistance);
+          if (preferences.ageRange) setAgeRange([preferences.ageRange.min, preferences.ageRange.max]);
+        }
+      } catch (error) {
+        console.error('Error loading user preferences:', error);
+        toast.error('Failed to load your preferences');
+      } finally {
+        setIsLoadingPreferences(false);
+      }
+    };
+    
+    loadUserPreferences();
+  }, [currentUser?.id]);
+
+  // Save user preferences to Supabase
+  const saveUserPreferences = useCallback(async (preferences: Partial<UserPreferences>) => {
+    if (!currentUser?.id) return false;
+    
+    try {
+      const { error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          id: currentUser.id,
+          max_distance: preferences.maxDistance || maxDistance || 100,
+          min_age: preferences.ageRange?.min || (ageRange ? ageRange[0] : 18),
+          max_age: preferences.ageRange?.max || (ageRange ? ageRange[1] : 99),
+          preferred_gender: currentUser.interestedIn || []
+        });
+      
+      if (error) throw error;
+      
+      setUserPreferences(prev => prev ? { ...prev, ...preferences } : null);
+      
+      if (preferences.maxDistance !== undefined) setMaxDistance(preferences.maxDistance);
+      if (preferences.ageRange) setAgeRange([preferences.ageRange.min, preferences.ageRange.max]);
+      
+      toast.success('Preferences saved successfully');
+      return true;
+    } catch (error) {
+      console.error('Error saving user preferences:', error);
+      toast.error('Failed to save your preferences');
+      return false;
+    }
+  }, [currentUser?.id, maxDistance, ageRange]);
+
+  // Apply filters to profiles
   const applyFilters = useCallback(() => {
     const filtered = filterProfiles(
       usersWithDistances,
@@ -195,22 +321,51 @@ export const useMatchProcessing = (
       maxDistance,
       ageRange?.[0],
       ageRange?.[1],
-      verifiedOnly
+      verifiedOnly,
+      onlyShowInterested
     );
     
     const sorted = sortProfiles(filtered, currentUser, sortBy, boostCache);
     setFilteredUsers(sorted);
-  }, [usersWithDistances, currentUser, maxDistance, ageRange, verifiedOnly, sortBy, boostCache]);
+  }, [
+    usersWithDistances, 
+    currentUser, 
+    maxDistance, 
+    ageRange, 
+    verifiedOnly, 
+    onlyShowInterested,
+    sortBy, 
+    boostCache
+  ]);
 
-  const boostUserProfile = useCallback((userId: string, level: 'local' | 'international') => {
-    const updated = boostProfile(userId, usersWithDistances, level);
-    
-    // Update the boost cache
-    const boostMultiplier = level === 'local' ? BOOST_MULTIPLIERS.local : BOOST_MULTIPLIERS.international;
-    boostCache.set(userId, boostMultiplier);
-    
+  // Apply filters whenever dependencies change
+  useEffect(() => {
     applyFilters();
-    return true;
+  }, [applyFilters]);
+
+  // Boost user profile 
+  const boostUserProfile = useCallback((userId: string, level: BoostLevelType) => {
+    try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      
+      const updated = boostProfile(userId, usersWithDistances, level);
+      
+      // Update the boost cache
+      const boostMultiplier = BOOST_MULTIPLIERS[level];
+      boostCache.set(userId, boostMultiplier);
+      
+      // Re-apply filters with boosted profiles
+      applyFilters();
+      
+      toast.success(`Profile boosted with ${level} level`);
+      return true;
+    } catch (error) {
+      console.error('Error boosting profile:', error);
+      toast.error('Failed to boost profile');
+      return false;
+    }
   }, [usersWithDistances, applyFilters, boostCache]);
 
   return {
@@ -219,8 +374,17 @@ export const useMatchProcessing = (
     setMaxDistance,
     setAgeRange,
     setVerifiedOnly,
+    setOnlyShowInterested,
     setSortBy,
-    boostProfile: boostUserProfile
+    boostProfile: boostUserProfile,
+    userPreferences,
+    isLoadingPreferences,
+    saveUserPreferences,
+    maxDistance,
+    ageRange,
+    verifiedOnly,
+    onlyShowInterested,
+    sortBy
   };
 };
 

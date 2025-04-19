@@ -8,6 +8,7 @@ import { User } from '@/types/user';
 import EditProfileForm from '@/components/profile-editor/EditProfileForm';
 import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
+import { Badge } from '@/components/ui/badge';
 
 interface DesktopProfileLayoutProps {
   loading: boolean;
@@ -16,6 +17,9 @@ interface DesktopProfileLayoutProps {
   currentUser: User | null;
   onNavigateBack: () => void;
   onUpdateProfile: (data: Partial<User>) => Promise<boolean>;
+  isSaving?: boolean;
+  saveError?: string | null;
+  onFormChange?: () => void;
 }
 
 export const DesktopProfileLayout: React.FC<DesktopProfileLayoutProps> = ({
@@ -25,6 +29,9 @@ export const DesktopProfileLayout: React.FC<DesktopProfileLayoutProps> = ({
   currentUser,
   onNavigateBack,
   onUpdateProfile,
+  isSaving = false,
+  saveError = null,
+  onFormChange
 }) => {
   const renderContent = () => {
     if (loading) {
@@ -56,9 +63,18 @@ export const DesktopProfileLayout: React.FC<DesktopProfileLayoutProps> = ({
           </Alert>
         )}
         
+        {saveError && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{saveError}</AlertDescription>
+          </Alert>
+        )}
+        
         <EditProfileForm 
           initialData={profileData || currentUser}
           onUpdate={onUpdateProfile}
+          isSaving={isSaving}
+          onChange={onFormChange}
         />
       </>
     );
@@ -70,16 +86,38 @@ export const DesktopProfileLayout: React.FC<DesktopProfileLayoutProps> = ({
       <main className="flex-grow container mx-auto px-4 py-8">
         <Card className="max-w-4xl mx-auto shadow-sm">
           <CardHeader className="border-b">
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={onNavigateBack}
-                className="mr-2"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <CardTitle className="text-2xl font-display">Edit Your Profile</CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={onNavigateBack}
+                  className="mr-2"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <CardTitle className="text-2xl font-display">Edit Your Profile</CardTitle>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {profileData?.verificationStatus === 'verified' && (
+                  <Badge variant="default" className="bg-green-500 hover:bg-green-600">
+                    Verified
+                  </Badge>
+                )}
+                
+                {profileData?.verificationStatus === 'pending' && (
+                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-300">
+                    Verification Pending
+                  </Badge>
+                )}
+                
+                {profileData?.premiumStatus !== 'standard' && (
+                  <Badge variant="default" className="bg-purple-500 hover:bg-purple-600">
+                    {profileData?.premiumStatus === 'vip' ? 'VIP' : 'Premium'}
+                  </Badge>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent className="py-6">
