@@ -7,10 +7,9 @@ import MobileContainer from '@/components/MobileContainer';
 import MobileToolbar from '@/components/MobileToolbar';
 import MobileMonetization from '@/components/monetization/MobileMonetization';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2, Save } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { User } from '@/types/user';
 import EditProfileForm from '@/components/profile-editor/EditProfileForm';
-import { Badge } from '@/components/ui/badge';
 
 interface MobileProfileLayoutProps {
   loading: boolean;
@@ -21,9 +20,6 @@ interface MobileProfileLayoutProps {
   setActiveTab: (tab: string) => void;
   onNavigateBack: () => void;
   onUpdateProfile: (data: Partial<User>) => Promise<boolean>;
-  isSaving?: boolean;
-  saveError?: string | null;
-  onFormChange?: () => void;
 }
 
 export const MobileProfileLayout: React.FC<MobileProfileLayoutProps> = ({
@@ -35,9 +31,6 @@ export const MobileProfileLayout: React.FC<MobileProfileLayoutProps> = ({
   setActiveTab,
   onNavigateBack,
   onUpdateProfile,
-  isSaving = false,
-  saveError = null,
-  onFormChange
 }) => {
   const renderContent = () => {
     if (loading) {
@@ -69,18 +62,9 @@ export const MobileProfileLayout: React.FC<MobileProfileLayoutProps> = ({
           </Alert>
         )}
         
-        {saveError && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{saveError}</AlertDescription>
-          </Alert>
-        )}
-        
         <EditProfileForm 
           initialData={profileData || currentUser}
           onUpdate={onUpdateProfile}
-          isSaving={isSaving}
-          onChange={onFormChange}
         />
       </>
     );
@@ -91,7 +75,7 @@ export const MobileProfileLayout: React.FC<MobileProfileLayoutProps> = ({
       <main className="flex-grow">
         <MobileContainer padding={false} scrollable>
           <div className="sticky top-0 z-10 bg-white border-b">
-            <div className="p-4 pb-3 flex items-center justify-between">
+            <div className="p-4 pb-3 flex items-center">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -101,19 +85,6 @@ export const MobileProfileLayout: React.FC<MobileProfileLayoutProps> = ({
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <h1 className="text-xl font-semibold text-center w-full">My Account</h1>
-              <div className="flex items-center gap-2">
-                {profileData?.verificationStatus === 'verified' && (
-                  <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-xs">
-                    Verified
-                  </Badge>
-                )}
-                
-                {profileData?.premiumStatus !== 'standard' && (
-                  <Badge variant="default" className="bg-purple-500 hover:bg-purple-600 text-xs">
-                    {profileData?.premiumStatus === 'vip' ? 'VIP' : 'Premium'}
-                  </Badge>
-                )}
-              </div>
             </div>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="w-full grid grid-cols-2">

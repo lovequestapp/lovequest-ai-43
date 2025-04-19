@@ -1,345 +1,234 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { Message } from '@/types/user';
 import { useUser } from '@/context/UserContext';
-import { supabase } from '@/lib/supabase';
-import { toast } from 'sonner';
 
-// Maximum number of messages to fetch per page
-const PAGE_SIZE = 50;
-
-// Local storage key for offline message queue
-const OFFLINE_QUEUE_KEY = 'offlineMessageQueue';
-
-export const useMessages = (recipientId: string | undefined) => {
-  const { currentUser } = useUser();
+export const useMessages = (conversationUserId?: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [page, setPage] = useState(1);
+  const { currentUser } = useUser();
+  const channelRef = useRef<any>(null);
+  const messagesPerPage = 20;
 
-  // Load offline message queue
-  const getOfflineQueue = useCallback((): Array<{message: Message, recipientId: string}> => {
+  // Fetch messages function
+  const fetchMessages = useCallback(async (pageNumber = 1) => {
+    if (!conversationUserId || !currentUser?.id) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const queue = localStorage.getItem(OFFLINE_QUEUE_KEY);
-      return queue ? JSON.parse(queue) : [];
-    } catch (e) {
-      console.error('Error reading offline message queue:', e);
-      return [];
-    }
-  }, []);
+      setIsLoading(true);
+      setError(null);
 
-  // Save message to offline queue
-  const saveToOfflineQueue = useCallback((message: Message, recipient: string) => {
-    try {
-      const queue = getOfflineQueue();
-      queue.push({message, recipientId: recipient});
-      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
-      return true;
-    } catch (e) {
-      console.error('Error saving to offline message queue:', e);
-      return false;
-    }
-  }, [getOfflineQueue]);
+      const { data, error: fetchError } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${conversationUserId}),and(sender_id.eq.${conversationUserId},receiver_id.eq.${currentUser.id})`)
+        .order('timestamp', { ascending: false })
+        .range((pageNumber - 1) * messagesPerPage, pageNumber * messagesPerPage - 1);
 
-  // Process offline message queue when back online
-  const processOfflineQueue = useCallback(async () => {
-    const queue = getOfflineQueue();
-    if (queue.length === 0) return;
-    
-    const processedIds = [];
-    
-    for (const item of queue) {
-      try {
-        const { error } = await supabase
-          .from('messages')
-          .insert({
-            content: item.message.content,
-            sender_id: item.message.senderId,
-            receiver_id: item.recipientId,
-            timestamp: new Date().toISOString(),
-            is_read: false,
-            status: 'sent'
-          });
-          
-        if (!error) {
-          processedIds.push(item.message.id);
-        }
-      } catch (e) {
-        console.error('Error processing offline message:', e);
-      }
-    }
-    
-    // Remove processed messages from queue
-    if (processedIds.length > 0) {
-      const newQueue = queue.filter(item => !processedIds.includes(item.message.id));
-      localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(newQueue));
-      
-      if (processedIds.length === queue.length) {
-        toast.success('All pending messages sent');
+      if (fetchError) throw fetchError;
+
+      // Check if we have more messages
+      setHasMore(data.length === messagesPerPage);
+
+      // Transform data to match Message type
+      const formattedMessages: Message[] = data.map(msg => ({
+        id: msg.id,
+        senderId: msg.sender_id,
+        recipientId: msg.receiver_id,
+        content: msg.content || '',
+        timestamp: new Date(msg.timestamp || new Date()),
+        // Use status field for type if available, otherwise default to 'text'
+        type: (msg.status as Message['type']) || 'text', 
+        isRead: msg.is_read || false,
+      }));
+
+      // Append or replace messages based on page
+      if (pageNumber === 1) {
+        setMessages(formattedMessages);
       } else {
-        toast.success(`Sent ${processedIds.length} of ${queue.length} pending messages`);
+        setMessages(prev => [...prev, ...formattedMessages]);
       }
       
-      // Reload messages to include the newly sent ones
-      fetchMessages(true);
-    }
-  }, [getOfflineQueue]);
+      // Mark received messages as read
+      const unreadMessageIds = formattedMessages
+        .filter(msg => msg.senderId === conversationUserId && !msg.isRead)
+        .map(msg => msg.id);
+        
+      if (unreadMessageIds.length > 0) {
+        markMessagesAsRead(unreadMessageIds);
+      }
 
-  // Listen for online/offline status changes
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      toast.success('You are back online');
-      processOfflineQueue();
-    };
-    
-    const handleOffline = () => {
-      setIsOnline(false);
-      toast.warning('You are offline. Messages will be sent when you reconnect.');
-    };
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [processOfflineQueue]);
+    } catch (err: any) {
+      console.error('Error fetching messages:', err);
+      setError(err.message || 'Failed to load messages');
+      toast.error('Failed to load messages', {
+        description: err.message
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [conversationUserId, currentUser?.id]);
+
+  // Load more messages
+  const loadMoreMessages = useCallback(() => {
+    if (hasMore && !isLoading) {
+      setPage(prev => prev + 1);
+    }
+  }, [hasMore, isLoading]);
 
   // Send a message
-  const sendMessage = useCallback(async (
-    content: string,
-    type: Message['type'] = 'text'
-  ): Promise<boolean> => {
-    if (!currentUser?.id || !recipientId) {
-      toast.error('Cannot send message: Missing user data');
+  const sendMessage = useCallback(async (content: string, type: Message['type'] = 'text'): Promise<boolean> => {
+    if (!conversationUserId || !currentUser?.id || !content.trim()) {
+      toast.error('Cannot send message', {
+        description: 'Missing recipient or content'
+      });
       return false;
     }
-    
+
     try {
-      // Create a temporary ID for the message
+      // Create optimistic message
       const tempId = `temp-${Date.now()}`;
-      
-      // Add message to local state optimistically
-      const newMessage: Message = {
+      const optimisticMessage: Message = {
         id: tempId,
         senderId: currentUser.id,
-        recipientId,
+        recipientId: conversationUserId,
         content,
         timestamp: new Date(),
+        type,
         isRead: false,
-        type
       };
-      
-      setMessages(prev => [newMessage, ...prev]);
-      
-      // If offline, save to queue and return
-      if (!isOnline) {
-        const saved = saveToOfflineQueue(newMessage, recipientId);
-        if (!saved) {
-          throw new Error('Failed to save message for offline sending');
-        }
-        return true;
-      }
-      
-      // If online, send to server
-      const { data, error } = await supabase
+
+      // Update UI immediately
+      setMessages(prev => [optimisticMessage, ...prev]);
+
+      // Send to server
+      const { data, error: sendError } = await supabase
         .from('messages')
         .insert({
-          content,
           sender_id: currentUser.id,
-          receiver_id: recipientId,
-          timestamp: new Date().toISOString(),
+          receiver_id: conversationUserId,
+          content,
+          status: type, // Store the message type in the status field
           is_read: false,
-          status: 'sent'
         })
         .select()
         .single();
-      
-      if (error) throw error;
-      
-      // Update local message with server-generated ID
-      if (data) {
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === tempId 
-              ? {
-                  id: data.id,
-                  senderId: data.sender_id,
-                  recipientId: data.receiver_id,
-                  content: data.content,
-                  timestamp: new Date(data.timestamp),
-                  isRead: data.is_read,
-                  type
-                }
-              : msg
-          )
-        );
-      }
-      
+
+      if (sendError) throw sendError;
+
+      // Replace optimistic message with real one
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempId 
+          ? {
+              id: data.id,
+              senderId: data.sender_id,
+              recipientId: data.receiver_id,
+              content: data.content || '',
+              timestamp: new Date(data.timestamp || new Date()),
+              type: (data.status as Message['type']) || 'text',
+              isRead: data.is_read || false,
+            }
+          : msg
+      ));
+
       return true;
-    } catch (error) {
-      console.error('Error sending message:', error);
+    } catch (err: any) {
+      console.error('Error sending message:', err);
+      toast.error('Failed to send message', {
+        description: err.message
+      });
       
-      // If it's a network error, queue the message
-      if (!navigator.onLine || error instanceof TypeError) {
-        setIsOnline(false);
-        toast.error('You appear to be offline. Message will be sent when connection is restored.');
-        return true; // Return success since we queued it
-      }
-      
-      toast.error('Failed to send message');
-      
-      // Remove the optimistic message from state
+      // Remove optimistic message on error
       setMessages(prev => prev.filter(msg => !msg.id.toString().startsWith('temp-')));
       
       return false;
     }
-  }, [currentUser, recipientId, isOnline, saveToOfflineQueue]);
+  }, [conversationUserId, currentUser?.id]);
 
-  // Fetch messages
-  const fetchMessages = useCallback(async (reset: boolean = false) => {
-    if (!currentUser?.id || !recipientId) return;
-    
+  // Mark messages as read
+  const markMessagesAsRead = useCallback(async (messageIds: string[]): Promise<boolean> => {
+    if (!messageIds.length) return true;
+
     try {
-      if (reset) {
-        setPage(0);
-        setHasMore(true);
-      }
-      
-      if (!hasMore && !reset) return;
-      
-      setIsLoading(true);
-      setError(null);
-      
-      const currentPage = reset ? 0 : page;
-      
-      // Query to get both sent and received messages between the two users
-      const { data, error } = await supabase
+      const { error: updateError } = await supabase
         .from('messages')
-        .select('*')
-        .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`)
-        .or(`sender_id.eq.${recipientId},receiver_id.eq.${recipientId}`)
-        .order('timestamp', { ascending: false })
-        .range(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE - 1);
-      
-      if (error) throw error;
-      
-      // Transform database records to Message objects
-      const transformedMessages: Message[] = data.map(msg => ({
-        id: msg.id,
-        senderId: msg.sender_id,
-        recipientId: msg.receiver_id,
-        content: msg.content,
-        timestamp: new Date(msg.timestamp),
-        isRead: msg.is_read,
-        type: msg.type || 'text',
-        mediaUrl: msg.media_url
-      }));
-      
-      // Update messages state
-      if (reset) {
-        setMessages(transformedMessages);
-      } else {
-        setMessages(prev => [...prev, ...transformedMessages]);
-      }
-      
-      // Check if we have more messages
-      setHasMore(data.length === PAGE_SIZE);
-      
-      // Increment page
-      if (!reset && data.length > 0) {
-        setPage(prev => prev + 1);
-      }
-      
-      // Mark messages as read
-      const unreadMessages = data
-        .filter(msg => 
-          msg.receiver_id === currentUser.id && 
-          !msg.is_read && 
-          msg.sender_id === recipientId
+        .update({ is_read: true })
+        .in('id', messageIds);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setMessages(prev => 
+        prev.map(msg => 
+          messageIds.includes(msg.id) ? { ...msg, isRead: true } : msg
         )
-        .map(msg => msg.id);
-        
-      if (unreadMessages.length > 0) {
-        await supabase
-          .from('messages')
-          .update({ is_read: true })
-          .in('id', unreadMessages);
-      }
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-      setError('Failed to load messages');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser, recipientId, page, hasMore]);
+      );
 
-  // Load more messages (pagination)
-  const loadMoreMessages = useCallback(() => {
-    if (!isLoading && hasMore) {
-      fetchMessages();
+      return true;
+    } catch (err: any) {
+      console.error('Error marking messages as read:', err);
+      return false;
     }
-  }, [fetchMessages, isLoading, hasMore]);
+  }, []);
 
-  // Setup real-time subscription to messages
+  // Set up real-time subscription
   useEffect(() => {
-    if (!currentUser?.id || !recipientId) return;
-    
+    if (!conversationUserId || !currentUser?.id) return;
+
     // Initial fetch
-    fetchMessages(true);
+    fetchMessages(1);
     
-    // Setup subscription for new messages
-    const channel = supabase
-      .channel('messages-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `receiver_id=eq.${currentUser.id},sender_id=eq.${recipientId}`
-        },
-        async (payload) => {
-          console.log('New message received:', payload);
-          
-          const newMsg = payload.new;
-          
-          // Add the new message to state
-          const message: Message = {
-            id: newMsg.id,
-            senderId: newMsg.sender_id,
-            recipientId: newMsg.receiver_id,
-            content: newMsg.content,
-            timestamp: new Date(newMsg.timestamp),
-            isRead: false,
-            type: newMsg.type || 'text',
-            mediaUrl: newMsg.media_url
-          };
-          
-          setMessages(prev => [message, ...prev]);
-          
-          // Mark as read if conversation is active
-          try {
-            await supabase
-              .from('messages')
-              .update({ is_read: true })
-              .eq('id', newMsg.id);
-          } catch (error) {
-            console.error('Error marking message as read:', error);
-          }
-        }
-      )
+    // Set up channel for real-time updates
+    const channel = supabase.channel(`messages:${currentUser.id}-${conversationUserId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `receiver_id=eq.${currentUser.id},sender_id=eq.${conversationUserId}`
+      }, (payload) => {
+        // New message received
+        const newMessage: Message = {
+          id: payload.new.id,
+          senderId: payload.new.sender_id,
+          recipientId: payload.new.receiver_id,
+          content: payload.new.content || '',
+          timestamp: new Date(payload.new.timestamp || new Date()),
+          type: (payload.new.status as Message['type']) || 'text',
+          isRead: payload.new.is_read || false,
+        };
+        
+        setMessages(prev => [newMessage, ...prev.filter(msg => msg.id !== newMessage.id)]);
+        
+        // Mark as read automatically since we're viewing the conversation
+        markMessagesAsRead([newMessage.id]);
+      })
       .subscribe();
-      
+    
+    // Store reference to channel
+    channelRef.current = channel;
+    
+    // Clean up on unmount
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
     };
-  }, [currentUser?.id, recipientId, fetchMessages]);
+  }, [conversationUserId, currentUser?.id, fetchMessages, markMessagesAsRead]);
+
+  // Refetch when page changes
+  useEffect(() => {
+    if (page > 1) {
+      fetchMessages(page);
+    }
+  }, [page, fetchMessages]);
 
   return {
     messages,
@@ -348,7 +237,7 @@ export const useMessages = (recipientId: string | undefined) => {
     hasMore,
     sendMessage,
     loadMoreMessages,
-    isOnline
+    markMessagesAsRead
   };
 };
 
