@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types/user';
 import { convertPremiumStatus } from '@/utils/subscription';
@@ -251,6 +252,103 @@ export const updateUserLocation = async (userId: string, latitude: number, longi
     return true;
   } catch (error) {
     console.error('Unexpected error updating user location:', error);
+    return false;
+  }
+};
+
+// NEW FUNCTION: Update bank details
+export const updateBankDetails = async (userId: string, bankDetails: {
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+  routingNumber: string;
+  accountType: string;
+}): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        bank_details: bankDetails
+      })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error updating bank details:', error);
+      return false;
+    }
+
+    console.log('Bank details updated successfully');
+    return true;
+  } catch (error) {
+    console.error('Unexpected error updating bank details:', error);
+    return false;
+  }
+};
+
+// NEW FUNCTION: Initiate withdrawal
+export const initiateWithdrawal = async (
+  userId: string,
+  amount: number, 
+  method: 'bank' | 'paypal'
+): Promise<boolean> => {
+  try {
+    // In a real app, you would create a withdrawal record in your database
+    // and potentially integrate with a payment processor
+    console.log(`Withdrawal initiated: $${amount} via ${method} for user ${userId}`);
+    
+    // For demo purposes, we'll just return success
+    // In a real app you might create a record in a withdrawals table
+    return true;
+  } catch (error) {
+    console.error('Unexpected error initiating withdrawal:', error);
+    return false;
+  }
+};
+
+// NEW FUNCTION: Update profile data with a single field or set of fields
+export const updateProfileData = async (
+  userId: string, 
+  data: Partial<User>
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update(data)
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error updating profile data:', error);
+      return false;
+    }
+
+    console.log('Profile data updated successfully');
+    return true;
+  } catch (error) {
+    console.error('Unexpected error updating profile data:', error);
+    return false;
+  }
+};
+
+// NEW FUNCTION: Save voice intro for a user
+export const saveVoiceIntro = async (
+  userId: string, 
+  voiceIntroUrl: string
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ voice_intro: voiceIntroUrl })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error saving voice intro:', error);
+      return false;
+    }
+
+    console.log('Voice intro saved successfully');
+    return true;
+  } catch (error) {
+    console.error('Unexpected error saving voice intro:', error);
     return false;
   }
 };
