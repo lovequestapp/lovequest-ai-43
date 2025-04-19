@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/header/Header';
@@ -116,6 +115,8 @@ const EditProfilePage = () => {
             console.error('Error parsing bank details:', e);
           }
           
+          const verificationStatus = (data.verification_status || 'unverified') as 'verified' | 'unverified' | 'pending' | 'rejected';
+          
           const transformedData: User = {
             id: data.id,
             name: data.name || '',
@@ -137,7 +138,7 @@ const EditProfilePage = () => {
             personalityTraits: Array.isArray(data.personality_traits) ? data.personality_traits : [],
             role: (data.role as 'admin' | 'moderator' | 'subscriber' | 'vip' | 'trial') || 'subscriber',
             isBanned: !!data.is_banned,
-            verificationStatus: data.verification_status || 'unverified',
+            verificationStatus,
             lastMessage: '',
             lastMessageTime: new Date(),
             status: 'online',

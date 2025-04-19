@@ -12,7 +12,6 @@ import UserProfile from './user-profile';
 import ProfileSetup from './profile-setup';
 import BlogPage from './BlogPage';
 import BlogPost from './BlogPost';
-import Explore from './Explore';
 import Preferences from './Preferences'; // Updated to relative path
 import Verification from './Verification';
 import EmailConfirmation from './EmailConfirmation';
@@ -34,7 +33,6 @@ export {
   ProfileSetup,
   BlogPage,
   BlogPost,
-  Explore,
   Preferences,
   Verification,
   EmailConfirmation,

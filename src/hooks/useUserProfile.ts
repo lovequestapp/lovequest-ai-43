@@ -73,7 +73,7 @@ export const useUserProfile = () => {
               
               const { error: bankError } = await supabase
                 .from('profiles')
-                .update({ bank_details: bankDetailsJson })
+                .update({ bank_details: bankDetailsJson } as any)
                 .eq('id', currentUser.id);
                 
               if (!bankError) {
@@ -140,7 +140,7 @@ export const useUserProfile = () => {
         
         const { error: bankError } = await supabase
           .from('profiles')
-          .update({ bank_details: bankDetailsJson })
+          .update({ bank_details: bankDetailsJson } as any)
           .eq('id', currentUser.id);
           
         if (bankError) {
@@ -188,7 +188,7 @@ export const useUserProfile = () => {
           // Last fallback: direct table update
           const { error: fallbackError } = await supabase
             .from('profiles')
-            .update({ [dbField]: jsonValue })
+            .update({ [dbField]: jsonValue } as any)
             .eq('id', currentUser.id);
             
           if (fallbackError) {
