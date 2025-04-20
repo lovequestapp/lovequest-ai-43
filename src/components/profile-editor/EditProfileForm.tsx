@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Camera, Loader2, Save, X } from 'lucide-react';
+import { Camera, Loader2, Save, X, AlertTriangle } from 'lucide-react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import { User } from '@/types/user';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useProfileStorage } from '@/hooks/useProfileStorage';
 import { supabase } from '@/lib/supabase';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -29,9 +30,16 @@ const profileSchema = z.object({
 interface EditProfileFormProps {
   initialData: User;
   onUpdate: (data: Partial<User>) => Promise<boolean>;
+  isSaving?: boolean;
+  onChange?: () => void;
 }
 
-const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate }) => {
+const EditProfileForm: React.FC<EditProfileFormProps> = ({ 
+  initialData, 
+  onUpdate,
+  isSaving = false,
+  onChange 
+}) => {
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<string[]>(initialData.photos || []);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -40,6 +48,8 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
   const [favoriteMusic, setFavoriteMusic] = useState<string[]>(initialData.favoriteMusic || []);
   const [personalityTraits, setPersonalityTraits] = useState<string[]>(initialData.personalityTraits || []);
   const [interestedIn, setInterestedIn] = useState<('male' | 'female' | 'non-binary')[]>(initialData.interestedIn || []);
+  const [savingField, setSavingField] = useState<string | null>(null);
+  const [hasNetworkError, setHasNetworkError] = useState(false);
   const { uploadFile, deleteFile, uploading } = useProfileStorage(initialData.id);
   
   const form = useForm<z.infer<typeof profileSchema>>({
@@ -52,6 +62,28 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
       gender: initialData.gender || 'non-binary',
     },
   });
+
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      if (onChange) onChange();
+    });
+    return () => subscription.unsubscribe();
+  }, [form, onChange]);
+  
+  useEffect(() => {
+    const handleOnline = () => setHasNetworkError(false);
+    const handleOffline = () => setHasNetworkError(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    setHasNetworkError(!navigator.onLine);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
   
   const onSubmit = async (data: z.infer<typeof profileSchema>) => {
     setLoading(true);
@@ -103,9 +135,14 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
         const newPhotos = [...photos, photoUrl];
         setPhotos(newPhotos);
         
-        await onUpdate({ photos: newPhotos });
-        
-        toast.success('Photo added successfully');
+        try {
+          await onUpdate({ photos: newPhotos });
+          toast.success('Photo added successfully');
+          if (onChange) onChange();
+        } catch (error) {
+          console.error('Error updating profile with new photo:', error);
+          toast.warning('Photo uploaded but not saved to profile. Will retry automatically.');
+        }
       } else {
         throw new Error('Failed to upload photo');
       }
@@ -121,15 +158,22 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
     try {
       const newPhotos = [...photos];
       const removedPhoto = newPhotos.splice(index, 1)[0];
+      
       setPhotos(newPhotos);
       
-      await deleteFile(removedPhoto);
-      
-      await onUpdate({ photos: newPhotos });
-      
-      toast.success('Photo removed successfully');
+      try {
+        await deleteFile(removedPhoto);
+        await onUpdate({ photos: newPhotos });
+        
+        toast.success('Photo removed successfully');
+        if (onChange) onChange();
+      } catch (error) {
+        console.error('Error removing photo:', error);
+        setPhotos([...photos]);
+        toast.error('Failed to remove photo');
+      }
     } catch (error) {
-      console.error('Error removing photo:', error);
+      console.error('Error in photo removal:', error);
       toast.error('Failed to remove photo');
     }
   };
@@ -280,6 +324,15 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {hasNetworkError && (
+          <Alert variant="warning" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              You are currently offline. Changes may not be saved until you reconnect.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Profile Photos</h3>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-4">
@@ -309,7 +362,7 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
                   className="sr-only"
                   accept="image/*"
                   onChange={handlePhotoUpload}
-                  disabled={uploadingPhoto}
+                  disabled={uploadingPhoto || isSaving}
                 />
                 <label
                   htmlFor="photoUpload"
@@ -543,8 +596,8 @@ const EditProfileForm: React.FC<EditProfileFormProps> = ({ initialData, onUpdate
         </div>
         
         <div className="pt-4 flex justify-end">
-          <Button type="submit" disabled={loading} className="w-full sm:w-auto">
-            {loading ? (
+          <Button type="submit" disabled={loading || isSaving} className="w-full sm:w-auto">
+            {(loading || isSaving) ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Saving...
