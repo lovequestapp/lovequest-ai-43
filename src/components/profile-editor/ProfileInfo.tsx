@@ -58,21 +58,18 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    const giftValue = gift ?? null;
+    // gift can be null, so add check
+    if (gift === null || gift === undefined) return 0;
 
-    if (
-      giftValue !== null &&
-      giftValue !== undefined &&
-      typeof giftValue === "object"
-    ) {
-      if ("count" in giftValue && typeof giftValue.count === "number") {
-        return giftValue.count;
+    if (typeof gift === "object" && gift !== null) {
+      if ("count" in gift && typeof gift.count === "number") {
+        return gift.count;
       }
       return 0;
     }
 
-    if (typeof giftValue === "number") {
-      return giftValue;
+    if (typeof gift === "number") {
+      return gift;
     }
     return 0;
   };
@@ -83,18 +80,15 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    const giftValue = gift ?? null;
+    // gift can be null, so add check
+    if (gift === null || gift === undefined) return 0;
 
-    if (
-      giftValue !== null &&
-      giftValue !== undefined &&
-      typeof giftValue === "object"
-    ) {
-      const hasCount = "count" in giftValue && typeof giftValue.count === "number";
-      const hasValue = "value" in giftValue && typeof giftValue.value === "number";
+    if (typeof gift === "object" && gift !== null) {
+      const hasCount = "count" in gift && typeof gift.count === "number";
+      const hasValue = "value" in gift && typeof gift.value === "number";
 
       if (hasCount && hasValue) {
-        return giftValue.count * giftValue.value;
+        return gift.count * gift.value;
       }
       return 0;
     }
@@ -196,3 +190,4 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
 };
 
 export default ProfileInfo;
+
