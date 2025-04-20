@@ -125,6 +125,14 @@ const MessagesPage = () => {
     navigate(`/messages/${userId}`);
   };
 
+  // Fix for typingStatus prop, ensure it has username required by TypingIndicator component
+  const typingIndicator = typingStatus
+    ? { 
+        isTyping: typingStatus.isTyping, 
+        username: selectedUser?.name || 'Someone' 
+      } 
+    : { isTyping: false, username: '' };
+
   return (
     <Layout hideFooter>
       <MessagesLayout
@@ -134,7 +142,7 @@ const MessagesPage = () => {
         selectedUser={selectedUser}
         messages={messages}
         isLoading={isLoading}
-        typingStatus={typingStatus || { isTyping: false, userId: '', lastTyped: new Date() }}
+        typingStatus={typingIndicator}
         username={selectedUser?.name || null}
         currentUser={currentUser}
         onSendMessage={handleSendMessage}
@@ -164,3 +172,4 @@ const MessagesPage = () => {
 };
 
 export default MessagesPage;
+

@@ -138,7 +138,7 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
             .find((presenceObj: any) =>
               presenceObj.user === recipientId &&
               presenceObj.recipientId === currentUser?.id &&
-              typeof presenceObj.typing === 'boolean'
+              presenceObj.typing !== undefined // Guard for typing existence
             );
 
           if (recipientState) {
