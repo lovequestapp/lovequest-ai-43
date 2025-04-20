@@ -26,6 +26,7 @@ const GiftInventory: React.FC<GiftInventoryProps> = ({ teddyIcon }) => {
         value = typeof giftItem.value === 'number' ? giftItem.value : 0;
       } else if (typeof giftItem === 'number') {
         count = giftItem;
+        // For value fallback remain undefined if unknown
         value = 0;
       }
     }
@@ -68,4 +69,3 @@ const GiftInventory: React.FC<GiftInventoryProps> = ({ teddyIcon }) => {
 };
 
 export default GiftInventory;
-

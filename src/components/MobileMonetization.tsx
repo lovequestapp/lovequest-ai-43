@@ -26,22 +26,26 @@ const MobileMonetization = () => {
     }, 2000);
   };
   
-  // Calculate estimated earnings
+  // Calculate estimated earnings as total of gifts * values
   const calculateEarnings = (): number => {
     if (!currentUser) return 0;
     
-    // We treat receivedGifts as numbers per type definitions now
+    // All counts are numbers now: currentUser.receivedGifts = { rose: number, heart: number, teddy: number }
     const roseCount = currentUser.receivedGifts?.rose ?? 0;
     const heartCount = currentUser.receivedGifts?.heart ?? 0;
     const teddyCount = currentUser.receivedGifts?.teddy ?? 0;
     
+    // Values correspond to:
+    // rose = 1,
+    // heart = 3,
+    // teddy = 5
     return roseCount * 1 + heartCount * 3 + teddyCount * 5;
   };
   
   const earnings = calculateEarnings();
   const isPremium = currentUser?.premiumStatus !== 'standard';
   
-  // Calculate popularity score
+  // Calculate popularity score similarly
   const popularityScore = (): number => {
     if (!currentUser) return 0;
     
@@ -54,7 +58,7 @@ const MobileMonetization = () => {
     return score;
   };
 
-  // Gift stats with native emojis for icons
+  // Gift stats with icons, counts, and values
   const giftStats = [
     { 
       type: "rose",
@@ -220,4 +224,3 @@ const MobileMonetization = () => {
 };
 
 export default MobileMonetization;
-
