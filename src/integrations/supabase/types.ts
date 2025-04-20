@@ -173,7 +173,7 @@ export type Database = {
           email: string
           favorite_music: string[] | null
           gender: string | null
-          gift_inventory: Json
+          gift_inventory: Json | null
           id: string
           interested_in: string[] | null
           interests: string[] | null
@@ -185,7 +185,7 @@ export type Database = {
           photos: string[]
           popularity_points: number | null
           premium_status: string | null
-          received_gifts: Json
+          received_gifts: Json | null
           role: string | null
           trial_end_date: string | null
           updated_at: string | null
@@ -199,7 +199,7 @@ export type Database = {
           email: string
           favorite_music?: string[] | null
           gender?: string | null
-          gift_inventory?: Json
+          gift_inventory?: Json | null
           id: string
           interested_in?: string[] | null
           interests?: string[] | null
@@ -211,7 +211,7 @@ export type Database = {
           photos?: string[]
           popularity_points?: number | null
           premium_status?: string | null
-          received_gifts?: Json
+          received_gifts?: Json | null
           role?: string | null
           trial_end_date?: string | null
           updated_at?: string | null
@@ -225,7 +225,7 @@ export type Database = {
           email?: string
           favorite_music?: string[] | null
           gender?: string | null
-          gift_inventory?: Json
+          gift_inventory?: Json | null
           id?: string
           interested_in?: string[] | null
           interests?: string[] | null
@@ -237,7 +237,7 @@ export type Database = {
           photos?: string[]
           popularity_points?: number | null
           premium_status?: string | null
-          received_gifts?: Json
+          received_gifts?: Json | null
           role?: string | null
           trial_end_date?: string | null
           updated_at?: string | null
@@ -369,7 +369,7 @@ export type Database = {
           email: string
           favorite_music: string[] | null
           gender: string | null
-          gift_inventory: Json
+          gift_inventory: Json | null
           id: string
           interested_in: string[] | null
           interests: string[] | null
@@ -381,7 +381,7 @@ export type Database = {
           photos: string[]
           popularity_points: number | null
           premium_status: string | null
-          received_gifts: Json
+          received_gifts: Json | null
           role: string | null
           trial_end_date: string | null
           updated_at: string | null

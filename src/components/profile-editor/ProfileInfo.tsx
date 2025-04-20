@@ -33,6 +33,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     );
   }
 
+  // Safely calculate total gift count
   const calculateTotalGifts = (gifts?: GiftInventory): number => {
     if (!gifts) return 0;
 
@@ -58,11 +59,11 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    // Explicit null or undefined check for TypeScript
     if (gift === null || gift === undefined) return 0;
 
-    if (typeof gift === "object") {
-      if ("count" in gift && typeof gift.count === "number" && gift.count !== null) {
+    if (typeof gift === "object" && gift !== null) {
+      // After null check, guaranteed gift is not null
+      if ("count" in gift && typeof gift.count === "number") {
         return gift.count;
       }
       return 0;
@@ -80,12 +81,12 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    // Explicit null or undefined check for TypeScript
     if (gift === null || gift === undefined) return 0;
 
-    if (typeof gift === "object") {
-      const hasCount = "count" in gift && typeof gift.count === "number" && gift.count !== null;
-      const hasValue = "value" in gift && typeof gift.value === "number" && gift.value !== null;
+    if (typeof gift === "object" && gift !== null) {
+      // After null check, gift is not null
+      const hasCount = "count" in gift && typeof gift.count === "number";
+      const hasValue = "value" in gift && typeof gift.value === "number";
 
       if (hasCount && hasValue) {
         return gift.count * gift.value;
