@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useUser } from '@/context/UserContext';
 import { Badge } from '@/components/ui/badge';
-import { Edit, User, Wallet, Crown, Shield, Music, Mic, ShoppingBag, Heart, Rabbit } from 'lucide-react'; // Use Rabbit for Teddy Bear icon
+import { Edit, User, Wallet, Crown, Shield, Music, Mic, ShoppingBag, Heart, Rabbit } from 'lucide-react';
 import Monetization from '@/components/Monetization';
 import ProfileEditor from '@/components/profile-editor/ProfileEditor';
 import ProfileInfo from '@/components/profile-editor/ProfileInfo';
@@ -159,7 +158,6 @@ const Profile = () => {
                 <TabsContent value="profile" className="mt-0">
                   <div className="space-y-4">
                     <ProfileInfo profile={profileData || currentUser} />
-                    {/* Add an encouraging message for editing in the profile info tab */}
                     <p className="text-center text-sm text-gray-500 italic">
                       To edit your profile details, please use the "Edit Profile" tab.
                     </p>
@@ -211,19 +209,17 @@ const Profile = () => {
                         <ShoppingBag className="h-5 w-5 text-love-500" />
                         Gift Shop
                       </h2>
-                      {/* Pass teddyIcon explicitly */}
                       <GiftShop />
                     </div>
-                    
+
                     <div>
                       <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                         <Heart className="h-5 w-5 text-love-500" />
                         Gift Inventory
                       </h2>
-                      {/* Pass teddyIcon explicitly */}
-                      <GiftInventory teddyIcon={<Rabbit className="h-5 w-5 text-amber-500" />} />
+                      <GiftInventory />
                     </div>
-                    
+
                     <div>
                       <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
                       <GiftTransactionHistory />
