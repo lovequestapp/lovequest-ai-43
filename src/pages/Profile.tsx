@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useUser } from '@/context/UserContext';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, User, Wallet, Crown, Shield, Music, Mic, ShoppingBag, Heart } from 'lucide-react';
+import { Edit, User, Wallet, Crown, Shield, Music, Mic, ShoppingBag, Heart, 'teddy-bear' as TeddyBear } from 'lucide-react';
 import Monetization from '@/components/Monetization';
 import ProfileEditor from '@/components/profile-editor/ProfileEditor';
 import ProfileInfo from '@/components/profile-editor/ProfileInfo';
@@ -26,7 +26,6 @@ const Profile = () => {
   const navigate = useNavigate();
   const { userId } = useParams<{ userId: string }>();
 
-  // If there's a userId parameter, we're viewing someone else's profile
   if (userId && userId !== currentUser?.id) {
     return <ProfileDetails />;
   }
@@ -112,28 +111,20 @@ const Profile = () => {
           {getRoleBadge()}
           {getSubscriptionBadge()}
         </div>
-        <Button 
-          variant="outline" 
-          className="flex items-center gap-2"
-          onClick={() => navigate('/edit-profile')}
-        >
-          <Edit size={16} />
-          Edit Profile
-        </Button>
+        {/* Removed Edit Profile button for better UX */}
       </div>
 
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-800">
           <p className="font-medium">Error loading profile</p>
           <p className="text-sm">{error}</p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mt-2" 
+          <button 
+            type="button" 
             onClick={() => window.location.reload()}
+            className="mt-2 inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
           >
             Retry
-          </Button>
+          </button>
         </div>
       )}
 
@@ -222,7 +213,7 @@ const Profile = () => {
                         <Heart className="h-5 w-5 text-love-500" />
                         Gift Inventory
                       </h2>
-                      <GiftInventory />
+                      <GiftInventory teddyIcon={<TeddyBear className="h-5 w-5 text-love-500" />} />
                     </div>
                     
                     <div>
