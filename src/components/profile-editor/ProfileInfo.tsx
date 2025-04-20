@@ -62,7 +62,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   const getGiftValue = (gifts: GiftInventory | undefined, type: 'rose' | 'heart' | 'teddy'): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    if (gift && typeof gift === 'object' && gift !== null && 'count' in gift && 'value' in gift && gift !== null) {
+    if (gift && gift !== null && typeof gift === 'object' && 'count' in gift && 'value' in gift) {
       const count = typeof gift.count === 'number' ? gift.count : 0;
       const value = typeof gift.value === 'number' ? gift.value : 0;
       return count * value;

@@ -1,7 +1,4 @@
 
-// Remove the top "Edit Profile" button since we have the tab for editing profile
-// Ensure advanced tab functionality for all tabs including Gift Shop and Monetization
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -245,4 +242,3 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
-
