@@ -1,3 +1,7 @@
+
+// Remove the top "Edit Profile" button since we have the tab for editing profile
+// Ensure advanced tab functionality for all tabs including Gift Shop and Monetization
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -118,14 +122,7 @@ const UserProfile = () => {
             {getRoleBadge()}
             {getSubscriptionBadge()}
           </div>
-          <Button 
-            variant="outline" 
-            className="flex items-center gap-2"
-            onClick={() => navigate('/edit-profile')}
-          >
-            <Edit size={16} />
-            Edit Profile
-          </Button>
+          {/* Removed the Edit Profile button here */}
         </div>
 
         {error && (
@@ -216,12 +213,18 @@ const UserProfile = () => {
                   <TabsContent value="shop" className="mt-0">
                     <div className="space-y-8">
                       <div>
-                        <h2 className="text-xl font-semibold mb-4">Gift Shop</h2>
+                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                          <ShoppingBag className="h-5 w-5 text-love-500" />
+                          Gift Shop
+                        </h2>
                         <GiftShop />
                       </div>
                       
                       <div>
-                        <h2 className="text-xl font-semibold mb-4">Gift Inventory</h2>
+                        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                          <ShoppingBag className="h-5 w-5 text-love-500" />
+                          Gift Inventory
+                        </h2>
                         <GiftInventory />
                       </div>
                       
@@ -246,3 +249,4 @@ const UserProfile = () => {
 };
 
 export default UserProfile;
+

@@ -1,4 +1,5 @@
 
+// Fix typing presence state for typing property in useRealtimeChat hook and improve TS checking
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User, Message } from '@/types/user';
@@ -16,6 +17,11 @@ interface ChatStatus {
   reconnecting: boolean;
   error: string | null;
 }
+
+// A type guard to check if presence object contains typing property
+const hasTyping = (presenceObj: any): presenceObj is { typing: boolean } => {
+  return presenceObj && 'typing' in presenceObj;
+};
 
 export const useRealtimeChat = (recipientId: string | undefined) => {
   const { currentUser } = useUser();
@@ -132,16 +138,16 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
           const state = channel.presenceState();
           console.log('Presence state synchronized:', state);
 
-          // Get presence states, filtering out unexpected entries with no typing property
+          // Find presence states with typing property uniquely for recipient typing status
           const recipientState = Object.values(state)
             .flat()
             .find((presenceObj: any) =>
               presenceObj.user === recipientId &&
               presenceObj.recipientId === currentUser?.id &&
-              presenceObj.typing !== undefined // Guard for typing existence
+              hasTyping(presenceObj)
             );
 
-          if (recipientState) {
+          if (recipientState && hasTyping(recipientState)) {
             setTypingStatus({
               userId: recipientId,
               isTyping: Boolean(recipientState.typing),

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useUser } from '@/context/UserContext';
 import { Card, CardContent } from "@/components/ui/card";
@@ -37,7 +36,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     if (!gifts) return 0;
 
     return Object.entries(gifts).reduce((sum, [_, giftOrCount]) => {
-      if (typeof giftOrCount === 'object' && giftOrCount !== null && 'count' in giftOrCount) {
+      if (giftOrCount && typeof giftOrCount === 'object' && 'count' in giftOrCount && giftOrCount !== null) {
         return sum + (typeof giftOrCount.count === 'number' ? giftOrCount.count : 0);
       }
       if (typeof giftOrCount === 'number') {
@@ -50,7 +49,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   const getGiftCount = (gifts: GiftInventory | undefined, type: 'rose' | 'heart' | 'teddy'): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    if (gift && typeof gift === 'object' && 'count' in gift && gift !== null) {
+    if (gift && typeof gift === 'object' && gift !== null && 'count' in gift) {
       return typeof gift.count === 'number' ? gift.count : 0;
     }
     if (typeof gift === 'number') {
@@ -157,4 +156,3 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
 };
 
 export default ProfileInfo;
-

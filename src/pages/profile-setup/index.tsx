@@ -3,7 +3,6 @@ import { useUser } from '@/context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, UserCircle, MapPin, Mic, Image, Check } from 'lucide-react';
 import BasicInfoForm from '@/components/profile-setup/BasicInfoForm';
 import AboutYouForm from '@/components/profile-setup/AboutYouForm';
 import PhotoUploader from '@/components/profile-setup/PhotoUploader';
@@ -118,17 +117,19 @@ const ProfileSetupPage = () => {
       
       const file = e.target.files[0];
       setUploadingPhoto(true);
-      
+
       if (!currentUser?.id) {
         toast.error("You must be logged in to upload photos");
         setUploadingPhoto(false);
         return;
       }
-      
+
       const photoUrl = await uploadProfilePhoto(currentUser.id, file);
-      
+
       if (photoUrl) {
-        setPhotos(prev => [...prev, photoUrl]);
+        const newPhotos = [...photos, photoUrl];
+        setPhotos(newPhotos);
+        setProfileData(prev => ({ ...prev, photos: newPhotos }));
         toast.success("Photo uploaded successfully");
       } else {
         throw new Error("Failed to upload photo");
@@ -142,7 +143,11 @@ const ProfileSetupPage = () => {
   };
 
   const removePhoto = (index: number) => {
-    setPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotos(prev => {
+      const updated = prev.filter((_, i) => i !== index);
+      setProfileData(prevProfile => ({ ...prevProfile, photos: updated }));
+      return updated;
+    });
   };
 
   const toggleRecording = () => {
@@ -202,30 +207,25 @@ const ProfileSetupPage = () => {
         return;
       }
       
-      // Prepare update data with correct type casting
       const updateData: Partial<User> = {
         ...profileData,
         gender: profileData.gender as 'male' | 'female' | 'non-binary',
-        photos
+        photos,
       };
       
       console.log('Submitting profile data:', updateData);
       
-      // First, try to use directProfileUpdate utility which has improved RLS handling
       const success = await directProfileUpdate(currentUser.id, updateData);
       
-      // If we have a voice note, save it separately
       if (voiceNote && success) {
         await saveVoiceIntro(currentUser.id, voiceNote);
       }
       
       if (success) {
-        // Update local user context
         await updateUserProfile(updateData);
         
         toast.success("LoveQuest profile setup complete!");
         
-        // Redirect to biometric verification
         navigate('/verification');
       }
     } catch (error) {

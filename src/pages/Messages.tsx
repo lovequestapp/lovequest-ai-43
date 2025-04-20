@@ -1,4 +1,5 @@
 
+// Add fix to pass typingStatus prop with username property to MessagesLayout for typing indicator
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GiftModal } from '@/components/GiftModal';
@@ -125,12 +126,12 @@ const MessagesPage = () => {
     navigate(`/messages/${userId}`);
   };
 
-  // Fix for typingStatus prop, ensure it has username required by TypingIndicator component
+  // Add typingStatus fix here to include username
   const typingIndicator = typingStatus
-    ? { 
-        isTyping: typingStatus.isTyping, 
-        username: selectedUser?.name || 'Someone' 
-      } 
+    ? {
+        isTyping: typingStatus.isTyping,
+        username: selectedUser?.name || 'Someone'
+      }
     : { isTyping: false, username: '' };
 
   return (
@@ -172,4 +173,3 @@ const MessagesPage = () => {
 };
 
 export default MessagesPage;
-
