@@ -1,14 +1,10 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Message } from '@/types/user';
 import { useUser } from '@/context/UserContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
-// Maximum number of messages to fetch per page
 const PAGE_SIZE = 50;
-
-// Local storage key for offline message queue
 const OFFLINE_QUEUE_KEY = 'offlineMessageQueue';
 
 export const useMessages = (recipientId: string | undefined) => {
@@ -20,7 +16,6 @@ export const useMessages = (recipientId: string | undefined) => {
   const [page, setPage] = useState(0);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Load offline message queue
   const getOfflineQueue = useCallback((): Array<{message: Message, recipientId: string}> => {
     try {
       const queue = localStorage.getItem(OFFLINE_QUEUE_KEY);
@@ -31,7 +26,6 @@ export const useMessages = (recipientId: string | undefined) => {
     }
   }, []);
 
-  // Save message to offline queue
   const saveToOfflineQueue = useCallback((message: Message, recipient: string) => {
     try {
       const queue = getOfflineQueue();
@@ -44,7 +38,6 @@ export const useMessages = (recipientId: string | undefined) => {
     }
   }, [getOfflineQueue]);
 
-  // Process offline message queue when back online
   const processOfflineQueue = useCallback(async () => {
     const queue = getOfflineQueue();
     if (queue.length === 0) return;
@@ -72,7 +65,6 @@ export const useMessages = (recipientId: string | undefined) => {
       }
     }
     
-    // Remove processed messages from queue
     if (processedIds.length > 0) {
       const newQueue = queue.filter(item => !processedIds.includes(item.message.id));
       localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(newQueue));
@@ -83,12 +75,10 @@ export const useMessages = (recipientId: string | undefined) => {
         toast.success(`Sent ${processedIds.length} of ${queue.length} pending messages`);
       }
       
-      // Reload messages to include the newly sent ones
       fetchMessages(true);
     }
   }, [getOfflineQueue]);
 
-  // Listen for online/offline status changes
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -110,7 +100,6 @@ export const useMessages = (recipientId: string | undefined) => {
     };
   }, [processOfflineQueue]);
 
-  // Send a message
   const sendMessage = useCallback(async (
     content: string,
     type: Message['type'] = 'text'
@@ -121,10 +110,8 @@ export const useMessages = (recipientId: string | undefined) => {
     }
     
     try {
-      // Create a temporary ID for the message
       const tempId = `temp-${Date.now()}`;
       
-      // Add message to local state optimistically
       const newMessage: Message = {
         id: tempId,
         senderId: currentUser.id,
@@ -137,7 +124,6 @@ export const useMessages = (recipientId: string | undefined) => {
       
       setMessages(prev => [newMessage, ...prev]);
       
-      // If offline, save to queue and return
       if (!isOnline) {
         const saved = saveToOfflineQueue(newMessage, recipientId);
         if (!saved) {
@@ -146,7 +132,6 @@ export const useMessages = (recipientId: string | undefined) => {
         return true;
       }
       
-      // If online, send to server
       const { data, error } = await supabase
         .from('messages')
         .insert({
@@ -162,7 +147,6 @@ export const useMessages = (recipientId: string | undefined) => {
       
       if (error) throw error;
       
-      // Update local message with server-generated ID
       if (data) {
         setMessages(prev => 
           prev.map(msg => 
@@ -185,23 +169,20 @@ export const useMessages = (recipientId: string | undefined) => {
     } catch (error) {
       console.error('Error sending message:', error);
       
-      // If it's a network error, queue the message
       if (!navigator.onLine || error instanceof TypeError) {
         setIsOnline(false);
         toast.error('You appear to be offline. Message will be sent when connection is restored.');
-        return true; // Return success since we queued it
+        return true;
       }
       
       toast.error('Failed to send message');
       
-      // Remove the optimistic message from state
       setMessages(prev => prev.filter(msg => !msg.id.toString().startsWith('temp-')));
       
       return false;
     }
   }, [currentUser, recipientId, isOnline, saveToOfflineQueue]);
 
-  // Fetch messages
   const fetchMessages = useCallback(async (reset: boolean = false) => {
     if (!currentUser?.id || !recipientId) return;
     
@@ -218,7 +199,6 @@ export const useMessages = (recipientId: string | undefined) => {
       
       const currentPage = reset ? 0 : page;
       
-      // Query to get both sent and received messages between the two users
       const { data, error } = await supabase
         .from('messages')
         .select('*')
@@ -229,34 +209,29 @@ export const useMessages = (recipientId: string | undefined) => {
       
       if (error) throw error;
       
-      // Transform database records to Message objects
-      const transformedMessages: Message[] = data.map(msg => ({
+      const transformedMessages: Message[] = (data || []).map(msg => ({
         id: msg.id,
-        senderId: msg.sender_id,
-        recipientId: msg.receiver_id,
-        content: msg.content,
-        timestamp: new Date(msg.timestamp),
-        isRead: msg.is_read,
-        type: msg.type || 'text',
-        mediaUrl: msg.media_url
+        senderId: msg.sender_id || '',
+        recipientId: msg.receiver_id || '',
+        content: msg.content || '',
+        timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
+        isRead: msg.is_read || false,
+        type: 'text',
+        mediaUrl: undefined,
       }));
       
-      // Update messages state
       if (reset) {
         setMessages(transformedMessages);
       } else {
         setMessages(prev => [...prev, ...transformedMessages]);
       }
       
-      // Check if we have more messages
       setHasMore(data.length === PAGE_SIZE);
       
-      // Increment page
       if (!reset && data.length > 0) {
         setPage(prev => prev + 1);
       }
       
-      // Mark messages as read
       const unreadMessages = data
         .filter(msg => 
           msg.receiver_id === currentUser.id && 
@@ -279,21 +254,17 @@ export const useMessages = (recipientId: string | undefined) => {
     }
   }, [currentUser, recipientId, page, hasMore]);
 
-  // Load more messages (pagination)
   const loadMoreMessages = useCallback(() => {
     if (!isLoading && hasMore) {
       fetchMessages();
     }
   }, [fetchMessages, isLoading, hasMore]);
 
-  // Setup real-time subscription to messages
   useEffect(() => {
     if (!currentUser?.id || !recipientId) return;
     
-    // Initial fetch
     fetchMessages(true);
     
-    // Setup subscription for new messages
     const channel = supabase
       .channel('messages-changes')
       .on(
@@ -309,7 +280,6 @@ export const useMessages = (recipientId: string | undefined) => {
           
           const newMsg = payload.new;
           
-          // Add the new message to state
           const message: Message = {
             id: newMsg.id,
             senderId: newMsg.sender_id,
@@ -323,7 +293,6 @@ export const useMessages = (recipientId: string | undefined) => {
           
           setMessages(prev => [message, ...prev]);
           
-          // Mark as read if conversation is active
           try {
             await supabase
               .from('messages')

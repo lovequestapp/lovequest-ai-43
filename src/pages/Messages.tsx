@@ -19,7 +19,6 @@ const MessagesPage = () => {
   const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
   const navigate = useNavigate();
   
-  // Use our custom hook for messages handling
   const { 
     messages, 
     isLoading, 
@@ -29,7 +28,6 @@ const MessagesPage = () => {
     loadMoreMessages 
   } = useMessages(selectedUserId);
   
-  // Use real-time chat features
   const {
     typingStatus,
     setTyping,
@@ -45,7 +43,6 @@ const MessagesPage = () => {
       return;
     }
     
-    // Filter and format users to populate the match list
     if (allUsers && allUsers.length > 0) {
       const matchData = allUsers
         .filter(user => user.id !== currentUser.id)
@@ -53,22 +50,20 @@ const MessagesPage = () => {
           id: user.id,
           name: user.name,
           photo: user.photos?.[0] || '',
-          status: Math.random() > 0.5 ? 'online' : 'offline', // Mock status
-          lastMessage: 'Hello there!', // Mock message
-          lastMessageTime: new Date(Date.now() - Math.random() * 86400000), // Random time in last 24h
-          unreadCount: Math.floor(Math.random() * 3) // Mock unread count
+          status: Math.random() > 0.5 ? 'online' : 'offline', 
+          lastMessage: 'Hello there!', 
+          lastMessageTime: new Date(Date.now() - Math.random() * 86400000), 
+          unreadCount: Math.floor(Math.random() * 3)
         }));
       setMatches(matchData);
     }
     
     if (selectedUserId) {
-      // Find the user in allUsers
       const user = allUsers.find(user => user.id === selectedUserId);
       setSelectedUser(user);
     }
   }, [selectedUserId, allUsers, currentUser, navigate]);
-  
-  // Show error toast if there's an error
+
   useEffect(() => {
     if (error) {
       toast.error(error);
@@ -98,7 +93,6 @@ const MessagesPage = () => {
     sendMessageHandler(giftMessage, 'gift');
     handleCloseGiftModal();
     
-    // Show success toast with animation
     toast.success(`Gift Sent!`, {
       description: `You sent a ${giftType} to ${selectedUser?.name}`,
       duration: 3000
@@ -107,36 +101,26 @@ const MessagesPage = () => {
 
   const handleSendVoiceNote = (voiceUrl: string) => {
     if (!selectedUserId) return;
-    
-    // Pass the actual voice URL data to the sendMessageHandler
     sendMessageHandler(voiceUrl, 'voice');
     toast.success('Voice note sent');
   };
 
   const handleSendImage = (imageUrl: string) => {
     if (!selectedUserId) return;
-    
-    // Pass the actual image URL data to the sendMessageHandler
     sendMessageHandler(imageUrl, 'image');
     handleCloseImageUploader();
     toast.success('Image sent');
   };
 
-  // Handle typing indicator for real-time feedback
   const handleMessageInputChange = (isTyping: boolean) => {
     setTyping(isTyping);
   };
   
-  // Handle sending message with real-time 
   const handleSendMessage = (content: string, type: Message['type'] = 'text') => {
-    // Clear typing indicator when sending
     setTyping(false);
-    
-    // Send through the messages hook
     return sendMessageHandler(content, type);
   };
 
-  // Handle selecting a user from the match list
   const handleSelectMatch = (userId: string) => {
     navigate(`/messages/${userId}`);
   };
@@ -150,7 +134,8 @@ const MessagesPage = () => {
         selectedUser={selectedUser}
         messages={messages}
         isLoading={isLoading}
-        typingStatus={typingStatus}
+        typingStatus={typingStatus?.isTyping || false}
+        username={selectedUser?.name || null}
         currentUser={currentUser}
         onSendMessage={handleSendMessage}
         onMessageInputChange={handleMessageInputChange}
@@ -161,14 +146,12 @@ const MessagesPage = () => {
         onLoadMore={loadMoreMessages}
       />
       
-      {/* Gift Modal */}
       <GiftModal 
         isOpen={isGiftModalOpen} 
         onClose={handleCloseGiftModal} 
         onSendGift={handleSendGift} 
       />
       
-      {/* Image Uploader Modal */}
       <ImageUploader 
         isOpen={isImageUploaderOpen}
         onClose={handleCloseImageUploader}

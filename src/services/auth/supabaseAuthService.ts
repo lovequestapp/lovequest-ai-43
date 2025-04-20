@@ -2,14 +2,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User } from '@/types/user';
 import { AuthResult, AuthService } from './types';
-import { mapProfileToUser, checkTrialExpiration, createAdminUser, isAdminCredentials } from './utils';
+import { mapProfileToUser, createAdminUser, isAdminCredentials } from './utils';
 
 export class SupabaseAuthService implements AuthService {
   async signIn(email: string, password: string): Promise<AuthResult> {
     try {
-      // Check for admin credentials
       if (isAdminCredentials(email, password)) {
-        // Store a marker for admin login
         localStorage.setItem('admin_email', email);
         localStorage.setItem('lovequestLastAuth', new Date().toISOString());
         
@@ -23,7 +21,6 @@ export class SupabaseAuthService implements AuthService {
         };
       }
       
-      // Regular auth flow
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -39,7 +36,6 @@ export class SupabaseAuthService implements AuthService {
         return { success: false, error: "No session created" };
       }
 
-      // Fetch user profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -50,13 +46,10 @@ export class SupabaseAuthService implements AuthService {
         console.error("Error fetching profile:", profileError);
       }
       
-      // We no longer need to check trial expiration, as we've moved to standard/unlimited/vip model
       const userObj = mapProfileToUser(profile, data.user.id, data.user.email || '');
       
-      // Check if profile is incomplete - if bio is empty or no photos, redirect to profile setup
       const isProfileIncomplete = !profile?.bio || !profile?.photos || profile?.photos.length === 0;
       
-      // Store auth timestamp to help with session management
       localStorage.setItem('lovequestLastAuth', new Date().toISOString());
       toast.success("Login successful!");
       
@@ -78,7 +71,6 @@ export class SupabaseAuthService implements AuthService {
     planType: string = 'standard'
   ): Promise<AuthResult> {
     try {
-      // First, create the user account
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -97,35 +89,38 @@ export class SupabaseAuthService implements AuthService {
         toast.error("Registration failed", { description: "No user account created" });
         return { success: false, error: "No user account created" };
       }
-      
-      // Set premium status based on plan type
+
       let premiumStatus = 'standard';
-      
+
       if (planType === 'unlimited' || planType === 'vip' || planType === 'admin') {
         premiumStatus = planType;
       }
 
-      // Create profile record if we have a session
       if (data.session) {
-        // Create profile with the authenticated session
+        const { id } = data.user;
+        const defaultProfile = {
+          id,
+          name,
+          email,
+          age: 18,
+          bio: '',
+          location: '',
+          premium_status: premiumStatus,
+          created_at: new Date().toISOString()
+        };
+        
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert({
-            id: data.user.id,
-            name,
-            email,
-            premium_status: premiumStatus,
-            created_at: new Date().toISOString(),
-          });
-
+          .insert(defaultProfile);
+          
         if (profileError) {
           console.error("Error creating profile:", profileError);
           toast.error("Failed to create profile", { description: profileError.message });
           return { success: false, error: profileError.message };
         }
         
-        const profile = await this.fetchUserProfile(data.user.id);
-        const userObj = mapProfileToUser(profile, data.user.id, data.user.email || '');
+        const profile = await this.fetchUserProfile(id);
+        const userObj = mapProfileToUser(profile, id, data.user.email || '');
         
         if (planType === 'standard') {
           toast.success("Your standard account has been created!");
@@ -140,7 +135,6 @@ export class SupabaseAuthService implements AuthService {
         };
       }
       
-      // No session means email confirmation is required
       toast.success("Registration successful!", {
         description: "Please check your email to confirm your account"
       });
@@ -158,12 +152,10 @@ export class SupabaseAuthService implements AuthService {
 
   async signOut(): Promise<{ success: boolean; error?: string }> {
     try {
-      // Clear admin marker, auth timestamp, and all related session data
       localStorage.removeItem('admin_email');
       localStorage.removeItem('lovequestLastAuth');
-      sessionStorage.clear(); // Clear any session storage as well
+      sessionStorage.clear();
       
-      // Sign out from supabase
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -172,8 +164,6 @@ export class SupabaseAuthService implements AuthService {
         return { success: false, error: error.message };
       }
       
-      // Force clear any supabase specific storage items using the fixed project ID
-      // instead of projectRef which doesn't exist in the type
       const supabaseProjectId = 'jhfzugtgazuagqfpsuku';
       localStorage.removeItem(`sb-${supabaseProjectId}-auth-token`);
       
@@ -188,17 +178,13 @@ export class SupabaseAuthService implements AuthService {
 
   async getCurrentUser(): Promise<User | null> {
     try {
-      // Check for admin user
       const adminEmail = localStorage.getItem('admin_email');
       if (adminEmail === 'hunainm.qureshi@gmail.com') {
-        // Double check if we want to be using admin or if it's a stale value
-        // If the last auth was more than 24 hours ago, clear it
         const lastAuth = localStorage.getItem('lovequestLastAuth');
         if (lastAuth) {
           const lastAuthDate = new Date(lastAuth);
           const now = new Date();
           if (now.getTime() - lastAuthDate.getTime() > 24 * 60 * 60 * 1000) {
-            // Clear stale admin session
             localStorage.removeItem('admin_email');
             localStorage.removeItem('lovequestLastAuth');
             return null;
@@ -207,7 +193,6 @@ export class SupabaseAuthService implements AuthService {
         return createAdminUser();
       }
       
-      // Check for session
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError || !sessionData.session) {
@@ -219,7 +204,6 @@ export class SupabaseAuthService implements AuthService {
         return null;
       }
       
-      // Fetch user profile
       const profile = await this.fetchUserProfile(data.user.id);
       return mapProfileToUser(profile, data.user.id, data.user.email || '');
     } catch (error: any) {
@@ -261,13 +245,11 @@ export class SupabaseAuthService implements AuthService {
 
   async isSessionValid(): Promise<boolean> {
     try {
-      // First check for admin user
       const adminEmail = localStorage.getItem('admin_email');
       if (adminEmail === 'hunainm.qureshi@gmail.com') {
         return true;
       }
       
-      // Then check regular Supabase session
       const { data, error } = await supabase.auth.getSession();
       
       if (error) {
@@ -277,7 +259,6 @@ export class SupabaseAuthService implements AuthService {
       
       const isValid = !!data.session;
       
-      // If session will expire soon (within 1 hour), try to refresh it
       if (isValid && data.session) {
         const expiresAt = data.session.expires_at;
         if (expiresAt) {
@@ -286,8 +267,6 @@ export class SupabaseAuthService implements AuthService {
           const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
           
           if (expiresAtDate < oneHourFromNow) {
-            // Session expires within the next hour, attempt to refresh
-            console.log("Session expiring soon, refreshing...");
             await this.refreshSession();
           }
         }
@@ -306,7 +285,6 @@ export class SupabaseAuthService implements AuthService {
     subscription: string | null 
   }> {
     try {
-      // Check for admin user
       const adminEmail = localStorage.getItem('admin_email');
       if (adminEmail === 'hunainm.qureshi@gmail.com') {
         return { 
@@ -328,7 +306,6 @@ export class SupabaseAuthService implements AuthService {
       
       const userId = data.session.user.id;
       
-      // Get user profile from the profiles table
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role, premium_status')
@@ -359,7 +336,6 @@ export class SupabaseAuthService implements AuthService {
     }
   }
 
-  // Helper methods
   private async fetchUserProfile(userId: string): Promise<any> {
     try {
       const { data, error } = await supabase
@@ -400,7 +376,6 @@ export class SupabaseAuthService implements AuthService {
   }
 }
 
-// Create a singleton instance of the auth service
 const supabaseAuthService = new SupabaseAuthService();
 
 export default supabaseAuthService;

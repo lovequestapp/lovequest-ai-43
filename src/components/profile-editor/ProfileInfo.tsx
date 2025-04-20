@@ -33,12 +33,10 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     );
   }
 
-  // Safe function to calculate total gifts (sum counts only)
   const calculateTotalGifts = (gifts?: GiftInventory): number => {
     if (!gifts) return 0;
     
     return Object.entries(gifts).reduce((sum, [_, giftOrCount]) => {
-      // giftOrCount can be object with count or number
       if (typeof giftOrCount === 'object' && giftOrCount !== null && 'count' in giftOrCount) {
         return sum + (typeof giftOrCount.count === 'number' ? giftOrCount.count : 0);
       }
@@ -49,11 +47,10 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     }, 0);
   };
 
-  // Extract counts safely
   const getGiftCount = (gifts: GiftInventory | undefined, type: 'rose' | 'heart' | 'teddy'): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    if (typeof gift === 'object' && gift !== null && 'count' in gift) {
+    if (gift && typeof gift === 'object' && 'count' in gift) {
       return typeof gift.count === 'number' ? gift.count : 0;
     }
     if (typeof gift === 'number') {
@@ -62,11 +59,10 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     return 0;
   };
 
-  // Extract value safely for gift type (use count * value)
   const getGiftValue = (gifts: GiftInventory | undefined, type: 'rose' | 'heart' | 'teddy'): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    if (typeof gift === 'object' && gift !== null && 'count' in gift && 'value' in gift) {
+    if (gift && typeof gift === 'object' && 'count' in gift && 'value' in gift && gift !== null) {
       const count = typeof gift.count === 'number' ? gift.count : 0;
       const value = typeof gift.value === 'number' ? gift.value : 0;
       return count * value;
@@ -161,3 +157,4 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
 };
 
 export default ProfileInfo;
+

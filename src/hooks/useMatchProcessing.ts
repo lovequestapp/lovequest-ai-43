@@ -104,21 +104,14 @@ export const sortProfiles = (
   const profileScores = new Map<string, number>();
   
   profiles.forEach(profile => {
-    // Calculate compatibility score if not already cached
     if (sortBy === 'compatibility' && !profileScores.has(profile.id)) {
-      // Check if score is already cached to improve performance
       const cacheKey = `${currentUser.id}-${profile.id}`;
       let score: number;
       
-      if (compatibilityCache.has(cacheKey)) {
-        score = compatibilityCache.get(cacheKey) || 0;
+      if (profile.finalScore !== undefined) {
+        score = profile.finalScore;
       } else {
-        score = profile.finalScore !== undefined 
-          ? profile.finalScore 
-          : calculateCompatibilityScore(currentUser, profile);
-        
-        // Cache the score for future use
-        compatibilityCache.set(cacheKey, score);
+        score = calculateCompatibilityScore(currentUser, profile);
       }
       
       const boost = profile.isBoosted && profile.boostLevel 
@@ -138,12 +131,10 @@ export const sortProfiles = (
       
     case 'distance':
       sortedProfiles.sort((a, b) => {
-        // Put profiles with distance at top
         if (a.distance === undefined && b.distance !== undefined) return 1;
         if (a.distance !== undefined && b.distance === undefined) return -1;
         if (a.distance === undefined && b.distance === undefined) return 0;
         
-        // Apply boost for closer profiles
         const boostA = a.isBoosted && a.boostLevel ? BOOST_MULTIPLIERS[a.boostLevel] : 1;
         const boostB = b.isBoosted && b.boostLevel ? BOOST_MULTIPLIERS[b.boostLevel] : 1;
         
@@ -167,14 +158,13 @@ export const sortProfiles = (
       break;
       
     case 'recent':
-      // Improved randomization for 'recent' sorting that prioritizes newer profiles
+      // Sort by updated_at field if available, else random fallback
       sortedProfiles.sort((a, b) => {
-        // If both have created_at dates, sort by date
-        if (a.createdAt && b.createdAt) {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        const aDate = (a as any).updated_at ? new Date((a as any).updated_at).getTime() : 0;
+        const bDate = (b as any).updated_at ? new Date((b as any).updated_at).getTime() : 0;
+        if (aDate !== 0 && bDate !== 0) {
+          return bDate - aDate;
         }
-        
-        // Otherwise use randomization
         return Math.random() - 0.5;
       });
       break;

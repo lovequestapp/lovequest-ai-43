@@ -30,25 +30,21 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
   const channelRef = useRef<any>(null);
   const typingIndicatorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Track when the user is typing
   const setTyping = useCallback((isTyping: boolean) => {
     if (!currentUser || !recipientId) return;
     
-    // Clear any existing timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = null;
     }
     
     if (isTyping) {
-      // Broadcast typing status through presence
       channelRef.current?.track({
         user: currentUser.id,
         typing: true,
         recipientId
       });
       
-      // Auto-clear typing status after 3 seconds of inactivity
       typingTimeoutRef.current = setTimeout(() => {
         channelRef.current?.track({
           user: currentUser.id,
@@ -57,7 +53,6 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
         });
       }, 3000);
     } else {
-      // Immediately broadcast that user stopped typing
       channelRef.current?.track({
         user: currentUser.id,
         typing: false,
@@ -66,7 +61,6 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
     }
   }, [currentUser, recipientId]);
 
-  // Send a message through the real-time channel
   const sendMessage = useCallback(async (
     content: string,
     type: Message['type'] = 'text'
@@ -77,10 +71,8 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
     }
 
     try {
-      // Clear typing indicator
       setTyping(false);
 
-      // First save to database
       const { error } = await supabase
         .from('messages')
         .insert({
@@ -96,7 +88,6 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
         throw new Error(`Error saving message: ${error.message}`);
       }
 
-      // Real-time broadcast is handled by the database trigger and subscription
       return true;
     } catch (error) {
       console.error('Error sending message:', error);
@@ -105,7 +96,6 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
     }
   }, [currentUser, recipientId, setTyping]);
 
-  // Mark messages as read
   const markAsRead = useCallback(async (messageIds: string[]): Promise<boolean> => {
     if (!messageIds.length || !currentUser?.id) return false;
 
@@ -124,45 +114,40 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
     }
   }, [currentUser?.id]);
 
-  // Setup real-time message channel
   useEffect(() => {
     if (!currentUser?.id || !recipientId) return;
 
     console.log(`Setting up realtime chat between ${currentUser.id} and ${recipientId}`);
     
     const setupChatChannel = () => {
-      // Cleanup any existing channel
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
       
       setConnectionStatus(prev => ({ ...prev, reconnecting: true }));
       
-      // Create a new presence channel
       const channel = supabase
         .channel(`chat:${currentUser.id}:${recipientId}`)
-        // Listen for presence events (typing indicators)
         .on('presence', { event: 'sync' }, () => {
           const state = channel.presenceState();
           console.log('Presence state synchronized:', state);
           
-          // Find state for the recipient
+          // Get presence states, filtering out unexpected entries with no typing property
           const recipientState = Object.values(state)
             .flat()
             .find((presenceObj: any) => 
               presenceObj.user === recipientId && 
-              presenceObj.recipientId === currentUser?.id
+              presenceObj.recipientId === currentUser?.id 
+              && 'typing' in presenceObj
             );
             
           if (recipientState) {
-            // Update typing status
             setTypingStatus({
               userId: recipientId,
-              isTyping: recipientState.typing,
+              isTyping: Boolean(recipientState.typing),
               lastTyped: new Date()
             });
             
-            // Clear typing indicator after 5 seconds of no updates
             if (typingIndicatorTimeoutRef.current) {
               clearTimeout(typingIndicatorTimeoutRef.current);
             }
@@ -178,7 +163,6 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
             }
           }
         })
-        // Listen for all database changes to messages
         .on(
           'postgres_changes',
           {
@@ -201,7 +185,6 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
               error: null
             });
             
-            // Start tracking presence
             channel.track({
               user: currentUser.id,
               typing: false,
@@ -215,8 +198,6 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
               reconnecting: false,
               error: 'Failed to connect to chat'
             });
-            
-            // Attempt to reconnect after 5 seconds
             setTimeout(() => {
               console.log('Attempting to reconnect chat channel...');
               setupChatChannel();
@@ -229,7 +210,6 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
     
     setupChatChannel();
     
-    // Cleanup function
     return () => {
       console.log('Cleaning up chat channel...');
       
