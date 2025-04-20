@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -210,6 +211,7 @@ const Profile = () => {
                         <ShoppingBag className="h-5 w-5 text-love-500" />
                         Gift Shop
                       </h2>
+                      {/* Pass teddyIcon explicitly */}
                       <GiftShop />
                     </div>
                     
@@ -218,7 +220,8 @@ const Profile = () => {
                         <Heart className="h-5 w-5 text-love-500" />
                         Gift Inventory
                       </h2>
-                      <GiftInventory teddyIcon={<Rabbit className="h-5 w-5 text-love-500" />} />
+                      {/* Pass teddyIcon explicitly */}
+                      <GiftInventory teddyIcon={<Rabbit className="h-5 w-5 text-amber-500" />} />
                     </div>
                     
                     <div>

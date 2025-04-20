@@ -70,4 +70,3 @@ const GiftInventory: React.FC<GiftInventoryProps> = ({ teddyIcon }) => {
 };
 
 export default GiftInventory;
-
