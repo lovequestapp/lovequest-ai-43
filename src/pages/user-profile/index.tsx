@@ -19,6 +19,22 @@ import ProfileDetails from '@/pages/ProfileDetails';
 import { Layout } from '@/components/layout';
 import SubscriptionBadge from '@/components/SubscriptionBadge';
 
+// Helper to normalize gift counts from possible object to number-only
+const normalizeGifts = (gifts: any) => {
+  if (!gifts) return { rose: 0, heart: 0, teddy: 0 };
+  const safeGetCount = (gift: any): number => {
+    if (gift == null) return 0;
+    if (typeof gift === 'number') return gift;
+    if (typeof gift === 'object' && typeof gift.count === 'number') return gift.count;
+    return 0;
+  };
+  return {
+    rose: safeGetCount(gifts.rose),
+    heart: safeGetCount(gifts.heart),
+    teddy: safeGetCount(gifts.teddy),
+  };
+};
+
 const UserProfile = () => {
   const { currentUser, setCurrentUser } = useUser();
   const [searchParams] = useSearchParams();
@@ -106,6 +122,19 @@ const UserProfile = () => {
     const subscription = currentUser?.premiumStatus || 'standard';
     return <SubscriptionBadge status={subscription} className="ml-2" />;
   };
+
+  // Normalize gifts in userData passed to Monetization
+  const monetizationUserData = React.useMemo(() => {
+    const userToNormalize = profileData || currentUser;
+    if (!userToNormalize) return null;
+
+    // Clone and normalize gifts
+    return {
+      ...userToNormalize,
+      receivedGifts: normalizeGifts(userToNormalize.receivedGifts),
+      giftInventory: normalizeGifts(userToNormalize.giftInventory),
+    };
+  }, [profileData, currentUser]);
 
   return (
     <Layout>
@@ -229,7 +258,7 @@ const UserProfile = () => {
                   </TabsContent>
                   
                   <TabsContent value="monetize" className="mt-0">
-                    <Monetization userData={profileData || currentUser} />
+                    <Monetization userData={monetizationUserData} />
                   </TabsContent>
                 </>
               )}

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,6 +16,22 @@ import GiftTransactionHistory from '@/components/GiftTransactionHistory';
 import GiftShop from '@/components/GiftShop';
 import ProfileDetails from '@/pages/ProfileDetails';
 import SubscriptionBadge from '@/components/SubscriptionBadge';
+
+// Helper to normalize gift counts from possible object to number-only
+const normalizeGifts = (gifts: any) => {
+  if (!gifts) return { rose: 0, heart: 0, teddy: 0 };
+  const safeGetCount = (gift: any): number => {
+    if (gift == null) return 0;
+    if (typeof gift === 'number') return gift;
+    if (typeof gift === 'object' && typeof gift.count === 'number') return gift.count;
+    return 0;
+  };
+  return {
+    rose: safeGetCount(gifts.rose),
+    heart: safeGetCount(gifts.heart),
+    teddy: safeGetCount(gifts.teddy),
+  };
+};
 
 const Profile = () => {
   const { currentUser, setCurrentUser } = useUser();
@@ -102,6 +119,19 @@ const Profile = () => {
     return <SubscriptionBadge status={subscription} className="ml-2" />;
   };
 
+  // Normalize gifts in userData passed to Monetization
+  const monetizationUserData = React.useMemo(() => {
+    const userToNormalize = profileData || currentUser;
+    if (!userToNormalize) return null;
+
+    // Clone and normalize gifts
+    return {
+      ...userToNormalize,
+      receivedGifts: normalizeGifts(userToNormalize.receivedGifts),
+      giftInventory: normalizeGifts(userToNormalize.giftInventory),
+    };
+  }, [profileData, currentUser]);
+
   return (
     <div className="container mx-auto px-4 py-8 pb-16 md:pb-8">
       <div className="mb-6 flex items-center justify-between flex-wrap gap-2">
@@ -156,84 +186,82 @@ const Profile = () => {
             ) : (
               <>
                 <TabsContent value="profile" className="mt-0">
-                  <div className="space-y-4">
-                    <ProfileInfo profile={profileData || currentUser} />
-                    <p className="text-center text-sm text-gray-500 italic">
-                      To edit your profile details, please use the "Edit Profile" tab.
-                    </p>
-                  </div>
-
-                  {profileData?.voiceIntro && (
-                    <div className="mt-6 p-4 border rounded-lg">
-                      <h3 className="text-lg font-medium flex items-center gap-2">
-                        <Mic size={18} />
-                        Voice Introduction
-                      </h3>
-                      <div className="mt-3">
-                        <audio
-                          controls
-                          src={profileData.voiceIntro}
-                          className="w-full"
-                        >
-                          Your browser does not support the audio element.
-                        </audio>
-                      </div>
-                    </div>
-                  )}
-
-                  {profileData?.favoriteMusic && profileData.favoriteMusic.length > 0 && (
-                    <div className="mt-6 p-4 border rounded-lg">
-                      <h3 className="text-lg font-medium flex items-center gap-2">
-                        <Music size={18} />
-                        Favorite Music
-                      </h3>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {profileData.favoriteMusic.map((genre: string, index: number) => (
-                          <Badge key={index} variant="secondary">
-                            {genre}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <ProfileInfo profile={profileData || currentUser} />
+                  <p className="text-center text-sm text-gray-500 italic">
+                    To edit your profile details, please use the "Edit Profile" tab.
+                  </p>
                 </TabsContent>
                 
-                <TabsContent value="edit" className="mt-0">
-                  <ProfileEditor initialData={profileData || currentUser} />
-                </TabsContent>
-                
-                <TabsContent value="shop" className="mt-0">
-                  <div className="space-y-8">
-                    <div>
-                      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <ShoppingBag className="h-5 w-5 text-love-500" />
-                        Gift Shop
-                      </h2>
-                      <GiftShop />
-                    </div>
-
-                    <div>
-                      <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                        <Heart className="h-5 w-5 text-love-500" />
-                        Gift Inventory
-                      </h2>
-                      <GiftInventory />
-                    </div>
-
-                    <div>
-                      <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
-                      <GiftTransactionHistory />
+                {profileData?.voiceIntro && (
+                  <div className="mt-6 p-4 border rounded-lg">
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                      <Mic size={18} />
+                      Voice Introduction
+                    </h3>
+                    <div className="mt-3">
+                      <audio
+                        controls
+                        src={profileData.voiceIntro}
+                        className="w-full"
+                      >
+                        Your browser does not support the audio element.
+                      </audio>
                     </div>
                   </div>
-                </TabsContent>
+                )}
                 
-                <TabsContent value="monetize" className="mt-0">
-                  <Monetization userData={profileData || currentUser} />
-                </TabsContent>
+                {profileData?.favoriteMusic && profileData.favoriteMusic.length > 0 && (
+                  <div className="mt-6 p-4 border rounded-lg">
+                    <h3 className="text-lg font-medium flex items-center gap-2">
+                      <Music size={18} />
+                      Favorite Music
+                    </h3>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {profileData.favoriteMusic.map((genre: string, index: number) => (
+                        <Badge key={index} variant="secondary">
+                          {genre}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </CardContent>
         </Card>
+        
+        <TabsContent value="edit" className="mt-0">
+          <ProfileEditor initialData={profileData || currentUser} />
+        </TabsContent>
+        
+        <TabsContent value="shop" className="mt-0">
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-love-500" />
+                Gift Shop
+              </h2>
+              <GiftShop />
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Heart className="h-5 w-5 text-love-500" />
+                Gift Inventory
+              </h2>
+              <GiftInventory />
+            </div>
+
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
+              <GiftTransactionHistory />
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="monetize" className="mt-0">
+          <Monetization userData={monetizationUserData} />
+        </TabsContent>
       </Tabs>
     </div>
   );
