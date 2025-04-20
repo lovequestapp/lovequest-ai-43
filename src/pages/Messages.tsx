@@ -18,7 +18,7 @@ const MessagesPage = () => {
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
   const [isImageUploaderOpen, setIsImageUploaderOpen] = useState(false);
   const navigate = useNavigate();
-  
+
   const { 
     messages, 
     isLoading, 
@@ -27,22 +27,22 @@ const MessagesPage = () => {
     sendMessage: sendMessageHandler, 
     loadMoreMessages 
   } = useMessages(selectedUserId);
-  
+
   const {
     typingStatus,
     setTyping,
     sendMessage: realtimeSendMessage
   } = useRealtimeChat(selectedUserId);
-  
+
   const [matches, setMatches] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  
+
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
       return;
     }
-    
+
     if (allUsers && allUsers.length > 0) {
       const matchData = allUsers
         .filter(user => user.id !== currentUser.id)
@@ -57,7 +57,7 @@ const MessagesPage = () => {
         }));
       setMatches(matchData);
     }
-    
+
     if (selectedUserId) {
       const user = allUsers.find(user => user.id === selectedUserId);
       setSelectedUser(user);
@@ -69,30 +69,30 @@ const MessagesPage = () => {
       toast.error(error);
     }
   }, [error]);
-  
+
   const handleOpenGiftModal = () => {
     setIsGiftModalOpen(true);
   };
-  
+
   const handleCloseGiftModal = () => {
     setIsGiftModalOpen(false);
   };
-  
+
   const handleOpenImageUploader = () => {
     setIsImageUploaderOpen(true);
   };
-  
+
   const handleCloseImageUploader = () => {
     setIsImageUploaderOpen(false);
   };
-  
+
   const handleSendGift = (giftType: 'rose' | 'heart' | 'teddy') => {
     if (!selectedUserId) return;
-    
+
     const giftMessage = `Sent a ${giftType}`;
     sendMessageHandler(giftMessage, 'gift');
     handleCloseGiftModal();
-    
+
     toast.success(`Gift Sent!`, {
       description: `You sent a ${giftType} to ${selectedUser?.name}`,
       duration: 3000
@@ -115,7 +115,7 @@ const MessagesPage = () => {
   const handleMessageInputChange = (isTyping: boolean) => {
     setTyping(isTyping);
   };
-  
+
   const handleSendMessage = (content: string, type: Message['type'] = 'text') => {
     setTyping(false);
     return sendMessageHandler(content, type);
@@ -124,7 +124,7 @@ const MessagesPage = () => {
   const handleSelectMatch = (userId: string) => {
     navigate(`/messages/${userId}`);
   };
-  
+
   return (
     <Layout hideFooter>
       <MessagesLayout
@@ -134,7 +134,7 @@ const MessagesPage = () => {
         selectedUser={selectedUser}
         messages={messages}
         isLoading={isLoading}
-        typingStatus={typingStatus?.isTyping || false}
+        typingStatus={typingStatus || { isTyping: false, userId: '', lastTyped: new Date() }}
         username={selectedUser?.name || null}
         currentUser={currentUser}
         onSendMessage={handleSendMessage}
@@ -145,13 +145,13 @@ const MessagesPage = () => {
         hasMore={hasMore}
         onLoadMore={loadMoreMessages}
       />
-      
+
       <GiftModal 
         isOpen={isGiftModalOpen} 
         onClose={handleCloseGiftModal} 
         onSendGift={handleSendGift} 
       />
-      
+
       <ImageUploader 
         isOpen={isImageUploaderOpen}
         onClose={handleCloseImageUploader}

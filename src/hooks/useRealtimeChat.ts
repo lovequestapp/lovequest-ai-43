@@ -25,26 +25,26 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
     reconnecting: false,
     error: null
   });
-  
+
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelRef = useRef<any>(null);
   const typingIndicatorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const setTyping = useCallback((isTyping: boolean) => {
     if (!currentUser || !recipientId) return;
-    
+
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = null;
     }
-    
+
     if (isTyping) {
       channelRef.current?.track({
         user: currentUser.id,
         typing: true,
         recipientId
       });
-      
+
       typingTimeoutRef.current = setTimeout(() => {
         channelRef.current?.track({
           user: currentUser.id,
@@ -118,45 +118,45 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
     if (!currentUser?.id || !recipientId) return;
 
     console.log(`Setting up realtime chat between ${currentUser.id} and ${recipientId}`);
-    
+
     const setupChatChannel = () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
-      
+
       setConnectionStatus(prev => ({ ...prev, reconnecting: true }));
-      
+
       const channel = supabase
         .channel(`chat:${currentUser.id}:${recipientId}`)
         .on('presence', { event: 'sync' }, () => {
           const state = channel.presenceState();
           console.log('Presence state synchronized:', state);
-          
+
           // Get presence states, filtering out unexpected entries with no typing property
           const recipientState = Object.values(state)
             .flat()
-            .find((presenceObj: any) => 
-              presenceObj.user === recipientId && 
-              presenceObj.recipientId === currentUser?.id 
-              && 'typing' in presenceObj
+            .find((presenceObj: any) =>
+              presenceObj.user === recipientId &&
+              presenceObj.recipientId === currentUser?.id &&
+              typeof presenceObj.typing === 'boolean'
             );
-            
+
           if (recipientState) {
             setTypingStatus({
               userId: recipientId,
               isTyping: Boolean(recipientState.typing),
               lastTyped: new Date()
             });
-            
+
             if (typingIndicatorTimeoutRef.current) {
               clearTimeout(typingIndicatorTimeoutRef.current);
             }
-            
+
             if (recipientState.typing) {
               typingIndicatorTimeoutRef.current = setTimeout(() => {
-                setTypingStatus(prev => 
-                  prev && prev.userId === recipientId 
-                    ? { ...prev, isTyping: false } 
+                setTypingStatus(prev =>
+                  prev && prev.userId === recipientId
+                    ? { ...prev, isTyping: false }
                     : prev
                 );
               }, 5000);
@@ -177,14 +177,14 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
         )
         .subscribe(status => {
           console.log('Chat channel status:', status);
-          
+
           if (status === 'SUBSCRIBED') {
             setConnectionStatus({
               isConnected: true,
               reconnecting: false,
               error: null
             });
-            
+
             channel.track({
               user: currentUser.id,
               typing: false,
@@ -204,23 +204,23 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
             }, 5000);
           }
         });
-        
+
       channelRef.current = channel;
     };
-    
+
     setupChatChannel();
-    
+
     return () => {
       console.log('Cleaning up chat channel...');
-      
+
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
       }
-      
+
       if (typingIndicatorTimeoutRef.current) {
         clearTimeout(typingIndicatorTimeoutRef.current);
       }
-      
+
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
@@ -237,3 +237,4 @@ export const useRealtimeChat = (recipientId: string | undefined) => {
 };
 
 export default useRealtimeChat;
+

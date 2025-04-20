@@ -35,7 +35,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
 
   const calculateTotalGifts = (gifts?: GiftInventory): number => {
     if (!gifts) return 0;
-    
+
     return Object.entries(gifts).reduce((sum, [_, giftOrCount]) => {
       if (typeof giftOrCount === 'object' && giftOrCount !== null && 'count' in giftOrCount) {
         return sum + (typeof giftOrCount.count === 'number' ? giftOrCount.count : 0);
@@ -50,7 +50,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   const getGiftCount = (gifts: GiftInventory | undefined, type: 'rose' | 'heart' | 'teddy'): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    if (gift && typeof gift === 'object' && 'count' in gift) {
+    if (gift && typeof gift === 'object' && 'count' in gift && gift !== null) {
       return typeof gift.count === 'number' ? gift.count : 0;
     }
     if (typeof gift === 'number') {
@@ -79,7 +79,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
             {userData.name?.substring(0, 2).toUpperCase() || 'U'}
           </AvatarFallback>
         </Avatar>
-        
+
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-2xl font-semibold">{userData.name || 'No Name'}</h2>
@@ -92,23 +92,23 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
               </Badge>
             )}
           </div>
-          
+
           <p className="text-gray-600">{userData.email || 'No email'}</p>
           <p className="text-gray-600">{userData.location || 'No location set'}</p>
         </div>
       </div>
-      
+
       <Separator />
-      
+
       <div>
         <h3 className="text-lg font-semibold mb-2">About Me</h3>
         <p className="text-gray-600">
           {userData.bio || 'No bio available. Add one by editing your profile!'}
         </p>
       </div>
-      
+
       <Separator />
-      
+
       <div>
         <h3 className="text-lg font-semibold mb-2">Interests</h3>
         <div className="flex flex-wrap gap-2">
@@ -123,9 +123,9 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
           )}
         </div>
       </div>
-      
+
       <Separator />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6 text-center">
@@ -133,14 +133,14 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
             <p className="text-2xl font-semibold">{userData.popularityPoints || 0}</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-sm text-gray-500">Total Gifts Received</p>
             <p className="text-2xl font-semibold">{calculateTotalGifts(userData.receivedGifts)}</p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-sm text-gray-500">Gift Value</p>
