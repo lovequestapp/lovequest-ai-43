@@ -14,6 +14,15 @@ const MobileMonetization = () => {
   const [payoutMethod, setPayoutMethod] = useState<string>("bank");
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Helper function to safely extract count from possibly object or number gift data
+  const getGiftCount = (giftData: any): number => {
+    // It can be a number or an object with count property
+    if (giftData == null) return 0;
+    if (typeof giftData === 'number') return giftData;
+    if (typeof giftData === 'object' && typeof giftData.count === 'number') return giftData.count;
+    return 0;
+  };
+  
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     setAmount(isNaN(value) ? 0 : value);
@@ -30,10 +39,9 @@ const MobileMonetization = () => {
   const calculateEarnings = (): number => {
     if (!currentUser) return 0;
     
-    // All counts are numbers now: currentUser.receivedGifts = { rose: number, heart: number, teddy: number }
-    const roseCount = currentUser.receivedGifts?.rose ?? 0;
-    const heartCount = currentUser.receivedGifts?.heart ?? 0;
-    const teddyCount = currentUser.receivedGifts?.teddy ?? 0;
+    const roseCount = getGiftCount(currentUser.receivedGifts?.rose);
+    const heartCount = getGiftCount(currentUser.receivedGifts?.heart);
+    const teddyCount = getGiftCount(currentUser.receivedGifts?.teddy);
     
     // Values correspond to:
     // rose = 1,
@@ -48,34 +56,33 @@ const MobileMonetization = () => {
   // Calculate popularity score similarly
   const popularityScore = (): number => {
     if (!currentUser) return 0;
-    
     let score = currentUser.popularityPoints || 0;
-    
-    score += (currentUser.receivedGifts?.rose ?? 0) * 1;
-    score += (currentUser.receivedGifts?.heart ?? 0) * 5;
-    score += (currentUser.receivedGifts?.teddy ?? 0) * 10;
-    
+
+    score += getGiftCount(currentUser.receivedGifts?.rose) * 1;
+    score += getGiftCount(currentUser.receivedGifts?.heart) * 5;
+    score += getGiftCount(currentUser.receivedGifts?.teddy) * 10;
+
     return score;
   };
-
+  
   // Gift stats with icons, counts, and values
   const giftStats = [
     { 
       type: "rose",
       icon: "🌹",
-      count: currentUser?.receivedGifts?.rose ?? 0,
+      count: getGiftCount(currentUser?.receivedGifts?.rose),
       value: 1
     },
     { 
       type: "heart", 
       icon: "❤️",
-      count: currentUser?.receivedGifts?.heart ?? 0,
+      count: getGiftCount(currentUser?.receivedGifts?.heart),
       value: 3
     },
     { 
       type: "teddy",
       icon: "🧸", 
-      count: currentUser?.receivedGifts?.teddy ?? 0,
+      count: getGiftCount(currentUser?.receivedGifts?.teddy),
       value: 5
     }
   ];
