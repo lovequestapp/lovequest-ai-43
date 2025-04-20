@@ -58,10 +58,10 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    // gift can be null or undefined, so check early
-    if (!gift) return 0;
+    // Explicit null or undefined check for TypeScript
+    if (gift === null || gift === undefined) return 0;
 
-    if (typeof gift === "object" && gift !== null) {
+    if (typeof gift === "object") {
       if ("count" in gift && typeof gift.count === "number" && gift.count !== null) {
         return gift.count;
       }
@@ -80,10 +80,10 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    // gift can be null or undefined, so check early
-    if (!gift) return 0;
+    // Explicit null or undefined check for TypeScript
+    if (gift === null || gift === undefined) return 0;
 
-    if (typeof gift === "object" && gift !== null) {
+    if (typeof gift === "object") {
       const hasCount = "count" in gift && typeof gift.count === "number" && gift.count !== null;
       const hasValue = "value" in gift && typeof gift.value === "number" && gift.value !== null;
 
