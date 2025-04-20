@@ -63,11 +63,14 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     if (
       giftValue !== null &&
       giftValue !== undefined &&
-      typeof giftValue === "object" &&
-      "count" in giftValue
+      typeof giftValue === "object"
     ) {
-      return typeof (giftValue as any).count === "number" ? (giftValue as any).count : 0;
+      if ("count" in giftValue && typeof giftValue.count === "number") {
+        return giftValue.count;
+      }
+      return 0;
     }
+
     if (typeof giftValue === "number") {
       return giftValue;
     }
@@ -85,14 +88,17 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     if (
       giftValue !== null &&
       giftValue !== undefined &&
-      typeof giftValue === "object" &&
-      "count" in giftValue &&
-      "value" in giftValue
+      typeof giftValue === "object"
     ) {
-      const count = typeof (giftValue as any).count === "number" ? (giftValue as any).count : 0;
-      const value = typeof (giftValue as any).value === "number" ? (giftValue as any).value : 0;
-      return count * value;
+      const hasCount = "count" in giftValue && typeof giftValue.count === "number";
+      const hasValue = "value" in giftValue && typeof giftValue.value === "number";
+
+      if (hasCount && hasValue) {
+        return giftValue.count * giftValue.value;
+      }
+      return 0;
     }
+
     return 0;
   };
 
@@ -190,4 +196,3 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
 };
 
 export default ProfileInfo;
-

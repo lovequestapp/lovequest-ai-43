@@ -17,6 +17,7 @@ export interface ProfileCardProps {
   onPass?: (profileId: string) => void;
   onBoost?: (profileId: string) => void;
   onUnmatch?: (profileId: string) => void;
+  onViewProfile?: () => void; // Added this prop for viewing profile on click
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ 
@@ -28,12 +29,22 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   onLike,
   onPass,
   onBoost,
-  onUnmatch
+  onUnmatch,
+  onViewProfile,
 }) => {
   const navigate = useNavigate();
   
-  const handleProfileClick = () => {
-    navigate(`/profile/${profile.id}`);
+  const handleProfileClick = (e: React.MouseEvent) => {
+    // Prevent navigation when clicking on action buttons
+    if ((e.target as HTMLElement).closest('.card-action-button')) {
+      return;
+    }
+
+    if (onViewProfile) {
+      onViewProfile();
+    } else if (profile.id) {
+      navigate(`/profile/${profile.id}`);
+    }
   };
   
   const handleLike = (e: React.MouseEvent) => {
