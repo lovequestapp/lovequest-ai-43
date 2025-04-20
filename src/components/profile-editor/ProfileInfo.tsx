@@ -58,7 +58,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    // gift can be null, so add check
+    // gift can be null or undefined, so check early
     if (gift === null || gift === undefined) return 0;
 
     if (typeof gift === "object" && gift !== null) {
@@ -80,7 +80,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    // gift can be null, so add check
+    // gift can be null or undefined, so check early
     if (gift === null || gift === undefined) return 0;
 
     if (typeof gift === "object" && gift !== null) {
@@ -93,6 +93,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
       return 0;
     }
 
+    // If gift is a number, but no value property, return 0 since no way to multiply
     return 0;
   };
 
