@@ -8,9 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useUser } from '@/context/UserContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, User, Wallet, Crown, Shield, Music, Mic, ShoppingBag } from 'lucide-react';
+import { Edit, User, Wallet, Crown, Shield, Music, Mic, ShoppingBag, Heart } from 'lucide-react';
 import Monetization from '@/components/Monetization';
 import ProfileEditor from '@/components/profile-editor/ProfileEditor';
 import ProfileInfo from '@/components/profile-editor/ProfileInfo';
@@ -20,10 +19,8 @@ import GiftInventory from '@/components/GiftInventory';
 import GiftTransactionHistory from '@/components/GiftTransactionHistory';
 import GiftShop from '@/components/GiftShop';
 import ProfileDetails from '@/pages/ProfileDetails';
-import MobileToolbar from '@/components/MobileToolbar';
 import { Layout } from '@/components/layout';
 import SubscriptionBadge from '@/components/SubscriptionBadge';
-import { convertPremiumStatus } from '@/utils/subscription';
 
 const UserProfile = () => {
   const { currentUser, setCurrentUser } = useUser();
@@ -129,14 +126,13 @@ const UserProfile = () => {
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md text-red-800">
             <p className="font-medium">Error loading profile</p>
             <p className="text-sm">{error}</p>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="mt-2" 
+            <button 
+              type="button" 
               onClick={() => window.location.reload()}
+              className="mt-2 inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100"
             >
               Retry
-            </Button>
+            </button>
           </div>
         )}
 
@@ -222,7 +218,7 @@ const UserProfile = () => {
                       
                       <div>
                         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                          <ShoppingBag className="h-5 w-5 text-love-500" />
+                          <Heart className="h-5 w-5 text-love-500" />
                           Gift Inventory
                         </h2>
                         <GiftInventory />

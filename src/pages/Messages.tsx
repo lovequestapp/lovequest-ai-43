@@ -126,7 +126,7 @@ const MessagesPage = () => {
     navigate(`/messages/${userId}`);
   };
 
-  // Add typingStatus fix here to include username
+  // Fix typingStatus here to provide correct shape for MessagesLayout props
   const typingIndicator = typingStatus
     ? {
         isTyping: typingStatus.isTyping,
@@ -144,7 +144,6 @@ const MessagesPage = () => {
         messages={messages}
         isLoading={isLoading}
         typingStatus={typingIndicator}
-        username={selectedUser?.name || null}
         currentUser={currentUser}
         onSendMessage={handleSendMessage}
         onMessageInputChange={handleMessageInputChange}
@@ -173,3 +172,4 @@ const MessagesPage = () => {
 };
 
 export default MessagesPage;
+
