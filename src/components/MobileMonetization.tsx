@@ -7,8 +7,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUser } from "@/context/UserContext";
-import { Gift, Wallet, DollarSign, Gem, Clock, User as UserIcon } from 'lucide-react';
-import { motion } from "framer-motion";
 
 const MobileMonetization = () => {
   const { currentUser } = useUser();
@@ -47,7 +45,6 @@ const MobileMonetization = () => {
   const popularityScore = (): number => {
     if (!currentUser) return 0;
     
-    // Base score
     let score = currentUser.popularityPoints || 0;
     
     // Add points from gifts
@@ -58,6 +55,7 @@ const MobileMonetization = () => {
     return score;
   };
 
+  // Gift stats with emojis for icons
   const giftStats = [
     { 
       type: "rose",
@@ -85,7 +83,7 @@ const MobileMonetization = () => {
       <Card className="border-love-100">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center">
-            <Wallet className="mr-2 h-5 w-5 text-love-500" />
+            <span role="img" aria-label="wallet" className="mr-2 text-love-500" style={{fontSize: '1.25rem'}}>💰</span>
             Earnings Overview
           </CardTitle>
         </CardHeader>
@@ -120,7 +118,7 @@ const MobileMonetization = () => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center">
-            <Gift className="mr-2 h-5 w-5 text-love-500" />
+            <span role="img" aria-label="gifts" className="mr-2 text-love-500" style={{fontSize:'1.25rem'}}>🎁</span>
             Received Gifts
           </CardTitle>
           <CardDescription>
@@ -148,7 +146,7 @@ const MobileMonetization = () => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center">
-            <DollarSign className="mr-2 h-5 w-5 text-love-500" />
+            <span role="img" aria-label="dollar" className="mr-2 text-love-500" style={{fontSize:'1.25rem'}}>💵</span>
             Withdraw Earnings
           </CardTitle>
           <CardDescription>
@@ -198,14 +196,13 @@ const MobileMonetization = () => {
       
       {/* Upgrade Banner */}
       {currentUser?.premiumStatus === 'standard' && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+        <div 
           className="rounded-lg p-4 bg-gradient-to-r from-love-100 to-love-200 border border-love-200"
+          aria-live="polite"
         >
           <div className="flex items-start space-x-3">
-            <div className="bg-love-500 text-white p-2 rounded-full">
-              <Gem className="h-5 w-5" />
+            <div className="bg-love-500 text-white p-2 rounded-full font-bold text-lg">
+              💎
             </div>
             <div>
               <h3 className="font-semibold text-love-800">Upgrade Your Account</h3>
@@ -217,7 +214,7 @@ const MobileMonetization = () => {
               </Button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );
