@@ -59,17 +59,18 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    if (gift == null) return 0; // covers null and undefined
+    // combine the null and type check in one guard to satisfy TS
+    if (gift == null) return 0;
 
-    // Assert gift is non-null and of type object or number
-    if (typeof gift === "object" && gift !== null) {
-      if ("count" in gift && typeof gift.count === "number") {
-        return gift.count;
+    // Narrow gift type now (gift cannot be null or undefined here)
+    if (typeof gift === "object") {
+      // Use a local constant after null check
+      const giftObj = gift as { count?: number; value?: number } | null;
+      if (giftObj && typeof giftObj.count === "number") {
+        return giftObj.count;
       }
       return 0;
-    }
-
-    if (typeof gift === "number") {
+    } else if (typeof gift === "number") {
       return gift;
     }
     return 0;
@@ -81,14 +82,16 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    if (gift == null) return 0; // covers null and undefined
+    if (gift == null) return 0;
 
-    if (typeof gift === "object" && gift !== null) {
+    if (typeof gift === "object") {
+      const giftObj = gift as { count?: number; value?: number } | null;
       if (
-        "count" in gift && typeof gift.count === "number" &&
-        "value" in gift && typeof gift.value === "number"
+        giftObj &&
+        typeof giftObj.count === "number" &&
+        typeof giftObj.value === "number"
       ) {
-        return gift.count * gift.value;
+        return giftObj.count * giftObj.value;
       }
       return 0;
     }
@@ -110,7 +113,8 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
             <h2 className="text-2xl font-semibold">{userData.name || "No Name"}</h2>
             <Badge variant="outline" className="bg-love-50 text-love-700">
               {userData.premiumStatus
-                ? userData.premiumStatus.charAt(0).toUpperCase() + userData.premiumStatus.slice(1)
+                ? userData.premiumStatus.charAt(0).toUpperCase() +
+                  userData.premiumStatus.slice(1)
                 : "Basic"}
             </Badge>
             {userData.verificationStatus === "verified" && (
@@ -157,7 +161,9 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-sm text-gray-500">Popularity</p>
-            <p className="text-2xl font-semibold">{userData.popularityPoints || 0}</p>
+            <p className="text-2xl font-semibold">
+              {userData.popularityPoints || 0}
+            </p>
           </CardContent>
         </Card>
 
@@ -189,4 +195,3 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
 };
 
 export default ProfileInfo;
-
