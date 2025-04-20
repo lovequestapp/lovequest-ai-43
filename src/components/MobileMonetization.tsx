@@ -13,7 +13,7 @@ const MobileMonetization = () => {
   const [amount, setAmount] = useState<number>(50);
   const [payoutMethod, setPayoutMethod] = useState<string>("bank");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Helper function to safely extract count from possibly object or number gift data
   const getGiftCount = (giftData: any): number => {
     // It can be a number or an object with count property
@@ -22,37 +22,37 @@ const MobileMonetization = () => {
     if (typeof giftData === 'object' && typeof giftData.count === 'number') return giftData.count;
     return 0;
   };
-  
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     setAmount(isNaN(value) ? 0 : value);
   };
-  
+
   const handleWithdrawal = async () => {
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
     }, 2000);
   };
-  
+
   // Calculate estimated earnings as total of gifts * values
   const calculateEarnings = (): number => {
     if (!currentUser) return 0;
-    
+
     const roseCount = getGiftCount(currentUser.receivedGifts?.rose);
     const heartCount = getGiftCount(currentUser.receivedGifts?.heart);
     const teddyCount = getGiftCount(currentUser.receivedGifts?.teddy);
-    
+
     // Values correspond to:
     // rose = 1,
     // heart = 3,
     // teddy = 5
     return roseCount * 1 + heartCount * 3 + teddyCount * 5;
   };
-  
+
   const earnings = calculateEarnings();
   const isPremium = currentUser?.premiumStatus !== 'standard';
-  
+
   // Calculate popularity score similarly
   const popularityScore = (): number => {
     if (!currentUser) return 0;
@@ -64,7 +64,7 @@ const MobileMonetization = () => {
 
     return score;
   };
-  
+
   // Gift stats with icons, counts, and values
   const giftStats = [
     { 
@@ -86,7 +86,7 @@ const MobileMonetization = () => {
       value: 5
     }
   ];
-  
+
   return (
     <div className="py-2 space-y-5">
       {/* Earnings Summary */}
@@ -104,7 +104,6 @@ const MobileMonetization = () => {
               Available for withdrawal
             </p>
           </div>
-          
           <div className="mt-4 grid grid-cols-2 gap-2">
             <div className="bg-muted rounded-lg px-3 py-2">
               <div className="text-sm text-muted-foreground">Popularity</div>
@@ -123,7 +122,7 @@ const MobileMonetization = () => {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Gift Stats */}
       <Card>
         <CardHeader className="pb-2">
@@ -137,21 +136,26 @@ const MobileMonetization = () => {
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center space-x-4">
-            {giftStats.map((gift) => (
-              <div 
-                key={gift.type}
-                className="flex flex-col items-center p-3 bg-muted rounded-lg text-center flex-1"
-              >
-                <div className="text-2xl mb-1" aria-label={gift.type}>{gift.icon}</div>
-                <div className="text-lg font-bold">{gift.count}</div>
-                <div className="text-xs text-muted-foreground capitalize">{gift.type}s</div>
-                <div className="text-xs mt-1 text-love-500">${(gift.count * gift.value).toFixed(2)}</div>
-              </div>
-            ))}
+            {giftStats.map((gift) => {
+              // Defensive: make sure count is a number and not an object
+              const giftCount = typeof gift.count === 'number' ? gift.count : 0;
+              const giftValue = typeof gift.value === 'number' ? gift.value : 0;
+              return (
+                <div 
+                  key={gift.type}
+                  className="flex flex-col items-center p-3 bg-muted rounded-lg text-center flex-1"
+                >
+                  <div className="text-2xl mb-1" aria-label={gift.type}>{gift.icon}</div>
+                  <div className="text-lg font-bold">{giftCount}</div>
+                  <div className="text-xs text-muted-foreground capitalize">{gift.type}s</div>
+                  <div className="text-xs mt-1 text-love-500">${(giftCount * giftValue).toFixed(2)}</div>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Withdrawal */}
       <Card>
         <CardHeader className="pb-2">
@@ -176,7 +180,6 @@ const MobileMonetization = () => {
             />
             <p className="text-xs text-muted-foreground">Minimum withdrawal: $10</p>
           </div>
-          
           <div className="space-y-2">
             <Label htmlFor="method">Payout Method</Label>
             <Select 
@@ -203,7 +206,7 @@ const MobileMonetization = () => {
           </Button>
         </CardFooter>
       </Card>
-      
+
       {/* Upgrade Banner */}
       {currentUser?.premiumStatus === 'standard' && (
         <div 
@@ -231,3 +234,4 @@ const MobileMonetization = () => {
 };
 
 export default MobileMonetization;
+
