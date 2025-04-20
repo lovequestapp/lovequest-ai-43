@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useUser } from '@/context/UserContext';
 import { Badge } from '@/components/ui/badge';
-import { Edit, User, Wallet, Crown, Shield, Music, Mic, ShoppingBag, Heart, 'teddy-bear' as TeddyBear } from 'lucide-react';
+import { Edit, User, Wallet, Crown, Shield, Music, Mic, ShoppingBag, Heart, Rabbit } from 'lucide-react'; // Use Rabbit for Teddy Bear icon
 import Monetization from '@/components/Monetization';
 import ProfileEditor from '@/components/profile-editor/ProfileEditor';
 import ProfileInfo from '@/components/profile-editor/ProfileInfo';
@@ -157,8 +157,14 @@ const Profile = () => {
             ) : (
               <>
                 <TabsContent value="profile" className="mt-0">
-                  <ProfileInfo profile={profileData || currentUser} />
-                  
+                  <div className="space-y-4">
+                    <ProfileInfo profile={profileData || currentUser} />
+                    {/* Add an encouraging message for editing in the profile info tab */}
+                    <p className="text-center text-sm text-gray-500 italic">
+                      To edit your profile details, please use the "Edit Profile" tab.
+                    </p>
+                  </div>
+
                   {profileData?.voiceIntro && (
                     <div className="mt-6 p-4 border rounded-lg">
                       <h3 className="text-lg font-medium flex items-center gap-2">
@@ -176,7 +182,7 @@ const Profile = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {profileData?.favoriteMusic && profileData.favoriteMusic.length > 0 && (
                     <div className="mt-6 p-4 border rounded-lg">
                       <h3 className="text-lg font-medium flex items-center gap-2">
@@ -213,7 +219,7 @@ const Profile = () => {
                         <Heart className="h-5 w-5 text-love-500" />
                         Gift Inventory
                       </h2>
-                      <GiftInventory teddyIcon={<TeddyBear className="h-5 w-5 text-love-500" />} />
+                      <GiftInventory teddyIcon={<Rabbit className="h-5 w-5 text-love-500" />} />
                     </div>
                     
                     <div>

@@ -5,7 +5,11 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Flower, Heart, Rabbit } from 'lucide-react';
 
-const GiftInventory = () => {
+interface GiftInventoryProps {
+  teddyIcon?: React.ReactNode; // Accept an optional icon for teddy bear gift
+}
+
+const GiftInventory: React.FC<GiftInventoryProps> = ({ teddyIcon }) => {
   const { inventory, updateInventory } = useGifts();
   
   React.useEffect(() => {
@@ -24,7 +28,7 @@ const GiftInventory = () => {
     let icon;
     if (type === 'rose') icon = <Flower className="h-8 w-8 text-red-500" />;
     else if (type === 'heart') icon = <Heart className="h-8 w-8 text-love-500" />;
-    else if (type === 'teddy') icon = <Rabbit className="h-8 w-8 text-amber-500" />;
+    else if (type === 'teddy') icon = teddyIcon || <Rabbit className="h-8 w-8 text-amber-500" />; // Use passed icon or default Rabbit
       
     return (
       <div className="flex items-center justify-between p-4 border rounded-lg">
