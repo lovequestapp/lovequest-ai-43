@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { useUser } from '@/context/UserContext';
+import React from "react";
+import { useUser } from "@/context/UserContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -37,34 +37,45 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     if (!gifts) return 0;
 
     return Object.entries(gifts).reduce((sum, [_, giftOrCount]) => {
-      if (giftOrCount && typeof giftOrCount === 'object' && giftOrCount !== null && 'count' in giftOrCount) {
-        return sum + (typeof giftOrCount.count === 'number' ? giftOrCount.count : 0);
+      if (
+        giftOrCount &&
+        typeof giftOrCount === "object" &&
+        giftOrCount !== null &&
+        "count" in giftOrCount
+      ) {
+        return sum + (typeof giftOrCount.count === "number" ? giftOrCount.count : 0);
       }
-      if (typeof giftOrCount === 'number') {
+      if (typeof giftOrCount === "number") {
         return sum + giftOrCount;
       }
       return sum;
     }, 0);
   };
 
-  const getGiftCount = (gifts: GiftInventory | undefined, type: 'rose' | 'heart' | 'teddy'): number => {
+  const getGiftCount = (
+    gifts: GiftInventory | undefined,
+    type: "rose" | "heart" | "teddy"
+  ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    if (gift && typeof gift === 'object' && gift !== null && 'count' in gift) {
-      return typeof gift.count === 'number' ? gift.count : 0;
+    if (gift !== null && typeof gift === "object" && "count" in gift) {
+      return typeof gift.count === "number" ? gift.count : 0;
     }
-    if (typeof gift === 'number') {
+    if (typeof gift === "number") {
       return gift;
     }
     return 0;
   };
 
-  const getGiftValue = (gifts: GiftInventory | undefined, type: 'rose' | 'heart' | 'teddy'): number => {
+  const getGiftValue = (
+    gifts: GiftInventory | undefined,
+    type: "rose" | "heart" | "teddy"
+  ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    if (gift && gift !== null && typeof gift === 'object' && 'count' in gift && 'value' in gift) {
-      const count = typeof gift.count === 'number' ? gift.count : 0;
-      const value = typeof gift.value === 'number' ? gift.value : 0;
+    if (gift !== null && typeof gift === "object" && "count" in gift && "value" in gift) {
+      const count = typeof gift.count === "number" ? gift.count : 0;
+      const value = typeof gift.value === "number" ? gift.value : 0;
       return count * value;
     }
     return 0;
@@ -74,27 +85,29 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
         <Avatar className="h-24 w-24 border-2 border-love-100">
-          <AvatarImage src={userData.photos?.[0] || ''} alt={userData.name} />
+          <AvatarImage src={userData.photos?.[0] || ""} alt={userData.name} />
           <AvatarFallback className="text-2xl bg-love-100 text-love-800">
-            {userData.name?.substring(0, 2).toUpperCase() || 'U'}
+            {userData.name?.substring(0, 2).toUpperCase() || "U"}
           </AvatarFallback>
         </Avatar>
 
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-2xl font-semibold">{userData.name || 'No Name'}</h2>
+            <h2 className="text-2xl font-semibold">{userData.name || "No Name"}</h2>
             <Badge variant="outline" className="bg-love-50 text-love-700">
-              {userData.premiumStatus?.charAt(0).toUpperCase() + userData.premiumStatus?.slice(1) || 'Basic'}
+              {userData.premiumStatus
+                ? userData.premiumStatus.charAt(0).toUpperCase() + userData.premiumStatus.slice(1)
+                : "Basic"}
             </Badge>
-            {userData.verificationStatus === 'verified' && (
+            {userData.verificationStatus === "verified" && (
               <Badge variant="outline" className="bg-green-50 text-green-700">
                 Verified
               </Badge>
             )}
           </div>
 
-          <p className="text-gray-600">{userData.email || 'No email'}</p>
-          <p className="text-gray-600">{userData.location || 'No location set'}</p>
+          <p className="text-gray-600">{userData.email || "No email"}</p>
+          <p className="text-gray-600">{userData.location || "No location set"}</p>
         </div>
       </div>
 
@@ -103,7 +116,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
       <div>
         <h3 className="text-lg font-semibold mb-2">About Me</h3>
         <p className="text-gray-600">
-          {userData.bio || 'No bio available. Add one by editing your profile!'}
+          {userData.bio || "No bio available. Add one by editing your profile!"}
         </p>
       </div>
 
@@ -137,18 +150,23 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-sm text-gray-500">Total Gifts Received</p>
-            <p className="text-2xl font-semibold">{calculateTotalGifts(userData.receivedGifts)}</p>
+            <p className="text-2xl font-semibold">
+              {calculateTotalGifts(userData.receivedGifts)}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-sm text-gray-500">Gift Value</p>
-            <p className="text-2xl font-semibold">${(
-              getGiftValue(userData.receivedGifts, 'rose') +
-              getGiftValue(userData.receivedGifts, 'heart') +
-              getGiftValue(userData.receivedGifts, 'teddy')
-            ).toFixed(2)}</p>
+            <p className="text-2xl font-semibold">
+              $
+              {(
+                getGiftValue(userData.receivedGifts, "rose") +
+                getGiftValue(userData.receivedGifts, "heart") +
+                getGiftValue(userData.receivedGifts, "teddy")
+              ).toFixed(2)}
+            </p>
           </CardContent>
         </Card>
       </div>
