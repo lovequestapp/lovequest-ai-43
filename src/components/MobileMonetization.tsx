@@ -1,6 +1,4 @@
 
-// Full unlock and fix MobileMonetization.tsx with emojis for gifts, clean, and fully functional
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,12 +30,11 @@ const MobileMonetization = () => {
   const calculateEarnings = (): number => {
     if (!currentUser) return 0;
     
-    // Calculate based on gifts received
-    const roseValue = (currentUser.receivedGifts?.rose || 0) * 1;
-    const heartValue = (currentUser.receivedGifts?.heart || 0) * 3;
-    const teddyValue = (currentUser.receivedGifts?.teddy || 0) * 5;
+    const roseCount = currentUser.receivedGifts?.rose?.count ?? 0;
+    const heartCount = currentUser.receivedGifts?.heart?.count ?? 0;
+    const teddyCount = currentUser.receivedGifts?.teddy?.count ?? 0;
     
-    return roseValue + heartValue + teddyValue;
+    return roseCount * 1 + heartCount * 3 + teddyCount * 5;
   };
   
   const earnings = calculateEarnings();
@@ -49,10 +46,9 @@ const MobileMonetization = () => {
     
     let score = currentUser.popularityPoints || 0;
     
-    // Add points from gifts
-    score += (currentUser.receivedGifts?.rose || 0) * 1;
-    score += (currentUser.receivedGifts?.heart || 0) * 5;
-    score += (currentUser.receivedGifts?.teddy || 0) * 10;
+    score += (currentUser.receivedGifts?.rose?.count ?? 0) * 1;
+    score += (currentUser.receivedGifts?.heart?.count ?? 0) * 5;
+    score += (currentUser.receivedGifts?.teddy?.count ?? 0) * 10;
     
     return score;
   };
@@ -62,19 +58,19 @@ const MobileMonetization = () => {
     { 
       type: "rose",
       icon: "🌹",
-      count: currentUser?.receivedGifts?.rose || 0,
+      count: currentUser?.receivedGifts?.rose?.count ?? 0,
       value: 1
     },
     { 
       type: "heart", 
       icon: "❤️",
-      count: currentUser?.receivedGifts?.heart || 0,
+      count: currentUser?.receivedGifts?.heart?.count ?? 0,
       value: 3
     },
     { 
       type: "teddy",
       icon: "🧸", 
-      count: currentUser?.receivedGifts?.teddy || 0,
+      count: currentUser?.receivedGifts?.teddy?.count ?? 0,
       value: 5
     }
   ];
@@ -134,7 +130,7 @@ const MobileMonetization = () => {
                 key={gift.type}
                 className="flex flex-col items-center p-3 bg-muted rounded-lg text-center flex-1"
               >
-                <div className="text-2xl mb-1">{gift.icon}</div>
+                <div className="text-2xl mb-1" aria-label={gift.type}>{gift.icon}</div>
                 <div className="text-lg font-bold">{gift.count}</div>
                 <div className="text-xs text-muted-foreground capitalize">{gift.type}s</div>
                 <div className="text-xs mt-1 text-love-500">${(gift.count * gift.value).toFixed(2)}</div>
@@ -223,3 +219,4 @@ const MobileMonetization = () => {
 };
 
 export default MobileMonetization;
+
