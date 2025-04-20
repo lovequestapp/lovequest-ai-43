@@ -30,9 +30,10 @@ const MobileMonetization = () => {
   const calculateEarnings = (): number => {
     if (!currentUser) return 0;
     
-    const roseCount = currentUser.receivedGifts?.rose?.count ?? 0;
-    const heartCount = currentUser.receivedGifts?.heart?.count ?? 0;
-    const teddyCount = currentUser.receivedGifts?.teddy?.count ?? 0;
+    // We treat receivedGifts as numbers per type definitions now
+    const roseCount = currentUser.receivedGifts?.rose ?? 0;
+    const heartCount = currentUser.receivedGifts?.heart ?? 0;
+    const teddyCount = currentUser.receivedGifts?.teddy ?? 0;
     
     return roseCount * 1 + heartCount * 3 + teddyCount * 5;
   };
@@ -46,9 +47,9 @@ const MobileMonetization = () => {
     
     let score = currentUser.popularityPoints || 0;
     
-    score += (currentUser.receivedGifts?.rose?.count ?? 0) * 1;
-    score += (currentUser.receivedGifts?.heart?.count ?? 0) * 5;
-    score += (currentUser.receivedGifts?.teddy?.count ?? 0) * 10;
+    score += (currentUser.receivedGifts?.rose ?? 0) * 1;
+    score += (currentUser.receivedGifts?.heart ?? 0) * 5;
+    score += (currentUser.receivedGifts?.teddy ?? 0) * 10;
     
     return score;
   };
@@ -58,19 +59,19 @@ const MobileMonetization = () => {
     { 
       type: "rose",
       icon: "🌹",
-      count: currentUser?.receivedGifts?.rose?.count ?? 0,
+      count: currentUser?.receivedGifts?.rose ?? 0,
       value: 1
     },
     { 
       type: "heart", 
       icon: "❤️",
-      count: currentUser?.receivedGifts?.heart?.count ?? 0,
+      count: currentUser?.receivedGifts?.heart ?? 0,
       value: 3
     },
     { 
       type: "teddy",
       icon: "🧸", 
-      count: currentUser?.receivedGifts?.teddy?.count ?? 0,
+      count: currentUser?.receivedGifts?.teddy ?? 0,
       value: 5
     }
   ];
