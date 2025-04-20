@@ -33,13 +33,45 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     );
   }
 
-  // Safe function to calculate total gifts
+  // Safe function to calculate total gifts (sum counts only)
   const calculateTotalGifts = (gifts?: GiftInventory): number => {
     if (!gifts) return 0;
     
-    return Object.entries(gifts).reduce((sum, [_, count]) => {
-      return sum + (typeof count === 'number' ? count : 0);
+    return Object.entries(gifts).reduce((sum, [_, giftOrCount]) => {
+      // giftOrCount can be object with count or number
+      if (typeof giftOrCount === 'object' && giftOrCount !== null && 'count' in giftOrCount) {
+        return sum + (typeof giftOrCount.count === 'number' ? giftOrCount.count : 0);
+      }
+      if (typeof giftOrCount === 'number') {
+        return sum + giftOrCount;
+      }
+      return sum;
     }, 0);
+  };
+
+  // Extract counts safely
+  const getGiftCount = (gifts: GiftInventory | undefined, type: 'rose' | 'heart' | 'teddy'): number => {
+    if (!gifts) return 0;
+    const gift = gifts[type];
+    if (typeof gift === 'object' && gift !== null && 'count' in gift) {
+      return typeof gift.count === 'number' ? gift.count : 0;
+    }
+    if (typeof gift === 'number') {
+      return gift;
+    }
+    return 0;
+  };
+
+  // Extract value safely for gift type (use count * value)
+  const getGiftValue = (gifts: GiftInventory | undefined, type: 'rose' | 'heart' | 'teddy'): number => {
+    if (!gifts) return 0;
+    const gift = gifts[type];
+    if (typeof gift === 'object' && gift !== null && 'count' in gift && 'value' in gift) {
+      const count = typeof gift.count === 'number' ? gift.count : 0;
+      const value = typeof gift.value === 'number' ? gift.value : 0;
+      return count * value;
+    }
+    return 0;
   };
 
   return (
@@ -100,31 +132,27 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-500">Popularity</p>
-              <p className="text-2xl font-semibold">{userData.popularityPoints || 0}</p>
-            </div>
+          <CardContent className="pt-6 text-center">
+            <p className="text-sm text-gray-500">Popularity</p>
+            <p className="text-2xl font-semibold">{userData.popularityPoints || 0}</p>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-500">Gifts Received</p>
-              <p className="text-2xl font-semibold">
-                {calculateTotalGifts(userData.receivedGifts)}
-              </p>
-            </div>
+          <CardContent className="pt-6 text-center">
+            <p className="text-sm text-gray-500">Total Gifts Received</p>
+            <p className="text-2xl font-semibold">{calculateTotalGifts(userData.receivedGifts)}</p>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-500">Account Level</p>
-              <p className="text-2xl font-semibold capitalize">{userData.premiumStatus || 'basic'}</p>
-            </div>
+          <CardContent className="pt-6 text-center">
+            <p className="text-sm text-gray-500">Gift Value</p>
+            <p className="text-2xl font-semibold">${(
+              getGiftValue(userData.receivedGifts, 'rose') +
+              getGiftValue(userData.receivedGifts, 'heart') +
+              getGiftValue(userData.receivedGifts, 'teddy')
+            ).toFixed(2)}</p>
           </CardContent>
         </Card>
       </div>

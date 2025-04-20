@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      blog_posts: {
+        Row: {
+          content: string
+          created_at: string
+          id: number
+          is_published: boolean
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: never
+          is_published?: boolean
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: never
+          is_published?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       gift_transactions: {
         Row: {
           amount: number
@@ -114,12 +144,33 @@ export type Database = {
         }
         Relationships: []
       }
+      presence: {
+        Row: {
+          id: string
+          last_seen: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          last_seen?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          last_seen?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
-          age: number | null
-          bio: string | null
+          age: number
+          bio: string
           created_at: string | null
-          email: string | null
+          email: string
           favorite_music: string[] | null
           gender: string | null
           gift_inventory: Json
@@ -128,10 +179,10 @@ export type Database = {
           interests: string[] | null
           is_banned: boolean | null
           is_verified: boolean | null
-          location: string | null
-          name: string | null
+          location: string
+          name: string
           personality_traits: string[] | null
-          photos: string[] | null
+          photos: string[]
           popularity_points: number | null
           premium_status: string | null
           received_gifts: Json
@@ -142,10 +193,10 @@ export type Database = {
           voice_intro: string | null
         }
         Insert: {
-          age?: number | null
-          bio?: string | null
+          age: number
+          bio: string
           created_at?: string | null
-          email?: string | null
+          email: string
           favorite_music?: string[] | null
           gender?: string | null
           gift_inventory?: Json
@@ -154,10 +205,10 @@ export type Database = {
           interests?: string[] | null
           is_banned?: boolean | null
           is_verified?: boolean | null
-          location?: string | null
-          name?: string | null
+          location: string
+          name: string
           personality_traits?: string[] | null
-          photos?: string[] | null
+          photos?: string[]
           popularity_points?: number | null
           premium_status?: string | null
           received_gifts?: Json
@@ -168,10 +219,10 @@ export type Database = {
           voice_intro?: string | null
         }
         Update: {
-          age?: number | null
-          bio?: string | null
+          age?: number
+          bio?: string
           created_at?: string | null
-          email?: string | null
+          email?: string
           favorite_music?: string[] | null
           gender?: string | null
           gift_inventory?: Json
@@ -180,10 +231,10 @@ export type Database = {
           interests?: string[] | null
           is_banned?: boolean | null
           is_verified?: boolean | null
-          location?: string | null
-          name?: string | null
+          location?: string
+          name?: string
           personality_traits?: string[] | null
-          photos?: string[] | null
+          photos?: string[]
           popularity_points?: number | null
           premium_status?: string | null
           received_gifts?: Json
@@ -312,10 +363,10 @@ export type Database = {
       get_profile_by_id: {
         Args: { profile_id: string } | { user_id: number }
         Returns: {
-          age: number | null
-          bio: string | null
+          age: number
+          bio: string
           created_at: string | null
-          email: string | null
+          email: string
           favorite_music: string[] | null
           gender: string | null
           gift_inventory: Json
@@ -324,10 +375,10 @@ export type Database = {
           interests: string[] | null
           is_banned: boolean | null
           is_verified: boolean | null
-          location: string | null
-          name: string | null
+          location: string
+          name: string
           personality_traits: string[] | null
-          photos: string[] | null
+          photos: string[]
           popularity_points: number | null
           premium_status: string | null
           received_gifts: Json
@@ -370,7 +421,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      gender_enum: "Not Specified" | "Male" | "Female"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -485,6 +536,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      gender_enum: ["Not Specified", "Male", "Female"],
+    },
   },
 } as const
