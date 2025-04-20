@@ -61,8 +61,8 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     const gift = gifts[type];
     if (gift == null) return 0; // covers null and undefined
 
-    if (typeof gift === "object") {
-      // now gift is NOT null here
+    // Assert gift is non-null and of type object or number
+    if (typeof gift === "object" && gift !== null) {
       if ("count" in gift && typeof gift.count === "number") {
         return gift.count;
       }
@@ -83,8 +83,7 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
     const gift = gifts[type];
     if (gift == null) return 0; // covers null and undefined
 
-    if (typeof gift === "object") {
-      // now gift is NOT null here
+    if (typeof gift === "object" && gift !== null) {
       if (
         "count" in gift && typeof gift.count === "number" &&
         "value" in gift && typeof gift.value === "number"
@@ -190,3 +189,4 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
 };
 
 export default ProfileInfo;
+
