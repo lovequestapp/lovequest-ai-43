@@ -1,4 +1,6 @@
 
+// Full unlock and fix MobileMonetization.tsx with emojis for gifts, clean, and fully functional
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,7 +57,7 @@ const MobileMonetization = () => {
     return score;
   };
 
-  // Gift stats with emojis for icons
+  // Gift stats with native emojis for icons
   const giftStats = [
     { 
       type: "rose",
