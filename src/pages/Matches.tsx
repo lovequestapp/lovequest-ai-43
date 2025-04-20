@@ -443,6 +443,7 @@ const MatchesPage = () => {
                       onPass={() => handlePass(profile.id)}
                       showActions
                       currentUser={currentUser}
+                      onViewProfile={() => navigate(`/profile/${profile.id}`)}
                     />
                   ))}
                 </div>
@@ -475,6 +476,7 @@ const MatchesPage = () => {
                       showActions
                       currentUser={currentUser}
                       isMatch
+                      onViewProfile={() => navigate(`/profile/${profile.id}`)}
                     />
                   ))}
                 </div>
@@ -506,6 +508,7 @@ const MatchesPage = () => {
                       showActions
                       currentUser={currentUser}
                       alreadyLiked
+                      onViewProfile={() => navigate(`/profile/${profile.id}`)}
                     />
                   ))}
                 </div>
