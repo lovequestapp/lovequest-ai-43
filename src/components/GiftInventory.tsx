@@ -11,34 +11,41 @@ interface GiftInventoryProps {
 
 const GiftInventory: React.FC<GiftInventoryProps> = ({ teddyIcon }) => {
   const { inventory, updateInventory } = useGifts();
-  
+
   React.useEffect(() => {
     updateInventory();
   }, [updateInventory]);
 
   const renderGiftCount = (type: 'rose' | 'heart' | 'teddy') => {
-    const count = typeof inventory[type] === 'object' 
-      ? (inventory[type] as any)?.count || 0 
-      : inventory[type] || 0;
-      
-    const value = typeof inventory[type] === 'object'
-      ? (inventory[type] as any)?.value || 0
-      : 0;
-    
+    // Defensive checks
+    const giftItem = inventory[type];
+    let count = 0;
+    let value = 0;
+
+    if (giftItem) {
+      if (typeof giftItem === 'object' && giftItem !== null) {
+        count = typeof giftItem.count === 'number' ? giftItem.count : 0;
+        value = typeof giftItem.value === 'number' ? giftItem.value : 0;
+      } else if (typeof giftItem === 'number') {
+        count = giftItem;
+        value = 0;
+      }
+    }
+
     let icon;
     if (type === 'rose') icon = <Flower className="h-8 w-8 text-red-500" />;
     else if (type === 'heart') icon = <Heart className="h-8 w-8 text-love-500" />;
-    else if (type === 'teddy') icon = teddyIcon || <Rabbit className="h-8 w-8 text-amber-500" />; // Use passed icon or default Rabbit
-      
+    else if (type === 'teddy') icon = teddyIcon || <Rabbit className="h-8 w-8 text-amber-500" />;
+
     return (
-      <div className="flex items-center justify-between p-4 border rounded-lg">
+      <div key={type} className="flex items-center justify-between p-4 border rounded-lg">
         <div className="flex items-center gap-3">
           <div className="text-3xl">{icon}</div>
           <div>
             <p className="font-medium capitalize">{type}</p>
             {value > 0 && (
               <Badge variant="outline" className="mt-1 text-xs">
-                Value: ${value}
+                Value: ${value.toFixed(2)}
               </Badge>
             )}
           </div>
@@ -63,3 +70,4 @@ const GiftInventory: React.FC<GiftInventoryProps> = ({ teddyIcon }) => {
 };
 
 export default GiftInventory;
+
