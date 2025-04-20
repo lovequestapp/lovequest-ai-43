@@ -58,7 +58,12 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    if (gift !== null && typeof gift === "object" && "count" in gift) {
+    if (
+      gift !== null && 
+      gift !== undefined &&
+      typeof gift === "object" &&
+      "count" in gift
+    ) {
       return typeof gift.count === "number" ? gift.count : 0;
     }
     if (typeof gift === "number") {
@@ -73,7 +78,13 @@ const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
   ): number => {
     if (!gifts) return 0;
     const gift = gifts[type];
-    if (gift !== null && typeof gift === "object" && "count" in gift && "value" in gift) {
+    if (
+      gift !== null &&
+      gift !== undefined &&
+      typeof gift === "object" &&
+      "count" in gift &&
+      "value" in gift
+    ) {
       const count = typeof gift.count === "number" ? gift.count : 0;
       const value = typeof gift.value === "number" ? gift.value : 0;
       return count * value;
