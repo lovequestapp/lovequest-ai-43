@@ -1,12 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { useUser } from '@/context/UserContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
-import { Edit, User, Wallet, Crown, Shield, Music, Mic, ShoppingBag, Heart } from 'lucide-react';
+import { Edit, User, Wallet, Crown, Shield, Music, Mic, ShoppingBag, Heart, CreditCard } from 'lucide-react';
 import Monetization from '@/components/Monetization';
 import ProfileEditor from '@/components/profile-editor/ProfileEditor';
 import ProfileInfo from '@/components/profile-editor/ProfileInfo';
@@ -47,6 +46,7 @@ const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
 
   if (userId && userId !== currentUser?.id) {
+    // If viewing another's profile, show public profile details
     return <ProfileDetails />;
   }
 
@@ -56,14 +56,13 @@ const UserProfile = () => {
         setLoading(false);
         return;
       }
-      
       try {
         setLoading(true);
         setError(null);
-        
+
         console.log('Fetching profile data for user ID:', currentUser.id);
         const userProfile = await fetchUserProfile(currentUser.id);
-          
+
         if (userProfile) {
           console.log('Profile data loaded successfully:', userProfile);
           setProfileData(userProfile);
@@ -82,7 +81,7 @@ const UserProfile = () => {
         setLoading(false);
       }
     };
-    
+
     refreshUserProfile();
   }, [currentUser?.id, setCurrentUser]);
 
@@ -93,7 +92,7 @@ const UserProfile = () => {
 
   const getRoleBadge = () => {
     const role = currentUser?.role || 'subscriber';
-    
+
     switch(role) {
       case 'admin':
         return (
@@ -123,12 +122,11 @@ const UserProfile = () => {
     return <SubscriptionBadge status={subscription} className="ml-2" />;
   };
 
-  // Normalize gifts in userData passed to Monetization
-  const monetizationUserData = React.useMemo(() => {
+  // Normalize gifts to consistent number-only shape for monetization component
+  const monetizationUserData = useMemo(() => {
     const userToNormalize = profileData || currentUser;
     if (!userToNormalize) return null;
 
-    // Clone and normalize gifts
     return {
       ...userToNormalize,
       receivedGifts: normalizeGifts(userToNormalize.receivedGifts),
@@ -145,7 +143,7 @@ const UserProfile = () => {
             {getRoleBadge()}
             {getSubscriptionBadge()}
           </div>
-          {/* Removed the Edit Profile button here */}
+          {/* Edit Profile button intentionally removed per design */}
         </div>
 
         {error && (
@@ -192,7 +190,6 @@ const UserProfile = () => {
                 <>
                   <TabsContent value="profile" className="mt-0">
                     <ProfileInfo profile={profileData || currentUser} />
-                    
                     {profileData?.voiceIntro && (
                       <div className="mt-6 p-4 border rounded-lg">
                         <h3 className="text-lg font-medium flex items-center gap-2">
@@ -210,8 +207,7 @@ const UserProfile = () => {
                         </div>
                       </div>
                     )}
-                    
-                    {profileData?.favoriteMusic && profileData.favoriteMusic.length > 0 && (
+                    {profileData?.favoriteMusic?.length > 0 && (
                       <div className="mt-6 p-4 border rounded-lg">
                         <h3 className="text-lg font-medium flex items-center gap-2">
                           <Music size={18} />
@@ -227,11 +223,11 @@ const UserProfile = () => {
                       </div>
                     )}
                   </TabsContent>
-                  
+
                   <TabsContent value="edit" className="mt-0">
                     <ProfileEditor initialData={profileData || currentUser} />
                   </TabsContent>
-                  
+
                   <TabsContent value="shop" className="mt-0">
                     <div className="space-y-8">
                       <div>
@@ -241,7 +237,7 @@ const UserProfile = () => {
                         </h2>
                         <GiftShop />
                       </div>
-                      
+
                       <div>
                         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                           <Heart className="h-5 w-5 text-love-500" />
@@ -249,14 +245,14 @@ const UserProfile = () => {
                         </h2>
                         <GiftInventory />
                       </div>
-                      
+
                       <div>
                         <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
                         <GiftTransactionHistory />
                       </div>
                     </div>
                   </TabsContent>
-                  
+
                   <TabsContent value="monetize" className="mt-0">
                     <Monetization userData={monetizationUserData} />
                   </TabsContent>
