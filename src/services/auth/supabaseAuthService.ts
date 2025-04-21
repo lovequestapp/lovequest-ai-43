@@ -36,20 +36,69 @@ export class SupabaseAuthService implements AuthService {
         return { success: false, error: "No session created" };
       }
 
-      const { data: profile, error: profileError } = await supabase
+      const userId = data.user.id;
+
+      let { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', data.user.id)
+        .eq('id', userId)
         .single();
-        
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
+
+      if (profileError && profileError.code === 'PGRST116') {
+        const defaultProfile = {
+          id: userId,
+          name: data.user.user_metadata?.name || '',
+          email: email,
+          age: 18,
+          bio: '',
+          location: '',
+          premium_status: 'standard',
+          role: 'subscriber',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          photos: [],
+          interests: [],
+          personality_traits: [],
+          favorite_music: [],
+          interested_in: [],
+          voice_intro: null,
+          popularity_points: 0,
+          is_banned: false,
+          is_verified: false,
+          verification_status: 'unverified',
+          gift_inventory: {
+            rose: { count: 0, value: 1 },
+            heart: { count: 0, value: 3 },
+            teddy: { count: 0, value: 5 }
+          },
+          received_gifts: {
+            rose: { count: 0, value: 1 },
+            heart: { count: 0, value: 3 },
+            teddy: { count: 0, value: 5 }
+          },
+          trial_end_date: null
+        };
+
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert(defaultProfile);
+
+        if (insertError) {
+          console.error("Error creating default profile on login:", insertError);
+          toast.error("Failed to create user profile");
+          return { success: false, error: insertError.message };
+        }
+        profile = defaultProfile;
+      } else if (profileError) {
+        console.error("Error fetching profile on login:", profileError);
+        toast.error("Failed to fetch user profile");
+        return { success: false, error: profileError.message };
       }
-      
-      const userObj = mapProfileToUser(profile, data.user.id, data.user.email || '');
-      
+
       const isProfileIncomplete = !profile?.bio || !profile?.photos || profile?.photos.length === 0;
-      
+
+      const userObj = mapProfileToUser(profile, userId, email);
+
       localStorage.setItem('lovequestLastAuth', new Date().toISOString());
       toast.success("Login successful!");
       
@@ -88,77 +137,6 @@ export class SupabaseAuthService implements AuthService {
       if (!data.user) {
         toast.error("Registration failed", { description: "No user account created" });
         return { success: false, error: "No user account created" };
-      }
-
-      const validPlans = ['standard', 'unlimited', 'vip', 'admin'] as const;
-      let premiumStatus: string = 'standard';
-      if (validPlans.includes(planType as any)) {
-        premiumStatus = planType;
-      } else {
-        premiumStatus = 'standard';
-      }
-
-      if (data.session) {
-        const { id } = data.user;
-
-        const defaultProfile = {
-          id,
-          name,
-          email,
-          age: 18,
-          bio: '',
-          location: '',
-          premium_status: premiumStatus,
-          role: 'subscriber',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          photos: [],
-          interests: [],
-          personality_traits: [],
-          favorite_music: [],
-          interested_in: [],
-          voice_intro: null,
-          popularity_points: 0,
-          is_banned: false,
-          is_verified: false,
-          verification_status: 'unverified',
-          gift_inventory: {
-            rose: { count: 0, value: 1 },
-            heart: { count: 0, value: 3 },
-            teddy: { count: 0, value: 5 }
-          },
-          received_gifts: {
-            rose: { count: 0, value: 1 },
-            heart: { count: 0, value: 3 },
-            teddy: { count: 0, value: 5 }
-          },
-          trial_end_date: null
-        };
-
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert(defaultProfile);
-
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          toast.error("Failed to create profile", { description: profileError.message });
-          return { success: false, error: profileError.message };
-        }
-
-        const profile = await this.fetchUserProfile(id);
-        const userObj = mapProfileToUser(profile, id, data.user.email || '');
-
-        if (planType === 'standard') {
-          toast.success("Your standard account has been created!");
-        } else {
-          toast.success(`Your ${planType} subscription has been activated!`);
-        }
-
-        return { 
-          success: true,
-          user: userObj,
-          isProfileIncomplete: true
-        };
       }
 
       toast.success("Registration successful!", {
@@ -229,9 +207,58 @@ export class SupabaseAuthService implements AuthService {
       if (error || !data.user) {
         return null;
       }
-      
-      const profile = await this.fetchUserProfile(data.user.id);
-      return mapProfileToUser(profile, data.user.id, data.user.email || '');
+
+      const userId = data.user.id;
+
+      let profile = await this.fetchUserProfile(userId);
+
+      if (!profile) {
+        const defaultProfile = {
+          id: userId,
+          name: data.user.user_metadata?.name || '',
+          email: data.user.email || '',
+          age: 18,
+          bio: '',
+          location: '',
+          premium_status: 'standard',
+          role: 'subscriber',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          photos: [],
+          interests: [],
+          personality_traits: [],
+          favorite_music: [],
+          interested_in: [],
+          voice_intro: null,
+          popularity_points: 0,
+          is_banned: false,
+          is_verified: false,
+          verification_status: 'unverified',
+          gift_inventory: {
+            rose: { count: 0, value: 1 },
+            heart: { count: 0, value: 3 },
+            teddy: { count: 0, value: 5 }
+          },
+          received_gifts: {
+            rose: { count: 0, value: 1 },
+            heart: { count: 0, value: 3 },
+            teddy: { count: 0, value: 5 }
+          },
+          trial_end_date: null
+        };
+
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert(defaultProfile);
+
+        if (insertError) {
+          console.error('Error creating profile in getCurrentUser:', insertError);
+          return null;
+        }
+        profile = defaultProfile;
+      }
+
+      return mapProfileToUser(profile, userId, data.user.email || '');
     } catch (error: any) {
       console.error('Error getting current user:', error.message);
       return null;
