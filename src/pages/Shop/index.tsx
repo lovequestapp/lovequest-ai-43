@@ -11,7 +11,6 @@ import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import { Loader2 } from 'lucide-react';
 import { Layout } from '@/components/layout'; // Import Layout
 import MobileToolbar from '@/components/MobileToolbar';
-import Header from '@/components/header/Header';
 
 const GiftItem = ({ 
   type, 
@@ -73,8 +72,7 @@ const Shop = () => {
 
   return (
     <>
-      <Header />
-      <Layout> {/* Wrap content with Layout to include container padding and max width */}
+      <Layout> {/* Use Layout that includes header and mobile toolbar */}
         <div className="container py-6 md:py-8 px-4 max-w-4xl mx-auto">
           <h1 className="text-2xl md:text-3xl font-bold mb-6">Gift Shop</h1>
           
@@ -155,9 +153,9 @@ const Shop = () => {
           )}
         </div>
       </Layout>
-      <MobileToolbar />
     </>
   );
 };
 
 export default Shop;
+
