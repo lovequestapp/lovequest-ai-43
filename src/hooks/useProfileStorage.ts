@@ -7,7 +7,7 @@ export const useProfileStorage = (userId: string) => {
   const [uploading, setUploading] = useState(false);
 
   /**
-   * Upload a file to Supabase storage
+   * Upload a file to Supabase storage in the 'profile-photos' bucket, under 'profiles/<userId>/'
    */
   const uploadFile = async (file: File, bucket: string = 'profile-photos', prefix: string = 'profiles'): Promise<string | null> => {
     if (!userId) {
@@ -48,11 +48,11 @@ export const useProfileStorage = (userId: string) => {
       console.log('File uploaded successfully:', data.path);
       
       // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
+      const { data: publicData } = supabase.storage
         .from(bucket)
         .getPublicUrl(data.path);
       
-      return publicUrl;
+      return publicData.publicUrl;
     } catch (error: any) {
       console.error('Error in file upload:', error);
       toast.error('An unexpected error occurred during upload: ' + error.message);
@@ -63,7 +63,7 @@ export const useProfileStorage = (userId: string) => {
   };
   
   /**
-   * Delete a file from Supabase storage
+   * Delete a file from Supabase storage in 'profile-photos' bucket
    */
   const deleteFile = async (fileUrl: string, bucket: string = 'profile-photos'): Promise<boolean> => {
     try {
@@ -73,15 +73,14 @@ export const useProfileStorage = (userId: string) => {
       }
       
       // Extract the path from the URL
-      // Format: https://[project-ref].supabase.co/storage/v1/object/public/[bucket]/[path]
-      const pathParts = fileUrl.split(`/storage/v1/object/public/${bucket}/`);
+      const baseUrl = `https://utrifqgsjrtjlkufyhol.supabase.co/storage/v1/object/public/${bucket}/`;
       
-      if (pathParts.length < 2) {
-        console.error('Invalid file URL format:', fileUrl);
+      if (!fileUrl.startsWith(baseUrl)) {
+        console.error('File URL does not belong to the bucket:', fileUrl);
         return false;
       }
       
-      const filePath = pathParts[1];
+      const filePath = fileUrl.substring(baseUrl.length);
       console.log('Deleting file at path:', filePath);
       
       // Delete the file

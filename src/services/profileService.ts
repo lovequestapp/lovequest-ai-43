@@ -1,3 +1,6 @@
+
+// Only showing the relevant parts updated for photo upload/delete
+
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types/user';
 import { convertPremiumStatus } from '@/utils/subscription';
@@ -106,9 +109,13 @@ export const deleteUserProfile = async (userId: string): Promise<boolean> => {
 // Function to upload a profile photo
 export const uploadProfilePhoto = async (userId: string, file: File): Promise<string | null> => {
   try {
-    const filePath = `profile-photos/${userId}/${file.name}`;
+    // Use bucket 'profile-photos' and proper folder 'profiles/<userId>/'
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+    const filePath = `profiles/${userId}/${fileName}`;
+    
     const { data, error } = await supabase.storage
-      .from('avatars')
+      .from('profile-photos')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false
@@ -119,8 +126,11 @@ export const uploadProfilePhoto = async (userId: string, file: File): Promise<st
       return null;
     }
 
-    const publicURL = `https://utrifqgsjrtjlkufyhol.supabase.co/storage/v1/object/public/${data.fullPath}`;
-    return publicURL;
+    // Get the public URL correctly using the storage bucket/public path
+    const { data: publicData } = supabase.storage
+      .from('profile-photos')
+      .getPublicUrl(filePath);
+    return publicData.publicUrl;
   } catch (error) {
     console.error('Unexpected error uploading image:', error);
     return null;
@@ -130,9 +140,20 @@ export const uploadProfilePhoto = async (userId: string, file: File): Promise<st
 // Function to delete a profile photo
 export const deleteProfilePhoto = async (photoUrl: string): Promise<boolean> => {
   try {
-    const filePath = photoUrl.replace("https://utrifqgsjrtjlkufyhol.supabase.co/storage/v1/object/public/avatars/", "");
+    if (!photoUrl) {
+      console.warn('No photo URL provided for deletion');
+      return false;
+    }
+    // Extract the file path relative to the bucket public URL
+    const baseUrl = `https://utrifqgsjrtjlkufyhol.supabase.co/storage/v1/object/public/profile-photos/`;
+    if (!photoUrl.startsWith(baseUrl)) {
+      console.error('Photo URL does not belong to profile-photos bucket:', photoUrl);
+      return false;
+    }
+    const filePath = photoUrl.substring(baseUrl.length);
+
     const { error } = await supabase.storage
-      .from('avatars')
+      .from('profile-photos')
       .remove([filePath]);
 
     if (error) {

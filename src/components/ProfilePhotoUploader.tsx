@@ -5,13 +5,14 @@ import { Card } from '@/components/ui/card';
 import { Upload, ImagePlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUser } from '@/context/UserContext';
-import { uploadProfilePhoto } from '@/services/profileService';
+import { uploadProfilePhoto, deleteProfilePhoto } from '@/services/profileService';
 
 interface ProfilePhotoUploaderProps {
   onPhotoUploaded?: (url: string) => void;
+  onPhotoRemoved?: (url: string) => void;
 }
 
-const ProfilePhotoUploader = ({ onPhotoUploaded }: ProfilePhotoUploaderProps) => {
+const ProfilePhotoUploader = ({ onPhotoUploaded, onPhotoRemoved }: ProfilePhotoUploaderProps) => {
   const [uploading, setUploading] = useState(false);
   const { currentUser } = useUser();
 
@@ -25,10 +26,10 @@ const ProfilePhotoUploader = ({ onPhotoUploaded }: ProfilePhotoUploaderProps) =>
       const file = files[0];
       const fileSize = file.size / 1024 / 1024; // size in MB
       
-      // Validate file size (max 2MB)
-      if (fileSize > 2) {
+      // Validate file size (max 5MB to stay consistent with validation)
+      if (fileSize > 5) {
         toast.error("File too large", { 
-          description: "Please upload an image smaller than 2MB" 
+          description: "Please upload an image smaller than 5MB" 
         });
         return;
       }
@@ -49,7 +50,7 @@ const ProfilePhotoUploader = ({ onPhotoUploaded }: ProfilePhotoUploaderProps) =>
         return;
       }
 
-      // Upload the photo
+      // Upload the photo to the correct bucket via the service
       const photoUrl = await uploadProfilePhoto(currentUser.id, file);
       
       if (photoUrl && onPhotoUploaded) {
@@ -63,6 +64,25 @@ const ProfilePhotoUploader = ({ onPhotoUploaded }: ProfilePhotoUploaderProps) =>
       toast.error("Upload failed", { 
         description: "There was a problem uploading your photo" 
       });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handlePhotoRemove = async (photoUrl: string) => {
+    if (!photoUrl) return;
+    setUploading(true);
+    try {
+      const success = await deleteProfilePhoto(photoUrl);
+      if (success) {
+        if (onPhotoRemoved) onPhotoRemoved(photoUrl);
+        toast.success('Photo removed successfully');
+      } else {
+        throw new Error('Failed to remove photo');
+      }
+    } catch (error) {
+      console.error('Error removing photo:', error);
+      toast.error('Failed to remove photo');
     } finally {
       setUploading(false);
     }
@@ -84,7 +104,7 @@ const ProfilePhotoUploader = ({ onPhotoUploaded }: ProfilePhotoUploaderProps) =>
               </div>
               <div className="mt-2 text-center">
                 <p className="text-sm font-medium">Click to upload photo</p>
-                <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, GIF up to 2MB</p>
+                <p className="text-xs text-muted-foreground mt-1">JPEG, PNG, GIF up to 5MB</p>
               </div>
               <Button 
                 type="button" 
