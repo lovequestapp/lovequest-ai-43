@@ -112,11 +112,11 @@ export class SupabaseAuthService implements AuthService {
           role: 'subscriber',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          photos: [] as string[],
-          interests: [] as string[],
-          personality_traits: [] as string[],
-          favorite_music: [] as string[],
-          interested_in: [] as string[],
+          photos: [],
+          interests: [],
+          personality_traits: [],
+          favorite_music: [],
+          interested_in: [],
           voice_intro: null,
           popularity_points: 0,
           is_banned: false,
@@ -143,25 +143,6 @@ export class SupabaseAuthService implements AuthService {
           console.error("Error creating profile:", profileError);
           toast.error("Failed to create profile", { description: profileError.message });
           return { success: false, error: profileError.message };
-        }
-
-        const defaultPreferences = {
-          id,
-          min_age: 18,
-          max_age: 99,
-          preferred_gender: [],
-          max_distance: 100,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-
-        const { error: prefsError } = await supabase
-          .from('user_preferences')
-          .insert(defaultPreferences);
-
-        if (prefsError) {
-          console.error("Error creating user preferences:", prefsError);
-          toast.warning("Failed to create default user preferences.");
         }
 
         const profile = await this.fetchUserProfile(id);
