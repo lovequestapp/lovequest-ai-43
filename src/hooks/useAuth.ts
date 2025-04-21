@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useUser } from '@/context/UserContext';
@@ -24,38 +24,38 @@ export const useAuth = () => {
 
   useEffect(() => {
     console.log('Initializing auth state');
-    
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event);
         
+        // On SIGNED_OUT event, clear auth state and localStorage keys explicitly
         if (event === 'SIGNED_OUT') {
-          setAuthState({
-            loading: false,
-            authenticated: false,
-            user: null
-          });
+          setAuthState({ loading: false, authenticated: false, user: null });
           setCurrentUser(null);
+          localStorage.removeItem('lovequestLastAuth');
+          localStorage.removeItem('admin_email');
+          // Also remove Supabase auth token that might be persisted
+          localStorage.removeItem('sb-jhfzugtgazuagqfpsuku-auth-token');
           return;
         }
 
-        if (session && session.user) {
-          // Use setTimeout to avoid calling Supabase inside the callback
-          setTimeout(async () => {
-            const user = await authService.getCurrentUser();
-            
-            if (user) {
-              console.log('User authenticated:', user.email);
-              setAuthState({
-                loading: false,
-                authenticated: true,
-                user
-              });
-              
-              setCurrentUser(user);
-            }
-          }, 0);
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          if (session && session.user) {
+            setTimeout(async () => {
+              const user = await authService.getCurrentUser();
+              if (user) {
+                console.log('User authenticated:', user.email);
+                setAuthState({
+                  loading: false,
+                  authenticated: true,
+                  user
+                });
+                setCurrentUser(user);
+              }
+            }, 0);
+          }
         }
       }
     );
@@ -63,10 +63,10 @@ export const useAuth = () => {
     // THEN check for existing session
     const checkInitialSession = async () => {
       const isValid = await authService.isSessionValid();
-      
+
       if (isValid) {
         const user = await authService.getCurrentUser();
-        
+
         if (user) {
           console.log('Initial session valid, user:', user.email);
           setAuthState({
@@ -74,7 +74,6 @@ export const useAuth = () => {
             authenticated: true,
             user
           });
-          
           setCurrentUser(user);
         } else {
           setAuthState({
@@ -82,6 +81,7 @@ export const useAuth = () => {
             authenticated: false,
             user: null
           });
+          setCurrentUser(null);
         }
       } else {
         console.log('No valid initial session');
@@ -90,9 +90,10 @@ export const useAuth = () => {
           authenticated: false,
           user: null
         });
+        setCurrentUser(null);
       }
     };
-    
+
     checkInitialSession();
 
     return () => {
@@ -104,7 +105,7 @@ export const useAuth = () => {
     try {
       console.log('Attempting sign in for:', email);
       const result = await authService.signIn(email, password);
-      
+
       if (result.success && result.user) {
         console.log('Sign in successful');
         setAuthState({
@@ -112,16 +113,15 @@ export const useAuth = () => {
           authenticated: true,
           user: result.user
         });
-        
+
         setCurrentUser(result.user);
-        
-        // Store auth timestamp to help with session management
+
         localStorage.setItem('lovequestLastAuth', new Date().toISOString());
       } else {
         console.log('Sign in failed:', result.error);
         toast.error("Login failed", { description: result.error });
       }
-      
+
       return result;
     } catch (error: any) {
       console.error('Sign in error:', error);
@@ -134,7 +134,7 @@ export const useAuth = () => {
     try {
       console.log('Attempting sign up for:', email);
       const result = await authService.signUp(email, password, name, planType);
-      
+
       if (result.success && result.user) {
         console.log('Sign up successful');
         setAuthState({
@@ -142,10 +142,9 @@ export const useAuth = () => {
           authenticated: true,
           user: result.user
         });
-        
+
         setCurrentUser(result.user);
-        
-        // Store auth timestamp to help with session management
+
         localStorage.setItem('lovequestLastAuth', new Date().toISOString());
       } else if (result.requiresEmailConfirmation) {
         console.log('Sign up successful, email confirmation required');
@@ -154,7 +153,7 @@ export const useAuth = () => {
         console.log('Sign up failed:', result.error);
         toast.error("Registration failed", { description: result.error });
       }
-      
+
       return result;
     } catch (error: any) {
       console.error('Sign up error:', error);
@@ -167,7 +166,7 @@ export const useAuth = () => {
     try {
       console.log('Attempting sign out');
       const result = await authService.signOut();
-      
+
       if (result.success) {
         console.log('Sign out successful');
         setAuthState({
@@ -175,24 +174,20 @@ export const useAuth = () => {
           authenticated: false,
           user: null
         });
-        
+
         setCurrentUser(null);
-        
-        // Clear auth timestamp
+
+        // Clear auth related localStorage keys
         localStorage.removeItem('lovequestLastAuth');
         localStorage.removeItem('admin_email');
-        
-        // Clear any Supabase auth tokens using a fixed key prefix
-        // Use fixed Supabase project ID instead of projectRef
         localStorage.removeItem('sb-jhfzugtgazuagqfpsuku-auth-token');
-        
-        // Navigate to login page
+
         navigate('/login');
       } else {
         console.log('Sign out failed:', result.error);
         toast.error("Logout failed", { description: result.error });
       }
-      
+
       return result;
     } catch (error: any) {
       console.error('Sign out error:', error);
