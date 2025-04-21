@@ -9,6 +9,7 @@ import GiftInventory from '@/components/GiftInventory';
 import GiftTransactionHistory from '@/components/GiftTransactionHistory';
 import { useProtectedRoute } from '@/hooks/useProtectedRoute';
 import { Loader2 } from 'lucide-react';
+import { Layout } from '@/components/layout'; // Import Layout
 
 const GiftItem = ({ 
   type, 
@@ -69,86 +70,89 @@ const Shop = () => {
   };
 
   return (
-    <div className="container py-6 md:py-8 px-4 max-w-4xl mx-auto">
-      <h1 className="text-2xl md:text-3xl font-bold mb-6">Gift Shop</h1>
-      
-      <div className="grid grid-cols-1 gap-6 md:gap-8">
-        <Tabs defaultValue="shop" className="w-full">
-          <TabsList className="mb-6 w-full grid grid-cols-3">
-            <TabsTrigger value="shop">Shop</TabsTrigger>
-            <TabsTrigger value="inventory">My Inventory</TabsTrigger>
-            <TabsTrigger value="transactions">History</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="shop" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Purchase Gifts</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <GiftItem 
-                  type="rose" 
-                  icon="🌹" 
-                  price={4.99} 
-                  onPurchase={(quantity) => handlePurchase('rose', quantity)} 
-                />
-                <GiftItem 
-                  type="heart" 
-                  icon="❤️" 
-                  price={9.99} 
-                  onPurchase={(quantity) => handlePurchase('heart', quantity)} 
-                />
-                <GiftItem 
-                  type="teddy" 
-                  icon="🧸" 
-                  price={14.99} 
-                  onPurchase={(quantity) => handlePurchase('teddy', quantity)} 
-                />
-              </CardContent>
-            </Card>
+    <Layout> {/* Wrap content with Layout to include header and mobile toolbar */}
+      <div className="container py-6 md:py-8 px-4 max-w-4xl mx-auto">
+        <h1 className="text-2xl md:text-3xl font-bold mb-6">Gift Shop</h1>
+        
+        <div className="grid grid-cols-1 gap-6 md:gap-8">
+          <Tabs defaultValue="shop" className="w-full">
+            <TabsList className="mb-6 w-full grid grid-cols-3">
+              <TabsTrigger value="shop">Shop</TabsTrigger>
+              <TabsTrigger value="inventory">My Inventory</TabsTrigger>
+              <TabsTrigger value="transactions">History</TabsTrigger>
+            </TabsList>
             
-            <div className="bg-muted p-4 rounded-lg text-sm">
-              <p className="font-medium mb-2">Gift Values</p>
-              <ul className="space-y-1 text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🌹</span>
-                  Roses: $1 in monetary value
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">❤️</span>
-                  Hearts: $3 in monetary value
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🧸</span>
-                  Teddy Bears: $5 in monetary value
-                </li>
-              </ul>
-              <p className="mt-2 text-muted-foreground">
-                Once purchased, you can gift these items to other members. When received, they'll add to that member's popularity and monetization potential.
-              </p>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="inventory">
-            <GiftInventory />
-          </TabsContent>
-          
-          <TabsContent value="transactions">
-            <GiftTransactionHistory />
-          </TabsContent>
-        </Tabs>
-      </div>
-      
-      {isProcessing && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background p-6 rounded-lg flex items-center gap-3">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <p>Processing your purchase...</p>
-          </div>
+            <TabsContent value="shop" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Purchase Gifts</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <GiftItem 
+                    type="rose" 
+                    icon="🌹" 
+                    price={4.99} 
+                    onPurchase={(quantity) => handlePurchase('rose', quantity)} 
+                  />
+                  <GiftItem 
+                    type="heart" 
+                    icon="❤️" 
+                    price={9.99} 
+                    onPurchase={(quantity) => handlePurchase('heart', quantity)} 
+                  />
+                  <GiftItem 
+                    type="teddy" 
+                    icon="🧸" 
+                    price={14.99} 
+                    onPurchase={(quantity) => handlePurchase('teddy', quantity)} 
+                  />
+                </CardContent>
+              </Card>
+              
+              <div className="bg-muted p-4 rounded-lg text-sm">
+                <p className="font-medium mb-2">Gift Values</p>
+                <ul className="space-y-1 text-muted-foreground">
+                  <li className="flex items-center gap-2">
+                    <span className="text-lg">🌹</span>
+                    Roses: $1 in monetary value
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-lg">❤️</span>
+                    Hearts: $3 in monetary value
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-lg">🧸</span>
+                    Teddy Bears: $5 in monetary value
+                  </li>
+                </ul>
+                <p className="mt-2 text-muted-foreground">
+                  Once purchased, you can gift these items to other members. When received, they'll add to that member's popularity and monetization potential.
+                </p>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="inventory">
+              <GiftInventory />
+            </TabsContent>
+            
+            <TabsContent value="transactions">
+              <GiftTransactionHistory />
+            </TabsContent>
+          </Tabs>
         </div>
-      )}
-    </div>
+        
+        {isProcessing && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-background p-6 rounded-lg flex items-center gap-3">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <p>Processing your purchase...</p>
+            </div>
+          </div>
+        )}
+      </div>
+    </Layout>
   );
 };
 
 export default Shop;
+
