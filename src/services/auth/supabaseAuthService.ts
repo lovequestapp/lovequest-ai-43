@@ -90,14 +90,17 @@ export class SupabaseAuthService implements AuthService {
         return { success: false, error: "No user account created" };
       }
 
-      let premiumStatus = 'standard';
-
-      if (planType === 'unlimited' || planType === 'vip' || planType === 'admin') {
+      const validPlans = ['standard', 'unlimited', 'vip', 'admin'] as const;
+      let premiumStatus: string = 'standard';
+      if (validPlans.includes(planType as any)) {
         premiumStatus = planType;
+      } else {
+        premiumStatus = 'standard';
       }
 
       if (data.session) {
         const { id } = data.user;
+
         const defaultProfile = {
           id,
           name,
@@ -106,47 +109,70 @@ export class SupabaseAuthService implements AuthService {
           bio: '',
           location: '',
           premium_status: premiumStatus,
-          created_at: new Date().toISOString()
+          role: 'subscriber',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          photos: [],
+          interests: [],
+          personality_traits: [],
+          favorite_music: [],
+          interested_in: [],
+          voice_intro: null,
+          popularity_points: 0,
+          is_banned: false,
+          is_verified: false,
+          verification_status: 'unverified',
+          gift_inventory: {
+            rose: { count: 0, value: 1 },
+            heart: { count: 0, value: 3 },
+            teddy: { count: 0, value: 5 }
+          },
+          received_gifts: {
+            rose: { count: 0, value: 1 },
+            heart: { count: 0, value: 3 },
+            teddy: { count: 0, value: 5 }
+          },
+          trial_end_date: null
         };
-        
+
         const { error: profileError } = await supabase
           .from('profiles')
           .insert(defaultProfile);
-          
+
         if (profileError) {
           console.error("Error creating profile:", profileError);
           toast.error("Failed to create profile", { description: profileError.message });
           return { success: false, error: profileError.message };
         }
-        
+
         const profile = await this.fetchUserProfile(id);
         const userObj = mapProfileToUser(profile, id, data.user.email || '');
-        
+
         if (planType === 'standard') {
           toast.success("Your standard account has been created!");
         } else {
           toast.success(`Your ${planType} subscription has been activated!`);
         }
-        
+
         return { 
           success: true,
           user: userObj,
           isProfileIncomplete: true
         };
       }
-      
+
       toast.success("Registration successful!", {
         description: "Please check your email to confirm your account"
       });
-      
+
       return { 
         success: true, 
         requiresEmailConfirmation: true 
       };
     } catch (error: any) {
       console.error('Registration error:', error);
-      toast.error("Registration failed", { description: error.message });
-      return { success: false, error: error.message };
+      toast.error("Registration failed", { description: error.message || "Unknown error" });
+      return { success: false, error: error.message || "Unknown error" };
     }
   }
 
