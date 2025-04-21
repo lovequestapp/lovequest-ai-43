@@ -19,11 +19,9 @@ const ProfileSetupPage = () => {
   const { currentUser, updateUserProfile } = useUser();
   const navigate = useNavigate();
   
-  // Setup steps
   const totalSteps = 5;
   const [step, setStep] = useState(1);
   
-  // Form state
   const [profileData, setProfileData] = useState({
     name: currentUser?.name || '',
     bio: currentUser?.bio || '',
@@ -36,20 +34,16 @@ const ProfileSetupPage = () => {
     favoriteMusic: currentUser?.favoriteMusic || [],
   });
   
-  // Photo state
   const [photos, setPhotos] = useState<string[]>(currentUser?.photos || []);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   
-  // Voice note state
   const [voiceNote, setVoiceNote] = useState<string | null>(currentUser?.voiceIntro || null);
   const [isRecording, setIsRecording] = useState(false);
   
-  // Submit state
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (currentUser?.name && currentUser?.bio && currentUser?.photos && currentUser?.photos.length >= 1) {
-      // If profile is already set up, redirect to discover page
       navigate('/discover');
     }
   }, [currentUser, navigate]);
@@ -163,7 +157,6 @@ const ProfileSetupPage = () => {
   };
 
   const handleNextStep = () => {
-    // Validate current step
     if (step === 1 && (!profileData.name || !profileData.gender || profileData.interestedIn.length === 0)) {
       toast.error("Please fill out all required fields");
       return;
@@ -184,7 +177,6 @@ const ProfileSetupPage = () => {
       return;
     }
     
-    // If validation passes, move to next step
     if (step < totalSteps) {
       setStep(prev => prev + 1);
       window.scrollTo(0, 0);
@@ -226,7 +218,7 @@ const ProfileSetupPage = () => {
         
         toast.success("LoveQuest profile setup complete!");
         
-        navigate('/verification');
+        navigate('/discover');
       }
     } catch (error) {
       console.error('Profile setup error:', error);

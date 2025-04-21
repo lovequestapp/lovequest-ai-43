@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -51,11 +50,9 @@ const Login = () => {
           console.log("Profile incomplete, redirecting to profile setup");
           navigate('/profile-setup');
         } else {
-          // Get the return URL or default to /discover
-          const params = new URLSearchParams(location.search);
-          const returnTo = params.get('returnTo') || '/discover';
-          console.log("Redirecting to:", returnTo);
-          navigate(returnTo);
+          // Redirect to discover for fully registered users
+          console.log("Profile complete, redirecting to discover");
+          navigate('/discover');
         }
       } else {
         console.log("Login failed:", result.error);
