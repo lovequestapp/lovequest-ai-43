@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { User } from '@/types/user';
@@ -10,17 +11,17 @@ export class SupabaseAuthService implements AuthService {
       if (isAdminCredentials(email, password)) {
         localStorage.setItem('admin_email', email);
         localStorage.setItem('lovequestLastAuth', new Date().toISOString());
-        
+
         const adminUser = createAdminUser();
         toast.success("Admin login successful!");
-        
+
         return { 
           success: true, 
           user: adminUser,
           isProfileIncomplete: false
         };
       }
-      
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -45,6 +46,7 @@ export class SupabaseAuthService implements AuthService {
         .single();
 
       if (profileError && profileError.code === 'PGRST116') {
+        // Add default profile with full required properties including gender and favorite_music
         const defaultProfile = {
           id: userId,
           name: data.user.user_metadata?.name || '',
@@ -61,7 +63,7 @@ export class SupabaseAuthService implements AuthService {
           personality_traits: [],
           favorite_music: [],
           interested_in: [],
-          voice_intro: null,
+          voice_intro: '',
           popularity_points: 0,
           is_banned: false,
           is_verified: false,
@@ -76,7 +78,8 @@ export class SupabaseAuthService implements AuthService {
             heart: { count: 0, value: 3 },
             teddy: { count: 0, value: 5 }
           },
-          trial_end_date: null
+          trial_end_date: null,
+          gender: ''
         };
 
         const { error: insertError } = await supabase
@@ -101,7 +104,7 @@ export class SupabaseAuthService implements AuthService {
 
       localStorage.setItem('lovequestLastAuth', new Date().toISOString());
       toast.success("Login successful!");
-      
+
       return { 
         success: true,
         user: userObj,
@@ -159,18 +162,19 @@ export class SupabaseAuthService implements AuthService {
       localStorage.removeItem('admin_email');
       localStorage.removeItem('lovequestLastAuth');
       sessionStorage.clear();
-      
+
+      // IMPORTANT: Explicitly clear the Supabase auth token in localStorage, fixed key
+      const supabaseProjectId = 'jhfzugtgazuagqfpsuku';
+      localStorage.removeItem(`sb-${supabaseProjectId}-auth-token`);
+
       const { error } = await supabase.auth.signOut();
-      
+
       if (error) {
         console.error("Sign out error:", error);
         toast.error("Logout failed", { description: error.message });
         return { success: false, error: error.message };
       }
-      
-      const supabaseProjectId = 'jhfzugtgazuagqfpsuku';
-      localStorage.removeItem(`sb-${supabaseProjectId}-auth-token`);
-      
+
       toast.success("Logged out successfully");
       return { success: true };
     } catch (error: any) {
@@ -196,13 +200,13 @@ export class SupabaseAuthService implements AuthService {
         }
         return createAdminUser();
       }
-      
+
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (sessionError || !sessionData.session) {
         return null;
       }
-      
+
       const { data, error } = await supabase.auth.getUser();
       if (error || !data.user) {
         return null;
@@ -213,6 +217,7 @@ export class SupabaseAuthService implements AuthService {
       let profile = await this.fetchUserProfile(userId);
 
       if (!profile) {
+        // Add default profile with gender and favorite_music
         const defaultProfile = {
           id: userId,
           name: data.user.user_metadata?.name || '',
@@ -229,7 +234,7 @@ export class SupabaseAuthService implements AuthService {
           personality_traits: [],
           favorite_music: [],
           interested_in: [],
-          voice_intro: null,
+          voice_intro: '',
           popularity_points: 0,
           is_banned: false,
           is_verified: false,
@@ -244,7 +249,8 @@ export class SupabaseAuthService implements AuthService {
             heart: { count: 0, value: 3 },
             teddy: { count: 0, value: 5 }
           },
-          trial_end_date: null
+          trial_end_date: null,
+          gender: ''
         };
 
         const { error: insertError } = await supabase
@@ -281,13 +287,13 @@ export class SupabaseAuthService implements AuthService {
       console.log("Attempting to refresh session...");
       const { data, error } = await supabase.auth.refreshSession();
       if (error) throw error;
-      
+
       if (data.session) {
         console.log("Session refreshed successfully");
         localStorage.setItem('lovequestLastAuth', new Date().toISOString());
         return { success: true };
       }
-      
+
       console.log("No session returned from refresh");
       return { success: false };
     } catch (error: any) {
@@ -302,29 +308,29 @@ export class SupabaseAuthService implements AuthService {
       if (adminEmail === 'hunainm.qureshi@gmail.com') {
         return true;
       }
-      
+
       const { data, error } = await supabase.auth.getSession();
-      
+
       if (error) {
         console.error("Session check error:", error);
         return false;
       }
-      
+
       const isValid = !!data.session;
-      
+
       if (isValid && data.session) {
         const expiresAt = data.session.expires_at;
         if (expiresAt) {
           const expiresAtDate = new Date(expiresAt * 1000);
           const now = new Date();
           const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
-          
+
           if (expiresAtDate < oneHourFromNow) {
             await this.refreshSession();
           }
         }
       }
-      
+
       return isValid;
     } catch (error) {
       console.error("Error checking session validity:", error);
@@ -346,9 +352,9 @@ export class SupabaseAuthService implements AuthService {
           subscription: 'admin' 
         };
       }
-      
+
       const { data, error } = await supabase.auth.getSession();
-      
+
       if (error || !data.session) {
         return { 
           isLoggedIn: false, 
@@ -356,15 +362,15 @@ export class SupabaseAuthService implements AuthService {
           subscription: null 
         };
       }
-      
+
       const userId = data.session.user.id;
-      
+
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('role, premium_status')
         .eq('id', userId)
         .single();
-        
+
       if (profileError) {
         console.error("Error fetching user profile:", profileError);
         return { 
@@ -373,7 +379,7 @@ export class SupabaseAuthService implements AuthService {
           subscription: 'standard' 
         };
       }
-      
+
       return { 
         isLoggedIn: true, 
         role: profileData.role || 'subscriber', 
@@ -432,3 +438,4 @@ export class SupabaseAuthService implements AuthService {
 const supabaseAuthService = new SupabaseAuthService();
 
 export default supabaseAuthService;
+
