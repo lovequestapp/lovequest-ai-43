@@ -14,6 +14,10 @@ import DiscoverContent from './DiscoverContent';
 import MobileFilterDisclosure from '@/components/discover/MobileFilterDisclosure';
 import useLocationCache from '@/hooks/useLocationCache';
 import { ModerationProvider } from '@/contexts/ModerationContext';
+import useAnalytics from '@/hooks/useAnalytics';
+import usePushNotifications from '@/hooks/usePushNotifications';
+
+const MAPBOX_ACCESS_TOKEN = localStorage.getItem('mapbox_token') || '';
 
 const Discover = () => {
   const { currentUser, allUsers, likeUser, passUser } = useUser();
@@ -32,6 +36,9 @@ const Discover = () => {
 
   const { cachedLocation, cacheLocation } = useLocationCache();
 
+  const { trackSwipe, trackMatch, trackError } = useAnalytics();
+  const { showNotification } = usePushNotifications();
+
   useEffect(() => {
     if (cachedLocation) {
       setLocation(cachedLocation);
@@ -48,7 +55,7 @@ const Discover = () => {
           };
           setUserCoordinates(coords);
 
-          fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.longitude},${coords.latitude}.json?access_token=${localStorage.getItem('mapbox_token') || ''}`)
+          fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${coords.longitude},${coords.latitude}.json?access_token=${MAPBOX_ACCESS_TOKEN}`)
             .then(response => response.json())
             .then(data => {
               if (data.features && data.features.length > 0) {
@@ -56,12 +63,18 @@ const Discover = () => {
                 setLocation(placeName);
                 cacheLocation(placeName);
               } else {
-                // Fallback to approximate location string if no feature returned
+                // Graceful fallback to "Nearby" with retry after 10 seconds
                 setLocation('Nearby');
+                setTimeout(() => {
+                  applyFilters();
+                }, 10000);
               }
             })
             .catch(() => {
               setLocation('Nearby');
+              setTimeout(() => {
+                applyFilters();
+              }, 10000);
             })
             .finally(() => {
               setLoadingLocation(false);
@@ -72,6 +85,7 @@ const Discover = () => {
           setLocation("Location unavailable");
           setLoadingLocation(false);
           toast.error("Couldn't get your location: Location services may be disabled.");
+          trackError(error);
         },
         { enableHighAccuracy: false, timeout: 7000, maximumAge: 5 * 60 * 1000 }
       );
@@ -80,7 +94,7 @@ const Discover = () => {
       setLoadingLocation(false);
       toast.error("Geolocation is not supported by your browser");
     }
-  }, [cachedLocation, cacheLocation]);
+  }, [cachedLocation, cacheLocation, applyFilters, trackError]);
 
   useEffect(() => {
     if (allUsers && currentUser && userCoordinates) {
@@ -93,7 +107,8 @@ const Discover = () => {
               coordinates: userCoordinates
             };
           }
-          
+
+          // Simulate distance and coordinates around current location
           const randomDistance = Math.random() * 50;
           const randomAngle = Math.random() * 2 * Math.PI;
           const latOffset = (randomDistance * Math.cos(randomAngle)) / 69;
@@ -107,17 +122,18 @@ const Discover = () => {
             }
           };
         }) as UserWithCoordinates[];
-        
+
         setProfiles(usersWithCoordinates);
       } catch (err) {
         setError('Failed to load profiles');
         toast.error('Failed to load profiles');
+        trackError(err);
         console.error(err);
       } finally {
         setIsLoading(false);
       }
     }
-  }, [allUsers, currentUser, userCoordinates]);
+  }, [allUsers, currentUser, userCoordinates, trackError]);
 
   useEffect(() => {
     if (profiles.length > 0) {
@@ -127,21 +143,28 @@ const Discover = () => {
       } catch (err) {
         setError('Failed to apply filters');
         toast.error('Failed to apply filters');
+        trackError(err);
         console.error(err);
       } finally {
         setIsLoading(false);
       }
     }
-  }, [applyFilters, profiles]);
+  }, [applyFilters, profiles, trackError]);
 
   const handleSwipe = (profileId: string, direction: 'left' | 'right') => {
     if (direction === 'right') {
+      trackSwipe(profileId, 'right');
       likeUser(profileId);
       toast.success("You liked this profile!");
-      
+
+      // Notify and track match if random chance
       if (Math.random() > 0.7) {
         const matchedProfile = filteredUsers.find(p => p.id === profileId);
         if (matchedProfile) {
+          trackMatch(profileId);
+          showNotification("It's a match! 💕", {
+            body: `You and ${matchedProfile.name} like each other!`
+          });
           toast("It's a match! 💕", {
             description: `You and ${matchedProfile.name} like each other!`,
             duration: 5000,
@@ -149,6 +172,7 @@ const Discover = () => {
         }
       }
     } else {
+      trackSwipe(profileId, 'left');
       passUser(profileId);
     }
 

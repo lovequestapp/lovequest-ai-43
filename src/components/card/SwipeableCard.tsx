@@ -86,7 +86,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
       }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.75}
+      dragElastic={0.8}
       onDragEnd={(e, info) => {
         const { offset, velocity } = info;
         

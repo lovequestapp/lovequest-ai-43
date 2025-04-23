@@ -123,7 +123,7 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
       // Random match chance (30%)
       if (Math.random() > 0.7) {
         trackMatch(currentProfile.id);
-        // User feedback about match will be managed externally (toast in parent)
+        // This component doesn't handle user feedback about matches; it is done externally in Discover/index
       }
     }
   };
@@ -189,4 +189,3 @@ const displayDistance = (user: any) => {
   const dist = Math.round(user.distance);
   return `${dist} ${dist === 1 ? 'mile' : 'miles'} away`;
 };
-
