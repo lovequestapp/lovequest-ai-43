@@ -46,7 +46,7 @@ export class SupabaseAuthService implements AuthService {
         .single();
 
       if (profileError && profileError.code === 'PGRST116') {
-        // Add default profile with full required properties including gender and favorite_music
+        // Add default profile with all required properties including gender and favorite_music
         const defaultProfile = {
           id: userId,
           name: data.user.user_metadata?.name || '',
@@ -58,11 +58,11 @@ export class SupabaseAuthService implements AuthService {
           role: 'subscriber',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-          photos: [],
-          interests: [],
-          personality_traits: [],
-          favorite_music: [],
-          interested_in: [],
+          photos: [] as string[],
+          interests: [] as string[],
+          personality_traits: [] as string[],
+          favorite_music: [] as string[],
+          interested_in: [] as ('male' | 'female' | 'non-binary')[],
           voice_intro: '',
           popularity_points: 0,
           is_banned: false,
@@ -79,7 +79,7 @@ export class SupabaseAuthService implements AuthService {
             teddy: { count: 0, value: 5 }
           },
           trial_end_date: null,
-          gender: ''
+          gender: '' as 'male' | 'female' | 'non-binary' | '' // added empty string allowed for default
         };
 
         const { error: insertError } = await supabase
@@ -163,9 +163,8 @@ export class SupabaseAuthService implements AuthService {
       localStorage.removeItem('lovequestLastAuth');
       sessionStorage.clear();
 
-      // IMPORTANT: Explicitly clear the Supabase auth token in localStorage, fixed key
-      const supabaseProjectId = 'jhfzugtgazuagqfpsuku';
-      localStorage.removeItem(`sb-${supabaseProjectId}-auth-token`);
+      // Remove Supabase auth token: This is now handled internally safely by supabase.auth.signOut()
+      // so we no longer remove localStorage token manually to avoid issues.
 
       const { error } = await supabase.auth.signOut();
 
@@ -176,6 +175,9 @@ export class SupabaseAuthService implements AuthService {
       }
 
       toast.success("Logged out successfully");
+
+      console.log("Sign out completed: localStorage keys cleared and Supabase signOut done");
+
       return { success: true };
     } catch (error: any) {
       console.error("Sign out error:", error);
