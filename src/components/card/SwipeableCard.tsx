@@ -12,6 +12,7 @@ interface SwipeableCardProps {
   children: React.ReactNode;
   cardClassName?: string;
   profileId?: string;
+  allowNavigate?: boolean;
 }
 
 const SwipeableCard: React.FC<SwipeableCardProps> = ({ 
@@ -19,7 +20,8 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
   onSwipeRight, 
   children,
   cardClassName = "",
-  profileId
+  profileId,
+  allowNavigate = true
 }) => {
   const [exitX, setExitX] = useState<number | null>(null);
   const [showControls, setShowControls] = useState(false);
@@ -57,11 +59,11 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Prevent navigation when clicking on action buttons
-    if ((e.target as HTMLElement).closest('.card-action-button')) {
+    if ((e.target as HTMLElement).closest('.card-action-button') || !allowNavigate) {
       return;
     }
     
-    if (profileId) {
+    if (profileId && allowNavigate) {
       navigate(`/profile/${profileId}`);
     }
   };
@@ -81,7 +83,7 @@ const SwipeableCard: React.FC<SwipeableCardProps> = ({
         position: 'relative',
         height: '100%',
         touchAction: 'none',
-        cursor: 'pointer',
+        cursor: allowNavigate ? 'pointer' : 'default',
         perspective: '1200px'
       }}
       drag="x"

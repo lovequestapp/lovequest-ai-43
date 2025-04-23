@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -14,6 +15,8 @@ import { FilePen, FileText, Heart, MessageSquare, Plus, Share, Send, Trash, Edit
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from "sonner";
 import { BlogPostType } from '@/types/user';
+import { motion } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
 
 interface BlogPostProps {
   post: BlogPostType;
@@ -73,7 +76,7 @@ const BlogPost: React.FC<BlogPostProps> = ({ post, isOwner, onEdit, onDelete, on
         </p>
         
         <div className="flex flex-wrap gap-2 mb-4">
-          {post.tags.map((tag, index) => (
+          {post.tags?.map((tag, index) => (
             <Badge key={index} variant="secondary" className="bg-love-50 text-love-700">
               {tag}
             </Badge>
@@ -207,18 +210,27 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({
   const [content, setContent] = useState(initialData?.content || '');
   const [tags, setTags] = useState<string[]>(initialData?.tags || []);
   const [tagInput, setTagInput] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (title.trim() && content.trim()) {
-      onCreatePost(title.trim(), content.trim(), tags);
-      setOpen(false);
-      
-      // Reset form if not editing
-      if (!isEditing) {
-        setTitle('');
-        setContent('');
-        setTags([]);
+      setIsSubmitting(true);
+      try {
+        await onCreatePost(title.trim(), content.trim(), tags);
+        setOpen(false);
+        
+        // Reset form if not editing
+        if (!isEditing) {
+          setTitle('');
+          setContent('');
+          setTags([]);
+        }
+      } catch (error) {
+        console.error("Error creating post:", error);
+        toast.error("Failed to create post");
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };
@@ -290,6 +302,12 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({
                 placeholder="Add a tag (e.g., Dating, Travel, Advice)"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && tagInput.trim()) {
+                    e.preventDefault();
+                    handleAddTag();
+                  }
+                }}
               />
               <Button 
                 type="button" 
@@ -324,8 +342,19 @@ const CreatePostDialog: React.FC<CreatePostDialogProps> = ({
           </div>
           
           <DialogFooter>
-            <Button type="submit" className="bg-gradient-love hover:opacity-90">
-              {isEditing ? 'Update Post' : 'Publish Post'}
+            <Button 
+              type="submit" 
+              className="bg-gradient-love hover:opacity-90"
+              disabled={isSubmitting || !title.trim() || !content.trim()}
+            >
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin">⌛</span>
+                  {isEditing ? 'Updating...' : 'Publishing...'}
+                </span>
+              ) : (
+                isEditing ? 'Update Post' : 'Publish Post'
+              )}
             </Button>
           </DialogFooter>
         </form>
@@ -361,8 +390,45 @@ const Blog: React.FC = () => {
       if (currentUser) {
         setIsLoading(true);
         try {
-          const posts = await fetchUserPosts(currentUser.id);
-          setUserPosts(posts);
+          // Try to fetch from Supabase first
+          let postsData: BlogPostType[] = [];
+          
+          try {
+            const { data: supabasePosts, error } = await supabase
+              .from('blog_posts')
+              .select(`
+                *,
+                profiles:user_id (name)
+              `)
+              .eq('user_id', currentUser.id)
+              .order('created_at', { ascending: false });
+              
+            if (error) throw error;
+            
+            if (supabasePosts && supabasePosts.length > 0) {
+              // Transform to expected format
+              postsData = supabasePosts.map(post => ({
+                id: post.id.toString(),
+                userId: post.user_id,
+                title: post.title,
+                content: post.content,
+                tags: post.tags || [],
+                createdAt: post.created_at,
+                updatedAt: post.updated_at,
+                likes: post.likes_count || 0,
+                comments: post.comments || [],
+                userName: post.profiles?.name || 'Anonymous'
+              }));
+            } else {
+              throw new Error("No posts found in Supabase");
+            }
+          } catch (supabaseError) {
+            console.error("Error fetching from Supabase:", supabaseError);
+            // Fallback to context API
+            postsData = await fetchUserPosts(currentUser.id);
+          }
+          
+          setUserPosts(postsData);
         } catch (error) {
           console.error("Error loading user posts:", error);
           toast.error("Failed to load your posts");
@@ -375,21 +441,152 @@ const Blog: React.FC = () => {
     loadUserPosts();
   }, [currentUser, fetchUserPosts]);
   
-  if (!currentUser) return null;
+  if (!currentUser) {
+    navigate('/login');
+    return null;
+  }
   
-  const handleCreatePost = (title: string, content: string, tags: string[]) => {
-    createPost({
-      title,
-      content,
-      tags,
-      userId: currentUser.id
-    });
+  const handleCreatePost = async (title: string, content: string, tags: string[]) => {
+    try {
+      // Try to create in Supabase first
+      try {
+        const { data, error } = await supabase
+          .from('blog_posts')
+          .insert({
+            title,
+            content,
+            tags,
+            user_id: currentUser.id
+          })
+          .select();
+          
+        if (error) throw error;
+        
+        if (data) {
+          toast.success('Post created successfully!');
+          // Refresh posts
+          const { data: updatedPosts, error: fetchError } = await supabase
+            .from('blog_posts')
+            .select(`
+              *,
+              profiles:user_id (name)
+            `)
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false });
+            
+          if (!fetchError && updatedPosts) {
+            // Transform to expected format
+            const formattedPosts = updatedPosts.map(post => ({
+              id: post.id.toString(),
+              userId: post.user_id,
+              title: post.title,
+              content: post.content,
+              tags: post.tags || [],
+              createdAt: post.created_at,
+              updatedAt: post.updated_at,
+              likes: post.likes_count || 0,
+              comments: post.comments || [],
+              userName: post.profiles?.name || 'Anonymous'
+            }));
+            
+            setUserPosts(formattedPosts);
+          }
+          return true;
+        }
+        throw new Error("Failed to create post in Supabase");
+      } catch (supabaseError) {
+        console.error("Supabase error:", supabaseError);
+        // Fall back to context API
+      }
+      
+      // Fallback
+      await createPost({
+        title,
+        content,
+        tags,
+        userId: currentUser.id
+      });
+      
+      // Refresh user posts
+      const refreshedPosts = await fetchUserPosts(currentUser.id);
+      setUserPosts(refreshedPosts);
+      
+      return true;
+    } catch (error) {
+      console.error("Error creating post:", error);
+      toast.error("Failed to create post");
+      return false;
+    }
   };
   
-  const handleUpdatePost = (title: string, content: string, tags: string[]) => {
-    if (editingPost) {
-      updatePost(editingPost.id, { title, content, tags });
+  const handleUpdatePost = async (title: string, content: string, tags: string[]) => {
+    if (!editingPost) return false;
+    
+    try {
+      // Try to update in Supabase first
+      try {
+        const { error } = await supabase
+          .from('blog_posts')
+          .update({
+            title,
+            content,
+            tags,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingPost.id);
+          
+        if (error) throw error;
+        
+        toast.success('Post updated successfully!');
+        
+        // Refresh posts
+        const { data: updatedPosts, error: fetchError } = await supabase
+          .from('blog_posts')
+          .select(`
+            *,
+            profiles:user_id (name)
+          `)
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false });
+          
+        if (!fetchError && updatedPosts) {
+          // Transform to expected format
+          const formattedPosts = updatedPosts.map(post => ({
+            id: post.id.toString(),
+            userId: post.user_id,
+            title: post.title,
+            content: post.content,
+            tags: post.tags || [],
+            createdAt: post.created_at,
+            updatedAt: post.updated_at,
+            likes: post.likes_count || 0,
+            comments: post.comments || [],
+            userName: post.profiles?.name || 'Anonymous'
+          }));
+          
+          setUserPosts(formattedPosts);
+        }
+        
+        setEditingPost(null);
+        return true;
+      } catch (supabaseError) {
+        console.error("Supabase error:", supabaseError);
+        // Fall back to context API
+      }
+      
+      // Fallback
+      await updatePost(editingPost.id, { title, content, tags });
+      
+      // Refresh user posts
+      const refreshedPosts = await fetchUserPosts(currentUser.id);
+      setUserPosts(refreshedPosts);
+      
       setEditingPost(null);
+      return true;
+    } catch (error) {
+      console.error("Error updating post:", error);
+      toast.error("Failed to update post");
+      return false;
     }
   };
   
@@ -400,27 +597,107 @@ const Blog: React.FC = () => {
         id: post.id,
         title: post.title,
         content: post.content,
-        tags: post.tags
+        tags: post.tags || []
       });
     }
   };
   
-  const handleDeletePost = (postId: string) => {
-    deletePost(postId);
+  const handleDeletePost = async (postId: string) => {
+    try {
+      // Try to delete from Supabase first
+      try {
+        const { error } = await supabase
+          .from('blog_posts')
+          .delete()
+          .eq('id', postId);
+          
+        if (error) throw error;
+        
+        toast.success('Post deleted successfully!');
+        // Update local state
+        setUserPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+        return true;
+      } catch (supabaseError) {
+        console.error("Supabase error:", supabaseError);
+        // Fall back to context API
+      }
+      
+      // Fallback
+      await deletePost(postId);
+      // Update local state
+      setUserPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
+      return true;
+    } catch (error) {
+      console.error("Error deleting post:", error);
+      toast.error("Failed to delete post");
+      return false;
+    }
   };
   
-  const handleLikePost = (postId: string) => {
-    likePost(postId);
+  const handleLikePost = async (postId: string) => {
+    try {
+      await likePost(postId);
+      // Update local state to reflect like
+      setUserPosts(prevPosts => 
+        prevPosts.map(post => 
+          post.id === postId 
+            ? { ...post, likes: post.likes + 1 } 
+            : post
+        )
+      );
+    } catch (error) {
+      console.error("Error liking post:", error);
+      toast.error("Failed to like post");
+    }
   };
   
-  const handleCommentPost = (postId: string, comment: string) => {
-    commentOnPost(postId, comment);
+  const handleCommentPost = async (postId: string, comment: string) => {
+    try {
+      await commentOnPost(postId, comment);
+      // Refresh the specific post or all posts to get updated comments
+      const updatedPosts = await fetchUserPosts(currentUser.id);
+      setUserPosts(updatedPosts);
+    } catch (error) {
+      console.error("Error commenting on post:", error);
+      toast.error("Failed to add comment");
+    }
   };
   
   if (isLoading) {
     return (
-      <div className="p-4 text-center">
-        <p>Loading your posts...</p>
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
+            <FileText className="text-love-500" />
+            <span>My Blog Posts</span>
+          </h2>
+          
+          <div className="animate-pulse">
+            <div className="h-10 w-32 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+        
+        {Array.from({ length: 2 }).map((_, i) => (
+          <Card key={i} className="mb-6">
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="h-6 w-3/4 bg-gray-200 rounded mb-4"></div>
+                <div className="h-4 w-1/4 bg-gray-200 rounded mb-6"></div>
+                <div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 w-full bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 w-2/3 bg-gray-200 rounded mb-4"></div>
+                <div className="flex justify-between">
+                  <div className="flex gap-2">
+                    <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                    <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                    <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                  </div>
+                  <div className="h-8 w-24 bg-gray-200 rounded"></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
@@ -447,18 +724,29 @@ const Blog: React.FC = () => {
       </div>
       
       {userPosts.length === 0 ? (
-        <Card className="p-8 text-center">
-          <div className="flex flex-col items-center gap-4">
-            <FileText size={48} className="text-muted-foreground" />
-            <h3 className="text-xl font-medium">No Posts Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Share your thoughts, experiences, and stories to connect with others.
-            </p>
-            <CreatePostDialog onCreatePost={handleCreatePost} />
-          </div>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Card className="p-8 text-center">
+            <div className="flex flex-col items-center gap-4">
+              <FileText size={48} className="text-muted-foreground" />
+              <h3 className="text-xl font-medium">No Posts Yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Share your thoughts, experiences, and stories to connect with others.
+              </p>
+              <CreatePostDialog onCreatePost={handleCreatePost} />
+            </div>
+          </Card>
+        </motion.div>
       ) : (
-        <div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="space-y-6"
+        >
           {userPosts.map(post => (
             <BlogPost 
               key={post.id}
@@ -470,7 +758,7 @@ const Blog: React.FC = () => {
               onComment={handleCommentPost}
             />
           ))}
-        </div>
+        </motion.div>
       )}
     </div>
   );

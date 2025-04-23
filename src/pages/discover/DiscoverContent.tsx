@@ -7,19 +7,21 @@ import ActionButtons from '@/components/card/ActionButtons';
 import { useNavigate } from 'react-router-dom';
 import { Camera, MapPin, Sparkles, Verified } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import ProfileSkeleton from '@/components/discover/ProfileSkeleton';
 import useAnalytics from '@/hooks/useAnalytics';
+import { toast } from 'sonner';
 
 interface DiscoverContentProps {
   profiles: UserWithCoordinates[];
   onSwipe: (id: string, direction: 'left' | 'right') => void;
+  isLoading?: boolean;
 }
 
-const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) => {
+const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe, isLoading = false }) => {
   const navigate = useNavigate();
   const { trackSwipe, trackMatch } = useAnalytics();
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [cardExitX, setCardExitX] = useState<number | null>(null);
 
   // Format profiles to be compatible with SwipeableCard
   const formattedProfiles = profiles.map(profile => ({
@@ -123,7 +125,13 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
       // Random match chance (30%)
       if (Math.random() > 0.7) {
         trackMatch(currentProfile.id);
-        // This component doesn't handle user feedback about matches; it is done externally in Discover/index
+        toast.success('New match! 🎉', {
+          description: `You matched with ${currentProfile.name}!`,
+          action: {
+            label: 'Open chat',
+            onClick: () => navigate('/messages')
+          }
+        });
       }
     }
   };
@@ -143,6 +151,14 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="relative h-[600px] w-full max-w-md mx-auto">
+        <ProfileSkeleton />
+      </div>
+    );
+  }
+
   if (!profiles || profiles.length === 0) {
     return <NoMatchesCard />;
   }
@@ -151,24 +167,27 @@ const DiscoverContent: React.FC<DiscoverContentProps> = ({ profiles, onSwipe }) 
 
   return (
     <div className="relative h-[600px] w-full max-w-md mx-auto">
-      {isLoadingMore && <ProfileSkeleton />}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative h-full"
-      >
-        {currentProfile && (
-          <SwipeableCard
-            onSwipeRight={handleSwipeRight}
-            onSwipeLeft={handleSwipeLeft}
-            cardClassName="w-full overflow-hidden shadow-2xl rounded-xl border border-gray-200"
-            profileId={currentProfile.id}
-          >
-            {renderCard(currentProfile)}
-          </SwipeableCard>
-        )}
-      </motion.div>
+      <AnimatePresence>
+        <motion.div
+          key={currentProfile.id}
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ x: cardExitX, opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative h-full"
+        >
+          {currentProfile && (
+            <SwipeableCard
+              onSwipeRight={handleSwipeRight}
+              onSwipeLeft={handleSwipeLeft}
+              cardClassName="w-full overflow-hidden shadow-2xl rounded-xl border border-gray-200"
+              profileId={currentProfile.id}
+            >
+              {renderCard(currentProfile)}
+            </SwipeableCard>
+          )}
+        </motion.div>
+      </AnimatePresence>
       
       {/* Action buttons below the card */}
       <ActionButtons 

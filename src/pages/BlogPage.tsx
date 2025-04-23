@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/header/Header';
 import Footer from '@/components/Footer';
-import MobileContainer from '@/components/MobileContainer';
 import Blog from '@/components/Blog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUser } from '@/context/UserContext';
@@ -11,28 +10,40 @@ import { useBlogPosts } from '@/hooks/useBlogPosts';
 import { BlogPostType } from '@/types/user';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Users, Zap } from 'lucide-react';
+import { FileText, Users, Zap, Sparkles, TrendingUp } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const BlogPage = () => {
   const { currentUser } = useUser();
-  const { allPosts, fetchFilteredPosts, isLoadingPosts } = useBlogPosts();
+  const { allPosts, fetchFilteredPosts, isLoadingPosts, refetchPosts } = useBlogPosts();
   const [activeTab, setActiveTab] = useState('my-posts');
   const [filteredPosts, setFilteredPosts] = useState<BlogPostType[]>([]);
   const [popularPosts, setPopularPosts] = useState<BlogPostType[]>([]);
+  const [trendingUsers, setTrendingUsers] = useState<string[]>([]);
+  const [isLoadingTrending, setIsLoadingTrending] = useState(false);
   const navigate = useNavigate();
 
+  // Effect for fetching initially
   useEffect(() => {
-    const loadFilteredPosts = async () => {
-      const posts = await fetchFilteredPosts('');
-      setFilteredPosts(posts);
+    const loadData = async () => {
+      try {
+        await refetchPosts();
+        const posts = await fetchFilteredPosts('');
+        setFilteredPosts(posts);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+        toast.error('Failed to load blog posts');
+      }
     };
     
-    loadFilteredPosts();
-  }, [fetchFilteredPosts]);
+    loadData();
+  }, [fetchFilteredPosts, refetchPosts]);
 
+  // Effect for sorting popular posts
   useEffect(() => {
-    // Find popular posts (posts with most likes and comments)
-    if (allPosts.length > 0) {
+    if (allPosts && allPosts.length > 0) {
       const sorted = [...allPosts]
         .sort((a, b) => {
           const aEngagement = a.likes + a.comments.length;
@@ -46,32 +57,51 @@ const BlogPage = () => {
   }, [allPosts]);
   
   // Find potential matches based on blog interactions
-  const findPotentialMatches = () => {
-    const userInteractions = new Map();
-    
-    // Count interactions with other users' posts
-    allPosts.forEach(post => {
-      if (post.userId !== currentUser?.id) {
-        // Check if current user liked or commented on this post
-        const hasCommented = post.comments.some(comment => comment.userId === currentUser?.id);
-        
-        if (hasCommented) {
-          const count = userInteractions.get(post.userId) || 0;
-          userInteractions.set(post.userId, count + 1);
+  useEffect(() => {
+    const findPotentialMatches = () => {
+      setIsLoadingTrending(true);
+      try {
+        if (!allPosts || allPosts.length === 0 || !currentUser) {
+          setTrendingUsers([]);
+          return;
         }
-      }
-    });
-    
-    // Sort by interaction count and return top 3
-    return Array.from(userInteractions.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([userId]) => userId);
-  };
-  
-  const potentialMatchIds = findPotentialMatches();
 
-  if (!currentUser) return null;
+        const userInteractions = new Map();
+        
+        // Count interactions with other users' posts
+        allPosts.forEach(post => {
+          if (post.userId !== currentUser?.id) {
+            // Check if current user liked or commented on this post
+            const hasCommented = post.comments.some(comment => comment.userId === currentUser?.id);
+            
+            if (hasCommented) {
+              const count = userInteractions.get(post.userId) || 0;
+              userInteractions.set(post.userId, count + 1);
+            }
+          }
+        });
+        
+        // Sort by interaction count and return top 3
+        const potentialMatchIds = Array.from(userInteractions.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([userId]) => userId);
+
+        setTrendingUsers(potentialMatchIds);
+      } catch (error) {
+        console.error('Error finding potential matches:', error);
+      } finally {
+        setIsLoadingTrending(false);
+      }
+    };
+
+    findPotentialMatches();
+  }, [allPosts, currentUser]);
+
+  if (!currentUser) {
+    navigate('/login');
+    return null;
+  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -109,9 +139,16 @@ const BlogPage = () => {
               <TabsContent value="explore" className="focus-visible:outline-none focus-visible:ring-0">
                 <div className="space-y-6">
                   {isLoadingPosts ? (
-                    <div className="text-center py-10">
-                      <p className="text-muted-foreground">Loading posts...</p>
-                    </div>
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <Card key={index} className="w-full">
+                        <CardContent className="p-6">
+                          <Skeleton className="h-6 w-3/4 mb-4" />
+                          <Skeleton className="h-4 w-full mb-2" />
+                          <Skeleton className="h-4 w-full mb-2" />
+                          <Skeleton className="h-4 w-2/3" />
+                        </CardContent>
+                      </Card>
+                    ))
                   ) : allPosts.length > 0 ? (
                     allPosts.map(post => (
                       <PostCard 
@@ -131,9 +168,16 @@ const BlogPage = () => {
               <TabsContent value="for-you" className="focus-visible:outline-none focus-visible:ring-0">
                 <div className="space-y-6">
                   {isLoadingPosts ? (
-                    <div className="text-center py-10">
-                      <p className="text-muted-foreground">Loading personalized posts...</p>
-                    </div>
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <Card key={index} className="w-full">
+                        <CardContent className="p-6">
+                          <Skeleton className="h-6 w-3/4 mb-4" />
+                          <Skeleton className="h-4 w-full mb-2" />
+                          <Skeleton className="h-4 w-full mb-2" />
+                          <Skeleton className="h-4 w-2/3" />
+                        </CardContent>
+                      </Card>
+                    ))
                   ) : filteredPosts.length > 0 ? (
                     filteredPosts.map(post => (
                       <PostCard 
@@ -165,15 +209,25 @@ const BlogPage = () => {
             {/* Popular Posts */}
             <Card>
               <CardHeader className="pb-2">
-                <h3 className="font-semibold">Popular Posts</h3>
+                <h3 className="font-semibold flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-love-500" />
+                  Popular Posts
+                </h3>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {popularPosts.length > 0 ? (
+                  {isLoadingPosts ? (
+                    Array.from({ length: 3 }).map((_, index) => (
+                      <div key={index} className="p-2">
+                        <Skeleton className="h-4 w-3/4 mb-2" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    ))
+                  ) : popularPosts.length > 0 ? (
                     popularPosts.map(post => (
                       <div 
                         key={post.id}
-                        className="p-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                        className="p-2 hover:bg-gray-50 rounded-md cursor-pointer transition-colors"
                         onClick={() => navigate(`/blog/${post.id}`)}
                       >
                         <p className="font-medium text-sm line-clamp-1">{post.title}</p>
@@ -194,16 +248,25 @@ const BlogPage = () => {
             {/* Potential Matches Based on Blog Interactions */}
             <Card>
               <CardHeader className="pb-2">
-                <h3 className="font-semibold">Potential Matches</h3>
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-amber-500" />
+                  Potential Matches
+                </h3>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {potentialMatchIds.length > 0 ? (
+                  {isLoadingTrending ? (
+                    Array.from({ length: 2 }).map((_, index) => (
+                      <div key={index} className="p-2">
+                        <Skeleton className="h-8 w-full" />
+                      </div>
+                    ))
+                  ) : trendingUsers.length > 0 ? (
                     <div className="space-y-3">
                       <p className="text-sm text-muted-foreground">
                         Based on your blog interactions, you might be interested in:
                       </p>
-                      {potentialMatchIds.map(userId => (
+                      {trendingUsers.map((userId) => (
                         <Button 
                           key={userId}
                           variant="outline"
