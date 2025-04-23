@@ -11,10 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Label } from "@/components/ui/label";
 import { useUser } from '@/context/UserContext';
 import { useBlogPosts } from '@/hooks/useBlogPosts';
+import { BlogPostType } from '@/types/user';
 import { FilePen, FileText, Heart, MessageSquare, Plus, Share, Send, Trash, Edit } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from "sonner";
-import { BlogPostType } from '@/types/user';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -398,7 +398,7 @@ const Blog: React.FC = () => {
               .from('blog_posts')
               .select(`
                 *,
-                profiles:user_id (name)
+                profiles (name)
               `)
               .eq('user_id', currentUser.id)
               .order('created_at', { ascending: false });
@@ -416,7 +416,7 @@ const Blog: React.FC = () => {
                 createdAt: post.created_at,
                 updatedAt: post.updated_at,
                 likes: post.likes_count || 0,
-                comments: post.comments || [],
+                comments: Array.isArray(post.comments) ? post.comments : [],
                 userName: post.profiles?.name || 'Anonymous'
               }));
             } else {
@@ -469,7 +469,7 @@ const Blog: React.FC = () => {
             .from('blog_posts')
             .select(`
               *,
-              profiles:user_id (name)
+              profiles (name)
             `)
             .eq('user_id', currentUser.id)
             .order('created_at', { ascending: false });
@@ -485,7 +485,7 @@ const Blog: React.FC = () => {
               createdAt: post.created_at,
               updatedAt: post.updated_at,
               likes: post.likes_count || 0,
-              comments: post.comments || [],
+              comments: Array.isArray(post.comments) ? post.comments : [],
               userName: post.profiles?.name || 'Anonymous'
             }));
             
@@ -544,7 +544,7 @@ const Blog: React.FC = () => {
           .from('blog_posts')
           .select(`
             *,
-            profiles:user_id (name)
+            profiles (name)
           `)
           .eq('user_id', currentUser.id)
           .order('created_at', { ascending: false });
@@ -560,7 +560,7 @@ const Blog: React.FC = () => {
             createdAt: post.created_at,
             updatedAt: post.updated_at,
             likes: post.likes_count || 0,
-            comments: post.comments || [],
+            comments: Array.isArray(post.comments) ? post.comments : [],
             userName: post.profiles?.name || 'Anonymous'
           }));
           

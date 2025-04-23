@@ -27,6 +27,22 @@ export const useBlogPosts = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Helper function to transform Supabase blog posts to our BlogPostType
+  const transformSupabasePosts = (posts: any[]): BlogPostType[] => {
+    return posts.map(post => ({
+      id: post.id.toString(),
+      userId: post.user_id,
+      title: post.title,
+      content: post.content,
+      tags: post.tags || [],
+      createdAt: post.created_at,
+      updatedAt: post.updated_at,
+      likes: post.likes_count || 0,
+      comments: Array.isArray(post.comments) ? post.comments : [],
+      userName: post.profiles?.name || 'Anonymous'
+    }));
+  };
+  
   // Fetch all posts
   const fetchAllPosts = useCallback(async () => {
     try {
@@ -38,7 +54,7 @@ export const useBlogPosts = () => {
           .from('blog_posts')
           .select(`
             *,
-            profiles:user_id (name)
+            profiles (name)
           `)
           .order('created_at', { ascending: false });
           
@@ -46,19 +62,7 @@ export const useBlogPosts = () => {
         
         if (supabasePosts && supabasePosts.length > 0) {
           // Transform to expected format
-          const formattedPosts: BlogPostType[] = supabasePosts.map(post => ({
-            id: post.id.toString(),
-            userId: post.user_id,
-            title: post.title,
-            content: post.content,
-            tags: post.tags || [],
-            createdAt: post.created_at,
-            updatedAt: post.updated_at,
-            likes: post.likes_count || 0,
-            comments: post.comments || [],
-            userName: post.profiles?.name || 'Anonymous'
-          }));
-          
+          const formattedPosts = transformSupabasePosts(supabasePosts);
           setAllBlogPosts(formattedPosts);
           return formattedPosts;
         }
@@ -97,7 +101,7 @@ export const useBlogPosts = () => {
           .from('blog_posts')
           .select(`
             *,
-            profiles:user_id (name)
+            profiles (name)
           `)
           .eq('user_id', userId)
           .order('created_at', { ascending: false });
@@ -106,19 +110,7 @@ export const useBlogPosts = () => {
         
         if (userPosts && userPosts.length > 0) {
           // Transform to expected format
-          const formattedPosts: BlogPostType[] = userPosts.map(post => ({
-            id: post.id.toString(),
-            userId: post.user_id,
-            title: post.title,
-            content: post.content,
-            tags: post.tags || [],
-            createdAt: post.created_at,
-            updatedAt: post.updated_at,
-            likes: post.likes_count || 0,
-            comments: post.comments || [],
-            userName: post.profiles?.name || 'Anonymous'
-          }));
-          
+          const formattedPosts = transformSupabasePosts(userPosts);
           setUserBlogPosts(formattedPosts);
           return formattedPosts;
         }
@@ -152,7 +144,7 @@ export const useBlogPosts = () => {
             .from('blog_posts')
             .select(`
               *,
-              profiles:user_id (name)
+              profiles (name)
             `)
             .ilike('title', `%${filter}%`)
             .order('created_at', { ascending: false });
@@ -161,19 +153,7 @@ export const useBlogPosts = () => {
           
           if (filteredPosts && filteredPosts.length > 0) {
             // Transform to expected format
-            const formattedPosts: BlogPostType[] = filteredPosts.map(post => ({
-              id: post.id.toString(),
-              userId: post.user_id,
-              title: post.title,
-              content: post.content,
-              tags: post.tags || [],
-              createdAt: post.created_at,
-              updatedAt: post.updated_at,
-              likes: post.likes_count || 0,
-              comments: post.comments || [],
-              userName: post.profiles?.name || 'Anonymous'
-            }));
-            
+            const formattedPosts = transformSupabasePosts(filteredPosts);
             setFilteredBlogPosts(formattedPosts);
             return formattedPosts;
           }
@@ -203,7 +183,7 @@ export const useBlogPosts = () => {
         .from('blog_posts')
         .select(`
           *,
-          profiles:user_id (name)
+          profiles (name)
         `)
         .eq('id', postId)
         .single();
@@ -220,7 +200,7 @@ export const useBlogPosts = () => {
           createdAt: post.created_at,
           updatedAt: post.updated_at,
           likes: post.likes_count || 0,
-          comments: post.comments || [],
+          comments: Array.isArray(post.comments) ? post.comments : [],
           userName: post.profiles?.name || 'Anonymous'
         };
       }

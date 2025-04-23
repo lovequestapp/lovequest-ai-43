@@ -1,5 +1,3 @@
-
-
 export type User = {
   id: string;
   name: string;
@@ -42,3 +40,23 @@ export type User = {
   };
 };
 
+export type BlogPostType = {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  tags: string[];
+  createdAt: string | Date; // Accept both string and Date
+  updatedAt: string | Date; // Accept both string and Date
+  likes: number;
+  comments: BlogComment[];
+  userName?: string;
+};
+
+export type BlogComment = {
+  id: string;
+  userId: string;
+  userName: string;
+  content: string;
+  createdAt: string | Date; // Accept both string and Date
+};

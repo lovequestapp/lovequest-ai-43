@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/header/Header';
@@ -40,7 +39,7 @@ const BlogPage = () => {
     
     loadData();
   }, [fetchFilteredPosts, refetchPosts]);
-
+  
   // Effect for sorting popular posts
   useEffect(() => {
     if (allPosts && allPosts.length > 0) {
